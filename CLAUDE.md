@@ -1,218 +1,269 @@
-# Projektinstruktioner
+# Project instructions
 
-Det här projektet drivs av ett team av agenter. Huvudsessionen är **orchestrator** och delegerar arbete till specialistagenterna i `.claude/agents/`. Alla agenter följer reglerna i den här filen.
+This project is run by a team of agents. The main session is the **orchestrator** and delegates work to the specialist agents in `.claude/agents/`. All agents follow the rules in this file.
 
 @.claude/agents/orchestrator.md
 
 ---
 
-## Teamet
+## Language
 
-| Agent | Fil | Ansvar | Äger |
+The repository is in English: code, comments, documentation (ADRs, service map, product documents, agent files, this file) and commit messages. Agents report to the orchestrator in English.
+
+## Team
+
+| Agent | File | Responsibility | Owns |
 |---|---|---|---|
-| Orchestrator | `orchestrator.md` | Planerar, delegerar, samordnar, stänger uppgifter | Uppgiftsflöde |
-| Produktägare | `product-owner.md` | Bedömer vad som byggs, förhindrar dubbel funktionalitet, kravspecifikation | `docs/product/` |
-| Arkitekt | `architect.md` | Design, tjänstegränser, ADR:er, tolkning av regler | `docs/adr/`, `docs/services.md`, kodstandard |
-| Reviewer | `reviewer.md` | Sträng granskning av all kod mot arkitektur och kodprinciper | Granskningsrapporter (ändrar ingen kod) |
-| UI/UX-expert | `ui-ux-expert.md` | Gränssnitt, användarflöden, tillgänglighet | `frontend/` |
-| Backend-expert | `backend-expert.md` | Tjänster, API, domänlogik, auth, databas | `services/`, `api/`, `pkg/` |
-| DevOps-expert | `devops-expert.md` | Bygg, CI/CD, drift, miljöer, övervakning | `infra/`, `.github/`, Dockerfiler, `compose*.yml` |
+| Orchestrator | `orchestrator.md` | Plans, delegates, coordinates, closes tasks | Task flow |
+| Product owner | `product-owner.md` | Decides what is built, prevents duplicate functionality, requirement specification | `docs/product/` |
+| Architect | `architect.md` | Design, service boundaries, ADRs, interpretation of the rules | `docs/adr/`, `docs/services.md`, code standard |
+| Reviewer | `reviewer.md` | Strict review of all code against architecture and code principles | Review reports (changes no code) |
+| UI/UX expert | `ui-ux-expert.md` | Interface, user flows, accessibility | `frontend/` |
+| Backend expert | `backend-expert.md` | Services, API, domain logic, auth, database | `services/`, `api/`, `pkg/` |
+| DevOps expert | `devops-expert.md` | Build, CI/CD, operations, environments, monitoring | `infra/`, `.github/`, Dockerfiles, `compose*.yml` |
 
-En agent ändrar bara filer inom sitt eget område. Behövs en ändring utanför området skickas den som en begäran till orchestratorn.
+An agent only changes files within its own area. If a change is needed outside it, send it as a request to the orchestrator.
 
-## Modellval
+## Glossary
 
-Agenterna använder den svagaste modell som klarar uppgiften. Varje uppgift börjar på steg 1 och går upp ett steg i taget bara när det behövs.
+This is the single shared vocabulary. Use these exact English terms in documents, code, API contracts, database schemas and error codes. Product documents use the same terms. If a term is missing, the architect adds it here before it is used elsewhere.
 
-| Steg | Modell | Effort | Används |
+| Term | Technical form | Notes |
+|---|---|---|
+| Group | `groups` | |
+| Member | `group_members` | |
+| Join (membership starts) | `joined_at` | |
+| Leave group | `DELETE /api/groups/{groupId}/membership` | |
+| Group admin | role value `admin` | |
+| System admin | `isSystemAdmin`, `X-User-System-Admin` | Set in configuration only (ADR 0011) |
+| Invite link | `invite_links`, `/api/invites/{token}` | |
+| Link creator | `createdByUserId` | |
+| Lobby | `lobbies`, `lobbyId`, schemas `Lobby` / `LobbyDetail` | A bookable slot in a group |
+| Creator | `createdByUserId` | Creator of a lobby |
+| Player | `lobby_players`, `players`, `playerCount` | A person who has joined a lobby |
+| Join a lobby | `PUT /api/groups/{groupId}/lobbies/{lobbyId}/players/me` | |
+| Leave a lobby | `DELETE /api/groups/{groupId}/lobbies/{lobbyId}/players/me` | |
+| Spot / max players | `maxPlayers` | Shown as "3/5 players" |
+| Game | `gameId`, `gameName` | |
+| Game list | `games` | Managed by system admin |
+| Other | `customGameName` | Free-text game name |
+
+Notes:
+- "Time" in the sense of a clock time or timestamp is "time" (`startsAt`, `endsAt`, time zone). Only the bookable slot is a "lobby".
+
+**Error codes** (renamed from the Swedish-era codes, all others unchanged):
+
+| Old | New |
+|---|---|
+| `time_in_past` | `lobby_in_past` |
+| `time_end_not_after_start` | `lobby_end_not_after_start` |
+| `time_too_long` | `lobby_too_long` |
+| `time_has_ended` | `lobby_has_ended` |
+| `time_full` | `lobby_full` |
+| `time_not_found` | `lobby_not_found` |
+| `own_upcoming_times_exist` | `own_upcoming_lobbies_exist` |
+
+**Status words:**
+- ADR: `Proposed` / `Accepted` (keep the date).
+- Architect and product handover: `DONE` / `BLOCKED` / `PARTIAL` / `ESCALATE`.
+- Review result: `APPROVED` / `NOT APPROVED`.
+- Review level: `BLOCKER` / `SHOULD` / `COULD`.
+- Markers in documents: `ASSUMPTION` / `DECISION`. "Amendment 2026-11-01" is written as "Amendment 2026-11-01".
+- Requirement status: `Draft` / `Decided` / `Implemented` / `Rejected`. Feature status: `Proposed` / `Decided` / `In progress` / `Done` / `Removed`. Priority: `Must` / `Should` / `Could`. Product owner verdict: `NEW` / `EXTEND F-NNN` / `DUPLICATE OF F-NNN` / `REJECTED` / `NEEDS ANSWER`.
+
+## Model selection
+
+Agents use the weakest model that can handle the task. Each task starts at step 1 and moves up one step at a time only when needed.
+
+| Step | Model | Effort | Used |
 |---|---|---|---|
-| 1 | Haiku (`haiku`) | medium | Alltid först |
-| 2 | Sonnet (`sonnet`) | medium | Efter eskalering från steg 1 |
-| 3 | Opus 5.5 (`opus`) | medium | Efter eskalering från steg 2. **Högsta tillåtna nivå.** |
+| 1 | Haiku (`haiku`) | medium | Always first |
+| 2 | Sonnet (`sonnet`) | medium | After escalation from step 1 |
+| 3 | Opus 5.5 (`opus`) | medium | After escalation from step 2. **Highest allowed level.** |
 
-- Agentfilerna har `model: haiku` och `effort: medium` som standard.
-- Effort är alltid högst `medium`. Modeller över Opus 5.5 (t.ex. Fable eller Mythos) och effort `high` eller högre används aldrig.
-- **Eskalering** sker när:
-  - agenten själv returnerar `Status: ESKALERA` med en motivering (den klarar inte uppgiften eller kan inte bedöma den säkert), eller
-  - resultatet underkänns av reviewern eller av tester två gånger på samma steg, eller
-  - orchestratorn bedömer att resultatet tydligt inte håller måttet.
-- Orchestratorn kör då om samma uppgift med nästa modell (`model`-parametern när agenten startas) och ger med den tidigare agentens resultat och problem som kontext.
-- Hoppa aldrig över ett steg. Misslyckas steg 3 stoppar orchestratorn och frågar användaren.
-- Nästa uppgift börjar på steg 1 igen, även för samma agent.
-- Huvudsessionen (orchestratorn) körs också på högst Opus 5.5 med effort medium. Det väljs i sessionen med `/model` och `/effort`.
-- Använd modellnamnen (`haiku`, `sonnet`, `opus`) i agentfilerna. Kontrollera i Claude Code att de pekar på de versioner du vill ha.
+- Agent files have `model: haiku` and `effort: medium` by default.
+- Effort is never higher than `medium`. Models above Opus 5.5 (e.g. Fable or Mythos) and effort `high` or higher are never used.
+- **Escalation** happens when:
+  - the agent itself returns `Status: ESCALATE` with a reason (it cannot handle the task or cannot judge it safely), or
+  - the result is rejected by the reviewer or by tests twice at the same step, or
+  - the orchestrator judges that the result clearly does not meet the bar.
+- The orchestrator then reruns the same task with the next model (the `model` parameter when starting the agent) and gives it the previous agent's result and problems as context.
+- Never skip a step. If step 3 fails, the orchestrator stops and asks the user.
+- The next task starts at step 1 again, including for the same agent.
+- The main session (orchestrator) also runs on at most Opus 5.5 with effort medium. It is selected in the session with `/model` and `/effort`.
+- Use the model names (`haiku`, `sonnet`, `opus`) in agent files. Check in Claude Code that they point to the versions you want.
 
 ## Stack
 
-Agenterna utgår från detta och väljer inte egna ramverk. Avvikelse kräver en ADR godkänd av arkitekten.
+Agents build on this and do not choose their own frameworks. A deviation requires an ADR approved by the architect.
 
-- **Arkitektur:** microservices bakom en API-gateway
-- **Backend:** Go (senaste stabila versionen). Standardbiblioteket först.
-- **Frontend:** React + TypeScript (Vite). Annat verktyg bara om React inte kan lösa behovet, och då med en ADR som motiverar varför.
-- **Inloggning:** Discord OAuth2. Andra inloggningsmetoder bara om Discord inte räcker för ett konkret krav.
-- **Databas:** PostgreSQL, en databas (eller ett schema) per tjänst
-- **Drift:** Docker / Docker Compose på Raspberry Pi 5 8GB
+- **Architecture:** microservices behind an API gateway
+- **Backend:** Go (latest stable version). Standard library first.
+- **Frontend:** React + TypeScript (Vite). Another tool only if React cannot solve the need, and then with an ADR that justifies why.
+- **Login:** Discord OAuth2. Other login methods only if Discord does not suffice for a concrete requirement.
+- **Database:** PostgreSQL, one database (or schema) per service
+- **Operations:** Docker / Docker Compose on Raspberry Pi 5 8GB
 - **CI:** GitHub Actions
 
-## Skills först
+## Skills first
 
-Innan en agent löser en uppgift själv kontrollerar den om det finns en lämplig skill (lista tillgängliga skills; i Claude Code via `/skills` eller skill-listan i sessionen). Finns en som passar ska den användas och dess instruktioner följas.
+Before an agent solves a task itself, it checks whether a suitable skill exists (list the available skills; in Claude Code via `/skills` or the skill list in the session). If one fits, it must be used and its instructions followed.
 
-- **ponytail** används vid allt kodskrivande för att hålla mängden kod så liten som möjligt.
-- Andra skills används när de matchar uppgiften (t.ex. frontend-design för UI, skill för dokumentformat, testning, säkerhet).
-- Står en skill i konflikt med `CLAUDE.md` gäller `CLAUDE.md`. Flagga konflikten till arkitekten.
-- I överlämningen anges vilka skills som användes.
+- **ponytail** is used whenever code is written, to keep the amount of code as small as possible.
+- Other skills are used when they match the task (e.g. frontend-design for UI, a skill for document formats, testing, security).
+- If a skill conflicts with `CLAUDE.md`, `CLAUDE.md` wins. Flag the conflict to the architect.
+- The handover states which skills were used.
 
 ## Microservices
 
-- **En tjänst = en avgränsad förmåga** (bounded context), inte ett tekniskt lager. "users-service" och "db-service" är fel uppdelning.
-- **Börja med få tjänster.** Dela upp när en gräns är tydlig och motiverad (olika ändringstakt, ägarskap, skalbehov). Varje ny tjänst kräver en ADR. Hellre en tjänst för lite än en för mycket.
-- **Startuppsättning:** `gateway` (routing, sessionsvalidering) och `auth` (Discord OAuth, sessioner). Domäntjänster tillkommer efter behov.
-- **Egen data:** en tjänst läser och skriver bara sin egen databas. Ingen tjänst läser direkt i en annan tjänsts tabeller.
-- **Kommunikation:** synkront via HTTP/JSON med kontrakt i `api/`. Asynkrona händelser (kö/broker) bara när ett konkret behov finns, och då med en ADR.
-- **Kontrakt först:** API-kontrakt (OpenAPI) ligger i `api/<tjänst>/` och är källan för typer i både Go och TypeScript. Kontrakten genereras, de skrivs inte för hand två gånger.
-- **Delad kod** i `pkg/` bara för ren infrastruktur (loggning, konfiguration, HTTP-middleware). Ingen delad domänlogik mellan tjänster, eftersom det kopplar ihop dem.
-- **Oberoende driftsättning:** varje tjänst byggs, testas och driftsätts för sig.
-- **En tjänst = en container.** Varje microservice har en egen `Dockerfile` och körs i en egen container med en process. Frontend och PostgreSQL körs också i egna containrar; en tjänst bäddar aldrig in en annan tjänst eller sin databas i samma container.
-- **Containrarna är tillståndslösa och utbytbara.** All konfiguration kommer från miljövariabler, loggar går till stdout, och inget tillstånd sparas i containerns filsystem. En container ska kunna stoppas, startas om eller köras i flera instanser utan dataförlust.
-- **Varje tjänst kan köras ensam.** `docker compose up <tjänst>` startar tjänsten med bara de beroenden den behöver. Tjänster hittar varandra via tjänstenamn och adresser från miljövariabler, aldrig via hårdkodade värdnamn eller `localhost`.
-- Varje tjänst har `/healthz` och `/readyz`, strukturerad loggning och ett korrelations-id som skickas vidare i alla anrop.
+- **One service = one bounded capability** (bounded context), not a technical layer. "users-service" and "db-service" are the wrong split.
+- **Start with few services.** Split when a boundary is clear and justified (different pace of change, ownership, scaling needs). Each new service requires an ADR. Better one service too few than one too many.
+- **Starting set:** `gateway` (routing, session validation) and `auth` (Discord OAuth, sessions). Domain services are added as needed.
+- **Own data:** a service reads and writes only its own database. No service reads another service's tables directly.
+- **Communication:** synchronous via HTTP/JSON with contracts in `api/`. Asynchronous events (queue/broker) only when a concrete need exists, and then with an ADR.
+- **Contract first:** API contracts (OpenAPI) live in `api/<service>/` and are the source for types in both Go and TypeScript. Contracts are generated, not written by hand twice.
+- **Shared code** in `pkg/` only for pure infrastructure (logging, configuration, HTTP middleware). No shared domain logic between services, because that couples them.
+- **Independent deployment:** each service is built, tested and deployed on its own.
+- **One service = one container.** Each microservice has its own `Dockerfile` and runs in its own container with one process. The frontend and PostgreSQL also run in their own containers; a service never embeds another service or its database in the same container.
+- **Containers are stateless and replaceable.** All configuration comes from environment variables, logs go to stdout, and no state is saved in the container's filesystem. A container must be able to be stopped, restarted or run in several instances without data loss.
+- **Each service can run alone.** `docker compose up <service>` starts the service with only the dependencies it needs. Services find each other via service names and addresses from environment variables, never via hard-coded host names or `localhost`.
+- Each service has `/healthz` and `/readyz`, structured logging and a correlation ID that is passed on in all calls.
 
-### Katalogstruktur
+### Directory structure
 
 ```
-api/<tjänst>/openapi.yaml        kontrakt
-services/<tjänst>/
-  cmd/<tjänst>/main.go           uppstart och koppling av beroenden
+api/<service>/openapi.yaml       contract
+services/<service>/
+  cmd/<service>/main.go          startup and wiring of dependencies
   internal/                      transport, application, domain, infrastructure
-  migrations/                    tjänstens egna migreringar
-  Dockerfile                     tjänstens egen image
-pkg/                             delad infrastrukturkod (inte domän)
-frontend/                        React-app
-infra/                           compose, driftkonfiguration
-docs/adr/                        arkitekturbeslut
-docs/services.md                 tjänstekarta: ansvar, ägd data, beroenden
-docs/product/                    vision, funktionsregister, backlog, krav
+  migrations/                    the service's own migrations
+  Dockerfile                     the service's own image
+pkg/                             shared infrastructure code (not domain)
+frontend/                        React app
+infra/                           compose, operations configuration
+docs/adr/                        architecture decisions
+docs/services.md                 service map: responsibility, owned data, dependencies
+docs/product/                    vision, feature register, backlog, requirements
 ```
 
-## Kodprinciper
+## Code principles
 
-Dessa gäller all kod i projektet. Arkitekten är den som tolkar dem vid oenighet.
+These apply to all code in the project. The architect interprets them in case of disagreement.
 
-### Minsta möjliga kod
-- Den bästa koden är den som inte behöver skrivas. Använd standardbiblioteket, befintlig kod och skills (ponytail) innan du skriver nytt.
-- Inga lager, abstraktioner eller konfigurationsmöjligheter som inget krav behöver.
+### Minimal code
+- The best code is the code that does not need to be written. Use the standard library, existing code and skills (ponytail) before writing something new.
+- No layers, abstractions or configuration options that no requirement needs.
 
 ### SOLID
-- **S – Single Responsibility**: en modul, typ eller funktion har ett skäl att ändras. Blanda inte HTTP-hantering, affärslogik och databasåtkomst i samma enhet. På tjänstenivå: en tjänst har ett ansvar.
-- **O – Open/Closed**: utöka beteende genom nya implementationer, inte genom att lägga till `if`-grenar i befintlig kod.
-- **L – Liskov Substitution**: en implementation av ett interface ska kunna bytas ut utan att anroparen märker skillnad i kontraktet (inklusive felbeteende).
-- **I – Interface Segregation**: små, fokuserade interface som definieras där de *används*, inte där de implementeras (idiomatiskt i Go).
-- **D – Dependency Inversion**: domänlogik beror på abstraktioner. Konkreta beroenden (databas, externa API:er, klocka) injiceras i `main.go`. Se avsnittet om modularitet nedan.
+- **S: Single Responsibility**: a module, type or function has one reason to change. Do not mix HTTP handling, business logic and database access in the same unit. At service level: a service has one responsibility.
+- **O: Open/Closed**: extend behavior through new implementations, not by adding `if` branches to existing code.
+- **L: Liskov Substitution**: an implementation of an interface can be swapped out without the caller noticing a difference in the contract (including error behavior).
+- **I: Interface Segregation**: small, focused interfaces defined where they are *used*, not where they are implemented (idiomatic in Go).
+- **D: Dependency Inversion**: domain logic depends on abstractions. Concrete dependencies (database, external APIs, clock) are injected in `main.go`. See the section on modularity below.
 
 ### DRY
-- Kunskap ska ha en enda auktoritativ plats: valideringsregler, konstanter, typer, konfiguration, API-kontrakt.
-- Duplicera hellre två gånger än abstrahera för tidigt. Vid tredje förekomsten: extrahera (*Rule of Three*).
-- DRY gäller kunskap, inte kod som råkar se likadan ut. Mellan tjänster är viss duplicering acceptabel, eftersom det är bättre än att koppla ihop dem.
+- Knowledge has a single authoritative place: validation rules, constants, types, configuration, API contracts.
+- Duplicate twice rather than abstract too early. At the third occurrence: extract (*Rule of Three*).
+- DRY applies to knowledge, not to code that happens to look alike. Between services some duplication is acceptable, because it is better than coupling them.
 
-### Även
-- **KISS** – den enklaste lösningen som uppfyller kravet vinner.
-- **YAGNI** – bygg inte för hypotetiska framtida behov.
-- **Separation of concerns** – lager inom en tjänst: transport → application → domain ← infrastructure. Domänen importerar aldrig från infrastruktur.
-- **Fail fast** – validera vid systemgränser, lita på data inuti.
+### Also
+- **KISS**: the simplest solution that meets the requirement wins.
+- **YAGNI**: do not build for hypothetical future needs.
+- **Separation of concerns**: layers within a service: transport → application → domain ← infrastructure. The domain never imports from infrastructure.
+- **Fail fast**: validate at system boundaries, trust data inside.
 
-## Modularitet och leverantörsoberoende
+## Modularity and vendor independence
 
-Koden ska vara tydligt separerad och får inte vara bunden till specifika leverantörer, bibliotek eller ramverk. Varje externt beroende ska gå att byta ut genom att skriva en ny adapter, utan att röra domän- eller applikationskoden.
+Code must be clearly separated and must not be bound to specific vendors, libraries or frameworks. Each external dependency must be replaceable by writing a new adapter, without touching domain or application code.
 
-### Portar och adaptrar
-- **Port:** ett interface som beskriver vad koden behöver, i domänens eget språk (t.ex. `IdentityProvider`, `UserRepository`, `Clock`). Porten definieras i det lager som använder den.
-- **Adapter:** en implementation av porten mot en specifik teknik (t.ex. `discordIdentityProvider`, `postgresUserRepository`). Adaptrar ligger i `infrastructure/`.
-- Kopplingen mellan port och adapter görs på ett enda ställe: i `main.go` för Go och i en provider/kompositionsrot för frontend.
+### Ports and adapters
+- **Port:** an interface that describes what the code needs, in the domain's own language (e.g. `IdentityProvider`, `UserRepository`, `Clock`). The port is defined in the layer that uses it.
+- **Adapter:** an implementation of the port against a specific technology (e.g. `discordIdentityProvider`, `postgresUserRepository`). Adapters live in `infrastructure/`.
+- The connection between port and adapter is made in one place only: in `main.go` for Go, and in a provider / composition root for the frontend.
 
-### Var interfaces används
-Interfaces används **vid gränser**, inte överallt:
-- mot alla externa system: identitetsleverantör (Discord), databas, andra tjänster, e-post, lagring, köer
-- mot sådant som gör kod svår att testa: tid, slump, filsystem, miljö
-- mellan moduler som ska kunna ändras oberoende av varandra
+### Where interfaces are used
+Interfaces are used **at boundaries**, not everywhere:
+- toward all external systems: identity provider (Discord), database, other services, email, storage, queues
+- toward things that make code hard to test: time, randomness, filesystem, environment
+- between modules that must be able to change independently
 
-Interfaces används **inte** för ren domänlogik med en enda implementation och inget externt beroende. Ett interface med en implementation och utan gräns att skydda är onödig kod.
+Interfaces are **not** used for pure domain logic with a single implementation and no external dependency. An interface with one implementation and no boundary to protect is unnecessary code.
 
-### Regler
-- **Inga leverantörstyper läcker.** Typer från Discord, `pgx`, HTTP-ramverk eller UI-bibliotek får bara förekomma i adaptern. Porten använder projektets egna typer (t.ex. `ExternalIdentity{Provider, SubjectID, DisplayName, AvatarURL}` i stället för en Discord-användare).
-- **Inga leverantörsnamn i domänen.** Domän- och applikationskod nämner aldrig Discord, Postgres eller liknande. Datamodellen sparar t.ex. `provider` + `provider_subject_id` i stället för `discord_id`, så att fler inloggningsleverantörer kan läggas till utan schemaändring.
-- **Ett nytt beroende = en adapter.** Ett nytt bibliotek eller en ny extern tjänst införs bakom en port, inte direkt i domän- eller applikationskoden.
-- **Byte ska vara lokalt.** Testfrågan är: om vi byter leverantör, ändras då bara adaptern och kopplingen i `main.go`? Om svaret är nej är separationen fel.
-- **Standarder före leverantörer.** Använd öppna standarder och format där det går: OAuth2/OIDC, SQL utan leverantörsspecifika funktioner när det inte behövs, OpenAPI, OCI-images, OpenTelemetry-kompatibel loggning och metrik.
-- **Moduler har tydliga publika ytor.** I Go ligger implementationen i `internal/` och bara det som behövs exporteras. I frontend exporterar varje modul via ett eget index och importerar inte andra modulers interna filer.
+### Rules
+- **No vendor types leak.** Types from Discord, `pgx`, HTTP frameworks or UI libraries may only appear in the adapter. The port uses the project's own types (e.g. `ExternalIdentity{Provider, SubjectID, DisplayName}` instead of a Discord user).
+- **No provider names in the domain.** Domain and application code never mentions Discord, Postgres or similar. The data model stores e.g. `provider` + `provider_subject_id` instead of `discord_id`, so that more login providers can be added without a schema change.
+- **One new dependency = one adapter.** A new library or a new external service is introduced behind a port, not directly in domain or application code.
+- **Replacement stays local.** The test question: if we change provider, does only the adapter and the wiring in `main.go` change? If the answer is no, the separation is wrong.
+- **Standards before vendors.** Use open standards and formats where possible: OAuth2/OIDC, SQL without vendor-specific features when not needed, OpenAPI, OCI images, OpenTelemetry-compatible logging and metrics.
+- **Modules have clear public surfaces.** In Go the implementation lives in `internal/` and only what is needed is exported. In the frontend each module exports through its own index and does not import other modules' internal files.
 
-## Kodstandard
+## Code standard
 
-- Namn beskriver *vad*, inte *hur*. Inga förkortningar utöver etablerade (`id`, `url`, `db`, `ctx`).
-- Funktioner hålls korta (riktmärke: under 30 rader) och på en abstraktionsnivå.
-- Inga magiska tal eller strängar, använd namngivna konstanter.
-- Kommentarer förklarar *varför*, inte *vad*.
-- Fel hanteras explicit; inga tysta `catch` och inga ignorerade `err`. Logga med kontext och exponera aldrig interna detaljer till klienten.
-- Ingen död kod, utkommenterad kod eller TODO utan ärendereferens.
-- Linter och formatterare är auktoritativa (`gofmt`, `golangci-lint`, ESLint, Prettier).
+- Names describe *what*, not *how*. No abbreviations beyond established ones (`id`, `url`, `db`, `ctx`).
+- Functions are kept short (guideline: under 30 lines) and at one level of abstraction.
+- No magic numbers or strings; use named constants.
+- Comments explain *why*, not *what*.
+- Errors are handled explicitly; no silent `catch` and no ignored `err`. Log with context and never expose internal details to the client.
+- No dead code, commented-out code, or TODO without an issue reference.
+- Linters and formatters are authoritative (`gofmt`, `golangci-lint`, ESLint, Prettier).
 
-## Tester
+## Tests
 
-- Varje ändring av beteende har tester. En buggfix börjar med ett test som reproducerar buggen.
-- Testpyramid: många enhetstester på domänlogik, färre integrationstester mot riktig databas, få end-to-end.
-- Kontraktstester mellan tjänster: en tjänst som anropar en annan testas mot kontraktet i `api/`.
-- Tester beror på interface, inte implementationer.
+- Every change of behavior has tests. A bug fix starts with a test that reproduces the bug.
+- Test pyramid: many unit tests on domain logic, fewer integration tests against a real database, few end-to-end tests.
+- Contract tests between services: a service that calls another is tested against the contract in `api/`.
+- Tests depend on interfaces, not implementations.
 
-## Arbetsflöde
+## Workflow
 
-1. **Produktägaren** bedömer om och varför något ska byggas, kontrollerar att funktionaliteten inte redan finns och skriver kravet med acceptanskriterier.
-2. **Orchestratorn** bryter ner kravet i deluppgifter och anger vilka skills som är relevanta.
-3. **Arkitekten** granskar planen om den rör tjänstegränser, nya tjänster, nya beroenden, datamodell eller API-kontrakt. Beslut dokumenteras som ADR.
-4. **Specialisterna** implementerar inom sina områden, med lämpliga skills och tester.
-5. **Reviewern** granskar all ändrad kod strängt mot arkitekturen och kodprinciperna. Fynd klassas: `BLOCKER` / `BÖR` / `KAN`. Vid `EJ GODKÄND` går uppgiften tillbaka till ägande agent och granskas igen efter åtgärd. Vid oklar regel avgör arkitekten.
-6. **Orchestratorn** kontrollerar Definition of Done, och **produktägaren** uppdaterar status i funktionsregistret.
+1. **The product owner** decides whether and why something should be built, checks that the functionality does not already exist, and writes the requirement with acceptance criteria.
+2. **The orchestrator** breaks the requirement down into sub-tasks and states which skills are relevant.
+3. **The architect** reviews the plan if it touches service boundaries, new services, new dependencies, the data model or API contracts. Decisions are documented as ADRs.
+4. **The specialists** implement within their areas, with relevant skills and tests.
+5. **The reviewer** reviews all changed code strictly against the architecture and code principles. Findings are classified: `BLOCKER` / `SHOULD` / `COULD`. On `NOT APPROVED` the task goes back to the owning agent and is reviewed again after the fix. If a rule is unclear, the architect decides.
+6. **The orchestrator** checks the Definition of Done, and **the product owner** updates the status in the feature register.
 
-Rena buggfixar och tekniska förbättringar utan ny funktionalitet kan gå direkt till steg 2. Ingen kod hoppar över steg 5.
+Pure bug fixes and technical improvements without new functionality may go directly to step 2. No code skips step 5.
 
-**Ansvarsgränser:**
-- Produktägaren undviker dubbel *funktionalitet* (samma behov löst två gånger).
-- Arkitekten designar och äger reglerna, och undviker dubbel *kod* (samma kunskap på flera ställen).
-- Reviewern kontrollerar att reglerna följs, men ändrar inga regler och ingen kod.
+**Responsibility boundaries:**
+- The product owner avoids duplicate *functionality* (the same need solved twice).
+- The architect designs and owns the rules, and avoids duplicate *code* (the same knowledge in several places).
+- The reviewer checks that the rules are followed, but does not change rules or code.
 
 ## Definition of Done
 
-- [ ] Acceptanskriterierna i kravet är uppfyllda
-- [ ] Funktionsregistret (`docs/product/features.md`) är uppdaterat
-- [ ] Lämpliga skills har använts
-- [ ] Tester skrivna och gröna lokalt och i CI
-- [ ] Lint och typkontroll utan fel
-- [ ] Reviewern har gett `GODKÄND` (inga `BLOCKER`, alla `BÖR` åtgärdade eller motiverade)
-- [ ] Inga hemligheter i koden
-- [ ] Migreringar är reversibla eller har en dokumenterad rollback-plan
-- [ ] API-kontrakt, `docs/services.md` och ADR uppdaterade där något ändrats
+- [ ] The acceptance criteria in the requirement are met
+- [ ] The feature register (`docs/product/features.md`) is up to date
+- [ ] Relevant skills have been used
+- [ ] Tests written and green locally and in CI
+- [ ] Lint and type checks without errors
+- [ ] The reviewer has given `APPROVED` (no `BLOCKER`, every `SHOULD` fixed or justified)
+- [ ] No secrets in the code
+- [ ] Migrations are reversible or have a documented rollback plan
+- [ ] API contracts, `docs/services.md` and ADRs updated where something changed
 
-## Överlämningsformat
+## Handover format
 
-När en agent lämnar tillbaka arbete till orchestratorn:
+When an agent hands work back to the orchestrator:
 
 ```
-## Resultat: <uppgift>
-Status: KLAR | BLOCKERAD | DELVIS | ESKALERA
-Modell: <haiku | sonnet | opus>
-Eskaleringsskäl: <bara vid ESKALERA: vad som inte gick och varför>
-Tjänst(er): <berörda tjänster>
-Ändrade filer: <lista>
-Skills som användes: <lista>
-Tester: <vad som lagts till / körts>
-Beslut som behöver ADR: <ja/nej + kort>
-Beroenden till andra agenter: <vad som behövs, av vem>
-Öppna frågor: <lista>
+## Result: <task>
+Status: DONE | BLOCKED | PARTIAL | ESCALATE
+Model: <haiku | sonnet | opus>
+Escalation reason: <only for ESCALATE: what did not work and why>
+Service(s): <affected services>
+Changed files: <list>
+Skills used: <list>
+Tests: <what was added / run>
+Decisions needing ADR: <yes/no + short>
+Dependencies on other agents: <what is needed, from whom>
+Open questions: <list>
 ```
 
-## Säkerhet (gäller alla)
+## Security (applies to everyone)
 
-- Hemligheter endast via miljövariabler/secret store, aldrig i repot.
-- All extern input valideras vid gränsen.
-- Principen om minsta behörighet för tjänster, databasroller och CI-tokens.
-- Interna tjänster exponeras inte publikt; all extern trafik går via gatewayen.
-- Identitet och roll når tjänsterna bara som `X-User-*`-headers som gatewayen sätter. Gatewayen tar bort klientens `X-User-*` på alla routes. Tjänster litar på dessa headers och på ingen annan header för identitet eller roll (ADR 0002, 0011). Roller i en tjänst kontrolleras i `application`, aldrig bara i UI.
+- Secrets only via environment variables or a secret store, never in the repository.
+- All external input is validated at the boundary.
+- Least privilege for services, database roles and CI tokens.
+- Internal services are not exposed publicly; all external traffic goes through the gateway.
+- Identity and role reach the services only as `X-User-*` headers set by the gateway. The gateway removes the client's `X-User-*` on all routes. Services trust these headers and no other header for identity or role (ADR 0002, 0011). Roles in a service are checked in `application`, never only in the UI.

@@ -1,0 +1,10 @@
+{
+  "name": "openlobby-tooling",
+  "private": true,
+  "devDependencies": {
+    "@redocly/cli": "2.72.1"
+  },
+  "scripts": {
+    "lint:api": "redocly lint --config redocly.yaml api/auth/openapi.yaml api/auth/internal.yaml api/calendar/openapi.yaml"
+  }
+}

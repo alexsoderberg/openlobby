@@ -1,148 +1,199 @@
-# Tjänstekarta
+# Service map
 
-Status: Accepterad (se ADR 0001–0011). Kontrakt i `api/` skrivs av backend-experten och finns ännu inte.
+Status: Accepted (see ADR 0001–0013). The amendment sections in the ADRs override earlier text that was not rewritten in place. ADR 0001 "Amendment 2026-11-01 (consolidated)" is the final statement of the cross-cutting rules, and ADR 0001 "review 4" and "review 5" list the text rewritten in place. This file reflects the state after review 5. The contracts are `api/auth/openapi.yaml`, `api/auth/internal.yaml` and `api/calendar/openapi.yaml`.
 
-## Översikt
+## Overview
 
 ```
-Webbläsare
-   │  HTTPS (443). HTTP (80) redirectas till HTTPS
+Browser
+   │  HTTPS (443). HTTP (80) redirects to HTTPS
    ▼
-edge (Nginx)                          TLS, redirect, säkerhetshuvuden (ADR 0009)
+edge (Nginx)                          TLS, redirect, security headers (ADR 0009)
    │
    ▼
-gateway ──────────────► frontend      (/ och alla icke-API-sökvägar)
-   │  validerar session, sätter X-User-*
+gateway ──────────────► frontend      (/ and all non-API paths)
+   │  validates session, sets X-User-*
    ├──────────────► auth              (/api/auth/*)
    │                 ▲
    └──────────────► calendar          (/api/groups*, /api/invites*, /api/games*)
-                     │  namnuppslag (internt HTTP)
+                     │  name lookup (internal HTTP)
                      └────────────► auth
 
-certbot (sidovagn)  förnyar certifikat till en volym som edge läser (ADR 0009)
+certbot (sidecar)  renews certificates into a volume that edge reads (ADR 0009)
 ```
 
-Alla tjänster använder synkront HTTP/JSON. Ingen tjänst läser en annan tjänsts databas. Ingen tjänst exponeras publikt utom `edge`, som bara vidarebefordrar till `gateway`.
+Each arrow is a shared Compose network; no other pair of containers shares one (ADR 0008 review 5). `auth` also has an egress network for Discord, and `postgres` is reached only by `auth`, `calendar` and their migration jobs.
 
-## Tjänster
+All services use synchronous HTTP/JSON. No service reads another service's database. No service is exposed publicly except `edge`, which only forwards to `gateway`.
 
-### edge (Nginx, ingen Go-tjänst)
-- **Ansvar:** publik ingång. TLS, HTTP→HTTPS-redirect, HSTS, `Referrer-Policy`, vidarebefordrade headers till `gateway`.
-- **Äger data:** inget. Certifikat och nycklar ligger i volymen `certs` och finns aldrig i repot.
-- **Beroenden:** `gateway`. Delar volymer med `certbot`.
-- **Realiserar:** HTTPS för all trafik (REQ-0001) och förutsättningen för `Secure`-cookien.
-- **Beslut:** ADR 0009.
+## Services
+
+### edge (Nginx, no Go service)
+- **Responsibility:** public entry point. TLS, HTTP→HTTPS redirect, HSTS, `Referrer-Policy`, forwarded headers to `gateway`, and rate limiting (`limit_req`) of `/api/auth/login` and `/api/auth/callback` (ADR 0009, amendment on rate limiting).
+- **Owns data:** nothing. Certificates and keys live in the volume `certs` and are never in the repository.
+- **Logs:** access log without query string and with the invite token masked (`log_format` from `$uri`, ADR 0009 review 4); error log level `emerg`; no response temporary files (ADR 0009 review 5).
+- **Dependencies:** `gateway`. Shares volumes with `certbot`.
+- **Realizes:** HTTPS for all traffic (REQ-0001) and the prerequisite for the `Secure` cookie.
+- **Decisions:** ADR 0009.
 
 ### gateway
-- **Ansvar:** routing, sessionsvalidering, sätter `X-User-Id` och `X-User-System-Admin` från sessionen och tar bort klientens egna `X-User-*`, korrelations-id, blockering av `/internal/*`, åtkomstlogg.
-- **Äger data:** inget.
-- **Beroenden:** `auth` (sessionsvalidering), `frontend` och `calendar` (routing).
-- **Realiserar:** F-001 (sessionsdelen av inloggningen), och förutsättningen för F-002–F-005, F-010, F-013, F-017, F-018 och F-024.
-- **Beslut:** ADR 0002, 0011.
+- **Responsibility:** routing (route table with path and method per route), session validation, sets `X-User-Id` and `X-User-System-Admin` from the session and removes the client's own `X-User-*`, forwards the `Cookie` header to `auth` only, correlation ID, answers `404 not_found` and `405 method_not_allowed`, blocks `/internal/*`, answers `503 service_unavailable` or `500 internal_error` when an upstream fails (a redirect on the two login routes, ADR 0002 review 5), access log.
+- **Owns data:** nothing.
+- **Dependencies:** `auth` (session validation), `frontend` and `calendar` (routing).
+- **Realizes:** F-001 (the session part of login), and the prerequisite for F-002–F-005, F-010, F-013, F-017, F-018 and F-024.
+- **Decisions:** ADR 0002, 0011.
 
 ### auth
-- **Ansvar:** inloggning med Discord, användarkonton, sessioner, utloggning, visningsnamn, och systemadminrollen (avgörs av konfiguration, `SYSTEM_ADMINS`).
-- **Äger data (databas `auth`):** `users`, `sessions`, `login_attempts`.
-- **Beroenden:** Discord OAuth2 (extern, bakom porten `IdentityProvider`), PostgreSQL.
-- **Realiserar:** F-001 (REQ-0001), och rollen för F-024 (systemadmin, REQ-0009).
-- **Beslut:** ADR 0003, 0005, 0011.
+- **Responsibility:** login with Discord, user accounts, sessions, logout, display names, and the system admin role (determined by configuration, `SYSTEM_ADMINS`). The provider name is not in any public path (ADR 0005).
+- **Owns data (database `auth`):** `users`, `sessions` (deleted at logout or after expiry), `login_attempts` (hash of `state`, PKCE verifier, `returnTo`; deleted when used or after expiry). ADR 0005 review 5, ADR 0006.
+- **Cookies:** `ol_session` (the session) and `ol_login` (binds a login attempt to the browser, path `/api/auth/callback`, 10 minutes).
+- **Dependencies:** Discord OAuth2 (external, behind the port `IdentityProvider`, `golang.org/x/oauth2` in the adapter), PostgreSQL.
+- **Realizes:** F-001 (REQ-0001), and the role for F-024 (system admin, REQ-0010).
+- **Decisions:** ADR 0003, 0005, 0011.
 
 ### calendar
-- **Ansvar:** grupper, medlemskap och roller (en eller flera admins, minst en så länge gruppen har medlemmar), inbjudningslänkar med utgång efter 2 timmar, max antal användningar per länk (1–10, förval 10), tider med spel och max antal platser, bokningar, och spellistan (F-024). Spellistan förvaltas av systemadmin. Behörighetskontroll sker här.
-- **Äger data (databas `calendar`):** `groups`, `group_members` (med `role` och `joined_at`), `invite_links` (med `expires_at`, `max_uses`, `use_count`), `times` (med `game_name` och `max_players`), `bookings`, `games` (spellistan, ADR 0010).
-- **Beroenden:** `auth` (visningsnamn via internt `POST /internal/users/lookup`), PostgreSQL.
-- **Realiserar:** F-002 (REQ-0002), F-003 (REQ-0003, REQ-0009), F-004 och F-017 (REQ-0004), F-005 (REQ-0005), F-018 (REQ-0005, REQ-0009), F-024 (REQ-0009, förvaltning av systemadmin), F-010 (REQ-0006), F-013 (REQ-0007).
-- **Beslut:** ADR 0004, 0006, 0007, 0010, 0011.
+- **Responsibility:** groups, membership and roles (one or more admins, at least one as long as the group has members), invite links expiring after 2 hours, max uses per link (1–10, default 10), lobbies with game and max players, players joining and leaving lobbies, and the game list (F-024). The game list is managed by the system admin. Members see it ordered by use in their group. Authorization is checked here.
+- **Owns data (database `calendar`):** `groups`, `group_members` (with `role` and `joined_at`), `invite_links` (with `expires_at`, `max_uses`, `use_count`), `lobbies` (with `game_name`, `game_id` and `max_players`), `lobby_players`, `games` (the game list with uuid IDs, ADR 0010).
+- **Dependencies:** `auth` (display names via internal `POST /internal/users/lookup`), PostgreSQL.
+- **Realizes:** F-002 (REQ-0002), F-003 (REQ-0003, REQ-0009), F-004 and F-017 (REQ-0004), F-005 (REQ-0005), F-018 (REQ-0005, REQ-0009), F-024 (REQ-0009, management by system admin), F-010 (REQ-0006), F-013 (REQ-0007).
+- **Decisions:** ADR 0004, 0006, 0007, 0010, 0011.
 
 ### frontend
-- **Ansvar:** React + TypeScript (Vite). Användargränssnittet, lokal tid, veckovyns filtrering, tolkning av sluttid som nästa dygn, spelval ur `GET /api/games` med förifyllt max från `defaultMaxPlayers`, platsläge ("X/Y platser" eller "X bokade"), länkars utgångstid och användningar, felmeddelanden utifrån felkoder, 404-sida för `invite_invalid`, och sidan `/systemadmin/spellista` för systemadmin (visas när `isSystemAdmin` är sant).
-- **Äger data:** inget. Kör i egen container med statiska filer.
-- **Beroenden:** `gateway` (allt API-anrop).
-- **Realiserar:** gränssnittet för F-001–F-005, F-010, F-013, F-017, F-018 och F-024.
-- **Beslut:** ADR 0008 (statisk webbserver), 0001, 0011.
+- **Responsibility:** React + TypeScript (Vite). The user interface, local time, filtering of the week view, interpretation of an end time as the next day, game selection from `GET /api/groups/{groupId}/games` with the max prefilled from `defaultMaxPlayers`, player count display ("X/Y players" or "X players"), expiry time and uses of links, error messages based on error codes, 404 page for `invite_invalid`, and the page `/systemadmin/games` for the system admin (shown when `isSystemAdmin` is true).
+- **Owns data:** nothing. Runs in its own container with static files (Nginx). No access log, error log level `emerg` (ADR 0008 and ADR 0009 review 5).
+- **Dependencies:** `gateway` (all API calls).
+- **Realizes:** the user interface for F-001–F-005, F-010, F-013, F-017, F-018 and F-024.
+- **Decisions:** ADR 0008 (static web server), 0001, 0011, 0013 (texts and formatting).
 
-### Gemensamt
-- **Databaser:** en PostgreSQL-instans, en databas och en roll per tjänst (`auth`, `calendar`). ADR 0006, 0008.
-- **Delad kod i `pkg/`:** endast infrastruktur (loggning, konfiguration från miljövariabler, HTTP-middleware för korrelations-id och fel, hälsoendpoints).
+### Shared
+- **Databases:** one PostgreSQL 17 instance (ADR 0008), one database per service (`auth`, `calendar`), with two roles each: `<service>` (DML) and `<service>_migrate` (DDL, only the migration job). ADR 0006, 0008, 0012.
+- **Migrations:** goose, run by the one-off job `<service>-migrate` (same image) before the service. ADR 0012.
+- **Networks:** one Compose network per group of containers that talk to each other (table in ADR 0008 review 5). The trust in `X-User-*` depends on it.
+- **Integration tests:** build tag `integration`, `TEST_DATABASE_URL`, a PostgreSQL service container in CI (ADR 0012 review 5).
+- **Code generation:** oapi-codegen (Go, server in `net/http`, client in `authclient`) and openapi-typescript + openapi-fetch (frontend). One configuration file per generated target next to the contract in `api/<service>/` (ADR 0012, review 2). Generated code is checked in and CI verifies that it is in sync with `api/`.
+- **Contract lint:** Redocly CLI, a development dependency in the root `package.json`. Script `npm run lint:api` (ADR 0012, review 2).
+- **Shared code in `pkg/`:** infrastructure only: logging, configuration from environment variables, HTTP middleware (correlation ID, request body limit, error envelope, uuid form check, generator error handlers, the path for request logs without query and with the invite token masked, ADR 0002 amendment review 4), health endpoints.
 
-## Endpoints (översikt, ej kontrakt)
+## Endpoints (overview, not the contract)
 
-Publika endpoints (via `gateway`, som tar emot trafik från `edge`):
+Public endpoints (via `gateway`, which receives traffic from `edge`):
 
-| Metod | Sökväg | Tjänst | Session | Krav |
+| Method | Path | Service | Session | Requirement |
 |---|---|---|---|---|
-| GET | `/api/auth/discord/login` | auth | nej | REQ-0001 |
-| GET | `/api/auth/discord/callback` | auth | nej | REQ-0001 |
-| POST | `/api/auth/logout` | auth | nej | REQ-0001 |
-| GET | `/api/auth/me` | auth | ja | REQ-0001 (svar `{id, displayName, isSystemAdmin}`, ADR 0011) |
-| POST | `/api/groups` | calendar | ja | REQ-0002 (skapar admin-medlemskap, ingen länk) |
-| GET | `/api/groups` | calendar | ja | REQ-0002 |
-| GET | `/api/groups/{groupId}` | calendar | ja, medlem | REQ-0002 |
-| DELETE | `/api/groups/{groupId}/membership` | calendar | ja, medlem | REQ-0006 (överlåter adminrollen när sista admin lämnar) |
-| PUT | `/api/groups/{groupId}/admins/{userId}` | calendar | ja, admin | REQ-0008 (gör medlem till admin, idempotent, 204. Icke-medlem `group_not_found`, icke-admin `not_allowed`, okänd medlem `member_not_found`) |
-| GET | `/api/groups/{groupId}/invite-links` | calendar | ja, medlem | REQ-0002, REQ-0007 (medlem: egna aktiva länkar; admin: alla aktiva länkar, med token så att de kan kopieras. Fält `id`, `token`, `createdBy`, `createdAt`, `expiresAt`, `useCount`, `maxUses`. Svar `Cache-Control: no-store`) |
-| POST | `/api/groups/{groupId}/invite-links` | calendar | ja, medlem | REQ-0002, REQ-0007 (body `{maxUses}`, valfritt heltal 1–10. Utelämnat eller `null` ger 10. Svar 201 med `token`, `expiresAt`, `useCount`, `maxUses`. `invalid_max_uses` vid värde utanför 1–10 eller fel typ. ADR 0007) |
-| DELETE | `/api/groups/{groupId}/invite-links/{linkId}` | calendar | ja, skapare eller admin | REQ-0007 (inaktiv länk ger `404 invite_invalid`, ADR 0007) |
-| GET | `/api/invites/{token}` | calendar | ja | REQ-0002 (404 `invite_invalid` om utgången, återkallad, uttömd eller okänd) |
-| POST | `/api/invites/{token}/join` | calendar | ja | REQ-0002 (404 `invite_invalid` enligt ovan. Räknar en användning vid nytt medlemskap) |
-| GET | `/api/games` | calendar | ja | REQ-0009 (spellistan, F-024; svar `[{id, name, defaultMaxPlayers}]`) |
-| POST | `/api/games` | calendar | ja, systemadmin | REQ-0009 (ny, ADR 0010. Body `{id, name, defaultMaxPlayers}`, 201. `not_allowed`, `invalid_game`, `invalid_capacity`, `game_taken`) |
-| PUT | `/api/games/{gameId}` | calendar | ja, systemadmin | REQ-0009 (ny, ADR 0010. Body `{name, defaultMaxPlayers}`, 200. `not_allowed`, `invalid_game`, `invalid_capacity`, `game_taken`, `game_not_found`) |
-| DELETE | `/api/games/{gameId}` | calendar | ja, systemadmin | REQ-0009 (ny, ADR 0010. 204. `not_allowed`, `game_not_found`. Tider behåller sitt spelnamn) |
-| GET | `/api/groups/{groupId}/times` | calendar | ja, medlem | REQ-0004 (alla kommande tider, utan intervallfilter; visar `gameName`, `maxPlayers`, `bookedCount`) |
-| POST | `/api/groups/{groupId}/times` | calendar | ja, medlem | REQ-0003, REQ-0009 (`startsAt`, `endsAt` i UTC. Exakt ett av `gameId` eller `customGameName`. `maxPlayers` krävs: heltal ≥ 1 eller `null`) |
-| GET | `/api/groups/{groupId}/times/{timeId}` | calendar | ja, medlem | REQ-0004, REQ-0005 (visar bokade medlemmar) |
-| DELETE | `/api/groups/{groupId}/times/{timeId}` | calendar | ja, skapare | REQ-0003 |
-| PUT | `/api/groups/{groupId}/times/{timeId}/booking` | calendar | ja, medlem | REQ-0005, F-018 (`time_has_ended`, `time_full`, `time_not_found`. Idempotent) |
-| DELETE | `/api/groups/{groupId}/times/{timeId}/booking` | calendar | ja, medlem | REQ-0005 (204 när tiden finns, även efter sluttid och idempotent. 404 `time_not_found` när tiden saknas) |
+| GET | `/api/auth/login` | auth | no | REQ-0001 (`?returnTo=`, 302 to Discord, sets `ol_login`, ADR 0005) |
+| GET | `/api/auth/callback` | auth | no | REQ-0001 (302 always. Needs `ol_login` equal to `state`, always clears `ol_login`. All errors except denied login redirect to `/?loginError=login_failed`, ADR 0005) |
+| POST | `/api/auth/logout` | auth | no | REQ-0001 (204, idempotent, deletes the session) |
+| GET | `/api/auth/me` | auth | yes | REQ-0001 (response `{userId, displayName, isSystemAdmin}`, ADR 0001, 0003, 0011) |
+| POST | `/api/groups` | calendar | yes | REQ-0002 (creates the admin membership, no link. 400 `invalid_group_name` or `invalid_request`) |
+| GET | `/api/groups` | calendar | yes | REQ-0002 (groups where the caller is a member, no order required) |
+| GET | `/api/groups/{groupId}` | calendar | yes, member | REQ-0002 |
+| DELETE | `/api/groups/{groupId}/membership` | calendar | yes, member | REQ-0006 (transfers the admin role when the last admin leaves) |
+| PUT | `/api/groups/{groupId}/admins/{userId}` | calendar | yes, admin | REQ-0008 (makes a member admin, idempotent, 204. Order: invalid `userId` form `member_not_found`, non-member `group_not_found`, non-admin `not_allowed`, unknown member `member_not_found`) |
+| GET | `/api/groups/{groupId}/invite-links` | calendar | yes, member | REQ-0002, REQ-0007 (member: own active links; admin: all active links, with token so they can be copied. Fields `id`, `token`, `createdByUserId`, `expiresAt`, `useCount`, `maxUses`. Response `Cache-Control: no-store`) |
+| POST | `/api/groups/{groupId}/invite-links` | calendar | yes, member | REQ-0002, REQ-0007 (body `{maxUses}`, optional. Omitted or `null` gives 10. 201 response with `id`, `token`, `createdByUserId`, `expiresAt`, `useCount`, `maxUses`. `invalid_max_uses` for an integer outside 1–10, `invalid_request` for a wrong type. ADR 0007) |
+| DELETE | `/api/groups/{groupId}/invite-links/{linkId}` | calendar | yes, link creator or admin | REQ-0007 (order: membership, link exists, permission, active. Inactive link gives `404 invite_invalid`, ADR 0007) |
+| GET | `/api/invites/{token}` | calendar | yes | REQ-0002 (404 `invite_invalid` if revoked, expired, used up or unknown, or the token has an invalid form) |
+| POST | `/api/invites/{token}/join` | calendar | yes | REQ-0002 (404 `invite_invalid` as above. Counts one use for a new membership) |
+| GET | `/api/games` | calendar | yes, system admin | REQ-0010 (the game list for the system admin page; non-admin `not_allowed`. Response `[{id, name, defaultMaxPlayers}]`, sorted by name ignoring case, then `id`, ADR 0010 consolidated) |
+| POST | `/api/games` | calendar | yes, system admin | REQ-0010 (ADR 0010 review 3. Body `{name, defaultMaxPlayers}`, 201 with the generated `id`. Order: `invalid_request`, `not_allowed`, `invalid_game` (name, including `Other`), `invalid_capacity`, `game_taken`) |
+| PUT | `/api/games/{gameId}` | calendar | yes, system admin | REQ-0010 (ADR 0010 review 3. Body `{name, defaultMaxPlayers}`, 200. Order: `game_not_found` (invalid form in path), `invalid_request`, `not_allowed`, `invalid_game`, `invalid_capacity`, `game_not_found` (unknown), `game_taken`) |
+| DELETE | `/api/games/{gameId}` | calendar | yes, system admin | REQ-0010 (ADR 0010 review 3. 204. Order: `game_not_found` (invalid form in path), `not_allowed`, `game_not_found` (unknown). Lobbies keep their game name) |
+| GET | `/api/groups/{groupId}/games` | calendar | yes, member | REQ-0009 (ADR 0010 review 3. The game list in the order of use in the group: most lobbies first, then by name ignoring case, then `id`; `Other` is not included and is shown last by the client. Non-member `group_not_found`) |
+| GET | `/api/groups/{groupId}/lobbies` | calendar | yes, member | REQ-0004 (all upcoming lobbies, sorted by start time, without interval filter; shows `gameName`, `maxPlayers`, `playerCount`) |
+| POST | `/api/groups/{groupId}/lobbies` | calendar | yes, member | REQ-0003, REQ-0009 (`startsAt`, `endsAt` as RFC 3339, both required. Exactly one of `gameId` or `customGameName`. `maxPlayers` omitted, `null` (unlimited) or an integer ≥ 1. Order: `invalid_request`, `group_not_found`, then the lobby rules. 201 response `Lobby` without `players`) |
+| GET | `/api/groups/{groupId}/lobbies/{lobbyId}` | calendar | yes, member | REQ-0004, REQ-0005 (shows the players who have joined. `lobby_not_found` also after the end time, since past lobbies are not shown, ADR 0004) |
+| DELETE | `/api/groups/{groupId}/lobbies/{lobbyId}` | calendar | yes, creator | REQ-0003 |
+| PUT | `/api/groups/{groupId}/lobbies/{lobbyId}/players/me` | calendar | yes, member | REQ-0005, F-018 (order: `lobby_not_found`, `lobby_has_ended` (also for a caller who is already a player), already a player → 204, `lobby_full`. ADR 0004 rule 7) |
+| DELETE | `/api/groups/{groupId}/lobbies/{lobbyId}/players/me` | calendar | yes, member | REQ-0005 (204 when the lobby exists, also after the end time and idempotent. 404 `lobby_not_found` when the lobby is missing) |
 
-Interna endpoints (ej publika, blockeras av `gateway`):
+Internal endpoints (not public, blocked by `gateway`, reachable only on the internal network `services`, ADR 0008):
 
-| Metod | Sökväg | Anropare | Tjänst |
+| Method | Path | Caller | Service |
 |---|---|---|---|
-| POST | `/internal/sessions/validate` | gateway | auth (svar `{userId, isSystemAdmin}`) |
-| POST | `/internal/users/lookup` | calendar | auth |
+| POST | `/internal/sessions/validate` | gateway | auth (response `{userId, isSystemAdmin}`; empty token gives 401) |
+| POST | `/internal/users/lookup` | calendar | auth (at most 100 IDs per call, more gives 400 `invalid_request`, ADR 0003) |
 
-Headers från gatewayen till `calendar` (ADR 0002, 0011): `X-User-Id` (uuid) och `X-User-System-Admin` (`true` eller `false`). Gatewayen tar bort klientens `X-User-*` på alla routes.
+Headers from the gateway to `calendar` (ADR 0002, 0011): `X-User-Id` (uuid) and `X-User-System-Admin` (`true` or `false`). The gateway removes the client's `X-User-*` on all routes. The session cookie is not forwarded to `calendar`.
 
-Noter:
-- Icke-medlem får `404 group_not_found` i stället för 403, så att gruppens existens inte röjs.
-- Okänd, återkallad, utgången, uttömd eller lämnad inbjudningslänk ger `404 invite_invalid`. Svaret är samma i alla fall.
-- Medlemslistan visar roll (`admin` eller `member`).
-- En systemadmin har ingen rätt i en grupp. Grupp- och tidsendpoints ger samma svar som för vem som helst (ADR 0004 regel 11).
-- Felkoder definieras i `api/calendar/openapi.yaml`. Tidsrelaterade: `time_in_past`, `time_end_not_after_start`, `time_too_long`, `time_not_found`, `time_has_ended` (bara inbokning), `time_full`, `invalid_game`, `invalid_capacity`. Länkar: `invite_invalid`, `invalid_max_uses`. Spellista: `game_taken`, `game_not_found` (`invalid_game` och `invalid_capacity` används också där). Övriga: `own_upcoming_times_exist`, `not_allowed`, `member_not_found`.
-- Avbokning ger 204 för medlem när tiden finns, även efter sluttid och även om medlemmen inte var bokad. Tiden saknas → `404 time_not_found` (ADR 0004 regel 7). REQ-0005 måste stämma med detta.
-- `GET /api/games` kräver session men ingen grupp. Svaret är sorterat på `name`.
+Notes:
+- A non-member gets `404 group_not_found` instead of 403, so that the group's existence is not revealed.
+- Unknown, revoked, expired or used-up invite link gives `404 invite_invalid`. The response is the same in all cases.
+- The member list shows role (`admin` or `member`).
+- A system admin has no rights in a group. Group and lobby endpoints give the same response as for anyone else (ADR 0004 rule 11).
+- Order of checks in every endpoint (shape before membership), the `required` rule and the defaults for omitted fields, and the shape rules (wrong JSON type, missing time, body over 16 KiB, invalid uuid in path): ADR 0001, "Amendment 2026-11-01 (consolidated)".
+- Times are RFC 3339. Any offset is accepted; responses are always UTC with `Z` (ADR 0001).
+- Error codes and status codes: the table under "Error codes" below. The source is `enum` in `api/`.
+- Login errors (`loginError=login_denied` and `login_failed`) are redirects and are not part of the table (ADR 0005).
+- Leaving a lobby gives 204 for a member when the lobby exists, also after the end time and even if the member was not a player. Lobby missing → `404 lobby_not_found` (ADR 0004 rule 7).
 
-## Öppna frågor och risker
+## Error codes
 
-Bekräftade av användaren (stängda, se ADR 0004, 0006, 0007, 0010, 0011):
-- **Exakt 24 timmar nekas** (`time_too_long`). Kravtexten i REQ-0003 ska stämma med det.
-- **Avbokning är alltid tillåten,** även efter sluttid. **Inbokning** går till sluttid, även under pågående tid, och bara om det finns en ledig plats (`time_full`). Se ADR 0004 regel 7.
-- **Max antal platser per tid** (F-018): tomt = obegränsat. Skaparen räknas in. Gränsen gäller bokningar under gruppens lås (ADR 0006).
-- **Max användningar per inbjudningslänk:** 1–10, obligatoriskt, förval 10 vid skapande (användarens beslut, för att motverka bottar). Användningar räknas vid nytt medlemskap under gruppens lås. Uttömd länk ger `invite_invalid` (ADR 0007).
-- **Admin kopierar andra medlemmars länkar:** ja. Admin ser token för alla aktiva länkar i gruppen (ADR 0007). Ersätter den öppna frågan i REQ-0002.
-- **Spellista i calendar** (ADR 0010): tabellen `games`, förvaltas av systemadmin i appen (`/api/games`, ADR 0011). Medlemmar och gruppadmins kan inte ändra den. Driftsrollen `calendar_ops` tas bort.
-- **Systemadmin** pekas ut i konfigurationen (`SYSTEM_ADMINS` i `auth`, ADR 0011). Ingen hantering i appen. Ingen rätt i grupper.
-- **Över midnatt tillåts.** ANTAGANDE-markeringen i REQ-0003 tas bort av produktägaren.
-- **Passerade tider ligger kvar** med `created_by_user_id` för avgångna medlemmar, utan att visas. Ingen rensning i MVP.
-- **Länkar från avgångna medlemmar tas bort** när medlemmen lämnar gruppen.
-- **Inaktiva inbjudningslänkar städas** (utgångna eller uttömda) vid skapande av ny länk i gruppen. Inaktiva länkar i inaktiva grupper ligger kvar tills gruppen skapar en ny länk eller tas bort (ADR 0007).
-- **Måste ta bort kommande egna tider innan man lämnar** (`own_upcoming_times_exist`).
-- **Ingen max-gräns** på medlemmar. **Ingen Discord-server** krävs (ADR 0005).
-- **Spellista** (ADR 0010, REQ-0009): startinnehåll Counter-Strike 2, World of Warcraft, League of Legends och Overwatch, alla med förvalt max 5. Ingen övre gräns för max. Tiden sparar spelnamnet.
+The source is `enum` in `api/` (`auth/openapi.yaml` and `calendar/openapi.yaml` for the public codes). The table is the overview. Order and rules: ADR 0001.
 
-Till produktägaren (kravtexter, ändras inte av arkitekten):
-- **REQ-0005, avbokning när tiden saknas:** API:t ger `404 time_not_found` (ADR 0004 regel 7). REQ-0005 säger "avboka alltid" och "inget felmeddelande" när man inte är bokad. Formulera REQ-0005 så att den tid som tagits bort är ett eget fall. Frontend visar ingen felruta för det fallet.
-- **REQ-0010 (F-025):** kravet är i linje med ADR 0010 och 0011. Driftloggen i ADR 0010 är inte en användarfunktion. Om "logg över ändringar" ska stå kvar utanför omfånget behöver kravtexten säga "för användaren", eftersom varje skrivning loggas på driftnivå.
-- **Begreppet "Systemadmin"** är tillagt i `docs/product/vision.md`. Arkitekten använder "gruppadmin" i ADR:erna där "admin" står i kravtexten.
+| Code | HTTP | Used when |
+|---|---|---|
+| `unauthenticated` | 401 | No valid session, or missing `X-User-Id` in calendar and `auth` `/me` |
+| `not_allowed` | 403 | The caller lacks permission (non-admin, non-creator, non-system-admin) |
+| `group_not_found` | 404 | The group is missing, the caller is not a member, or `groupId` has an invalid form |
+| `member_not_found` | 404 | The user is not a member of the group, or `userId` has an invalid form |
+| `lobby_not_found` | 404 | The lobby is missing, the end time has passed on GET, or `lobbyId` has an invalid form |
+| `invite_invalid` | 404 | The link is unknown, revoked, expired or used up, or the token or `linkId` has an invalid form |
+| `game_not_found` | 404 | The game is missing (PUT, DELETE), or `gameId` in the path has an invalid form |
+| `not_found` | 404 | Gateway only: unknown `/api/*` path or `/internal/*` path |
+| `method_not_allowed` | 405 | Gateway only: wrong method on a known path |
+| `invalid_request` | 400 | Invalid JSON, a value of the wrong JSON type, a required time that is missing or not RFC 3339, a body over 16 KiB, an invalid uuid in a lookup, more than 100 IDs in lookup. Checked before membership |
+| `invalid_group_name` | 400 | Name empty after trim, over 50 characters, or missing |
+| `invalid_max_uses` | 400 | `maxUses` is an integer outside 1–10 |
+| `lobby_in_past` | 400 | `startsAt` is not in the future |
+| `lobby_end_not_after_start` | 400 | `endsAt` is not after `startsAt` |
+| `lobby_too_long` | 400 | The lobby is 24 hours or longer |
+| `invalid_game` | 400 | Lobby: unknown `gameId` (also a value not in uuid form), both or neither of `gameId` and `customGameName`, invalid `customGameName`. Game list: name missing, empty after trim, over 50 characters, or `Other` (ignoring case) |
+| `invalid_capacity` | 400 | `maxPlayers` or `defaultMaxPlayers` is an integer under 1 (`null` means unlimited) |
+| `lobby_has_ended` | 409 | Joining when the end time has passed, also for a player who is already in the lobby |
+| `lobby_full` | 409 | Joining when all spots are taken |
+| `own_upcoming_lobbies_exist` | 409 | Leaving a group with own upcoming lobbies |
+| `game_taken` | 409 | Name (case-insensitive) already used by another game |
+| `service_unavailable` | 503 | A dependency (auth, database) does not respond. Never after a committed write |
+| `internal_error` | 500 | Unexpected error. No details to the client. Documented on every operation |
 
-Arbetsantaganden som produktägaren ska bekräfta i kraven:
-- **Flera admins.** En admin kan göra en medlem till admin. Ingen kan ta bort en adminroll i MVP. Skaparen blir admin.
-- **Överlåtelse:** när sista admin lämnar går rollen till medlemmen med tidigast `joined_at`. Lämnar en admin och andra admins finns kvar sker ingen ändring.
-- **Länkar:** medlemmar ser bara egna länkar. Admin ser alla gruppens aktiva länkar, för att kunna kopiera och återkalla. Kravtexterna REQ-0002, REQ-0006 och REQ-0007 uppdateras av produktägaren.
-- **Gruppradslåset** (ADR 0006) gör att två admins som lämnar samtidigt inte kan lämna gruppen utan admin.
+## Open questions and risks
 
-Till användaren (kvarstår):
-- **Publik ingång (ADR 0009).** Kräver ett domännamn, publik IPv4 och vidarebefordrade portar 80/443. Vid CGNAT behövs en annan väg in. Svaret avgör om driftsättningen går att genomföra.
-- **Nya beroenden som kräver egna ADR när de väljs:** OpenAPI-generatorer (Go och TS) och migreringsverktyg. Nginx, certbot och Let's Encrypt är beslutade i ADR 0009.
+Confirmed by the user (closed, see ADR 0004, 0006, 0007, 0010, 0011):
+- **Exactly 24 hours is rejected** (`lobby_too_long`), as REQ-0003 states. An end with the same clock time as the start gives `lobby_end_not_after_start` (REQ-0003, ADR 0004 rule 6).
+- **Leaving a lobby is always allowed,** even after the end time. **Joining** is allowed until the end time, including while the lobby is ongoing, and only if a spot is free (`lobby_full`). See ADR 0004 rule 7.
+- **Max players per lobby** (F-018): empty = unlimited (`null` in the API). The creator counts. The limit applies to joins under the group's lock (ADR 0006).
+- **Max uses per invite link:** 1–10, default 10 at creation when omitted or `null` (the user's decision, to counter bots). Uses are counted when a new membership is created, under the group's lock. An exhausted link gives `invite_invalid` (ADR 0007).
+- **Admins copy other members' links:** yes. An admin sees the token for all active links in the group (ADR 0007).
+- **Game list in calendar** (ADR 0010): the table `games`, managed by the system admin in the app (`/api/games`, ADR 0011). Members and group admins cannot change it. The operations role `calendar_ops` is removed.
+- **System admin** is set in configuration (`SYSTEM_ADMINS` in `auth`, ADR 0011). No management in the app. No rights in groups.
+- **Crossing midnight is allowed** (DECISION in REQ-0003).
+- **Past lobbies remain** with `created_by_user_id` for members who have left, without being shown. No cleanup in MVP.
+- **Links from members who leave are removed** when the member leaves the group.
+- **Inactive invite links are cleaned up** (expired or used up) when a new link is created in the group. Inactive links in inactive groups remain until the group creates a new link or is deleted (ADR 0007).
+- **Own upcoming lobbies must be removed before leaving** (`own_upcoming_lobbies_exist`).
+- **No max limit** on members. **No Discord server** is required (ADR 0005).
+- **Game list** (ADR 0010, REQ-0009): starting content Counter-Strike 2, World of Warcraft, League of Legends and Overwatch, all with default max 5. No upper limit for max. The lobby stores the game name and the game's uuid (`game_id`, no foreign key). Game IDs are uuids generated by the system (review 3). Members see the list ordered by use in their group (review 3).
+
+Closed with the product owner (requirement texts):
+- **REQ-0005, leaving when the lobby is missing:** the API returns `404 lobby_not_found` (ADR 0004 rule 7). REQ-0005 states the case ("the lobby no longer exists", no error dialog).
+- **REQ-0010 (F-025), change log:** REQ-0010 excludes "a history or change log of the game list for users". The operations log of ADR 0010 (every write logged at info level with `actorUserId`) is not a user feature, so the two agree. Closed (review 5).
+- **The term "System admin"** has been added to `docs/product/vision.md`. The architect uses "group admin" in the ADRs where "admin" appears in the requirement text.
+
+Decided by the user (review 3, 2026-11-01). The product owner updates REQ-0009 and REQ-0010 to match (ADR 0010 amendment review 3):
+1. **Game ID:** a uuid generated by the system. The system admin types only the name and the default max.
+2. **Reserved name "Other":** a game in the list cannot be named "Other" (ignoring case and surrounding spaces). Free text for a lobby named "Other" is not restricted.
+3. **Order of the game choice:** most lobbies in the group first (all time, custom names not counted), then by name, `Other` last.
+
+Closed by the user (2026-11-01):
+4. **Join after the end time (REQ-0005):** a player who presses "join" again after the end time gets `409 lobby_has_ended`, and the frontend shows the lobby as "Ended". The order b before c in ADR 0004 rule 7 stands. REQ-0005 is updated.
+
+Confirmed in the requirements (closed):
+- **Several admins.** An admin can make a member admin. No one can remove an admin role in MVP. The creator becomes admin (DECISION in REQ-0002).
+- **Transfer:** when the last admin leaves, the role goes to the member with the earliest `joined_at`, counted from the latest join. If an admin leaves and other admins remain, nothing changes (DECISION in REQ-0006).
+- **Links:** members see only their own links. Admins see all active links in the group, to be able to copy and revoke (DECISION in REQ-0002).
+- **The group row lock** (ADR 0006) ensures that two admins who leave at the same time cannot leave the group without an admin. A technical rule, not a requirement.
+
+To the user (remaining):
+- **Public entry (ADR 0009).** Requires a domain name, public IPv4 and forwarded ports 80/443. With CGNAT another way in is needed. The answer decides whether the deployment can be carried out.
+- **Dependencies:** OpenAPI generators (Go and TS), migration tool, PostgreSQL driver and Redocly lint are decided in ADR 0012. `golang.org/x/oauth2` is decided in ADR 0005 (review 5). Nginx, certbot and Let's Encrypt are decided in ADR 0009.
+- **Rate limiting on login and callback:** decided in ADR 0009 (amendment on rate limiting): `limit_req` in `edge`, 10 requests per minute per address, a limited request is redirected to `/?loginError=login_failed`. No Go code. The requirement comes from the backend expert's guidelines, not from CLAUDE.md. DevOps implements it in `infra/edge/`.

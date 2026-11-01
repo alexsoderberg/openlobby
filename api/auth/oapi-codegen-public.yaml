@@ -1,0 +1,6 @@
+# Generates the server for api/auth/openapi.yaml (ADR 0012). Run from the directory of the go:generate line.
+package: publicapi
+generate:
+  models: true
+  std-http-server: true
+  strict-server: true

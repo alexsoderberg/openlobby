@@ -1,86 +1,88 @@
-# Vision: Gemensam Gibb Kalender
+# Vision: OpenLobby
 
 ## Problem
-Vänner som spelar tillsammans online vill veta när de kan ses. Idag sker det i chatt eller på minnet: tider drunknar i meddelanden, ingen ser vem som faktiskt kommer, och det tar tid att samordna varje gång.
+Friends who play online together want to know when they can play together. Today this happens in chat or from memory: lobbies drown in messages, nobody sees who is actually coming, and coordinating every time takes effort.
 
-## Målgrupp
-Små vänkretsar, ungefär 3–15 personer, som spelar samma spel tillsammans och redan kommunicerar via Discord. Alla medlemmar är likvärdiga inom sin grupp, med ett undantag: var och en kan återkalla sina egna inbjudningslänkar, och gruppadmin kan dessutom se, kopiera och återkalla alla gruppens länkar och göra en medlem till admin (se Begrepp). En systemadmin är en roll för hela systemet, inte för en grupp. Hen underhåller spellistan och har inga rättigheter i grupperna. Ingen är betalande kund.
+## Target audience
+Small circles of friends, roughly 3–15 people, who play the same games together and already communicate via Discord. All members are equal within their group, with one exception: each member can revoke their own invite links, and a group admin can additionally see, copy and revoke all of the group's links and make a member a group admin (see Glossary). A system admin is a role for the whole system, not for a group. That person maintains the game list and has no rights in groups. Nobody is a paying customer.
 
-## Värde
-En gemensam, överblickbar vy över när gruppen kan spela och vem som är med. Mindre samordning i chatten, snabbare beslut om "ses vi ikväll?".
+## Value
+A shared, clear overview of when the group can play and who is in. Less coordination in chat, faster decisions on "are we playing tonight?".
 
-## Vad produkten INTE är
-- Ingen matchmaking eller sökning efter okända spelare.
-- Ingen chatt, röst eller notiser i MVP. Samtalet sker kvar i Discord.
-- Ingen integration mot spelen (ingen API-koppling, ingen automatisk synk av speltillstånd).
-- Ingen publik kalender. Grupper är privata och nås bara via inbjudningslänk.
-- Ingen kalendersynk mot Google, Outlook eller Discord-events i MVP.
-- Ingen native mobilapp i MVP. Webbläsare räcker.
-- Inget betalmoment, inga premiumnivåer.
-- Ingen användarstyrd spellista i MVP. Medlemmar lägger inte till eller föreslår spel i listan.
+## What the product is NOT
+- No matchmaking or search for unknown players.
+- No chat, voice or notifications in the MVP. Conversation stays in Discord.
+- No integration with the games (no API coupling, no automatic sync of game state).
+- No public calendar. Groups are private and are reached only via invite link.
+- No calendar sync with Google, Outlook or Discord events in the MVP.
+- No native mobile app in the MVP. A web browser is enough.
+- No payment, no premium tiers.
+- No user-managed game list in the MVP. Members do not add or propose games in the list.
 
-## MVP-avgränsning
-Kärnflödet, i ordning:
+## MVP scope
+The core flow, in order:
 
-1. Logga in med Discord.
-2. Skapa en grupp eller gå med i en grupp via inbjudningslänk. Medlemmar skapar länkar på begäran. Varje länk gäller i 2 timmar och har alltid ett max antal användningar (1–10). Medlemmar ser bara sina egna länkar; gruppadmin ser, kopierar och återkallar alla. Länkar kan återkallas: gruppadmin kan återkalla alla gruppens länkar, och var och en kan återkalla de länkar hen själv skapat. Gruppadmin kan göra en medlem till admin.
-3. Lägga upp en tillgänglighetstid (spel, start, slut, max antal platser).
-4. Se gruppens kommande tider, som lista eller kalender.
-5. Boka in mig på en tid (om det finns lediga platser), eller avboka.
-6. Lämna en grupp.
+1. Log in with Discord.
+2. Create a group or join a group via invite link. Members create links on request. Each link is valid for 2 hours and always has a max number of uses (1–10). Members see only their own links; group admins see, copy and revoke all of them. Links can be revoked: a group admin can revoke all of the group's links, and each person can revoke the links they created themselves. A group admin can make a member a group admin.
+3. Create a lobby (game, start, end, max players).
+4. View the group's upcoming lobbies, as a list or as a calendar.
+5. Join a lobby (if there are free spots), or leave it.
+6. Leave a group.
 
-Därutöver, för driften: en systemadmin underhåller spellistan i appen (lägga till, ändra och ta bort spel), REQ-0010.
+Additionally, for operations: a system admin maintains the game list in the app (add, change and remove games), REQ-0010.
 
-Allt annat är utanför MVP och finns i `features.md` med status `Föreslagen` eller i listan "Senare".
+Everything else is outside the MVP and is listed in `features.md` with status `Proposed` or in the "Later" list.
 
-## Begrepp (ordlista)
+## Glossary
 
-Kraven använder "admin" som kortform för gruppadmin. Systemadmin är en separat roll.
+Terms are identical to the Glossary section in `CLAUDE.md`, which holds the technical names (tables, fields, endpoints). This section gives the product meaning only.
 
-| Begrepp | Betydelse | Undviks |
+The requirements use "admin" as short for group admin. System admin is a separate role.
+
+| Term | Meaning | Avoid |
 |---|---|---|
-| Grupp | En privat krets med medlemmar där tider läggs upp. | Server, klan, lag |
-| Medlem | En inloggad användare som ingår i en grupp. Slutar vara medlem när hen lämnar gruppen. | Användare (i gruppkontext), spelare |
-| Gruppadmin | En medlem i en grupp med två befogenheter: att se, kopiera och återkalla alla gruppens inbjudningslänkar, och att göra en medlem till gruppadmin. Gruppens skapare är gruppadmin från start. En grupp kan ha flera gruppadmins. Ingen kan ta bort en annans gruppadminroll; gruppadmin avstår genom att lämna gruppen. När sista gruppadmin lämnar går rollen till den medlem som varit med längst (räknat från senaste inträde). | Admin utan prefix, ägare, moderator, ledare, systemadmin |
-| Systemadmin | En roll för hela systemet, inte för en grupp. Utses av driftaren via konfiguration, inte i appen. Får lägga till, ändra och ta bort spel i spellistan (REQ-0010). Ger ingen rätt i grupperna: systemadmin är inte gruppadmin. | Admin utan prefix, superadmin, driftare |
-| Inträde | Tidpunkten då en medlem senast gick med i gruppen (för skaparen: när gruppen skapades). Ett återinträde ersätter det tidigare inträdet. | Anslutning, join |
-| Inbjudningslänk | Länk som ger åtkomst till att gå med i en grupp. Skapas av en medlem på begäran och gäller i 2 timmar från skapandet (fast, går inte att välja). Har alltid ett max antal användningar, 1–10 (förvalt 10). En återkallad, utgången eller förbrukad länk (max antal användningar nått) slutar fungera direkt och visar 404. Flera kan vara aktiva samtidigt. Ersätts inte automatiskt. Medlemmar ser bara sina egna länkar; gruppadmin ser alla. | Kod, invite |
-| Användning | Ett lyckat "Gå med" via en inbjudningslänk som ger ett nytt medlemskap. Att en redan medlem öppnar länken räknas inte. | Klick, visning, träff |
-| Länkskapare | Medlemmen som skapade en viss inbjudningslänk. Kan återkalla just den länken. När länkskaparen lämnar gruppen återkallas hens länkar. | Skapare (betyder tidens skapare) |
-| Tid | En tillgänglighetstid: spel, start, slut, max antal platser, skapad av en medlem. Sluttiden kan vara nästa dygn, men tiden måste vara kortare än 24 timmar (exakt 24 timmar nekas). Visas för medlemmar fram till sluttid. | Event, session, slot |
-| Skapare | Medlemmen som lade upp en tid. Enda som får ta bort den. Är automatiskt bokad på sin tid och tar en plats. | Ägare, admin |
-| Bokning | Att en medlem är med på en tid ("Jag är med") och tar en plats. Tiden fungerar som ett öppet rum: man går in (Boka in mig) och ut (Avboka). Att gå ut går alltid. Att gå in går också fram till sluttid, även medan tiden pågår, och bara om det finns en ledig plats. | RSVP, anmälan |
-| Spel | Det spel en tid gäller: ett val från spellistan (t.ex. "World of Warcraft"), eller "Annat" med ett fritextnamn. Tiden kopierar spelets namn och förvalda max vid skapandet; senare ändringar i listan påverkar inte tiden. | Titel, speltyp |
-| Spellista | Gemensam lista över spel där varje spel har ett förvalt max antal platser. Gemensam för alla grupper. Ändras av systemadmin i appen, utan ny version (REQ-0010). Medlemmar och gruppadmins kan inte ändra den i MVP. | Spelkatalog |
-| Plats | En bokningsplats på en tid. Tidens max antal platser är hur många som kan vara bokade samtidigt; skaparen tar en plats. Tomt max betyder obegränsat. Visas som "X/Y platser". | Slot, kapacitet |
-| Max antal platser | Tidens gräns för antal platser. Förvalt från spellistan och kan ändras av skaparen vid skapande. Ändras inte efter skapande i MVP. | Max deltagare, kapacitet |
-| Lämna grupp | Medlemmen slutar vara med i gruppen och tas bort från bokningarna på kommande tider. Kommande tider som hen skapat måste tas bort först. Hens inbjudningslänkar återkallas. | Gå ur, avsluta grupp |
+| Group | A private circle of members where lobbies are created. | Server, clan, team |
+| Member | A logged-in user who belongs to a group. Stops being a member when they leave the group. | User (in group context), player |
+| Group admin | A member of a group with two powers: to see, copy and revoke all of the group's invite links, and to make a member a group admin. The group's creator is group admin from the start. A group can have several group admins. Nobody can remove another's group admin role; a group admin gives it up by leaving the group. When the last group admin leaves, the role goes to the member who has been in the group the longest (counted from the latest join). | Admin without prefix, owner, moderator, leader, system admin |
+| System admin | A role for the whole system, not for a single group. Appointed by the operator via configuration, not in the app. Can add, change and remove games in the game list (REQ-0010). Gives no rights in groups: a system admin is not a group admin. | Admin without prefix, superadmin, operator |
+| Join (membership starts) | The moment a member most recently joined the group (for the creator: when the group was created). A rejoin replaces the previous join. | Connection, entry |
+| Invite link | A link that gives access to join a group. Created by a member on request and valid for 2 hours from creation (fixed, cannot be chosen). Always has a max number of uses, 1–10 (default 10). A revoked, expired or used-up link (max uses reached) stops working immediately and shows 404. Several can be active at once. Not replaced automatically. Members see only their own links; group admins see all. | Code, invitation |
+| Use | A successful "Join group" via an invite link that gives a new membership. A member who opens the link again does not count. | Click, view, hit |
+| Link creator | The member who created a specific invite link. Can revoke that link. When the link creator leaves the group, their links are revoked. | Creator (meaning the lobby creator) |
+| Lobby | An availability slot: game, start, end, max players, created by a member. The end time can be the next day, but the lobby must be shorter than 24 hours (exactly 24 hours is rejected). Shown to members until the end time. | Event, session, slot |
+| Creator | The member who created a lobby. The only one who may delete it. Is automatically a player in their lobby and takes a spot. | Owner, admin |
+| Player | A member who has joined a lobby ("I'm in") and takes a spot. A lobby works like an open room: you join it ("Join lobby") and leave it ("Leave lobby"). Leaving always works. Joining works until the end time, even while the lobby is running, and only if there is a free spot. | RSVP, sign-up |
+| Game | The game a lobby is for: a choice from the game list (e.g. "World of Warcraft"), or "Other" with a free-text name. The lobby copies the game's name and default max players at creation; later changes to the list do not affect the lobby. "Other" is reserved and is never a game in the list. | Title, game type |
+| Game list | A shared list of games where each game has a default max players. Each game keeps its identity when its name changes. Shared by all groups. Changed by a system admin in the app, without a new version (REQ-0010). Members and group admins cannot change it in the MVP. | Game catalog |
+| Spot / max players | A player place in a lobby. Max players is the lobby's limit on spots: it defaults from the game list, the creator can change it at creation, and it does not change after creation in the MVP. The creator takes one spot. An empty max means unlimited. Shown as "X/Y players". | Slot, capacity, max attendees |
+| Leave group | The member stops being part of the group and is removed as a player from upcoming lobbies. Upcoming lobbies they created must be deleted first. Their invite links are revoked. | Quit group, end group |
 
-## Beslut
-Gäller för hela produkten. Detaljer och acceptanskriterier finns i kraven.
+## Decisions
+Applies to the whole product. Details and acceptance criteria are in the requirements.
 
-- Tidszon: varje medlem ser tider i sin lokala tid (REQ-0003).
-- Ingen gräns för antal medlemmar i en grupp i MVP (REQ-0002). Antal bokade per tid begränsas av tidens max antal platser (se nedan).
-- Max antal platser: varje tid har ett max antal platser. Förvalt värde kommer från spellistan och skaparen kan ändra det vid skapande. Skaparen räknas in i max. Max ändras inte efter skapande i MVP. Ingen får gå in när tiden är full. Ingen övre gräns för max; tomt max betyder obegränsat (REQ-0003, REQ-0005, REQ-0009). Ersätter tidigare beslut om ingen gräns för bokade per tid.
-- Spellista: spel väljs från en gemensam spellista med förvalt max antal platser, eller som "Annat" med fritextnamn. Spellistan är dynamisk: systemadmin ändrar den i appen utan ny version (REQ-0010). Den är gemensam för alla grupper; medlemmar och gruppadmins kan inte ändra den i MVP. Ett spel får sakna förvalt max (tomt = obegränsat). Byter systemadmin namn eller tar bort ett spel påverkas inte redan skapade tider (REQ-0009). Ersätter tidigare beslut att spel är fritext.
-- Systemadmin: en roll för hela systemet, skild från gruppadmin. Utses av driftaren via konfiguration, inte i appen. Appen har ingen sida för att hantera systemadmins i MVP. Systemadmin har inga rättigheter i grupper (REQ-0010).
-- Ingen koppling till en specifik Discord-server: vilket Discord-konto som helst kan logga in (REQ-0001).
-- Gruppadmin: gruppens skapare blir gruppadmin. En grupp kan ha flera gruppadmins, och en gruppadmin kan göra en medlem till gruppadmin (REQ-0002, REQ-0008). Ingen kan ta bort en annans gruppadminroll. När sista gruppadmin lämnar går rollen till den medlem som varit med längst, räknat från senaste inträde (REQ-0006).
-- Länkar: medlemmar skapar länkar på begäran, flera kan vara aktiva, och varje länk gäller i 2 timmar (fast). Länken har alltid ett max antal användningar, 1–10 (förvalt 10), för att skydda mot missbruk som bottar; när max är nått fungerar den som en utgången länk. Medlemmar ser bara sina egna länkar. Gruppadmin ser, kopierar och återkallar alla. När länkskapare lämnar återkallas hens länkar (REQ-0002, REQ-0006, REQ-0007).
-- Bekräftelse krävs vid återkallning av länk och vid lämna grupp (REQ-0006, REQ-0007).
-- Tid: måste vara kortare än 24 timmar. Sluttid före starttid som klockslag tolkas som nästa dygn. Ingen varning för långa tider (REQ-0003).
-- Bokning: att gå ut ur en bokning går alltid, även efter tidens sluttid. Passerade tider visas inte i MVP, så gränssnittet erbjuder i praktiken avbokning bara medan tiden syns. Att gå in går fram till tidens sluttid, även medan tiden pågår, och bara om det finns en ledig plats (REQ-0005).
-- Passerade tider från avgångna medlemmar ligger kvar men visas inte (REQ-0006).
-- Kommande tider måste tas bort innan man kan lämna gruppen (REQ-0006).
-- Listvy är standard. Kalendervyn är veckovy, måndag–söndag. Tid som går över midnatt visas på startdagen med markering (REQ-0004).
-- Samtidig redigering av tider sker utan låsning (REQ-0003).
+- Time zone: each member sees lobbies in their local time (REQ-0003).
+- UI language: English at launch. The product is built for several languages from the start: all user-facing text is translatable, and dates and clock times are formatted per the user's locale. Swedish is the next language (F-026, Proposed, not in the MVP). Applies to all UI requirements (REQ-0004 for dates).
+- No limit on the number of members in a group in the MVP (REQ-0002). The number of players per lobby is limited by the lobby's max players (see below).
+- Max players: each lobby has a max players value. The default comes from the game list, and the creator can change it at creation. The creator counts toward max. Max players does not change after creation in the MVP. Nobody can join when the lobby is full. There is no upper limit for max; an empty max means unlimited (REQ-0003, REQ-0005, REQ-0009). Replaces the earlier decision of no limit on players per lobby.
+- Game list: games are chosen from a shared game list with a default max players, or as "Other" with a free-text name. The game list is dynamic: a system admin changes it in the app without a new version (REQ-0010). It is shared by all groups; members and group admins cannot change it in the MVP. A game may lack a default max (empty = unlimited). If a system admin renames or removes a game, existing lobbies are not affected (REQ-0009). Replaces the earlier decision that games were free text.
+- System admin: a role for the whole system, separate from group admin. Appointed by the operator via configuration, not in the app. The app has no page for managing system admins in the MVP. A system admin has no rights in groups (REQ-0010).
+- No connection to a specific Discord server: any Discord account can log in (REQ-0001).
+- Group admin: the group's creator becomes group admin. A group can have several group admins, and a group admin can make a member a group admin (REQ-0002, REQ-0008). Nobody can remove another's group admin role. When the last group admin leaves, the role goes to the member who has been in the group the longest, counted from the latest join (REQ-0006).
+- Links: members create links on request, several can be active at once, and each link is valid for 2 hours (fixed). A link always has a max number of uses, 1–10 (default 10), to protect against abuse such as bots; when max is reached, it works like an expired link. Members see only their own links. Group admins see, copy and revoke all of them. When a link creator leaves, their links are revoked (REQ-0002, REQ-0006, REQ-0007).
+- Confirmation is required when revoking a link and when leaving a group (REQ-0006, REQ-0007).
+- Lobby time: must be shorter than 24 hours. An end time earlier in the day than the start time is read as the next day. No warning for long lobbies (REQ-0003).
+- Player status: leaving a lobby always works, even after its end time. Past lobbies are not shown in the MVP, so in practice the interface offers leaving only while the lobby is visible. Joining works until the lobby's end time, even while it is running, and only if there is a free spot (REQ-0005).
+- Past lobbies from members who have left remain in the system but are not shown (REQ-0006).
+- Upcoming lobbies must be deleted before a member can leave the group (REQ-0006).
+- List view is the default. The calendar view is a week view, Monday–Sunday. A lobby that crosses midnight is shown on its start day with a marker (REQ-0004).
+- Concurrent editing of lobbies happens without locking (REQ-0003).
 
-## Öppna frågor
-- Ska medlemmar kunna föreslå spel i en senare version? (REQ-0009)
-- Ska en gruppadmin kunna ta bort en annans gruppadminroll i en senare version? Ej beslutat, MVP tillåter det inte. (REQ-0008)
+## Open questions
+- Should members be able to propose games in a later version? (REQ-0009)
+- Should a group admin be able to remove another group admin's role in a later version? Not decided; the MVP does not allow it. (REQ-0008)
 
-Följande antaganden gäller tills användaren beslutar annat:
-- Ett återinträde ger ingen tillbaka gruppadminroll, även om hen var gruppadmin före lämnandet (REQ-0006).
-- Bekräftelsen vid lämna grupp täcker även att hens länkar återkallas (REQ-0006).
-- Befordran till gruppadmin kräver bekräftelse (REQ-0008).
-- Driftaren kan utse flera systemadmins (REQ-0010).
+The following assumptions apply until the user decides otherwise:
+- A rejoin does not give back the group admin role, even if the member was a group admin before leaving (REQ-0006).
+- The confirmation when leaving a group also covers that their links are revoked (REQ-0006).
+- Promoting a member to group admin requires confirmation (REQ-0008).
+- The operator can appoint several system admins (REQ-0010).

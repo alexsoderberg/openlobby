@@ -1,0 +1,265 @@
+openapi: 3.0.3
+info:
+  title: OpenLobby - auth (public endpoints)
+  version: 0.1.0
+  description: |
+    Public endpoints for login with Discord, logout and the current user.
+    Clients reach them via `gateway` (ADR 0002). Internal endpoints are in `internal.yaml`.
+
+    Applies to all endpoints:
+    - **Session:** all endpoints require the session cookie `ol_session` unless marked with `security: []`. The public ones are login, callback and logout.
+    - **Correlation ID:** `X-Request-Id` may be sent in the request (at most 64 characters, `[A-Za-z0-9-]`). The gateway generates a new one if it is missing or invalid. The response always contains `X-Request-Id`.
+    - **Error format:** `{"error": {"code": "...", "requestId": "..."}}` (ADR 0001). The response contains no free text. The frontend maps `code` to text.
+    - **Times:** RFC 3339. Any offset is accepted; responses use UTC with Z.
+servers:
+  - url: /
+tags:
+  - name: Login
+    description: Login with Discord (REQ-0001, ADR 0005).
+  - name: Session
+    description: Logout and the current user (ADR 0003, 0011).
+security:
+  - sessionCookie: []
+paths:
+  /api/auth/login:
+    get:
+      operationId: startLogin
+      tags: [Login]
+      summary: Start login with Discord
+      description: |
+        Creates a login attempt (valid 10 minutes, used once) and redirects to Discord with `state` and a PKCE challenge (S256).
+        The server keeps the PKCE verifier with the attempt. The response sets the cookie `ol_login`, which binds the attempt to this browser:
+        the callback accepts `state` only together with this cookie (ADR 0005).
+        `returnTo` is used only if its decoded value starts with a single `/`, its second character is neither `/` nor `\`, and it contains no ASCII control character and no whitespace. Otherwise it is ignored and `/` is used (ADR 0005).
+        If the attempt cannot be created, the response redirects to `/?loginError=login_failed` without `ol_login`. Login endpoints never answer with JSON errors to the browser,
+        also when `auth` does not respond: the gateway then gives the same redirect (ADR 0002).
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/RequestIdHeader'
+        - name: returnTo
+          in: query
+          required: false
+          description: |
+            Relative path to return to after login, e.g. `/groups/123`. The rule applies to the decoded value: it must start with a single `/`,
+            the second character must be neither `/` nor `\`, and it must contain no ASCII control character and no whitespace. Otherwise `/` is used (ADR 0005).
+          schema:
+            type: string
+      responses:
+        '302':
+          description: Redirect to Discord's authorize URL, or to `/?loginError=login_failed` if the attempt cannot be created.
+          headers:
+            Location:
+              description: Discord's authorize URL with `state`, `code_challenge`, `code_challenge_method=S256` and scope `identify`, or `/?loginError=login_failed`.
+              schema:
+                type: string
+                format: uri-reference
+            Set-Cookie:
+              description: |
+                Login binding cookie `ol_login` with the value of `state`. Attributes: `HttpOnly`, `Secure`, `SameSite=Lax`, `Path=/api/auth/callback`, `Max-Age=600`.
+                Set only when the attempt was created. A secret, never logged.
+              schema:
+                type: string
+            Cache-Control:
+              description: Always no-store, the response sets a cookie
+              schema:
+                type: string
+                enum: [no-store]
+  /api/auth/callback:
+    get:
+      operationId: completeLogin
+      tags: [Login]
+      summary: Receive Discord's response and create a session
+      description: |
+        Checks that the cookie `ol_login` equals `state`, then consumes the login attempt of `state` (it is deleted, so it works once),
+        exchanges `code` for a token with Discord using the stored PKCE verifier, and creates or updates the user.
+        The response always redirects to the frontend and always clears `ol_login`.
+        On success a new session is created, the session cookie is set and the response redirects to `returnTo`.
+        If Discord returns `error=access_denied`, the response redirects to `/?loginError=login_denied`, regardless of `state`.
+        All other errors redirect to `/?loginError=login_failed` without a session cookie: other `error` values, missing `code` or `state`,
+        a missing `ol_login` cookie or one that does not equal `state`, unknown, expired or already used `state`,
+        failures when exchanging the code or fetching the user from Discord, and database errors.
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/RequestIdHeader'
+        - name: code
+          in: query
+          required: false
+          description: One-time code from Discord. Present on successful login. A secret, never logged.
+          schema:
+            type: string
+        - name: state
+          in: query
+          required: false
+          description: The `state` sent in the login step. A secret, never logged.
+          schema:
+            type: string
+        - name: error
+          in: query
+          required: false
+          description: Set by Discord when login is denied, e.g. `access_denied`.
+          schema:
+            type: string
+        - name: ol_login
+          in: cookie
+          required: false
+          description: Login binding cookie set by `GET /api/auth/login`. Must equal `state`, otherwise the login fails (ADR 0005). A secret, never logged.
+          schema:
+            type: string
+      responses:
+        '302':
+          description: |
+            Redirect. On success to `returnTo` (or `/`) with `Set-Cookie: ol_session=...`.
+            On denied login to `/?loginError=login_denied`.
+            On all other errors to `/?loginError=login_failed`, without a session cookie.
+          headers:
+            Location:
+              description: Target address of the redirect.
+              schema:
+                type: string
+                format: uri-reference
+            Set-Cookie:
+              description: |
+                Always clears `ol_login` (empty value, `Path=/api/auth/callback`, `Max-Age=0`).
+                On successful login it also sets the session cookie `ol_session`, see securitySchemes `sessionCookie`.
+              schema:
+                type: string
+            Cache-Control:
+              description: Always no-store, the response sets a cookie
+              schema:
+                type: string
+                enum: [no-store]
+  /api/auth/logout:
+    post:
+      operationId: logout
+      tags: [Session]
+      summary: Log out
+      description: |
+        Revokes the session on the server and clears the session cookie. Does not require a valid session.
+        The response is 204 even when the cookie is missing or the session is already invalid, so logout is always idempotent.
+        If the database does not respond, the session is not revoked, the cookie is not cleared and the response is 503.
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/RequestIdHeader'
+      responses:
+        '204':
+          description: Logged out. The cookie is cleared.
+          headers:
+            Set-Cookie:
+              description: Clears `ol_session` (empty value and expiry in the past).
+              schema:
+                type: string
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/auth/me:
+    get:
+      operationId: getCurrentUser
+      tags: [Session]
+      summary: Get the logged-in user
+      description: |
+        Returns the logged-in user. `isSystemAdmin` is decided by `auth` on every call (ADR 0011).
+        The frontend uses the value only to show the link to the game list. The server always checks permissions itself.
+      parameters:
+        - $ref: '#/components/parameters/RequestIdHeader'
+      responses:
+        '200':
+          description: The logged-in user.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthUser'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: ol_session
+      description: |
+        Session cookie set by `GET /api/auth/callback`. Attributes: `HttpOnly`, `Secure`, `SameSite=Lax`, `Path=/`.
+        Valid 30 days from login without sliding renewal. The gateway validates the cookie against `auth` on every protected call.
+        An invalid or missing cookie gives 401. Discord tokens never leave the server.
+
+  parameters:
+    RequestIdHeader:
+      name: X-Request-Id
+      in: header
+      required: false
+      description: Correlation ID (ADR 0001). A valid value is kept and passed on. A missing or invalid value is replaced by a new one. The response always contains `X-Request-Id`.
+      schema:
+        type: string
+        maxLength: 64
+        pattern: '^[A-Za-z0-9-]+$'
+
+  responses:
+    Unauthenticated:
+      description: No valid session.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: unauthenticated
+              requestId: 5f0c2e1a-9b7d-4c1e-8a3f-1d2e3f4a5b6c
+    ServiceUnavailable:
+      description: A dependency does not respond. The request was refused before any change was committed.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalError:
+      description: Unexpected error. No details.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          $ref: '#/components/schemas/ErrorBody'
+
+    ErrorBody:
+      type: object
+      required: [code, requestId]
+      properties:
+        code:
+          type: string
+          description: Machine-readable error code. The text for the user belongs to the frontend. not_found and method_not_allowed are returned by the gateway only.
+          enum:
+            - unauthenticated
+            - service_unavailable
+            - internal_error
+            - not_found
+            - method_not_allowed
+        requestId:
+          type: string
+          maxLength: 64
+          pattern: '^[A-Za-z0-9-]+$'
+          description: Same value as `X-Request-Id` in the response. Used to match logs.
+
+    AuthUser:
+      type: object
+      required: [userId, displayName, isSystemAdmin]
+      properties:
+        userId:
+          type: string
+          format: uuid
+        displayName:
+          type: string
+          description: Discord display name (`global_name`, otherwise `username`). Updated at the next login.
+        isSystemAdmin:
+          type: boolean
+          description: True if the user is in the configuration `SYSTEM_ADMINS` (ADR 0011).

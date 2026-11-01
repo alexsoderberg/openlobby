@@ -1,0 +1,5 @@
+# Generates the client for api/auth/internal.yaml, used by calendar and gateway (ADR 0012).
+package: gen
+generate:
+  models: true
+  client: true
