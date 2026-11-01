@@ -1,0 +1,44 @@
+# Hemligheter: lokala miljöfiler (.env.example checkas in)
+.env
+.env.*
+!.env.example
+
+# TLS-certifikat och nycklar (certbot/letsencrypt monteras som volym)
+*.pem
+*.key
+*.crt
+certs/
+certbot/
+letsencrypt/
+
+# Go: byggartefakter och testutdata
+bin/
+*.exe
+*.test
+*.coverprofile
+coverage.*
+
+# Node/Vite: beroenden och byggutdata (npm/pnpm-loggar fångas av *.log)
+node_modules/
+dist/
+
+# Lokala Docker-/databasvolymer
+/pgdata/
+/data/
+
+# Loggar
+*.log
+logs/
+
+# IDE (delade VS Code-inställningar undantagna)
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude Code: personliga inställningar (CLAUDE.md och .claude/agents/ versioneras)
+.claude/settings.local.json
