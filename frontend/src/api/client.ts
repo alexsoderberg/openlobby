@@ -1,0 +1,57 @@
+import type { components as authComponents } from "./gen/auth";
+import type { components as calendarComponents } from "./gen/calendar";
+
+export type AuthUser = authComponents["schemas"]["AuthUser"];
+export type GroupSummary = calendarComponents["schemas"]["GroupSummary"];
+export type ApiErrorCode =
+  | authComponents["schemas"]["ErrorBody"]["code"]
+  | calendarComponents["schemas"]["ErrorBody"]["code"];
+
+const LOGIN_PATH = "/api/auth/login";
+const UNKNOWN_CODE = "internal_error";
+const UNREACHABLE_CODE = "service_unavailable";
+const HTTP_UNAUTHENTICATED = 401;
+/** Status used when no HTTP response arrived at all. */
+export const NETWORK_FAILURE_STATUS = 0;
+
+/** The port the UI depends on. Implemented by httpApiClient, replaced by a fake in tests. */
+export interface ApiClient {
+  getCurrentUser(): Promise<AuthUser>;
+  logout(): Promise<void>;
+  listGroups(): Promise<GroupSummary[]>;
+}
+
+/** A failed call. `code` is the contract's error code, never a message from the server. */
+export class ApiError extends Error {
+  readonly status: number;
+  readonly code: string;
+
+  constructor(status: number, code: string) {
+    super(code);
+    this.name = "ApiError";
+    this.status = status;
+    this.code = code;
+  }
+}
+
+export function apiErrorFrom(status: number, code: unknown): ApiError {
+  return new ApiError(status, typeof code === "string" ? code : UNKNOWN_CODE);
+}
+
+/** No answer, or a 2xx answer without the body the contract promises. Both mean the service cannot be used. */
+export function unreachableError(): ApiError {
+  return new ApiError(NETWORK_FAILURE_STATUS, UNREACHABLE_CODE);
+}
+
+export function isUnauthenticated(error: unknown): boolean {
+  return error instanceof ApiError && error.status === HTTP_UNAUTHENTICATED;
+}
+
+export function errorCodeOf(error: unknown): string {
+  return error instanceof ApiError ? error.code : UNKNOWN_CODE;
+}
+
+/** Full-page navigation target. The server handles Discord; the browser never sees Discord tokens. */
+export function loginUrl(returnTo: string): string {
+  return `${LOGIN_PATH}?${new URLSearchParams({ returnTo })}`;
+}
