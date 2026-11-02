@@ -54,7 +54,7 @@ All services use synchronous HTTP/JSON. No service reads another service's datab
 ### calendar
 - **Responsibility:** groups, membership and roles (one or more admins, at least one as long as the group has members), invite links expiring after 2 hours, max uses per link (1–10, default 10), lobbies with game and max players, players joining and leaving lobbies, and the game list (F-024). The game list is managed by the system admin. Members see it ordered by use in their group. Authorization is checked here.
 - **Owns data (database `calendar`):** `groups`, `group_members` (with `role` and `joined_at`), `invite_links` (with `expires_at`, `max_uses`, `use_count`), `lobbies` (with `game_name`, `game_id` and `max_players`), `lobby_players`, `games` (the game list with uuid IDs, ADR 0010).
-- **Dependencies:** `auth` (display names via internal `POST /internal/users/lookup`), PostgreSQL.
+- **Dependencies:** `auth` (display names via internal `POST /internal/users/lookup`, from REQ-0002; no call and no Compose dependency before, ADR 0008 amendment REQ-0001 calendar), PostgreSQL.
 - **Realizes:** F-002 (REQ-0002), F-003 (REQ-0003, REQ-0009), F-004 and F-017 (REQ-0004), F-005 (REQ-0005), F-018 (REQ-0005, REQ-0009), F-024 (REQ-0009, management by system admin), F-010 (REQ-0006), F-013 (REQ-0007).
 - **Decisions:** ADR 0004, 0006, 0007, 0010, 0011.
 
@@ -70,10 +70,11 @@ All services use synchronous HTTP/JSON. No service reads another service's datab
 - **Migrations:** goose, run by the one-off job `<service>-migrate` (same image) before the service, with `migrate up` and `migrate down`. ADR 0012.
 - **Container contract:** one image per Go service, entrypoint `/<service>`, subcommands `serve` (default), `migrate up|down` and `healthcheck`. Configuration only through the variables of ADR 0008 (operations base). Non-root users, except `edge` and `certbot` (ADR 0009).
 - **Networks:** one Compose network per group of containers that talk to each other (table in ADR 0008 review 5). The trust in `X-User-*` depends on it.
-- **Integration tests:** build tag `integration`, `TEST_DATABASE_URL`, a PostgreSQL service container in CI (ADR 0012 review 5).
+- **Integration tests:** build tag `integration`, `TEST_DATABASE_URL`, a PostgreSQL service container in CI. With the tag set and the variable missing, the test fails (ADR 0012 review 5, amendment 2026-11-02 item 3).
+- **Go:** version 1.27.3 (the `go` line in each `go.mod` and the `golang:1.27.3` image in each Dockerfile). One `go.mod` per service and one for `pkg/`, connected with `replace` (ADR 0012 amendment 2026-11-02, items 1, 2). Lint rules in the root `.golangci.yml` (ADR 0012 amendment 2026-11-02 (REQ-0001 calendar), item 1).
 - **Code generation:** oapi-codegen (Go, server in `net/http`, client in `authclient`) and openapi-typescript + openapi-fetch (frontend). One configuration file per generated target next to the contract in `api/<service>/` (ADR 0012, review 2). Generated code is checked in and CI verifies that it is in sync with `api/`.
 - **Contract lint:** Redocly CLI, a development dependency in the root `package.json`. Script `npm run lint:api` (ADR 0012, review 2).
-- **Shared code in `pkg/`:** infrastructure only: logging, configuration from environment variables, HTTP middleware (correlation ID, request body limit, error envelope, uuid form check, generator error handlers, the path for request logs without query and with the invite token masked, ADR 0002 amendment review 4), health endpoints.
+- **Shared code in `pkg/`:** infrastructure only: logging, configuration from environment variables, HTTP middleware (correlation ID, request body limit, error envelope, uuid form check, generator error handlers, health endpoints). The path for request logs without query and with the invite token masked (ADR 0002 amendment review 4) is added with the gateway, not before (ADR 0002 amendment 2026-11-02, item 7).
 
 ## Endpoints (overview, not the contract)
 
