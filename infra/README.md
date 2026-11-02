@@ -5,7 +5,7 @@ The stack runs with Docker Compose on one Raspberry Pi 5 (ADR 0008, ADR 0009). I
 ## Local start
 
 1. Create a Discord application for development (not the production one). Register `https://localhost/api/auth/callback` as its redirect URI.
-2. Run `make dev-certs`. It creates a self-signed certificate for `localhost` in `infra/dev-certs/` (git ignores it).
+2. Run `make dev-certs`. It creates a self-signed certificate for `localhost` in `infra/dev-certs/live/openlobby/` (git ignores it). That directory is mounted read-only at `/etc/letsencrypt`, the same layout as production.
 3. Copy `infra/.env.example` to `infra/.env` and fill in the values.
 4. Run `make dev`, or `make dev SERVICE=calendar` for one service with its dependencies. Open https://localhost and accept the warning for the self-signed certificate.
 
@@ -41,8 +41,10 @@ Monitoring of the expiry date is not set up yet.
 
 - `edge`: the Nginx master runs as root (it binds 80 and 443 and reads the key at start and reload). The workers run as `nginx` (uid 101). The container drops all capabilities and adds only `CHOWN`, `SETGID`, `SETUID` and `NET_BIND_SERVICE`. If startup fails with a permission error, add only the capability named in the error and record it in ADR 0009.
 - `certbot`: runs as root with all capabilities dropped. It writes the root-owned certificates that edge reads.
-- `frontend`: runs as uid 101 with all capabilities dropped.
-- PostgreSQL runs as the image's `postgres` user. The Go services will run as the `nonroot` user of their base image (uid 65532).
+- `frontend`: runs as uid 101 with all capabilities dropped. Nginx needs `/var/cache/nginx` to be writable by uid 101 at start, so it is a tmpfs owned by uid 101 (mode 0755). The tmpfs lives in RAM and is cleared when the container stops.
+- `postgres`: starts as root for the image's entrypoint, then runs the server as the `postgres` user. Capabilities: `DAC_OVERRIDE`, `FOWNER`, `SETGID`, `SETUID`, all others dropped. `SETUID` and `SETGID` are for the switch to the `postgres` user (gosu). `FOWNER` is for the `chmod` of the data directory and `DAC_OVERRIDE` for `find` on the 0700 directory, both at restart. `CHOWN` is not needed, because the named volume `pgdata` is already postgres-owned. A bind mount or a root-owned volume would need `CHOWN`.
+- PostgreSQL's configuration sets `listen_addresses = '*'`, because the file replaces the image's default. Access is limited by `pg_hba` and by the internal `data` network.
+- The Go services will run as the `nonroot` user of their base image (uid 65532).
 - `make dev-certs` sets the development key to mode 0644. Edge runs as root without `CAP_DAC_OVERRIDE`, so a key with mode 0600 owned by the host user cannot be read.
 
 Known limits, each a shortcut in the ADRs:
