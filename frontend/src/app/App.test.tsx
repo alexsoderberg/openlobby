@@ -1,0 +1,228 @@
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import { ApiError, ApiProvider, type ApiClient } from "../api";
+import { en } from "../i18n/messages/en";
+import { fakeApiClient, testUser } from "../test/fakeApiClient";
+import { App } from "./App";
+
+const START_LOGIN_HREF = "/api/auth/login?returnTo=%2F";
+
+function renderAt(client: ApiClient, path: string, search = "") {
+  window.history.replaceState(null, "", `${path}${search}`);
+  return render(
+    <ApiProvider client={client}>
+      <App />
+    </ApiProvider>,
+  );
+}
+
+function loggedInClient(overrides: Partial<ApiClient> = {}) {
+  return fakeApiClient({
+    getCurrentUser: () => Promise.resolve(testUser),
+    ...overrides,
+  });
+}
+
+describe("logged out", () => {
+  it("shows the Discord login button and no group data", async () => {
+    const client = fakeApiClient();
+    renderAt(client, "/");
+
+    const login = await screen.findByRole("link", {
+      name: en.logInWithDiscord,
+    });
+    expect(login.getAttribute("href")).toBe(START_LOGIN_HREF);
+    expect(client.listGroups).not.toHaveBeenCalled();
+    expect(screen.queryByRole("list")).toBeNull();
+  });
+
+  it("sends a protected page to login with returnTo set to that page", async () => {
+    renderAt(fakeApiClient(), "/invite/abc123");
+
+    const login = await screen.findByRole("link", {
+      name: en.logInWithDiscord,
+    });
+    expect(login.getAttribute("href")).toBe(
+      "/api/auth/login?returnTo=%2Finvite%2Fabc123",
+    );
+  });
+
+  it("keeps the query string in returnTo but drops loginError from it and from the address bar", async () => {
+    renderAt(fakeApiClient(), "/invite/abc123", "?x=1&loginError=login_failed");
+
+    const login = await screen.findByRole("link", {
+      name: en.logInWithDiscord,
+    });
+    expect(login.getAttribute("href")).toBe(
+      "/api/auth/login?returnTo=%2Finvite%2Fabc123%3Fx%3D1",
+    );
+    expect(window.location.search).toBe("?x=1");
+  });
+
+  it("shows the denied-login message and stays logged out", async () => {
+    renderAt(fakeApiClient(), "/", "?loginError=login_denied");
+
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).toBe(en.loginErrors.login_denied);
+    expect(
+      screen.getByRole("link", { name: en.logInWithDiscord }),
+    ).toBeTruthy();
+  });
+
+  it("shows the generic login-failed message", async () => {
+    renderAt(fakeApiClient(), "/", "?loginError=login_failed");
+
+    expect((await screen.findByRole("alert")).textContent).toBe(
+      en.loginErrors.login_failed,
+    );
+  });
+
+  it("removes the login result from the address bar after showing it", async () => {
+    renderAt(fakeApiClient(), "/", "?loginError=login_denied");
+
+    await screen.findByRole("alert");
+    expect(window.location.pathname).toBe("/");
+    expect(window.location.search).toBe("");
+  });
+});
+
+describe("logged in", () => {
+  it("shows the display name and the list of groups", async () => {
+    renderAt(
+      loggedInClient({
+        listGroups: () => Promise.resolve([{ id: "g1", name: "Friday crew" }]),
+      }),
+      "/",
+    );
+
+    expect((await screen.findByRole("listitem")).textContent).toBe(
+      "Friday crew",
+    );
+    expect(screen.getByText(testUser.displayName)).toBeTruthy();
+    expect(
+      screen.queryByRole("link", { name: en.logInWithDiscord }),
+    ).toBeNull();
+  });
+
+  it("shows the empty state when the user is in no group", async () => {
+    renderAt(loggedInClient(), "/");
+
+    expect(await screen.findByText(en.groupsEmpty)).toBeTruthy();
+  });
+
+  it("logs out and shows the login button again", async () => {
+    const client = loggedInClient();
+    renderAt(client, "/");
+
+    fireEvent.click(await screen.findByRole("button", { name: en.logOut }));
+
+    expect(
+      await screen.findByRole("link", { name: en.logInWithDiscord }),
+    ).toBeTruthy();
+    expect(client.logout).toHaveBeenCalledOnce();
+  });
+
+  it("moves focus to the login heading after logout", async () => {
+    renderAt(loggedInClient(), "/");
+
+    fireEvent.click(await screen.findByRole("button", { name: en.logOut }));
+
+    const heading = await screen.findByRole("heading", {
+      name: en.loginHeading,
+    });
+    await waitFor(() => expect(document.activeElement).toBe(heading));
+  });
+
+  it("keeps the account visible and retries the logout when it fails", async () => {
+    const logout = vi
+      .fn<ApiClient["logout"]>()
+      .mockRejectedValueOnce(new ApiError(503, "service_unavailable"))
+      .mockResolvedValueOnce(undefined);
+    renderAt(loggedInClient({ logout }), "/");
+
+    fireEvent.click(await screen.findByRole("button", { name: en.logOut }));
+
+    expect((await screen.findByRole("alert")).textContent).toBe(
+      en.errors.service_unavailable,
+    );
+    expect(screen.getByText(testUser.displayName)).toBeTruthy();
+    expect(screen.getByRole("button", { name: en.logOut })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: en.tryAgain }));
+
+    expect(
+      await screen.findByRole("link", { name: en.logInWithDiscord }),
+    ).toBeTruthy();
+    expect(logout).toHaveBeenCalledTimes(2);
+  });
+
+  it("shows the invite placeholder on a protected page", async () => {
+    renderAt(loggedInClient(), "/invite/abc123");
+
+    expect(
+      await screen.findByRole("heading", { name: en.inviteHeading }),
+    ).toBeTruthy();
+  });
+
+  it("shows an error with a retry button when groups cannot be loaded", async () => {
+    const listGroups = vi
+      .fn<ApiClient["listGroups"]>()
+      .mockRejectedValueOnce(new ApiError(503, "service_unavailable"))
+      .mockResolvedValueOnce([]);
+    renderAt(loggedInClient({ listGroups }), "/");
+
+    expect((await screen.findByRole("alert")).textContent).toBe(
+      en.errors.service_unavailable,
+    );
+    fireEvent.click(screen.getByRole("button", { name: en.tryAgain }));
+
+    expect(await screen.findByText(en.groupsEmpty)).toBeTruthy();
+    expect(listGroups).toHaveBeenCalledTimes(2);
+  });
+
+  it("sends the user to login with a notice when the session expired", async () => {
+    renderAt(
+      loggedInClient({
+        listGroups: () => Promise.reject(new ApiError(401, "unauthenticated")),
+      }),
+      "/",
+    );
+
+    expect((await screen.findByRole("alert")).textContent).toBe(
+      en.sessionExpired,
+    );
+    expect(
+      screen.getByRole("link", { name: en.logInWithDiscord }),
+    ).toBeTruthy();
+    await waitFor(() =>
+      expect(screen.queryByText(testUser.displayName)).toBeNull(),
+    );
+  });
+
+  it("shows an error when the login status cannot be checked", async () => {
+    renderAt(
+      fakeApiClient({
+        getCurrentUser: () =>
+          Promise.reject(new ApiError(0, "service_unavailable")),
+      }),
+      "/",
+    );
+
+    expect((await screen.findByRole("alert")).textContent).toBe(
+      en.errors.service_unavailable,
+    );
+  });
+});
+
+describe("unknown page", () => {
+  it("shows the not-found page without asking for login", async () => {
+    renderAt(fakeApiClient(), "/does-not-exist");
+
+    expect(
+      await screen.findByRole("heading", { name: en.notFoundHeading }),
+    ).toBeTruthy();
+    expect(
+      screen.queryByRole("link", { name: en.logInWithDiscord }),
+    ).toBeNull();
+  });
+});
