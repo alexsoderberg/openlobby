@@ -93,7 +93,7 @@ Amendment 2026-11-02 (operations base): container contract, environment, users, 
    | `HTTP_ADDR` | `serve`, `healthcheck` | `:8080` | Listen address. `healthcheck` takes the port from it |
    | `DATABASE_URL` | `serve`, `migrate` | `postgres://<role>:<password>@postgres:5432/<db>?sslmode=disable` | Runtime role for `serve`, migration role for `migrate` (ADR 0012). Contains a password, never logged |
    | `DATABASE_MAX_CONNECTIONS` | `serve` | `5` | Pool size (ADR 0008). `migrate` runs one statement stream and does not read it |
-   | `AUTH_URL` | `gateway` (`calendar` from REQ-0002, see Amendment 2026-11-02 (REQ-0001 calendar) below, item 1) | `http://auth:8080` | Base URL of `auth` (ADR 0002, ADR 0012 client) |
+   | `AUTH_URL` | Read by: `gateway`, `calendar` (`calendar` from REQ-0002, see Amendment 2026-11-02 (REQ-0001 calendar) below, item 1; wired in compose by DevOps) | `http://auth:8080` | Base URL of `auth` (ADR 0002, ADR 0012 client) |
    | `CALENDAR_URL` | `gateway` | `http://calendar:8080` | Base URL of `calendar` |
    | `FRONTEND_URL` | `gateway` | `http://frontend:8080` | Base URL of `frontend` |
    | `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, `DISCORD_REDIRECT_URI` | `serve` of `auth` | from `infra/.env` | ADR 0005. Read in `cmd/auth/main.go` for the Discord adapter |

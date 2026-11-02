@@ -102,3 +102,33 @@ Amendment 2026-11-01 (review 2):
 Amendment 2026-11-01 (review 4):
 - **A member can learn that a link ID exists in their group.** On `DELETE .../invite-links/{linkId}` a member who is not the creator gets `403 not_allowed` for a link in their group and `404 invite_invalid` for an unknown one. Accepted: the ID is a random uuid that cannot be guessed, it is not the token, and it gives no access. The group scoping (a link ID from another group gives the same 404 as a missing one) is ADR 0004 rule 12.
 - Logging of the token: see "Logging" above (rewritten in place in review 5 to cover `frontend` and `postgres`).
+
+Amendment 2026-11-02 (REQ-0002 design check). Decided by the architect before implementation. These are mechanics and names; the decisions above do not change.
+
+**1. Token storage (confirmed).** Plain text: `invite_links.token text unique not null` (ADR 0006). The reasons above hold: members and admins must be able to copy links again. A hash is rejected.
+
+**2. Token generation (decided).** Port `TokenGenerator` in `calendar/internal/application`, method `NewToken() (string, error)`. Adapter `cryptotoken` in `calendar/internal/infrastructure`: 32 bytes from `crypto/rand`, encoded with `base64.RawURLEncoding` (43 characters). This is the same port and adapter name as in `auth` (ADR 0003). The code is duplicated in each service and not moved to `pkg/`: it is about 10 lines, and the rule of three is not reached.
+
+**3. Time (decided).** The `Clock` port (ADR 0004) is read after the group lock in join, create and revoke. Create sets `created_at = now` and `expires_at = now + InviteLinkLifetime` (2 hours). `InviteLink.IsActive(now)` is true when `now` is before `expires_at` and `use_count < max_uses`. A link with `expires_at == now` is not active.
+
+**4. One error for every inactive case (decided).** The application returns the domain error `ErrInviteInvalid` for: token unknown; group row missing at the lock; link missing in this group (revoke); link not active. The transport writes the envelope with `invite_invalid` and no other data. The 404 bodies differ only in `requestId`. There is no check of the token's form: a value that matches no row gives `invite_invalid`, which is also the answer the contract gives for an invalid form.
+
+**5. Order of the join (decided; the steps of "Check and count at join", with the lock first).** Lock the group, read the link again (`WHERE id = $1 AND group_id = $2`, ADR 0006 rule 12), `IsActive(now)` else `invite_invalid`, then: if the caller is a member, return the group and change nothing; otherwise insert the membership (`joined_at = now`) and run `UPDATE invite_links SET use_count = use_count + 1 WHERE id = $1 AND group_id = $2`, all in the same transaction. The membership check comes after the lock, so a double click by one person creates one membership.
+
+**6. Order of create (decided).** Lock the group, membership (`group_not_found`), `NewInviteLinkMaxUses` (`invalid_max_uses`), delete the group's inactive links, insert. Validation runs after the lock to keep the order of the contract. `NewInviteLinkMaxUses` is a pure domain function and reads no data.
+
+**7. Lists and invite page (decided).** `listInviteLinks` reads the links without a lock (all of them for an admin, the caller's own for a member) and filters with `IsActive(now)` in `application`. `getInvite` reads the token without a lock.
+
+**8. `InviteInfo` gets `groupId` and `isMember` (decided; contract change in `api/calendar/openapi.yaml`).** REQ-0002 requires that a member who opens an active link goes to the group's page, with no membership and no use counted. The invite page can only do that if it knows the group and whether the caller is already a member. The rule in "Joining" above (the group's name and ID are not shown) applies to inactive links. For an active link the group ID is shown to the token holder. It gives no access: a non-member gets `404 group_not_found` for that group.
+
+**9. Empty body (decided).** `createInviteLink` has an optional body. A request with no body is treated as `{}`: 201 with `maxUses` 10. The backend pins this with a transport test. If the generated decoder rejects an empty body, the transport maps an empty body to `{}` before decoding. This needs no contract change.
+
+**10. Delivery order of revoke (decided by the orchestrator, review item B3).** REQ-0002 delivers `revokeInviteLink` for group admins only, because REQ-0002's acceptance criterion is about the admin. Revoke by the link's creator belongs to REQ-0007 and comes as its own PR later. The contract keeps the final rule ("the link's creator or a group admin", see Endpoints above). Until REQ-0007 is delivered, a member who is not an admin gets `403 not_allowed`, the answer the contract defines for a caller who is not permitted. This holds also for the creator of the link, who is not an admin: until REQ-0007 is delivered, a creator who is not an admin gets the same answer as any other member. The contract's `403 not_allowed` response for `revokeInviteLink` already covers this, so no contract change is needed for it. The order of checks is unchanged: membership, link exists in this group, permission, link active. REQ-0007's acceptance tests (creator, admin, other member, inactive link, cancelled confirmation) are added with its PR.
+
+**11. Request body limit (decided, no new ADR).** `httpapi.LimitBody` already exists in `pkg/httpapi` (ADR 0001, item 3) and `auth` uses it. `calendar` adds it to its router after `requireUserID`. It stays in `pkg/`, because it is pure HTTP middleware used by two services.
+
+**12. Timing of the 404 (accepted, review COULD).** The three 404 cases (unknown, inactive, group gone) are identical in body and headers, but not in timing: an inactive link needs one more read than an unknown one. This is accepted. A token has 256 bits of entropy (item 2), so timing reveals nothing that can be guessed.
+
+**13. `getInvite` when the group row is gone (decided).** `getInvite` reads the link and the group name in one query. If the group row is gone, the query returns no row, so the answer is `invite_invalid`, the same as for an unknown token.
+
+**14. Backups and dumps are secrets (consequence, review COULD).** Database dumps and backups contain live tokens (item 1, plain text by decision). Access to dumps and backups is limited like access to the database. A dump is never added to the repository, never sent to a log, and never shared without the same care as the database itself.
