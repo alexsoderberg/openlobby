@@ -4,7 +4,7 @@ The single source of truth for which functionality exists or is decided. The Ser
 
 | ID | Feature | Status | Service | Requirement | Comment |
 |---|---|---|---|---|---|
-| F-001 | Log in with Discord | Decided | auth (+ gateway for session validation) | REQ-0001 | Only login method in the MVP. |
+| F-001 | Log in with Discord | Done | auth (+ gateway for session validation) | REQ-0001 | Only login method in the MVP. Manual step: live Discord login with the user's own Discord app (see REQ-0001). |
 | F-002 | Create and join group via invite link | Decided | calendar | REQ-0002 | Member list is shown to members. The creator becomes group admin. Members create links on request and see only their own. Links are valid for 2 hours (fixed) and always have max uses, 1–10 (default 10, DECISION). Unlimited links do not exist (DECISION, abuse protection). Group admins see, copy and revoke all of them (DECISION). |
 | F-003 | Create lobby | Decided | calendar | REQ-0003, REQ-0009 | Game is chosen from the game list (F-024) or is "Other" with a free-text name. Max players is set at creation. The creator can delete their lobby. Lobby shorter than 24 hours. |
 | F-004 | View upcoming lobbies | Decided | calendar | REQ-0004 | List sorted by start time. Shows spot status (X/Y players). |
