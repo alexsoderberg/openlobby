@@ -2,12 +2,24 @@ name: ci
 
 on:
   push:
+    branches: [main]
   pull_request:
 
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Node version of every job. infra/frontend/Dockerfile still pins node:22-alpine (follow-up).
+  NODE_VERSION: "22.13.0"
+
 # Actions are pinned to full commit SHAs; the tag is kept as a comment for the reader.
+# Go modules: pkg, services/auth, services/gateway, services/calendar. The Go version comes from each go.mod, so a
+# version change is made once. Generated code (go generate) is checked for auth, calendar and gateway. To add a Go
+# module, add its path to the go matrix and the generate loop, and its Dockerfile to docker-build.
 jobs:
   api-lint:
     name: Contract lint
@@ -19,7 +31,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4.4.0
         with:
-          node-version: "22"
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
       - run: npm ci
       - run: npm run lint:api
@@ -34,3 +46,127 @@ jobs:
           persist-credentials: false
       - run: make config
       - run: make nginx-test
+
+  go:
+    name: Go (${{ matrix.module }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        module: [pkg, services/auth, services/gateway, services/calendar]
+    services:
+      # Throwaway cluster for the integration tests (ADR 0012). Trust authentication, so no password exists in CI.
+      # Published on loopback only. pkg needs no database; it gets the service container too, to keep one job shape.
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 127.0.0.1:5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    defaults:
+      run:
+        working-directory: ${{ matrix.module }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e  # v7.0.0
+        with:
+          go-version-file: ${{ matrix.module }}/go.mod
+          cache-dependency-path: "**/go.sum"
+      # Finds .golangci.yml in the repository root from the module directory.
+      - uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a  # v9.3.0
+        with:
+          version: v2.15.0
+          working-directory: ${{ matrix.module }}
+      - run: go vet ./...
+      # Untagged tests need no database (ADR 0012).
+      - run: go test -race ./...
+      # Integration tests fail, not skip, without TEST_DATABASE_URL (ADR 0012). pkg has none, so this finds no test files.
+      - run: go test -tags=integration ./...
+        env:
+          TEST_DATABASE_URL: postgres://postgres@localhost:5432/postgres?sslmode=disable
+
+  generated-code:
+    name: Generated code is in sync
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e  # v7.0.0
+        with:
+          go-version-file: services/auth/go.mod
+          cache-dependency-path: "**/go.sum"
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+        working-directory: frontend
+      - name: Generate Go code
+        run: |
+          for module in services/auth services/calendar services/gateway; do
+            (cd "$module" && go generate ./...)
+          done
+      - run: npm run gen:api
+        working-directory: frontend
+      # Fails on a changed file and on a new file that is not ignored (ADR 0012, section 5).
+      - name: Check for drift
+        run: |
+          git diff --exit-code
+          test -z "$(git ls-files --others --exclude-standard)"
+
+  frontend:
+    name: Frontend checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run format:check
+      # The build script runs tsc --noEmit before vite build, so the type check is not repeated here.
+      - run: npm test
+      - run: npm run build
+
+  docker-build:
+    name: Docker build (${{ matrix.image }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: auth
+            dockerfile: services/auth/Dockerfile
+          - image: gateway
+            dockerfile: services/gateway/Dockerfile
+          - image: calendar
+            dockerfile: services/calendar/Dockerfile
+          - image: frontend
+            dockerfile: infra/frontend/Dockerfile
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4.4.0
+        with:
+          persist-credentials: false
+      # Build only, nothing is pushed. The context is the repository root (.dockerignore applies).
+      - run: docker build --file ${{ matrix.dockerfile }} --tag openlobby/${{ matrix.image }}:ci .
