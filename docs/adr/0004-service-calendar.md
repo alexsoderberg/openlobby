@@ -127,3 +127,64 @@ Amendment 2026-11-01 (consolidated). The final cross-cutting rules are in ADR 00
 Amendment 2026-11-01 (review 4):
 - **Rule 12 (scoping, no cross-group access).** Every lookup of a resource below a group (`lobbyId`, `linkId`, and the `userId` of a member) is made together with the `groupId` of the path (`WHERE id = $1 AND group_id = $2`, never by the ID alone). An ID that belongs to another group gives the same code and status as an ID that does not exist: `lobby_not_found`, `invite_invalid` or `member_not_found` (404). The membership check comes first and is for the `groupId` of the path (rule 2). **Required test (calendar, for each operation that takes `lobbyId`, `linkId` or `userId`):** a member of group A calls the operation with group A's `groupId` and an ID that belongs to group B, and gets 404 with the same code and body as for a random uuid.
 - **Order with path IDs:** a malformed uuid in the path comes before the membership check, from left to right (ADR 0001 consolidated, item 1). The contract text of `revokeInviteLink` and `deleteLobby` states it.
+
+Amendment 2026-11-02 (REQ-0002 ports and adapters). Decided by the architect before implementation. The ports named in "Layers" above are extended as follows. All are defined in `application`, at the consumer.
+
+**Ports for REQ-0002:**
+- `GroupRepository`:
+  - reads: `ListForUser(ctx, userID)`, `Members(ctx, groupID)` (with role), `FindMember(ctx, groupID, userID)`, `FindLinkByToken(ctx, token)` (link and group ID), `ListLinks(ctx, groupID, creatorID or all)`, group name.
+  - `Create(ctx, group, creatorID, now)`: one transaction for the group and the admin membership. No lock is needed, because the row is new.
+  - `WithLockedGroup(ctx, groupID, fn func(tx GroupTx) error) error`: the adapter starts a transaction, runs `SELECT ... FROM groups WHERE id = $1 FOR UPDATE` as the first statement, and passes a transaction-scoped `GroupTx`. It returns `ErrGroupNotFound` when no row exists. `GroupTx` holds the locked operations only: membership and link reads, `AddMember`, `InsertLink`, `DeleteInactiveLinks(now)`, `DeleteLink`, `IncrementUse`. Every write that touches a group uses this method (ADR 0006). The method names are the backend's; the shape is fixed here so that the test fakes implement one rule.
+- `Clock` (`Now() time.Time`), adapter `systemclock`. Read after the lock (ADR 0007, item 3).
+- `TokenGenerator` (`NewToken() (string, error)`), adapter `cryptotoken` (ADR 0007, item 2).
+- `UserDirectory` (`DisplayNames(ctx, userIDs []string) (map[string]string, error)`), adapter `authclient`.
+
+**`authclient` (decided).**
+- Generated from `api/auth/internal.yaml` with `api/auth/oapi-codegen-client.yaml` into `services/calendar/internal/infrastructure/authclient/gen/` (ADR 0012).
+- Calls are split into batches of at most 100 IDs (named constant, ADR 0003). The adapter's tests check 100 (one call) and 101 (two calls).
+- Timeout 5 seconds (named constant, the same value as the session call in ADR 0002).
+- A request editor sets `X-Request-Id` from the context (`pkg/requestid`), so the correlation ID is passed on.
+- Error mapping (the only place where it is decided):
+  - connection error, timeout or `503` from `auth`: `ErrUserDirectoryUnavailable`, which gives `503 service_unavailable` (ADR 0003);
+  - any other status (`400`, `500`), a malformed response, or a requested ID missing from the response: a plain error, which gives `500 internal_error`, logged with the request ID. A member is never shown with an empty name. In MVP users cannot be deleted, so a missing name is a fault, not a normal case.
+
+**Where names are used (decided).** `getGroup` uses `UserDirectory`, because the member list needs names (REQ-0002). `listInviteLinks` and `createInviteLink` do not call `auth`: the frontend takes the creator's name from the member list (ADR 0007). Lobby details (REQ-0004, REQ-0005) use the same port later.
+
+**Create group (decided).** `CreateGroup` validates the name in `domain.NewGroupName` before any write: trimmed, 1–50 code points. Omitted, `null`, empty after trim or too long give `ErrInvalidGroupName` (`invalid_group_name`). Only then does `GroupRepository.Create` run. No link is created.
+
+**Router (decided).** The `calendar` router adds `httpapi.LimitBody` after `requireUserID` (ADR 0001, item 3; ADR 0007, item 11).
+
+**Compose (decided; ADR 0008 item 1 applies now).** `calendar` gets `AUTH_URL: http://auth:8080` and `depends_on: auth` with the same condition as `gateway` (`service_healthy`). The `services` network already contains `calendar` and `auth`.
+
+**Test rules for REQ-0002 (decided).** Domain tests: `NewGroupName`; `NewInviteLinkMaxUses` (nil gives 10; 1 and 10 are valid; 0, 11 and -2 give `invalid_max_uses`); `IsActive` at the boundaries. Application tests with fakes, including the fake of `WithLockedGroup`. Integration test (tag `integration`, real PostgreSQL): two concurrent joins on the last use give one membership and `use_count` = `max_uses`; migration `0002` up and down; deleting a group removes its links. Transport test: the bodies of unknown, inactive and invalid-token 404 responses are equal except `requestId`.
+
+Amendment 2026-11-02 (review of the REQ-0002 design). Decided by the architect. This section supersedes the bullet "`GroupRepository`" and the test rules of the previous amendment 2026-11-02. The other text of that amendment stands.
+
+**Ports (split, supersedes the single `GroupRepository`).** Each port is defined in `application` at the consumer and has only the methods of its use cases (interface segregation, CLAUDE.md). A single `GroupRepository` was rejected: every use case would depend on methods it does not use, and every fake would grow with the feature.
+- `GroupsOfUser` (ListGroups): `ListForUser(ctx, userID) ([]GroupSummary, error)`.
+- `GroupCreator` (CreateGroup): `Create(ctx, group, creatorID, joinedAt) error`. One transaction, no lock, because the row is new.
+- `GroupReader` (GetGroup, membership check of ListInviteLinks and CreateInviteLink): `Membership(ctx, groupID, userID) (Membership, bool, error)`, `Members(ctx, groupID) ([]Member, error)`.
+- `InviteLinkReader` (GetInvite, ListInviteLinks): `FindLinkByToken(ctx, token) (LinkLookup, bool, error)`, where `LinkLookup` holds the link, the group ID and the group name (one query, so a missing group gives "not found", ADR 0007 item 13); `ListLinks(ctx, groupID, creatorID or all)`.
+- `GroupLocker` (every write that touches a group): `WithLockedGroup(ctx, groupID, fn func(tx GroupTx) error) error`. The adapter starts the transaction, sets `lock_timeout` and runs `SELECT ... FOR UPDATE` as the first statement (ADR 0006, lock-order invariant). It returns `ErrGroupNotFound` when no row exists. `GroupTx` holds the locked operations only, each scoped to the group (ADR 0006 rule 12): `Membership`, `LinkByID`, `GroupName`, `AddMember`, `InsertLink`, `DeleteInactiveLinks(now)`, `DeleteLink`, `IncrementUse`.
+- `Clock`, `TokenGenerator`, `UserDirectory`: unchanged from the previous amendment.
+
+**One error for a dependency that is down (decided).** The application error is `ErrUnavailable`. It is returned when the database does not respond, when the group lock times out (SQLSTATE `55P03`, ADR 0006 and ADR 0001 item 8) and when `UserDirectory` cannot reach `auth`. The transport maps it to `503 service_unavailable`. `ErrUserDirectoryUnavailable` is removed. A second error would give the same answer, so one is enough. `ErrUnavailable` is never returned after a commit (ADR 0001).
+
+**One deadline for the whole name lookup (decided).** `DisplayNames` runs under one deadline of 5 seconds (named constant in `authclient`), not 5 seconds per batch. The batches of 100 run in order under that one context. A group of more than 100 members therefore cannot take longer than the deadline in total.
+
+**Order in `getGroup` (decided).** The membership check (`group_not_found`) comes before the `authclient` call. A non-member never causes a call to `auth`.
+
+**Error mapping of `authclient` (decided, restated).** Connection error, timeout or `503` from `auth`: `ErrUnavailable`, so `503`. `400`, `500`, a malformed response body, or a requested ID missing from the response: a plain error, so `500 internal_error`, logged with the request ID. A member is never shown with an empty name.
+
+**Test rules for REQ-0002 (decided; replaces the list of the previous amendment).**
+- Domain: `NewGroupName` (trim, 1 and 50 valid, empty and 51 invalid, code points); `NewInviteLinkMaxUses` (nil gives 10; 1 and 10 valid; 0, 11 and -2 give `invalid_max_uses`; 2.5 and text give `invalid_request` in the transport); `IsActive` at the boundaries (`expires_at == now` is not active, `use_count == max_uses` is not active).
+- `authclient` error mapping: connection error, timeout and `503` give `service_unavailable` (503); `400`, `500`, a malformed body and a missing ID give `internal_error` (500); no member is ever returned with an empty name.
+- `authclient` contract test with an `httptest` server that implements `api/auth/internal.yaml`: 100 IDs in one call, 101 IDs in two calls, one deadline for the whole lookup.
+- Authorization: a non-member gets `group_not_found` on `getGroup`, `listInviteLinks`, `createInviteLink` and `joinInvite`. A member sees only their own links in `listInviteLinks`; an admin sees all of them.
+- A member opening an active link through `getInvite` gets 200 with `isMember` true; `useCount` is unchanged and no row is inserted. Joining as a member through `joinInvite` also changes nothing.
+- An empty `createInviteLink` body gives 201 with `maxUses` 10.
+- A body over 16 KiB gives 400 `invalid_request`.
+- Max-uses values: 0 gives `invalid_max_uses`; 11 gives `invalid_max_uses`; -2 gives `invalid_max_uses`; 2.5 gives `invalid_request`; text gives `invalid_request`.
+- Cross-group link for revoke: a member of group A calls `DELETE /api/groups/{A}/invite-links/{linkId}` with a link of group B and gets 404 `invite_invalid`, the same as for a random uuid (ADR 0004 rule 12).
+- Integration (real PostgreSQL, tag `integration`): two concurrent joins on the last use; migration `0002` up and down; deleting a group removes its links; a lock that waits longer than `lock_timeout` (SQLSTATE `55P03`) gives `ErrUnavailable`; the `translate()` unit test also covers code `55P03`.
+- Transport: the bodies of unknown, inactive, group-gone and invalid-token 404 responses are equal except `requestId`.

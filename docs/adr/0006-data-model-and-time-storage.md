@@ -40,6 +40,16 @@ After the user's decision the data model also needs roles (several admins, at le
 - **Join against max:** the group lock is taken first, then players on the lobby are counted and compared with `max_players`. A concurrent join waits for the lock and sees the first transaction's committed row. Two members on the last spot: one succeeds, the other gets `lobby_full`. A row lock on the lobby (`FOR UPDATE` on `lobbies`) would give the same protection, but it would be a second lock point per write, and the group lock already exists. Tested with two concurrent calls against real PostgreSQL.
 - **Join against max uses:** the same pattern. The group lock is taken first, the link is read again, `use_count < max_uses` is checked and `use_count` is incremented in the same transaction. No separate row lock on the link. Two concurrent joins on the last use: one succeeds, the other gets `invite_invalid`. Tested against real PostgreSQL.
 
+**Lock-order invariant (decided, review of the REQ-0002 design; the reviewer checks these four rules).**
+- (a) A transaction takes at most one group lock.
+- (b) The group lock is the first statement of the transaction.
+- (c) No network call (for example the `authclient` to `auth`) runs inside the locked section. Names are read before or after the lock, never inside it.
+- (d) Rows owned by a group (`group_members`, `invite_links`, `lobbies`, `lobby_players`) are written only inside `WithLockedGroup` (ADR 0004, amendment 2026-11-02). Reads outside the lock are allowed, but a rule that decides a write must be read again under the lock.
+
+**Lock timeout (decided).** The group lock runs with `SET LOCAL lock_timeout = '5s'` (named constant `groupLockTimeout` in `infrastructure/postgres`). The reason: a request must not wait without limit behind a stuck transaction on the Raspberry Pi. A wait that hits the limit is reported by PostgreSQL as SQLSTATE `55P03` (`lock_not_available`). The adapter maps it to `ErrUnavailable` (ADR 0001, item 8, as amended 2026-11-02 (REQ-0002)), so it gives `service_unavailable` (503) and nothing is committed, so the 503 text of the contract is true. Five seconds is far longer than any join or create on a group with 3–15 members.
+
+**Rule 12 in the locked statements (decided).** Every statement on a link or a member inside the lock carries the group of the path: the re-read `WHERE id = $1 AND group_id = $2`, the increment `UPDATE invite_links SET use_count = use_count + 1 WHERE id = $1 AND group_id = $2`, and the revoke `DELETE ... WHERE id = $1 AND group_id = $2`. The same holds for lobbies and players (ADR 0004 rule 12).
+
 **Revoked and left data:** when a member leaves, only players on upcoming lobbies and links are deleted. Past lobbies remain with `created_by_user_id` and are not shown to any member.
 
 **Driver:** `database/sql` with a PostgreSQL driver (`pgx`) behind the repository adapters. The driver is used only in `infrastructure/postgres`.
@@ -85,3 +95,36 @@ Amendment 2026-11-01 (review 3). The `games` and `lobbies` definitions above inc
 Amendment 2026-11-02 (REQ-0001 calendar). Decided by the architect on the calendar migration review.
 
 **1. Index for "the groups of a user" (confirmed).** The primary key `(group_id, user_id)` cannot serve a lookup by `user_id` alone, and `GET /api/groups` needs one. The migration `services/calendar/migrations/0001_init.sql` already creates `group_members_user_id_idx` on `group_members (user_id)`. The data model text above now names it. Its `down` part is the drop of the table. It is the only index added to `group_members` (YAGNI: no index for `joined_at` or `role`).
+
+Amendment 2026-11-02 (REQ-0002 invite links). Decided by the architect before implementation.
+
+**1. Migration `services/calendar/migrations/0002_invite_links.sql` (decided).** Creates the table `invite_links` with exactly these definitions:
+
+```sql
+-- +goose Up
+CREATE TABLE invite_links (
+    id                 uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    group_id           uuid NOT NULL REFERENCES groups (id) ON DELETE CASCADE,
+    token              text NOT NULL UNIQUE,
+    created_by_user_id uuid NOT NULL,
+    created_at         timestamptz NOT NULL,
+    expires_at         timestamptz NOT NULL,
+    max_uses           integer NOT NULL CHECK (max_uses BETWEEN 1 AND 10),
+    use_count          integer NOT NULL DEFAULT 0 CHECK (use_count >= 0 AND use_count <= max_uses)
+);
+CREATE INDEX invite_links_group_id_idx ON invite_links (group_id);
+
+-- +goose Down
+DROP TABLE invite_links;
+```
+
+- `id` has the same database default as `groups`, so both tables create ids the same way.
+- `created_at` and `expires_at` have no database default. The application sets them from the `Clock` port, so there is one source of time for the validity rule.
+- `created_by_user_id` has no foreign key, because the user belongs to `auth`.
+- `token UNIQUE` gives the index for the lookup by token. The index on `group_id` serves the cascade delete and the listing, because PostgreSQL does not index foreign keys by itself.
+- The `CHECK` constraints mirror the domain constants. Changing the limit needs a new migration (ADR 0007).
+- Reversible: `down` drops the table. This is for rollback of a fresh install only, as with `0001`.
+
+**2. The link is read twice in join and revoke (decided; clarifies "Check and count at join").** The first read of the token has no lock; it only finds the group. After `SELECT ... FOR UPDATE` on the group, the link is read again. If the group row is missing at the lock (the last member left between the two steps), the join gives `invite_invalid`, not `group_not_found`, because the caller came through a link.
+
+**3. Rejected: a conditional `UPDATE invite_links SET use_count = use_count + 1 WHERE use_count < max_uses` as the only check.** The group lock already serializes the joins of a group (this ADR, ADR 0007). A conditional `UPDATE` would put part of the rule "not expired and not used up" in SQL, next to `IsActive(now)` in the domain, so the rule would live in two places. The `CHECK (use_count <= max_uses)` stays as the safety net: if a bug ever violated it, the write fails and the answer is `internal_error`, not a silent extra use.
