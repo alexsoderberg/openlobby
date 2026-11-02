@@ -1,0 +1,5 @@
+# Shell scripts and Makefiles run in Linux containers and on Linux CI runners, so they keep LF line endings
+# even on a machine with core.autocrlf=true.
+infra/** text eol=lf
+Makefile text eol=lf
+.github/** text eol=lf

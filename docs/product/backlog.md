@@ -29,6 +29,15 @@ REQ-0004 contains both the list view (F-004) and the calendar view (F-017). Thes
 
 REQ-0002 and REQ-0007 have been extended with max uses on invite links (mandatory, 1–10) and group admins' overview of all links. The dependencies in the table are unchanged.
 
+## Technical tasks (operations)
+
+Technical improvements found while building the operations base. They are not user functionality, so they have no requirement or feature entry. They are not ordered against the MVP requirements above, but all four must be done before the first production deployment.
+
+1. **Secret scanning in pre-commit and CI.** Block committed secrets locally and in CI. Owner: architect (tool choice, new dependency), devops-expert (implementation). Reference: CLAUDE.md, Security; a new ADR is needed for the tool.
+2. **Automated PostgreSQL backups with a tested restore.** Scheduled backups, and a restore that has been tested, not only configured. Owner: devops-expert. Reference: ADR 0008.
+3. **Monitoring of TLS certificate expiry.** Alert before the certbot margin runs out. Owner: devops-expert. Reference: ADR 0009 (and ADR 0008, operations responsibility).
+4. **CI jobs that need service code.** Network-membership check (ADR 0008 review 5), smoke test (ADR 0009 review 5), per-service Go and frontend lint/test/build jobs, and the generated-code sync check (ADR 0012). Owner: devops-expert. Prerequisite: the first service images (REQ-0001). Reference: ADR 0008, ADR 0009, ADR 0012.
+
 ## Later
 
 Ideas outside the MVP are listed in `features.md` with status `Proposed`. They are prioritized only after the MVP is delivered and the user has seen how it is used.

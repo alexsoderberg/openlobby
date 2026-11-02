@@ -1,6 +1,6 @@
 # Service map
 
-Status: Accepted (see ADR 0001–0013). The amendment sections in the ADRs override earlier text that was not rewritten in place. ADR 0001 "Amendment 2026-11-01 (consolidated)" is the final statement of the cross-cutting rules, and ADR 0001 "review 4" and "review 5" list the text rewritten in place. This file reflects the state after review 5. The contracts are `api/auth/openapi.yaml`, `api/auth/internal.yaml` and `api/calendar/openapi.yaml`.
+Status: Accepted (see ADR 0001–0013). The amendment sections in the ADRs override earlier text that was not rewritten in place. ADR 0001 "Amendment 2026-11-01 (consolidated)" is the final statement of the cross-cutting rules, and ADR 0001 "review 4" and "review 5" list the text rewritten in place. This file reflects the state after review 5 and the operations base amendments of ADR 0008, 0009 and 0012 (2026-11-02). The contracts are `api/auth/openapi.yaml`, `api/auth/internal.yaml` and `api/calendar/openapi.yaml`.
 
 ## Overview
 
@@ -67,7 +67,8 @@ All services use synchronous HTTP/JSON. No service reads another service's datab
 
 ### Shared
 - **Databases:** one PostgreSQL 17 instance (ADR 0008), one database per service (`auth`, `calendar`), with two roles each: `<service>` (DML) and `<service>_migrate` (DDL, only the migration job). ADR 0006, 0008, 0012.
-- **Migrations:** goose, run by the one-off job `<service>-migrate` (same image) before the service. ADR 0012.
+- **Migrations:** goose, run by the one-off job `<service>-migrate` (same image) before the service, with `migrate up` and `migrate down`. ADR 0012.
+- **Container contract:** one image per Go service, entrypoint `/<service>`, subcommands `serve` (default), `migrate up|down` and `healthcheck`. Configuration only through the variables of ADR 0008 (operations base). Non-root users, except `edge` and `certbot` (ADR 0009).
 - **Networks:** one Compose network per group of containers that talk to each other (table in ADR 0008 review 5). The trust in `X-User-*` depends on it.
 - **Integration tests:** build tag `integration`, `TEST_DATABASE_URL`, a PostgreSQL service container in CI (ADR 0012 review 5).
 - **Code generation:** oapi-codegen (Go, server in `net/http`, client in `authclient`) and openapi-typescript + openapi-fetch (frontend). One configuration file per generated target next to the contract in `api/<service>/` (ADR 0012, review 2). Generated code is checked in and CI verifies that it is in sync with `api/`.

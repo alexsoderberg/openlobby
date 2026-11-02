@@ -1,0 +1,6 @@
+# First certificate only (infra/README.md). edge serves the ACME challenge over HTTP and has no TLS and no gateway yet.
+services:
+  edge:
+    depends_on: !reset {}
+    volumes:
+      - ./edge/bootstrap.conf.template:/etc/nginx/templates/default.conf.template:ro

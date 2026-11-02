@@ -1,0 +1,14 @@
+# First certificate only (infra/README.md): HTTP for the ACME challenge, no TLS and no gateway.
+
+server {
+    listen 80;
+    add_header Referrer-Policy same-origin always;
+
+    location ^~ /.well-known/acme-challenge/ {
+        root /var/www/acme;
+    }
+
+    location / {
+        return 404;
+    }
+}

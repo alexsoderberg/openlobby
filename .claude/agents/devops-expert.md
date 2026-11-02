@@ -40,7 +40,7 @@ You make it easy and safe to build, test, deploy and monitor the system. The sam
 
 - Each service is built, tested and deployed independently.
 - CI builds only the services affected by a change (path filters on `services/<service>/`, `api/<service>/` and `pkg/`).
-- Only the gateway and frontend are exposed publicly. Internal services sit on an internal network.
+- Only `edge` is exposed publicly (ADR 0009). Internal services sit on an internal network.
 - Each service has its own database role and, where possible, its own database or schema.
 - Start order is handled with readiness checks, not with fixed waiting times.
 
@@ -64,7 +64,7 @@ The pipeline must be fast: cache Go modules and npm, and run independent service
 - **Compose:** one compose service per microservice. Each service must be startable alone with `docker compose up <service>`, which starts only its dependencies (`depends_on` with `condition: service_healthy`). Internal services publish no ports outward.
 - Go: multi-stage build with a static binary (`CGO_ENABLED=0`) in a minimal runtime image (distroless or `scratch` with CA certificates).
 - Frontend: built to static files and served by a minimal web server or via the gateway.
-- Run as a non-root user.
+- Run as a non-root user with `cap_drop: [ALL]`. Exceptions are listed in ADR 0008/0009 "Amendment 2026-11-02 (operations base)": the `edge` nginx master runs as root (binds 80/443, reads the key) with only the capabilities it needs, and `certbot` runs as root. A new exception requires an ADR.
 - Liveness and readiness via `/healthz` and `/readyz`.
 - No secrets in image layers. A `.dockerignore` keeps out everything that is not needed.
 
@@ -73,7 +73,7 @@ The pipeline must be fast: cache Go modules and npm, and run independent service
 - `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET` and `DISCORD_REDIRECT_URI` are set per environment as secrets.
 - Each environment (local, test, production) has its redirect URI registered in the Discord Developer Portal. Document in the README which URIs must be registered.
 - Preferably use a separate Discord application for development and testing, so that the production secret is never used locally.
-- Session signing and encryption keys are secrets per environment and must be rotatable.
+- Sessions need no signing or encryption key (ADR 0005: opaque random tokens stored hashed). The only secrets are `DISCORD_CLIENT_SECRET` and the database passwords.
 
 ## Secrets
 

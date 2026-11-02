@@ -1,0 +1,53 @@
+# Template for conf.d/default.conf. The image's entrypoint replaces ${GATEWAY_URL} from the environment.
+# Other $ variables are nginx's own and are not touched.
+
+server {
+    listen 80;
+    add_header Referrer-Policy same-origin always;
+
+    location ^~ /.well-known/acme-challenge/ {
+        root /var/www/acme;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl;
+    ssl_certificate /etc/letsencrypt/live/openlobby/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/openlobby/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    # 300 until HTTPS is proven stable, then 31536000 (ADR 0009). No includeSubDomains, no preload.
+    add_header Strict-Transport-Security "max-age=300" always;
+    add_header Referrer-Policy same-origin always;
+
+    # Set by edge and never taken from the client (ADR 0009).
+    proxy_set_header X-Forwarded-Proto https;
+    proxy_set_header X-Forwarded-For $remote_addr;
+    proxy_set_header X-Forwarded-Host $host;
+
+    # Resolved per request through Docker's DNS, so a restarted gateway gets its new address (ADR 0009).
+    resolver 127.0.0.11 valid=10s ipv6=off;
+    set $gateway_upstream "${GATEWAY_URL}";
+
+    location ~ ^/api/auth/(login|callback)$ {
+        limit_req zone=login burst=5 nodelay;
+        error_page 429 = @login_failed;
+        proxy_pass $gateway_upstream;
+    }
+
+    location / {
+        proxy_pass $gateway_upstream;
+    }
+
+    # add_header in this block replaces the inherited set, so the security headers are repeated here (ADR 0005, 0009).
+    location @login_failed {
+        add_header Cache-Control "no-store" always;
+        add_header Strict-Transport-Security "max-age=300" always;
+        add_header Referrer-Policy same-origin always;
+        return 302 /?loginError=login_failed;
+    }
+}

@@ -1,0 +1,14 @@
+# Build context is the repository root. Keep out what no image needs, and no secrets.
+.git
+.claude
+docs
+node_modules
+**/node_modules
+**/.env
+**/.env.*
+!**/.env.example
+infra/dev-certs
+frontend/dist
+**/*.pem
+**/*.key
+**/*.crt

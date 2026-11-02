@@ -1,0 +1,5 @@
+# Local development: edge uses the self-signed certificate from infra/dev-certs/ (see infra/README.md).
+services:
+  edge:
+    volumes:
+      - ./dev-certs:/etc/letsencrypt/live/openlobby:ro
