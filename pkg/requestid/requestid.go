@@ -25,10 +25,13 @@ func FromContext(ctx context.Context) string {
 	return id
 }
 
-// Middleware keeps a valid incoming ID, generates a new one otherwise, and sets it on the response.
+// Middleware keeps a valid incoming ID, generates a new one otherwise. It sets the one kept ID on the request header,
+// the response header and the context, so the generated binding sees exactly one value (ADR 0001, REQ-0001 calendar).
 func Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		id := validOrNew(r.Header.Values(Header))
+		// The generated binding refuses two values (ADR 0001, REQ-0001 calendar), so the request holds the one kept ID.
+		r.Header.Set(Header, id)
 		w.Header().Set(Header, id)
 		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), contextKey{}, id)))
 	})

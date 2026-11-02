@@ -56,6 +56,11 @@ func (s server) do(method, target string, body string, headers map[string]string
 	for _, cookie := range cookies {
 		request.AddCookie(cookie)
 	}
+	return s.send(request)
+}
+
+// send runs a prepared request through the router and records the response.
+func (s server) send(request *http.Request) *httptest.ResponseRecorder {
 	response := httptest.NewRecorder()
 	s.http.ServeHTTP(response, request)
 	return response
@@ -506,6 +511,49 @@ func TestSystemAdminFlagFollowsConfiguration(t *testing.T) {
 	decode(t, validate, &validation)
 	if validation["isSystemAdmin"] != false {
 		t.Fatalf("other subject: validate isSystemAdmin = %v", validation["isSystemAdmin"])
+	}
+}
+
+// doWithRequestIDs sends a request with the given X-Request-Id values, one header line each.
+func (s server) doWithRequestIDs(method, target, body string, headers map[string]string, ids ...string) *httptest.ResponseRecorder {
+	s.t.Helper()
+	request := httptest.NewRequest(method, target, strings.NewReader(body))
+	for name, value := range headers {
+		request.Header.Set(name, value)
+	}
+	for _, id := range ids {
+		request.Header.Add("X-Request-Id", id)
+	}
+	return s.send(request)
+}
+
+// TestDuplicateRequestIDGivesOperationAnswer checks ADR 0001 (REQ-0001 calendar, item 1): two X-Request-Id values
+// are replaced, not rejected with 400 by the generated binding.
+func TestDuplicateRequestIDGivesOperationAnswer(t *testing.T) {
+	s := newServer(t, nil)
+	token, userID := s.login("/")
+	ids := []string{"abc", "def"}
+
+	me := s.doWithRequestIDs(http.MethodGet, "/api/auth/me", "", map[string]string{"X-User-Id": userID}, ids...)
+	if me.Code != http.StatusOK {
+		t.Fatalf("/me with two request IDs: status %d, body %q", me.Code, me.Body.String())
+	}
+	var account map[string]any
+	decode(t, me, &account)
+	if account["userId"] != userID {
+		t.Fatalf("/me body %v, want userId %q", account, userID)
+	}
+	validate := s.doWithRequestIDs(http.MethodPost, "/internal/sessions/validate", fmt.Sprintf(`{"token":%q}`, token),
+		jsonHeader(), ids...)
+	if validate.Code != http.StatusOK {
+		t.Fatalf("validate with two request IDs: status %d, body %q", validate.Code, validate.Body.String())
+	}
+	lookup := s.doWithRequestIDs(http.MethodPost, "/internal/users/lookup", `{"userIds":[]}`, jsonHeader(), ids...)
+	if lookup.Code != http.StatusOK {
+		t.Fatalf("lookup with two request IDs: status %d, body %q", lookup.Code, lookup.Body.String())
+	}
+	if id := me.Header().Get("X-Request-Id"); id == "" || id == "abc" || id == "def" {
+		t.Fatalf("response request ID %q is not a new single value", id)
 	}
 }
 
