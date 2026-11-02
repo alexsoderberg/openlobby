@@ -9,7 +9,7 @@ info:
     `gateway` blocks all `/internal/*` paths from clients (ADR 0002). No session cookies are used here.
 
     Applies to all endpoints:
-    - **Correlation ID:** `X-Request-Id` must be passed on by the caller. The response contains the same value.
+    - **Correlation ID:** the caller passes its ID on. A missing or invalid value is replaced by a new one (see the parameter).
     - **Error format:** `{"error": {"code": "...", "requestId": "..."}}` (ADR 0001).
     - **Request body:** at most 16 KiB. A larger body, invalid JSON or a value of the wrong JSON type gives `400 invalid_request`. A field that is not `required` may be omitted or `null` and then has the default stated on the field. Unknown fields are ignored.
     - **Logging:** the token in `POST /internal/sessions/validate` is a secret. It must never be logged.

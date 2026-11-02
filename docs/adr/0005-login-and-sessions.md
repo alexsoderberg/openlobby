@@ -52,7 +52,7 @@ REQ-0001 requires login with Discord, logout that requires a new login at the ne
 
 Amendment 2026-11-01:
 - The callback always redirects to the frontend, including on errors. If Discord returns `error=access_denied`, `login_denied` is given, regardless of `state`. All other errors give `/?loginError=login_failed` without a session cookie and without details: a different `error` parameter, missing `code` or `state`, unknown, expired or already used `state`, an error when exchanging the code or fetching the user from Discord, and database errors.
-- `login` redirects in the same way with `login_failed` if the login attempt cannot be created. Login endpoints never answer with JSON errors to the browser.
+- `login` redirects in the same way with `login_failed` if the login attempt cannot be created. Login endpoints never answer with JSON errors to the browser (the `GET` login flow; amendment review 6 below).
 - Errors are logged with category and `requestId`. Never `code`, `state`, a token, the PKCE verifier, a cookie value, `returnTo` (it can hold an invite token, ADR 0007) or a response body from the provider.
 - `returnTo` is validated again at callback before the redirect.
 
@@ -101,3 +101,8 @@ Amendment 2026-11-02 (review 5): browser binding, PKCE storage, cleanup and libr
   - the challenge function gives the RFC 7636 Appendix B value; the fake provider (`httptest.Server`) receives the stored verifier at the exchange;
   - `GET /api/auth/callback?code=A&state=B&state=C` gives 302 `login_failed`;
   - an error body from the fake provider that contains a marker string does not appear in any log line, and no log line contains the `state`, `code`, verifier, cookie values or `returnTo` used in the tests.
+
+Amendment 2026-11-02 (review 6): scope of "never JSON errors". Decided by the architect after the fifth contract review.
+- **DECISION:** the rule "Login endpoints never answer with JSON errors to the browser" (amendment 2026-11-01 above) is narrowed to the login flow: every `GET /api/auth/login` and `GET /api/auth/callback` request that reaches the route ends in a redirect, including failures in `auth`, failures to reach `auth` (ADR 0002 review 5) and parameter errors (review 5 above). A wrong method on these paths is not part of the login flow and gets the gateway's normal `405 method_not_allowed` JSON answer (ADR 0002 review 2).
+- **Why:** a browser reaches these paths only by following a link or a redirect (from the frontend or from the provider), and those are always `GET`. Another method comes only from a script or a crafted form, which no user flow produces. A redirect for 405 would need a second flag or a method check in the gateway's 405 handler for a case no user meets (KISS, YAGNI). The 405 rule stays one rule for every route.
+- No code change. The test is the 405 row in ADR 0002, amendment review 6.

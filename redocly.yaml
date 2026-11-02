@@ -5,8 +5,9 @@ rules:
   # The project is private and no license has been decided. Re-enable when the project is opened.
   info-license: off
 apis:
-  # The login, callback and logout operations answer with redirects or 204 and never with a
-  # JSON error (ADR 0005, ADR 0012, consolidated amendment). These two rules would warn on them by design.
+  # startLogin and completeLogin always redirect and never answer with JSON (ADR 0005), so both rules warn on them.
+  # logout has no 4xx response (success is 204; its 500 and 503 are JSON, ADR 0001), so operation-4xx-response
+  # warns on it. Five warnings by design (ADR 0012, consolidated amendment).
   # The file is matched by the path given to `redocly lint` (see `lint:api` in package.json).
   auth-public:
     root: api/auth/openapi.yaml

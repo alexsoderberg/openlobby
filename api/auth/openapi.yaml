@@ -30,9 +30,9 @@ paths:
         Creates a login attempt (valid 10 minutes, used once) and redirects to Discord with `state` and a PKCE challenge (S256).
         The server keeps the PKCE verifier with the attempt. The response sets the cookie `ol_login`, which binds the attempt to this browser:
         the callback accepts `state` only together with this cookie (ADR 0005).
-        `returnTo` is used only if its decoded value starts with a single `/`, its second character is neither `/` nor `\`, and it contains no ASCII control character and no whitespace. Otherwise it is ignored and `/` is used (ADR 0005).
-        If the attempt cannot be created, the response redirects to `/?loginError=login_failed` without `ol_login`. Login endpoints never answer with JSON errors to the browser,
-        also when `auth` does not respond: the gateway then gives the same redirect (ADR 0002).
+        `returnTo` follows the rule on the parameter.
+        If the attempt cannot be created, the response redirects to `/?loginError=login_failed` without `ol_login`. The login flow never answers with JSON errors to the browser,
+        also when `auth` does not respond: the gateway then gives the same redirect (ADR 0002). A method other than GET gets the gateway's `405 method_not_allowed` (ADR 0005 review 6).
       security: []
       parameters:
         - $ref: '#/components/parameters/RequestIdHeader'

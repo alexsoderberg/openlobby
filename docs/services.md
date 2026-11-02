@@ -37,7 +37,7 @@ All services use synchronous HTTP/JSON. No service reads another service's datab
 - **Decisions:** ADR 0009.
 
 ### gateway
-- **Responsibility:** routing (route table with path and method per route), session validation, sets `X-User-Id` and `X-User-System-Admin` from the session and removes the client's own `X-User-*`, forwards the `Cookie` header to `auth` only, correlation ID, answers `404 not_found` and `405 method_not_allowed`, blocks `/internal/*`, answers `503 service_unavailable` or `500 internal_error` when an upstream fails (a redirect on the two login routes, ADR 0002 review 5), access log.
+- **Responsibility:** routing (route table with path and method per route), session validation, sets `X-User-Id` and `X-User-System-Admin` from the session and removes the client's own `X-User-*`, forwards the `Cookie` header to `auth` only, correlation ID, answers `404 not_found` and `405 method_not_allowed`, blocks `/internal/*`, answers `503 service_unavailable` or `500 internal_error` when an upstream fails (a redirect on the two `GET` login routes, ADR 0002 review 5; a wrong method on them still gives JSON 405, review 6), access log.
 - **Owns data:** nothing.
 - **Dependencies:** `auth` (session validation), `frontend` and `calendar` (routing).
 - **Realizes:** F-001 (the session part of login), and the prerequisite for F-002–F-005, F-010, F-013, F-017, F-018 and F-024.
@@ -132,7 +132,7 @@ The source is `enum` in `api/` (`auth/openapi.yaml` and `calendar/openapi.yaml` 
 
 | Code | HTTP | Used when |
 |---|---|---|
-| `unauthenticated` | 401 | No valid session, or missing `X-User-Id` in calendar and `auth` `/me` |
+| `unauthenticated` | 401 | No valid session, or `X-User-Id` missing or invalid in calendar; `X-User-Id` missing on `auth` `/me` |
 | `not_allowed` | 403 | The caller lacks permission (non-admin, non-creator, non-system-admin) |
 | `group_not_found` | 404 | The group is missing, the caller is not a member, or `groupId` has an invalid form |
 | `member_not_found` | 404 | The user is not a member of the group, or `userId` has an invalid form |

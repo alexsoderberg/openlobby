@@ -7,14 +7,14 @@ info:
     Clients reach the API via `gateway` (ADR 0002). Authorization is checked in `calendar`.
 
     Applies to all endpoints:
-    - **Session:** all endpoints require the session cookie `ol_session`. An invalid or missing session gives 401.
+    - **Session:** all endpoints require the session cookie `ol_session`. No valid session, or the user identity from the gateway is missing or invalid, gives 401.
     - **Identity:** the gateway validates the session and sets `X-User-Id` and `X-User-System-Admin` on the call to `calendar`. Clients never send these headers, and the gateway removes them from client calls (ADR 0002, 0011).
     - **Membership:** a non-member gets `404 group_not_found`, never 403, so that the existence of a group is not revealed (ADR 0004 rule 2).
     - **System admin:** the role gives no right inside a group. It only gives the right to write `/api/games` (ADR 0011).
     - **Correlation ID:** `X-Request-Id` may be sent (at most 64 characters, `[A-Za-z0-9-]`). The response always contains `X-Request-Id`.
     - **Error format:** `{"error": {"code": "...", "requestId": "..."}}` (ADR 0001). The response contains no free text.
     - **Order of checks:** 1) identity (401 `unauthenticated`), 2) shape (400 `invalid_request`; an invalid uuid in a path gives the not-found code of that resource), 3) membership (404 `group_not_found`), 4) permission that does not depend on a resource (403 `not_allowed`), 5) validation of values (400 with a domain code), 6) existence (404), 7) permission on the resource (403), 8) state (409). A check that does not apply to an endpoint is skipped. ADR 0001.
-    - **Request body:** at most 16 KiB. A larger body, invalid JSON, a value of the wrong JSON type, and a missing or non-RFC 3339 time all give `400 invalid_request`. A field that is not `required` may be omitted or `null` and then has the default stated on the field. Unknown fields are ignored.
+    - **Request body:** at most 16 KiB. A body over 16 KiB gives `400 invalid_request`. A body over 1 MiB is refused by `edge` with 413 before it reaches the service (ADR 0009). Invalid JSON, a value of the wrong JSON type, and a missing or non-RFC 3339 time all give `400 invalid_request`. A field that is not `required` may be omitted or `null` and then has the default stated on the field. Unknown fields are ignored.
     - **Times:** RFC 3339. Any offset is accepted; responses use UTC with Z.
     - **Names:** trimmed before validation and measured in characters (code points). A trimmed empty name is invalid (ADR 0004 rule 1). The length limits in the schema apply after trim. The server responds with the domain code (e.g. `invalid_game`) also when the length is exceeded.
     - **Invite token:** a secret. Responses that contain a token get `Cache-Control: no-store`. The token is never logged.
@@ -808,7 +808,7 @@ components:
       name: ol_session
       description: |
         Session cookie set by `auth` at login (`ol_session`, `HttpOnly`, `Secure`, `SameSite=Lax`).
-        The gateway validates the cookie and passes the identity on to `calendar`. The client never calls `calendar` directly.
+        The gateway validates the cookie and passes the identity on to `calendar`. The client never calls `calendar` directly, only through the gateway.
 
   parameters:
     RequestIdHeader:
@@ -865,7 +865,7 @@ components:
 
   responses:
     Unauthenticated:
-      description: No valid session, or the user identity from the gateway is missing.
+      description: No valid session, or the user identity from the gateway is missing or invalid.
       content:
         application/json:
           schema:
@@ -1055,13 +1055,6 @@ components:
       maxLength: 50
       description: Game name, 1–50 characters after trim.
 
-    GameListName:
-      type: string
-      minLength: 1
-      maxLength: 50
-      description: |
-        Name of a game in the game list, 1–50 characters after trim. The name `Other` (ignoring case, after trim) is reserved for the client's free-text choice and gives `invalid_game`.
-
     Lobby:
       type: object
       required: [id, gameName, maxPlayers, startsAt, endsAt, createdByUserId, playerCount]
@@ -1137,7 +1130,7 @@ components:
         id:
           $ref: '#/components/schemas/GameId'
         name:
-          $ref: '#/components/schemas/GameListName'
+          $ref: '#/components/schemas/GameName'
         defaultMaxPlayers:
           $ref: '#/components/schemas/DefaultMaxPlayers'
 
@@ -1148,8 +1141,8 @@ components:
           type: string
           nullable: true
           allOf:
-            - $ref: '#/components/schemas/GameListName'
-          description: Game name. Omitted or `null` gives `invalid_game`.
+            - $ref: '#/components/schemas/GameName'
+          description: Game name. Omitted or `null` gives `invalid_game`. The name `Other` (ignoring case, after trim) is reserved for the client's free-text choice and gives `invalid_game` (ADR 0010).
         defaultMaxPlayers:
           $ref: '#/components/schemas/DefaultMaxPlayers'
 
@@ -1160,7 +1153,7 @@ components:
           type: string
           nullable: true
           allOf:
-            - $ref: '#/components/schemas/GameListName'
-          description: Game name. Omitted or `null` gives `invalid_game`.
+            - $ref: '#/components/schemas/GameName'
+          description: Game name. Omitted or `null` gives `invalid_game`. The name `Other` (ignoring case, after trim) is reserved for the client's free-text choice and gives `invalid_game` (ADR 0010).
         defaultMaxPlayers:
           $ref: '#/components/schemas/DefaultMaxPlayers'

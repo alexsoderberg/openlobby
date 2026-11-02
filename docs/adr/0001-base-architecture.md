@@ -76,7 +76,7 @@ Consequences: a non-admin with a malformed body gets 400 `invalid_request`, whic
 
 **Path parameters** are `type: string` in the contracts, not `format: uuid` (ADR 0012).
 
-Amendment 2026-11-01 (review 3): one exception to "every operation documents `500`" (review 2, Errors and codes). `GET /api/auth/login` and `GET /api/auth/callback` document no `500` and no JSON error. ADR 0005 requires that login endpoints always redirect. An internal error during login therefore gives the redirect `/?loginError=login_failed`, and no JSON reaches the browser.
+Amendment 2026-11-01 (review 3): one exception to "every operation documents `500`" (review 2, Errors and codes). `GET /api/auth/login` and `GET /api/auth/callback` document no `500` and no JSON error. ADR 0005 requires that login endpoints always redirect. An internal error during login therefore gives the redirect `/?loginError=login_failed`, and no JSON reaches the browser (the `GET` login flow; a wrong method gets the gateway's 405 JSON, ADR 0005 amendment review 6).
 
 Amendment 2026-11-01 (consolidated). This is the final statement of the cross-cutting rules. It supersedes every conflicting sentence in the earlier amendments of ADR 0001, 0003, 0004, 0010 and 0012. The contracts in `api/` follow this section. Reason: the review 2 and review 3 amendments contradicted each other on the points below, and the contracts failed review because of it.
 

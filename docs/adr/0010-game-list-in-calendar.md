@@ -52,7 +52,7 @@ The user has now decided that management happens in the app, by a system admin (
 - **Tests:**
   - Application against fakes: permission before validation, every error code in rules 2–6, trimming, and that deleting a game does not touch lobbies. Transport: rule 1.
   - Adapter against real PostgreSQL: sorting by name, `ErrGameNotFound`, case-insensitive duplicate name gives `ErrGameTaken`, check on max ≥ 1, and the migration `up` and `down`.
-  - Transport: `X-User-System-Admin` with any value other than `true` gives non-admin. Missing `X-User-Id` gives 401 (ADR 0011).
+  - Transport: `X-User-System-Admin` with any value other than `true` gives non-admin. A missing or invalid `X-User-Id` gives 401 (ADR 0011).
   - Contract test against `api/calendar/openapi.yaml` once the contract exists.
 
 ## Consequences
