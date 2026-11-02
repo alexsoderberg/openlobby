@@ -36,7 +36,7 @@ Technical improvements found while building the operations base. They are not us
 1. **Secret scanning in pre-commit and CI.** Block committed secrets locally and in CI. Owner: architect (tool choice, new dependency), devops-expert (implementation). Reference: CLAUDE.md, Security; a new ADR is needed for the tool.
 2. **Automated PostgreSQL backups with a tested restore.** Scheduled backups, and a restore that has been tested, not only configured. Owner: devops-expert. Reference: ADR 0008.
 3. **Monitoring of TLS certificate expiry.** Alert before the certbot margin runs out. Owner: devops-expert. Reference: ADR 0009 (and ADR 0008, operations responsibility).
-4. **CI jobs that need service code.** Network-membership check (ADR 0008 review 5), smoke test (ADR 0009 review 5), per-service Go and frontend lint/test/build jobs, and the generated-code sync check (ADR 0012). Owner: devops-expert. Prerequisite: the first service images (REQ-0001). Reference: ADR 0008, ADR 0009, ADR 0012.
+4. **CI jobs that need service code.** Network-membership check (ADR 0008 review 5) and smoke test in CI (ADR 0009 review 5). Owner: devops-expert. Reference: ADR 0008, ADR 0009. Notes: `bash infra/smoke-test.sh` passed locally against the full dev stack on 2026-11-02 (commit e7305a9). In CI it needs infra/.env from .env.example, dev certs and image tags, and it calls Discord, which adds external flakiness.
 
 ## Later
 
