@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"openlobby/pkg/logging"
+	"openlobby/pkg/requestid"
 	"openlobby/services/gateway/internal/application"
 )
 
@@ -152,6 +153,18 @@ func silentURL(t *testing.T) (*url.URL, <-chan error) {
 		closed <- conn.Close()
 	}()
 	return &url.URL{Scheme: "http", Host: listener.Addr().String()}, closed
+}
+
+// receive waits a bounded time so a request that never reaches a stub fails the test instead of hanging it.
+func receive[T any](t *testing.T, ch <-chan T) T {
+	t.Helper()
+	select {
+	case value := <-ch:
+		return value
+	case <-time.After(5 * time.Second):
+		t.Fatal("upstream stub was never reached")
+		panic("unreachable")
+	}
 }
 
 // newRouter builds the router and a log buffer that receives every log line.
@@ -388,7 +401,7 @@ func TestUpstreamWithoutAnswerGives500(t *testing.T) {
 	s.urls.Calendar = target
 	handler, _ := newRouter(validSessions(), s.urls)
 	assertError(t, send(handler, http.MethodGet, "/api/groups", cookieHeader(goodToken)), http.StatusInternalServerError, "internal_error")
-	if err := <-closed; err != nil {
+	if err := receive(t, closed); err != nil {
 		t.Errorf("close silent upstream: %v", err)
 	}
 }
@@ -397,13 +410,13 @@ func TestRequestIDIsPassedOn(t *testing.T) {
 	s := newStubs(t)
 	handler, _ := newRouter(validSessions(), s.urls)
 	header := cookieHeader(goodToken)
-	header.Set("X-Request-Id", "abc-123")
+	header.Set(requestid.Header, "abc-123")
 	recorder := send(handler, http.MethodGet, "/api/groups", header)
-	if got := s.calendar.last(t).header.Values("X-Request-Id"); len(got) != 1 || got[0] != "abc-123" {
+	if got := s.calendar.last(t).header.Values(requestid.Header); len(got) != 1 || got[0] != "abc-123" {
 		t.Errorf("upstream X-Request-Id = %v, want abc-123", got)
 	}
-	if recorder.Header().Get("X-Request-Id") != "abc-123" {
-		t.Errorf("response X-Request-Id = %q", recorder.Header().Get("X-Request-Id"))
+	if got := recorder.Header().Values(requestid.Header); len(got) != 1 || got[0] != "abc-123" {
+		t.Errorf("response X-Request-Id = %v, want exactly abc-123", got)
 	}
 }
 
@@ -561,17 +574,92 @@ func assertPublicRoute(t *testing.T, rt route, method, target string) {
 }
 
 func TestResponseHeaderTimeoutGives500(t *testing.T) {
-	stalled := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
-		<-r.Context().Done()
+	s := newStubs(t)
+	s.urls.Calendar = stalledURL(t)
+	handler := buildRouter(validSessions(), s.urls, logging.New(io.Discard), shortTimeouts())
+	assertError(t, send(handler, http.MethodGet, "/api/groups", cookieHeader(goodToken)), http.StatusInternalServerError, "internal_error")
+}
+
+// TestProxiedResponseHasOneRequestID: an upstream that echoes X-Request-Id must not add a second value (ADR 0002 review 5).
+func TestProxiedResponseHasOneRequestID(t *testing.T) {
+	received := make(chan string, 1)
+	echo := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		received <- r.Header.Get(requestid.Header)
+		w.Header().Add(requestid.Header, r.Header.Get(requestid.Header))
+		w.WriteHeader(http.StatusOK)
 	}))
-	t.Cleanup(stalled.Close)
-	stalledURL, err := url.Parse(stalled.URL)
+	t.Cleanup(echo.Close)
+	echoURL, err := url.Parse(echo.URL)
 	if err != nil {
 		t.Fatalf("parse stub URL: %v", err)
 	}
 	s := newStubs(t)
-	s.urls.Calendar = stalledURL
-	handler := buildRouter(validSessions(), s.urls, logging.New(io.Discard),
-		upstreamTimeouts{dial: dialTimeout, responseHeader: 100 * time.Millisecond})
-	assertError(t, send(handler, http.MethodGet, "/api/groups", cookieHeader(goodToken)), http.StatusInternalServerError, "internal_error")
+	s.urls.Auth = echoURL
+	handler, _ := newRouter(validSessions(), s.urls)
+	header := http.Header{}
+	header.Set(requestid.Header, "abc-123")
+	recorder := send(handler, http.MethodPost, "/api/auth/logout", header)
+	if got := receive(t, received); got != "abc-123" {
+		t.Errorf("upstream X-Request-Id = %q, want abc-123", got)
+	}
+	if got := recorder.Header().Values(requestid.Header); len(got) != 1 || got[0] != "abc-123" {
+		t.Errorf("response X-Request-Id = %v, want exactly abc-123", got)
+	}
+}
+
+// stalledURL is an upstream that accepts requests and never answers.
+func stalledURL(t *testing.T) *url.URL {
+	t.Helper()
+	stalled := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
+		<-r.Context().Done()
+	}))
+	t.Cleanup(stalled.Close)
+	stalledAddress, err := url.Parse(stalled.URL)
+	if err != nil {
+		t.Fatalf("parse stub URL: %v", err)
+	}
+	return stalledAddress
+}
+
+// shortTimeouts makes the response header timeout fire within a test.
+func shortTimeouts() upstreamTimeouts {
+	return upstreamTimeouts{dial: dialTimeout, responseHeader: 100 * time.Millisecond}
+}
+
+// TestErrorAnswersHaveOneRequestID: every answer of the gateway's own errors and redirects carries exactly one
+// X-Request-Id, equal to the one the client sent (ADR 0002 review 5).
+func TestErrorAnswersHaveOneRequestID(t *testing.T) {
+	tests := []struct {
+		name   string
+		method string
+		target string
+		header http.Header
+		router func(*testing.T) http.Handler
+	}{
+		{"upstream down gives 503", http.MethodGet, "/api/groups", cookieHeader(goodToken), func(t *testing.T) http.Handler {
+			s := newStubs(t)
+			s.urls.Calendar = closedURL(t)
+			return NewRouter(validSessions(), s.urls, logging.New(io.Discard))
+		}},
+		{"upstream timeout gives 500", http.MethodGet, "/api/groups", cookieHeader(goodToken), func(t *testing.T) http.Handler {
+			s := newStubs(t)
+			s.urls.Calendar = stalledURL(t)
+			return buildRouter(validSessions(), s.urls, logging.New(io.Discard), shortTimeouts())
+		}},
+		{"login redirect", http.MethodGet, "/api/auth/login", http.Header{}, func(t *testing.T) http.Handler {
+			s := newStubs(t)
+			s.urls.Auth = closedURL(t)
+			return NewRouter(validSessions(), s.urls, logging.New(io.Discard))
+		}},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			header := test.header.Clone()
+			header.Set(requestid.Header, "err-123")
+			recorder := send(test.router(t), test.method, test.target, header)
+			if got := recorder.Header().Values(requestid.Header); len(got) != 1 || got[0] != "err-123" {
+				t.Errorf("response X-Request-Id = %v, want exactly err-123", got)
+			}
+		})
+	}
 }

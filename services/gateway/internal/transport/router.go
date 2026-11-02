@@ -106,6 +106,11 @@ func newProxy(target *url.URL, transport http.RoundTripper, logger *slog.Logger,
 				out.Out.Header.Del(cookieHeaderName)
 			}
 		},
+		// The gateway's ID is already on the response. Dropping the upstream's copy keeps exactly one value (ADR 0002 review 5).
+		ModifyResponse: func(resp *http.Response) error {
+			resp.Header.Del(requestid.Header)
+			return nil
+		},
 		Transport:    transport,
 		ErrorHandler: proxyErrorHandler(logger),
 	}
