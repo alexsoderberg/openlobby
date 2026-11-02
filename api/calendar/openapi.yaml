@@ -323,9 +323,9 @@ paths:
     get:
       operationId: getInvite
       tags: [Invite links]
-      summary: Show group name for invite link
+      summary: Show group ID, name and membership for invite link
       description: |
-        Returns the group's name if the link is active. Active means not revoked, not expired and not used up. Every inactive case and an unknown or invalid token give the same 404, without group information.
+        Returns the group's ID and name, and whether the caller is already a member, if the link is active. Active means not revoked, not expired and not used up. Every inactive case and an unknown or invalid token give the same 404, without group information.
       parameters:
         - $ref: '#/components/parameters/RequestIdHeader'
         - $ref: '#/components/parameters/InviteToken'
@@ -1032,10 +1032,17 @@ components:
 
     InviteInfo:
       type: object
-      required: [groupName]
+      required: [groupId, groupName, isMember]
       properties:
+        groupId:
+          type: string
+          format: uuid
+          description: The group's ID. The frontend opens the group's page with it when `isMember` is true.
         groupName:
           $ref: '#/components/schemas/GroupName'
+        isMember:
+          type: boolean
+          description: True if the caller is already a member. Opening the link then changes nothing and is not counted as a use.
 
     MaxPlayers:
       type: integer

@@ -153,8 +153,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Show group name for invite link
-         * @description Returns the group's name if the link is active. Active means not revoked, not expired and not used up. Every inactive case and an unknown or invalid token give the same 404, without group information.
+         * Show group ID, name and membership for invite link
+         * @description Returns the group's ID and name, and whether the caller is already a member, if the link is active. Active means not revoked, not expired and not used up. Every inactive case and an unknown or invalid token give the same 404, without group information.
          */
         get: operations["getInvite"];
         put?: never;
@@ -416,7 +416,14 @@ export interface components {
             maxUses?: (number & components["schemas"]["InviteMaxUses"]) | null;
         };
         InviteInfo: {
+            /**
+             * Format: uuid
+             * @description The group's ID. The frontend opens the group's page with it when `isMember` is true.
+             */
+            groupId: string;
             groupName: components["schemas"]["GroupName"];
+            /** @description True if the caller is already a member. Opening the link then changes nothing and is not counted as a use. */
+            isMember: boolean;
         };
         /** @description Max players, at least 1. `null` or omitted means unlimited. Set at creation and not changed. */
         MaxPlayers: number | null;

@@ -217,8 +217,14 @@ type GroupSummary struct {
 
 // InviteInfo defines model for InviteInfo.
 type InviteInfo struct {
+	// GroupId The group's ID. The frontend opens the group's page with it when `isMember` is true.
+	GroupId openapi_types.UUID `json:"groupId"`
+
 	// GroupName Group name, 1–50 characters after trim.
 	GroupName GroupName `json:"groupName"`
+
+	// IsMember True if the caller is already a member. Opening the link then changes nothing and is not counted as a use.
+	IsMember bool `json:"isMember"`
 }
 
 // InviteLink defines model for InviteLink.
@@ -544,7 +550,7 @@ type ServerInterface interface {
 	// LeaveGroup Leave group
 	// (DELETE /api/groups/{groupId}/membership)
 	LeaveGroup(w http.ResponseWriter, r *http.Request, groupId GroupId, params LeaveGroupParams)
-	// GetInvite Show group name for invite link
+	// GetInvite Show group ID, name and membership for invite link
 	// (GET /api/invites/{token})
 	GetInvite(w http.ResponseWriter, r *http.Request, token InviteToken, params GetInviteParams)
 	// JoinInvite Join group via invite link
@@ -3661,7 +3667,7 @@ type StrictServerInterface interface {
 	// LeaveGroup Leave group
 	// (DELETE /api/groups/{groupId}/membership)
 	LeaveGroup(ctx context.Context, request LeaveGroupRequestObject) (LeaveGroupResponseObject, error)
-	// GetInvite Show group name for invite link
+	// GetInvite Show group ID, name and membership for invite link
 	// (GET /api/invites/{token})
 	GetInvite(ctx context.Context, request GetInviteRequestObject) (GetInviteResponseObject, error)
 	// JoinInvite Join group via invite link
