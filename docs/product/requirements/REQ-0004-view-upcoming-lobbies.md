@@ -21,7 +21,7 @@ List (F-004):
 - Given that the group has no upcoming lobbies, when I open the group's page, then the text "No lobbies have been created yet" is shown.
 - Given that I am a member and click a lobby, when the detail view opens, then I see the names of all players.
 - Given that another member has just joined or left a lobby, or deleted one, when I reload the group's page, then the change is shown.
-- Given that I am not a member, when I try to see the group's lobbies, then access is denied without any lobby information being shown.
+- Given that I am not a member, when I try to see the group's lobbies, then the 404 page is shown without any lobby information, the same as for an unknown group (DECISION, consistent with REQ-0002).
 
 Switching between list and calendar (F-017):
 - Given that I am a member, when I open the group's page, then the list view is shown (DECISION: list is the default view).
