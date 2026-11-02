@@ -5,6 +5,9 @@
 # PostgreSQL settings. Exits 1 on any failure. It cannot pass until the gateway, auth, calendar and frontend images exist.
 set -uo pipefail
 cd "$(dirname "$0")/.." || exit 1
+# Git Bash rewrites arguments that start with a slash (for example /proc/1/status and the awk pattern /^Uid:/) into
+# Windows paths. No effect on Linux.
+export MSYS_NO_PATHCONV=1
 
 BASE_URL=${BASE_URL:-https://localhost}
 CALLBACK_URL="$BASE_URL/api/auth/callback?code=SECRETCODE&state=SECRETSTATE"
@@ -51,7 +54,7 @@ check_edge_workers() {
     local ps_output workers
     ps_output=$(compose exec -T edge ps -o user,args 2>&1) || { fail "edge: ps failed"; return; }
     workers=$(grep 'nginx: worker' <<<"$ps_output")
-    if [ -n "$workers" ] && [ -z "$(grep -v '^ *nginx ' <<<"$workers")" ]; then
+    if [ -n "$workers" ] && ! grep -qv '^ *nginx ' <<<"$workers"; then
         pass "edge: worker processes run as user nginx"
     else
         fail "edge: worker processes are not all user nginx"
@@ -61,7 +64,8 @@ check_edge_workers() {
 check_postgres_settings() {
     local name expected actual
     while IFS='=' read -r name expected; do
-        actual=$(compose exec -T postgres psql -U postgres -tA -c "SHOW $name" | tr -d '\r')
+        # </dev/null: docker compose exec would otherwise read the settings list from the loop's stdin.
+        actual=$(compose exec -T postgres psql -U postgres -tA -c "SHOW $name" </dev/null | tr -d '\r')
         if [ "$actual" = "$expected" ]; then pass "postgres: $name = $expected"; else fail "postgres: $name is '$actual', expected '$expected'"; fi
     done <<'SETTINGS'
 listen_addresses=*
@@ -127,13 +131,14 @@ check_error_paths() {
 # Login is limited to 10 per minute per address with burst 5 (ADR 0009). The 7th request is redirected, and the
 # redirect carries Cache-Control: no-store (ADR 0005). /api/auth/me is not limited.
 check_rate_limit() {
-    local index headers result
-    for index in 1 2 3 4 5 6; do
+    local headers result
+    for _ in 1 2 3 4 5 6; do
         send -H 'Cookie: ol_login=SECRETSTATE' "$CALLBACK_URL"
     done
     headers=$(curl -sk --max-time 20 -o /dev/null -D - -H 'Cookie: ol_login=SECRETSTATE' "$CALLBACK_URL")
-    if grep -q '^HTTP/[0-9.]* 302' <<<"$headers" && grep -qi '^location: .*loginError=login_failed' <<<"$headers"; then
-        pass "rate limit: 7th login request is redirected to loginError=login_failed"
+    # The Location is the path form: an absolute URL would be built from the Host header (edge sets absolute_redirect off).
+    if grep -q '^HTTP/[0-9.]* 302' <<<"$headers" && grep -qi '^location: /?loginError=login_failed' <<<"$headers"; then
+        pass "rate limit: 7th login request is redirected to /?loginError=login_failed"
     else
         fail "rate limit: 7th login request is not a redirect to loginError=login_failed"
     fi

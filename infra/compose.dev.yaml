@@ -1,5 +1,6 @@
-# Local development: edge uses the self-signed certificate from infra/dev-certs/ (see infra/README.md).
+# Local development: edge uses the self-signed certificate in infra/dev-certs/live/openlobby/ (see infra/README.md).
+# The directory replaces the certs volume (same target) and keeps the production layout and read-only mount.
 services:
   edge:
     volumes:
-      - ./dev-certs:/etc/letsencrypt/live/openlobby:ro
+      - ./dev-certs:/etc/letsencrypt:ro

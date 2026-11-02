@@ -107,6 +107,10 @@ services:
     image: openlobby/frontend:${OPENLOBBY_VERSION:-dev}
     # uid 101 is the nginx user of the official image (ADR 0008 operations base, item 11).
     user: "101:101"
+    # Nginx creates its temp directories under /var/cache/nginx at start, so uid 101 must own it. A tmpfs keeps the
+    # container stateless (ADR 0008 operations base, item 11).
+    tmpfs:
+      - /var/cache/nginx:mode=0755,uid=101,gid=101
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]
     deploy:
@@ -199,11 +203,11 @@ services:
   postgres:
     <<: *common
     image: postgres:17
-    # Capabilities are what the image's entrypoint needs to start as root and switch to postgres (ADR 0008).
-    # UNVERIFIED: the set must be confirmed at first start. If startup fails with a permission error, add only the
-    # capability named in the error and record it in ADR 0008.
+    # Set verified (fresh init and restart) on Docker 29.6.1. CHOWN is unnecessary only because the named volume pgdata
+    # is postgres-owned; a bind mount or a root-owned volume would need CHOWN. DAC_OVERRIDE and FOWNER are needed at
+    # restart by the entrypoint's chmod and find on the data directory.
     cap_drop: [ALL]
-    cap_add: [CHOWN, DAC_OVERRIDE, FOWNER, SETGID, SETUID]
+    cap_add: [DAC_OVERRIDE, FOWNER, SETGID, SETUID]
     security_opt: [no-new-privileges:true]
     stop_signal: SIGINT
     command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
