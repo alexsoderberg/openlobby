@@ -212,3 +212,141 @@ Amendment 2026-11-02 (operations base): subcommands, migration history and seque
 1. **Subcommands.** The migration job runs `migrate up` and `migrate down`. `down` rolls back one migration. `down-to` is not built in MVP (YAGNI). A rollback of several migrations is several `migrate down` runs, each with the check of the lost data in the migration's comment. This replaces "`down` and `down-to`" in the section "Running as a one-off job". `serve` and `migrate` are subcommands of the same binary (ADR 0008 operations base).
 2. **The runtime role cannot change the migration history.** The default privileges in `infra/postgres/init` give the runtime role DML on every table that the migration role creates. That includes goose's version table `goose_db_version`, which goose creates before migration 0001 runs. A DML grant on the history would let a compromised service rewrite which migrations count as applied, so it is revoked. Decision: the first migration of each service (`0001_*.sql`, `auth` and `calendar`) ends with `REVOKE ALL ON goose_db_version FROM <service>;`. Because the revoke runs after goose has created the table, it removes the default grant. Required test: the integration test (`up`, `down`, `up`) also asserts, after `up`, that the runtime role has no privilege on `goose_db_version` (`has_table_privilege` is false for INSERT, UPDATE and DELETE). The migration role keeps its rights as owner.
 3. **Sequences.** The default privileges grant no sequence rights, and the services use uuid keys (ADR 0006). A migration that adds a `serial` or identity column grants `USAGE` on that sequence to `<service>` in the same file. Without the grant the runtime role cannot insert into the table.
+
+Amendment 2026-11-02 (REQ-0001 implementation). Decisions on the open questions of the backend and frontend for REQ-0001. Where this amendment differs from earlier text in this ADR, this amendment governs.
+
+**1. Module layout (confirmed).** One `go.mod` per Go service (`services/<service>/go.mod`) and one for `pkg/` (`pkg/go.mod`, module `openlobby/pkg`). A service connects to it with `replace openlobby/pkg => ../../pkg`. No `go.work`: each service is built and tested alone, and a workspace would add a second build mode to keep in step. The Docker build context is the repository root. Each Go Dockerfile copies `pkg/` to `/src/pkg` and `services/<service>/` to `/src/services/<service>` and builds in the service directory, so the `replace` path resolves unchanged.
+- Backend: no change. The `gateway` and `calendar` modules follow the `services/auth/go.mod` layout.
+- DevOps: keep the build context at the repository root.
+
+**2. Go version (DECISION (user), 2026-11-02): Go 1.27.3.** This replaces the earlier choice of Go 1.26, because go.dev lists 1.27.3 as the current stable line, and CLAUDE.md requires the latest stable version. The pins to older library versions are removed, so that security fixes in the libraries are not blocked by the toolchain.
+- `pkg/go.mod`, `services/auth/go.mod`, `services/gateway/go.mod` and `services/calendar/go.mod`: `go 1.27.3`, with no `toolchain` line.
+- Every Go Dockerfile (`services/auth/Dockerfile` now, the gateway and calendar Dockerfiles later): `FROM golang:1.27.3 AS build`. The image tag is set in the Dockerfile only.
+- `github.com/pressly/goose/v3` and `golang.org/x/oauth2` are upgraded to their latest releases (`go get github.com/pressly/goose/v3@latest golang.org/x/oauth2@latest`, then `go mod tidy`). No other broad upgrade is made in this step.
+- Local toolchain: the `go 1.27.3` line makes the Go toolchain download 1.27.3 automatically when `GOTOOLCHAIN` is `auto` (the default since Go 1.21). No `toolchain` line is added. If the automatic download is blocked, install 1.27.3 directly. Backend checks with `go version` in each module directory.
+- Tests: `go test ./...` and `go test -tags=integration ./...` are green after the upgrade. A failure caused by the upgrade is fixed in the code, not by going back to an old version.
+- DevOps: the Go CI jobs (see item 6) use `actions/setup-go` with `go-version-file` pointing to the service's `go.mod`, so the version is written once. golangci-lint is built with Go 1.27.3 or newer, because it must be at least as new as the modules it lints.
+
+**3. Integration tests fail when `TEST_DATABASE_URL` is missing (confirmed).** With the build tag `integration` set and the variable unset, the test fails. It does not skip. A skip in CI would show green with no database test run.
+- Backend: in `services/auth/internal/infrastructure/postgres/postgres_integration_test.go`, `testStore` changes `t.Skip(...)` to `t.Fatal(...)`, with a message that names the fix (`TEST_DATABASE_URL is not set: start the database with docker compose up postgres, ADR 0012`). Without the tag no database is needed, so `go test ./...` is unchanged.
+
+**4. The test creates the NOLOGIN role `auth` (accepted with conditions).** The migration's `REVOKE` needs the role to exist. The test uses the existing `DO` block, which creates the role only when it is missing and never alters it.
+- Condition: `TEST_DATABASE_URL` points only to a throwaway cluster: the CI service container, or the development `postgres` container of Compose. Production data is never reached by this test. The test runs with a role that may create roles (a superuser in both cases).
+- Backend: add a comment in `testStore` that says the test cluster must be throwaway. No other change.
+
+**5. `applicationtest` stays a non-test package (accepted).** Go `_test.go` files cannot be imported by another package, and the fakes are used by the tests of `application` and `transport`. The package is imported only by test files. The depguard rule in item 6 enforces this for the `auth` package. A service that gets its own fakes places them in its own `internal/application/applicationtest` and adds its path to that rule.
+- Backend: no change.
+
+**6. golangci-lint configuration (decided; exact content).** The file is `.golangci.yml` in the repository root. golangci-lint finds it from each module directory by searching upward. The rules are the ones of ADR 0012 "Import rules", with two precisions: `cmd/<service>` does not import goose (the migration code lives in `infrastructure/postgres`, so `cmd` may not import the driver or the migration library either), and the generated code of the service's contracts must not be imported from `domain` or `application`.
+
+```yaml
+version: "2"
+
+linters:
+  enable:
+    - depguard
+  settings:
+    depguard:
+      rules:
+        vendor-libraries-only-in-infrastructure:
+          list-mode: lax
+          files:
+            - "!**/internal/infrastructure/**"
+          deny:
+            - pkg: database/sql
+              desc: database access belongs in infrastructure (ADR 0012)
+            - pkg: github.com/jackc/pgx
+              desc: the database driver belongs in infrastructure (ADR 0012)
+            - pkg: github.com/pressly/goose
+              desc: migrations run from infrastructure (ADR 0012)
+            - pkg: golang.org/x/oauth2
+              desc: the identity provider adapter only (ADR 0005)
+        generated-code-stays-out-of-domain-and-application:
+          list-mode: lax
+          files:
+            - "**/internal/domain/**"
+            - "**/internal/application/**"
+          deny:
+            - pkg: openlobby/services/auth/internal/transport/gen
+              desc: generated types stay in transport and adapters (ADR 0012)
+        test-fakes-only-in-tests:
+          list-mode: lax
+          files:
+            - "!$test"
+          deny:
+            - pkg: openlobby/services/auth/internal/application/applicationtest
+              desc: in-memory fakes are for tests only (ADR 0012)
+```
+
+- Each new service adds its own generated package paths to the second rule (its `transport/gen` and any `infrastructure/.../gen` it contains), and its fakes package to the third rule.
+- Domain logic does not name a vendor in code. Because depguard checks imports and not names, a vendor name in a domain comment or identifier is checked by the reviewer.
+- Backend verifies the rule once with a negative test: add a `database/sql` import to a file in `internal/application`, run `golangci-lint run ./...` in `services/auth`, expect a depguard finding, then remove the import. If depguard does not match the `pkg` prefix as described, the backend reports it to the architect before changing the rule.
+- DevOps: add the file. Add to CI a Go job per Go module (`services/auth`, `pkg`, later `gateway` and `calendar`) that runs `go test ./...`, `go test -tags=integration ./...` with a `postgres:17` service container and `TEST_DATABASE_URL` set, and `golangci-lint run ./...`. The current `.github/workflows/ci.yml` has no Go job, so the Go tests are not yet run in CI. This job is required before REQ-0001 counts as done (Definition of Done: "Tests green in CI").
+
+**10. Frontend API client location (confirmed; amends the location named in decision 2).** The `openapi-fetch` client is created in `frontend/src/api/httpApiClient.ts` by `createHttpApiClient()`. This is the adapter; it is the only file that imports `openapi-fetch`, and it converts errors to `ApiError`. `frontend/src/api/index.ts` re-exports it. The concrete client is chosen only in `frontend/src/main.tsx` (the composition root), which passes it to `ApiProvider`. Components get the port with `useApi()`. The typed `paths` (the intersection of the two generated `paths` types) is defined in `httpApiClient.ts`. The rule "components import from `src/api/index.ts`, not from `gen/`" stands.
+- Frontend: no change. The ADR text "created once in `frontend/src/api/index.ts`" is read as above.
+
+**Required by this amendment (summary):**
+- Backend: items 2, 3, 4 (comment), 6 (negative test) and the CI requirement of item 6.
+- DevOps: `.golangci.yml`, the Go CI jobs, and the Dockerfile tag `golang:1.27.3` (with the backend).
+- Frontend: none.
+
+Amendment 2026-11-02 (REQ-0001 calendar). Decided by the architect on the lint question of the calendar service. It replaces the two depguard rules `generated-code-stays-out-of-domain-and-application` and `test-fakes-only-in-tests` of item 6, and the depguard sentence of decision 5 ("Import rules"). The depguard rule `vendor-libraries-only-in-infrastructure` of item 6 is unchanged.
+
+**1. Generated code and test fakes are checked by `revive`, not by `depguard` (decided).**
+- **Why not `depguard`:** depguard v2.2.1 (golangci-lint 2.15) matches `deny` and `allow` entries only as a string prefix, or as an exact match with a trailing `$`. Globs apply to file paths only. A pattern such as `openlobby/services/*/internal/transport/gen` matches no import, so the rule passes silently. One entry per service would work, but it is a copy per service, which is rejected.
+- **Verified** in a scratch module outside the repository (golangci-lint 2.15.0 on Windows): the glob form reported nothing for a domain file that imported its generated package, while a literal prefix in the same place was reported. The `revive` form below reported every negative case and none of the positive cases.
+- **Go already refuses cross-service imports** of generated packages, because their paths contain `internal`: `use of internal package ... not allowed`. The lint rule therefore covers the layers inside one service. One glob covers every service, so no line is added per service.
+- **Known limit:** `gen` as a glob fragment also matches a package whose name starts with `gen` (for example `generator`) below `services/`. No such package exists. The reviewer checks new package names against this rule.
+
+The exact content of `.golangci.yml` in the repository root:
+
+```yaml
+version: "2"
+
+linters:
+  enable:
+    - depguard
+    - revive
+  settings:
+    depguard:
+      rules:
+        vendor-libraries-only-in-infrastructure:
+          list-mode: lax
+          files:
+            - "!**/internal/infrastructure/**"
+          deny:
+            - pkg: database/sql
+              desc: database access belongs in infrastructure (ADR 0012)
+            - pkg: github.com/jackc/pgx
+              desc: the database driver belongs in infrastructure (ADR 0012)
+            - pkg: github.com/pressly/goose
+              desc: migrations run from infrastructure (ADR 0012)
+            - pkg: golang.org/x/oauth2
+              desc: the identity provider adapter only (ADR 0005)
+    revive:
+      rules:
+        - name: imports-blocklist
+          arguments:
+            - "openlobby/services/**/gen/**"
+            - "openlobby/services/**/applicationtest/**"
+  exclusions:
+    rules:
+      - linters: [revive]
+        path: 'internal.(transport|infrastructure).'
+        text: "/gen"
+      - linters: [revive]
+        path: '_test\.go$'
+        text: "applicationtest"
+```
+
+- **What the rules mean:** no import of a `gen` package (any service's server, client or contract types, including the gateway's `authclient`) from any file, except in `internal/transport` and `internal/infrastructure`, the two adapter layers of decision 5. No import of an `applicationtest` package (the in-memory fakes) except from `_test.go` files. `domain` and `application` never import `gen` or fakes. The rule does not need a `domain/` directory, so the gateway, which has none, is covered too.
+- **The `.` in `internal.(transport|infrastructure).` replaces the path separator on purpose:** a separator class does not survive the YAML and regex layers reliably on both Windows and Linux. The scratch test ran on Windows, where paths use `\`.
+- **Not verified yet:** that `revive` runs only the rules that are listed when `rules` is set (no default rules), and the pattern on Linux paths. DevOps checks both in CI (see follow-up).
+
+Consequences: a new service needs no lint change if its generated packages are in `gen` directories (ADR 0012 item 4 names them so). A new fake package must be named `applicationtest` to be covered; a different name needs an ADR amendment.
+
+Follow-up:
+- DevOps: replace the content of `.golangci.yml` with the block above. Verify once on Linux with a throwaway file outside the repository: an import of a `gen` package from `domain` is reported, and the same import from `transport` is not. Check that no other `revive` finding appears.
+- Backend: no code change is needed for this rule. Existing imports already follow it (`auth`'s `transport_test.go` and `application/auth_test.go` import `applicationtest` from tests only; the generated packages are imported from `transport` and `infrastructure`).
+- Reviewer: applies the rule as written above.

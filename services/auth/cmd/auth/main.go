@@ -29,13 +29,11 @@ import (
 const (
 	usage = "usage: auth [serve | migrate up | migrate down | healthcheck]"
 
-	shutdownTimeout       = 10 * time.Second
-	readHeaderTimeout     = 10 * time.Second
-	writeTimeout          = 30 * time.Second
-	idleTimeout           = 60 * time.Second
-	databaseWaitAttempts  = 30
-	databaseRetryInterval = 2 * time.Second
-	migrationConnections  = 1
+	shutdownTimeout      = 10 * time.Second
+	readHeaderTimeout    = 10 * time.Second
+	writeTimeout         = 30 * time.Second
+	idleTimeout          = 60 * time.Second
+	migrationConnections = 1
 )
 
 var errUsage = errors.New(usage)
@@ -121,9 +119,6 @@ func serve(logger *slog.Logger) error {
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, os.Interrupt)
 	defer stop()
-	if err := waitForDatabase(ctx, store, logger); err != nil {
-		return err
-	}
 
 	auth := application.NewAuth(application.Ports{
 		Identity: discord.New(cfg.discord),
@@ -137,23 +132,6 @@ func serve(logger *slog.Logger) error {
 	}, logger)
 	handler := transport.NewRouter(auth, store.Ping, logger)
 	return listen(ctx, logger, cfg.httpAddr, handler)
-}
-
-// waitForDatabase retries at startup, so that auth starts before PostgreSQL is ready (ADR 0008).
-func waitForDatabase(ctx context.Context, store *postgres.Store, logger *slog.Logger) error {
-	var err error
-	for attempt := 1; attempt <= databaseWaitAttempts; attempt++ {
-		if err = store.Ping(ctx); err == nil {
-			return nil
-		}
-		logger.WarnContext(ctx, "database not ready", "attempt", attempt)
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-time.After(databaseRetryInterval):
-		}
-	}
-	return fmt.Errorf("database not reachable after %d attempts: %w", databaseWaitAttempts, err)
 }
 
 // listen serves until the context is cancelled (SIGTERM), then stops accepting calls and finishes the open ones.

@@ -1,0 +1,36 @@
+version: "2"
+
+linters:
+  enable:
+    - depguard
+    - revive
+  settings:
+    depguard:
+      rules:
+        vendor-libraries-only-in-infrastructure:
+          list-mode: lax
+          files:
+            - "!**/internal/infrastructure/**"
+          deny:
+            - pkg: database/sql
+              desc: database access belongs in infrastructure (ADR 0012)
+            - pkg: github.com/jackc/pgx
+              desc: the database driver belongs in infrastructure (ADR 0012)
+            - pkg: github.com/pressly/goose
+              desc: migrations run from infrastructure (ADR 0012)
+            - pkg: golang.org/x/oauth2
+              desc: the identity provider adapter only (ADR 0005)
+    revive:
+      rules:
+        - name: imports-blocklist
+          arguments:
+            - "openlobby/services/**/gen/**"
+            - "openlobby/services/**/applicationtest/**"
+  exclusions:
+    rules:
+      - linters: [revive]
+        path: 'internal.(transport|infrastructure).'
+        text: "/gen"
+      - linters: [revive]
+        path: '_test\.go$'
+        text: "applicationtest"

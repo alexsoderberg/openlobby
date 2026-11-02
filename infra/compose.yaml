@@ -170,7 +170,6 @@ services:
     image: &image-calendar openlobby/calendar:${OPENLOBBY_VERSION:-dev}
     environment:
       <<: *go-env
-      AUTH_URL: http://auth:8080
       # shortcut: traffic between services and postgres is not encrypted, upgrade with server certificates if the database leaves the host
       DATABASE_URL: postgres://calendar:${CALENDAR_DB_PASSWORD}@postgres:5432/calendar?sslmode=disable
       DATABASE_MAX_CONNECTIONS: "5"
@@ -181,8 +180,6 @@ services:
       calendar-migrate:
         condition: service_completed_successfully
       postgres:
-        condition: service_healthy
-      auth:
         condition: service_healthy
     networks: [services, data]
 
