@@ -19,6 +19,7 @@ import (
 type publicHandler struct {
 	pendingOperations
 	groups  *application.Groups
+	games   *application.Games
 	invites *application.InviteLinks
 }
 

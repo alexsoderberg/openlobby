@@ -36,6 +36,7 @@ type memoryGroups struct {
 	groups  map[string]domain.Group
 	members map[string][]domain.Member
 	links   map[string][]domain.InviteLink
+	games   []domain.Game
 	err     error
 	calls   int
 	created int
@@ -85,6 +86,15 @@ func (m *memoryGroups) Group(_ context.Context, groupID string) (domain.Group, e
 	return group, m.err
 }
 
+func (m *memoryGroups) ListForGroup(_ context.Context, _ string) ([]application.GameUsage, error) {
+	m.calls++
+	usages := make([]application.GameUsage, 0, len(m.games))
+	for _, game := range m.games {
+		usages = append(usages, application.GameUsage{Game: game})
+	}
+	return usages, m.err
+}
+
 func (m *memoryGroups) Members(_ context.Context, groupID string) ([]domain.Member, error) {
 	m.calls++
 	return append([]domain.Member(nil), m.members[groupID]...), m.err
@@ -127,8 +137,9 @@ func newRouter(store *memoryGroups, directory *fakeDirectory) http.Handler {
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	ready := func(context.Context) error { return store.err }
 	groups := application.NewGroups(store, store, store, directory, fixedClock{})
+	games := application.NewGames(store, store)
 	invites := application.NewInviteLinks(store, store, store, fixedTokens{}, fixedClock{})
-	return transport.NewRouter(groups, invites, ready, logger)
+	return transport.NewRouter(groups, invites, games, ready, logger)
 }
 
 func call(router http.Handler, method, target string, headers map[string]string, body string) *httptest.ResponseRecorder {

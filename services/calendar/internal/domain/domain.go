@@ -54,6 +54,14 @@ type Group struct {
 	Name string
 }
 
+// Game is an entry of the game list (ADR 0010). Lobbies refer to it by ID, so a rename keeps its identity. A nil
+// DefaultMaxPlayers means unlimited.
+type Game struct {
+	ID                string
+	Name              string
+	DefaultMaxPlayers *int
+}
+
 // Member is a user's membership in a group. DisplayName is not stored; the application fills it from auth.
 type Member struct {
 	UserID      string

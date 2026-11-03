@@ -65,6 +65,18 @@ type TokenGenerator interface {
 	NewToken() (string, error)
 }
 
+// GameUsage is a game of the list with the number of lobbies the group created with it (ADR 0010). The order of the
+// game choice is decided in application, not by the adapter.
+type GameUsage struct {
+	Game       domain.Game
+	LobbyCount int
+}
+
+// GameCatalog reads the game list with the lobby counts of one group (ADR 0010).
+type GameCatalog interface {
+	ListForGroup(ctx context.Context, groupID string) ([]GameUsage, error)
+}
+
 // UserDirectory gives the display names of users. The names are read from auth and never stored (ADR 0003, 0004).
 type UserDirectory interface {
 	DisplayNames(ctx context.Context, userIDs []string) (map[string]string, error)
