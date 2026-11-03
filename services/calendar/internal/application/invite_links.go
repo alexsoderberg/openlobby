@@ -131,6 +131,43 @@ func (l *InviteLinks) Join(ctx context.Context, token, callerID string) (domain.
 	return lookup.Group, nil
 }
 
+// Revoke deletes a link of the group. Its creator and a group admin may revoke it (ADR 0007, REQ-0007). The checks run
+// in the contract's order: membership, the link in this group, permission, then activity.
+func (l *InviteLinks) Revoke(ctx context.Context, groupID, linkID, callerID string) error {
+	err := l.locker.WithLockedGroup(ctx, groupID, func(tx GroupTx) error {
+		return l.revokeLocked(ctx, tx, groupID, linkID, callerID)
+	})
+	if err != nil {
+		return fmt.Errorf("revoke invite link: %w", err)
+	}
+	return nil
+}
+
+// revokeLocked runs under the group lock, so the rules read the committed membership and link.
+func (l *InviteLinks) revokeLocked(ctx context.Context, tx GroupTx, groupID, linkID, callerID string) error {
+	member, isMember, err := tx.Membership(ctx, groupID, callerID)
+	if err != nil {
+		return err
+	}
+	if !isMember {
+		return domain.ErrGroupNotFound
+	}
+	link, found, err := tx.LinkByID(ctx, groupID, linkID)
+	if err != nil {
+		return err
+	}
+	if !found {
+		return domain.ErrInviteInvalid
+	}
+	if member.Role != domain.RoleAdmin && link.CreatedByUserID != callerID {
+		return domain.ErrNotAllowed
+	}
+	if !link.IsActive(l.clock.Now()) {
+		return domain.ErrInviteInvalid
+	}
+	return tx.DeleteInviteLink(ctx, groupID, linkID)
+}
+
 // joinLocked runs under the group lock. The link is read again, because the lookup had no lock (ADR 0007, step 3).
 // Activity is checked before membership, so an exhausted link refuses a member too.
 func (l *InviteLinks) joinLocked(ctx context.Context, tx GroupTx, groupID, linkID, callerID string) error {

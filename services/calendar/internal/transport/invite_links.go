@@ -87,6 +87,29 @@ func (h publicHandler) JoinInvite(ctx context.Context, request publicapi.JoinInv
 	return publicapi.JoinInvite200JSONResponse{Id: id, Name: group.Name}, nil
 }
 
+// RevokeInviteLink deletes a link for its creator or a group admin. A malformed group ID is group_not_found and a
+// malformed link ID is invite_invalid, both before the membership check (ADR 0001, ADR 0007).
+func (h publicHandler) RevokeInviteLink(ctx context.Context, request publicapi.RevokeInviteLinkRequestObject) (publicapi.RevokeInviteLinkResponseObject, error) {
+	if !httpapi.IsUUID(request.GroupId) {
+		return publicapi.RevokeInviteLink404JSONResponse{Error: publicErrorBody(ctx, publicapi.ErrorBodyCodeGroupNotFound)}, nil
+	}
+	if !httpapi.IsUUID(request.LinkId) {
+		return publicapi.RevokeInviteLink404JSONResponse{Error: publicErrorBody(ctx, publicapi.ErrorBodyCodeInviteInvalid)}, nil
+	}
+	err := h.invites.Revoke(ctx, request.GroupId, request.LinkId, userIDFrom(ctx))
+	switch {
+	case errors.Is(err, domain.ErrGroupNotFound):
+		return publicapi.RevokeInviteLink404JSONResponse{Error: publicErrorBody(ctx, publicapi.ErrorBodyCodeGroupNotFound)}, nil
+	case errors.Is(err, domain.ErrInviteInvalid):
+		return publicapi.RevokeInviteLink404JSONResponse{Error: publicErrorBody(ctx, publicapi.ErrorBodyCodeInviteInvalid)}, nil
+	case errors.Is(err, domain.ErrNotAllowed):
+		return publicapi.RevokeInviteLink403JSONResponse{Error: publicErrorBody(ctx, publicapi.ErrorBodyCodeNotAllowed)}, nil
+	case err != nil:
+		return nil, err
+	}
+	return publicapi.RevokeInviteLink204Response{}, nil
+}
+
 // requestedMaxUses returns the max uses the body asks for, or nil when it is omitted or null. The domain decides the rule.
 func requestedMaxUses(body *publicapi.CreateInviteLinkRequest) *int {
 	if body == nil {

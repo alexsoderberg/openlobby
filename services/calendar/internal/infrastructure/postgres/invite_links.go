@@ -20,8 +20,9 @@ const (
 	selectLinkByTokenSQL = `SELECT l.id, l.group_id, l.created_by_user_id, l.expires_at, l.use_count, l.max_uses, g.name
 		FROM invite_links l JOIN groups g ON g.id = l.group_id WHERE l.token = $1`
 	// Both IDs are in the WHERE clause, so a link of another group is not found (ADR 0006 rule 12).
-	selectLinkByIDSQL = `SELECT id, created_by_user_id, expires_at, use_count, max_uses FROM invite_links WHERE id = $1 AND group_id = $2`
-	incrementUseSQL   = `UPDATE invite_links SET use_count = use_count + 1 WHERE id = $1 AND group_id = $2`
+	selectLinkByIDSQL   = `SELECT id, created_by_user_id, expires_at, use_count, max_uses FROM invite_links WHERE id = $1 AND group_id = $2`
+	incrementUseSQL     = `UPDATE invite_links SET use_count = use_count + 1 WHERE id = $1 AND group_id = $2`
+	deleteInviteLinkSQL = `DELETE FROM invite_links WHERE id = $1 AND group_id = $2`
 	// No ORDER BY: the contract does not promise an order for the list.
 	selectLinksOfGroupSQL   = `SELECT id, token, created_by_user_id, expires_at, use_count, max_uses FROM invite_links WHERE group_id = $1`
 	selectLinksCreatedBySQL = selectLinksOfGroupSQL + ` AND created_by_user_id = $2`

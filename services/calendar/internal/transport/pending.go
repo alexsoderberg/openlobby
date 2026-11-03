@@ -39,10 +39,6 @@ func (pendingOperations) ListGroupGames(context.Context, publicapi.ListGroupGame
 	return nil, errOperationPending
 }
 
-func (pendingOperations) RevokeInviteLink(context.Context, publicapi.RevokeInviteLinkRequestObject) (publicapi.RevokeInviteLinkResponseObject, error) {
-	return nil, errOperationPending
-}
-
 func (pendingOperations) ListUpcomingLobbies(context.Context, publicapi.ListUpcomingLobbiesRequestObject) (publicapi.ListUpcomingLobbiesResponseObject, error) {
 	return nil, errOperationPending
 }

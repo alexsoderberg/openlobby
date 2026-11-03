@@ -24,6 +24,9 @@ var ErrInvalidMaxUses = errors.New("invalid max uses")
 // gives this one error, so the answer does not show which one it was (ADR 0007).
 var ErrInviteInvalid = errors.New("invite invalid")
 
+// ErrNotAllowed means the caller is a member but may not do this, e.g. revoke another member's link (ADR 0007).
+var ErrNotAllowed = errors.New("not allowed")
+
 // InviteLinkLifetime is how long an invite link is valid after it is created (ADR 0007).
 const InviteLinkLifetime = 2 * time.Hour
 
