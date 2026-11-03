@@ -1,15 +1,96 @@
-/* Design tokens: the only place with color, spacing and type values. Contrast checked for WCAG AA. */
+/* Self-hosted fonts (OFL, Latin subset). font-display: swap keeps text visible in the fallback stack while a file loads. */
+@font-face {
+  font-family: "Cormorant Garamond";
+  src: url("/fonts/cormorant-garamond-latin-600-normal.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Cormorant Garamond";
+  src: url("/fonts/cormorant-garamond-latin-700-normal.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Space Grotesk";
+  src: url("/fonts/space-grotesk-latin-500-normal.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Space Grotesk";
+  src: url("/fonts/space-grotesk-latin-600-normal.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Space Grotesk";
+  src: url("/fonts/space-grotesk-latin-700-normal.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/inter-latin-400-normal.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/inter-latin-500-normal.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/inter-latin-600-normal.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Design tokens: the only place with colour, radius, font, spacing and motion values.
+   Text contrast is pinned by styles/tokens.test.ts. */
 :root {
-  --color-bg: #f7f6f2;
-  --color-surface: #ffffff;
-  --color-text: #1d1c1a;
-  --color-muted: #5c5a55;
-  --color-border: #d9d6cf;
-  --color-accent: #1d1c1a;
-  --color-on-accent: #f7f6f2;
-  --color-focus: #1f5fbf;
-  --color-danger: #9b2226;
-  --color-danger-bg: #f8e9e7;
+  color-scheme: dark;
+
+  --color-bg: #0a0a0d;
+  --color-bg-raised: #111116;
+  --color-surface: rgba(255, 255, 255, 0.03);
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-text: #e9e9ee;
+  --color-muted: #8c8d96;
+  --color-accent: #f0c75e;
+  --color-on-accent: #14110a;
+  --color-accent-tint: rgba(240, 199, 94, 0.12);
+  --color-accent-wash: rgba(240, 199, 94, 0.07);
+  --color-focus: var(--color-accent);
+  --color-online: #3ddc84;
+  --color-danger: #ff7b72;
+  --color-danger-bg: #2a1214;
+  --color-frost: rgba(10, 10, 13, 0.72);
+  --color-highlight: rgba(255, 255, 255, 0.35);
+  --color-shade: rgba(0, 0, 0, 0.18);
+  --color-sheen: rgba(255, 255, 255, 0.45);
+
+  --font-display: "Cormorant Garamond", Georgia, serif;
+  --font-heading: "Space Grotesk", system-ui, sans-serif;
+  --font-sans:
+    "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 
   --space-1: 0.25rem;
   --space-2: 0.5rem;
@@ -17,9 +98,30 @@
   --space-4: 1.5rem;
   --space-6: 3rem;
 
-  --radius: 6px;
+  --radius-panel: 16px;
+  --radius-control: 10px;
+  --radius-badge: 6px;
   --content-width: 40rem;
-  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --duration-fast: 0.1s;
+  --duration-base: 0.45s;
+  --duration-sweep: 0.7s;
+  --duration-slow: 1s;
+  --sweep-start: -150%;
+  --sweep-end: 350%;
+  --sweep-skew: -20deg;
+  --sweep-angle: 100deg;
+  --sweep-width: 35%;
+  --tracking-tight: -0.03em;
+  --tracking-snug: -0.02em;
+  --tracking-wide: 0.14em;
+  --lift-button: -2px;
+  --lift-panel: -3px;
+  --press-scale: 0.97;
+  --reveal-offset: 40px;
+  --blur-glass: 8px;
 }
 
 *,
@@ -34,17 +136,44 @@ body {
   font-size: 1rem;
   line-height: 1.5;
   color: var(--color-text);
-  background: var(--color-bg);
+  background-color: var(--color-bg);
+  background-image:
+    radial-gradient(
+      60rem 40rem at 85% 0%,
+      var(--color-accent-wash),
+      transparent 70%
+    ),
+    linear-gradient(180deg, var(--color-bg-raised), var(--color-bg) 30rem);
+  background-repeat: no-repeat;
 }
 
 h1 {
+  font-family: var(--font-heading);
   font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: var(--tracking-tight);
   line-height: 1.2;
   margin: 0 0 var(--space-3);
 }
 
+h2 {
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: var(--tracking-snug);
+  line-height: 1.3;
+  margin: var(--space-4) 0 var(--space-2);
+}
+
+/* Links stay text-coloured and underlined; gold appears only on hover or focus. :where keeps .button colours intact. */
 a {
-  color: var(--color-focus);
+  color: var(--color-text);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+:where(a):hover {
+  color: var(--color-accent);
 }
 
 :focus-visible {
@@ -63,7 +192,10 @@ a {
 }
 
 .brand {
+  font-family: var(--font-heading);
+  font-size: 1.125rem;
   font-weight: 700;
+  letter-spacing: var(--tracking-snug);
   color: var(--color-text);
   text-decoration: none;
 }
@@ -74,38 +206,108 @@ a {
   gap: var(--space-3);
 }
 
+/* Frosted bar that stays at the top; the scroll state is set by the page that uses it. */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  border-bottom: 1px solid transparent;
+  transition:
+    background-color var(--duration-base) var(--ease-out),
+    border-color var(--duration-base) var(--ease-out);
+}
+
+.topbar.is-scrolled {
+  background: var(--color-frost);
+  backdrop-filter: blur(var(--blur-glass));
+  border-bottom-color: var(--color-border);
+}
+
 .page {
   max-width: var(--content-width);
   padding: var(--space-6) var(--space-4);
   margin: 0 auto;
 }
 
-.button {
+/* Primary button is solid accent; the ghost variants are translucent with a neutral edge. */
+.button,
+.button-ghost,
+.button--secondary {
+  position: relative;
   display: inline-block;
+  overflow: hidden;
   padding: var(--space-2) var(--space-4);
   border: 1px solid var(--color-accent);
-  border-radius: var(--radius);
+  border-radius: var(--radius-control);
   background: var(--color-accent);
   color: var(--color-on-accent);
+  box-shadow:
+    inset 0 1px 0 var(--color-highlight),
+    inset 0 -1px 0 var(--color-shade);
   font: inherit;
+  font-weight: 600;
   text-decoration: none;
   cursor: pointer;
+  transition:
+    transform var(--duration-base) var(--ease-spring),
+    border-color var(--duration-base) var(--ease-out);
 }
 
+/* The sweep parks off the left edge and only animates on hover-in, so leaving does not flash it back across. */
+.button::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: var(--sweep-width);
+  background: linear-gradient(
+    var(--sweep-angle),
+    transparent,
+    var(--color-sheen),
+    transparent
+  );
+  transform: translateX(var(--sweep-start)) skewX(var(--sweep-skew));
+  pointer-events: none;
+}
+
+.button-ghost,
 .button--secondary {
-  background: transparent;
-  color: var(--color-text);
+  background: var(--color-surface);
   border-color: var(--color-border);
+  color: var(--color-text);
+  box-shadow: none;
 }
 
-.button:active {
-  transform: translateY(1px);
+.button-ghost::after,
+.button--secondary::after {
+  content: none;
+}
+
+:is(.button, .button-ghost, .button--secondary):not(:disabled):hover {
+  transform: translateY(var(--lift-button));
+  border-color: var(--color-accent);
+}
+
+.button:not(:disabled):hover::after {
+  transform: translateX(var(--sweep-end)) skewX(var(--sweep-skew));
+  transition: transform var(--duration-sweep) var(--ease-out);
+}
+
+:is(.button, .button-ghost, .button--secondary):not(:disabled):active {
+  transform: scale(var(--press-scale));
+  transition-duration: var(--duration-fast);
+}
+
+:is(.button, .button-ghost, .button--secondary):disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .alert {
   margin: 0 0 var(--space-3);
   padding: var(--space-3);
-  border-radius: var(--radius);
+  border-radius: var(--radius-control);
   background: var(--color-danger-bg);
   color: var(--color-danger);
 }
@@ -118,10 +320,45 @@ a {
   margin-top: var(--space-2);
 }
 
-h2 {
-  font-size: 1.25rem;
-  line-height: 1.3;
-  margin: var(--space-4) 0 var(--space-2);
+/* Scroll reveal, set by useReveal: pending hides the element, shown resolves it once. */
+[data-reveal="pending"] {
+  opacity: 0;
+  transform: translateY(var(--reveal-offset));
+}
+
+[data-reveal="pending"],
+[data-reveal="shown"] {
+  transition:
+    opacity var(--duration-slow) var(--ease-out),
+    transform var(--duration-slow) var(--ease-out);
+}
+
+[data-reveal="shown"] {
+  opacity: 1;
+  transform: none;
+}
+
+.panel,
+.login-panel {
+  padding: var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-panel);
+  backdrop-filter: blur(var(--blur-glass));
+}
+
+.panel {
+  transition:
+    opacity var(--duration-slow) var(--ease-out),
+    transform var(--duration-slow) var(--ease-out),
+    translate var(--duration-base) var(--ease-out),
+    border-color var(--duration-base) var(--ease-out);
+}
+
+/* The lift uses `translate`, not `transform`, so the slow scroll reveal keeps its own timing. */
+.panel:hover {
+  translate: 0 var(--lift-panel);
+  border-color: var(--color-accent);
 }
 
 .item-list {
@@ -133,10 +370,22 @@ h2 {
 }
 
 .badge {
+  display: inline-block;
   padding: 0 var(--space-2);
-  border: 1px solid var(--color-text);
-  border-radius: var(--radius);
+  border-radius: var(--radius-badge);
+  background: var(--color-accent-tint);
+  color: var(--color-accent);
   font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.eyebrow {
+  margin: 0 0 var(--space-2);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--color-muted);
 }
 
 .group-form {
@@ -155,7 +404,7 @@ h2 {
   color: var(--color-text);
   background: var(--color-surface);
   border: 1px solid var(--color-muted);
-  border-radius: var(--radius);
+  border-radius: var(--radius-control);
 }
 
 .group-form input {
@@ -193,7 +442,7 @@ h2 {
   color: var(--color-text);
   background: var(--color-surface);
   border: 1px solid var(--color-muted);
-  border-radius: var(--radius);
+  border-radius: var(--radius-control);
 }
 
 .invite-link__confirm {
@@ -225,11 +474,6 @@ h2 {
   white-space: nowrap;
 }
 
-.button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
 .form-hint {
   margin: 0;
   font-size: 0.875rem;
@@ -240,4 +484,24 @@ h2 {
   margin: 0;
   font-weight: 600;
   color: var(--color-danger);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+    scroll-behavior: auto !important;
+  }
+
+  .button::after {
+    display: none;
+  }
+
+  [data-reveal="pending"],
+  [data-reveal="shown"] {
+    opacity: 1;
+    transform: none;
+  }
 }
