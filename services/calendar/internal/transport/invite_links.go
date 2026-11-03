@@ -53,6 +53,40 @@ func (h publicHandler) ListInviteLinks(ctx context.Context, request publicapi.Li
 	return publicapi.ListInviteLinks200JSONResponse{Body: body, Headers: publicapi.ListInviteLinks200ResponseHeaders{CacheControl: noStore()}}, nil
 }
 
+// GetInvite shows the group of an active link and whether the caller is a member. Every other link is the same 404
+// (ADR 0007). The token is a secret, so the answer is never cached.
+func (h publicHandler) GetInvite(ctx context.Context, request publicapi.GetInviteRequestObject) (publicapi.GetInviteResponseObject, error) {
+	group, isMember, err := h.invites.Get(ctx, request.Token, userIDFrom(ctx))
+	switch {
+	case errors.Is(err, domain.ErrInviteInvalid):
+		return publicapi.GetInvite404JSONResponse{Error: publicErrorBody(ctx, publicapi.ErrorBodyCodeInviteInvalid)}, nil
+	case err != nil:
+		return nil, err
+	}
+	id, err := parseUUID(group.ID)
+	if err != nil {
+		return nil, err
+	}
+	body := publicapi.InviteInfo{GroupId: id, GroupName: group.Name, IsMember: isMember}
+	return publicapi.GetInvite200JSONResponse{Body: body, Headers: publicapi.GetInvite200ResponseHeaders{CacheControl: noStore()}}, nil
+}
+
+// JoinInvite makes the caller a member through an active link. A member who joins again gets the same 200.
+func (h publicHandler) JoinInvite(ctx context.Context, request publicapi.JoinInviteRequestObject) (publicapi.JoinInviteResponseObject, error) {
+	group, err := h.invites.Join(ctx, request.Token, userIDFrom(ctx))
+	switch {
+	case errors.Is(err, domain.ErrInviteInvalid):
+		return publicapi.JoinInvite404JSONResponse{Error: publicErrorBody(ctx, publicapi.ErrorBodyCodeInviteInvalid)}, nil
+	case err != nil:
+		return nil, err
+	}
+	id, err := parseUUID(group.ID)
+	if err != nil {
+		return nil, err
+	}
+	return publicapi.JoinInvite200JSONResponse{Id: id, Name: group.Name}, nil
+}
+
 // requestedMaxUses returns the max uses the body asks for, or nil when it is omitted or null. The domain decides the rule.
 func requestedMaxUses(body *publicapi.CreateInviteLinkRequest) *int {
 	if body == nil {

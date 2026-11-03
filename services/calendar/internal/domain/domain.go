@@ -20,6 +20,10 @@ var ErrInvalidGroupName = errors.New("invalid group name")
 // ErrInvalidMaxUses means the requested max uses is outside 1 to InviteLinkMaxUsesLimit (ADR 0007).
 var ErrInvalidMaxUses = errors.New("invalid max uses")
 
+// ErrInviteInvalid means the link cannot be used: unknown, revoked, expired, used up, or its group is gone. Every case
+// gives this one error, so the answer does not show which one it was (ADR 0007).
+var ErrInviteInvalid = errors.New("invite invalid")
+
 // InviteLinkLifetime is how long an invite link is valid after it is created (ADR 0007).
 const InviteLinkLifetime = 2 * time.Hour
 
