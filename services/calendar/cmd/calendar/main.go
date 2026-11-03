@@ -9,6 +9,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"syscall"
@@ -18,7 +19,9 @@ import (
 	"openlobby/pkg/health"
 	"openlobby/pkg/logging"
 	"openlobby/services/calendar/internal/application"
+	"openlobby/services/calendar/internal/infrastructure/authclient"
 	"openlobby/services/calendar/internal/infrastructure/postgres"
+	"openlobby/services/calendar/internal/infrastructure/systemclock"
 	"openlobby/services/calendar/internal/transport"
 )
 
@@ -91,6 +94,7 @@ type serveConfig struct {
 	httpAddr       string
 	databaseURL    string
 	maxConnections int
+	authURL        string
 }
 
 func readServeConfig() (serveConfig, error) {
@@ -102,8 +106,23 @@ func readServeConfig() (serveConfig, error) {
 	if cfg.databaseURL, err = config.String("DATABASE_URL"); err != nil {
 		return cfg, err
 	}
-	cfg.maxConnections, err = config.PositiveInt("DATABASE_MAX_CONNECTIONS")
-	return cfg, err
+	if cfg.maxConnections, err = config.PositiveInt("DATABASE_MAX_CONNECTIONS"); err != nil {
+		return cfg, err
+	}
+	if cfg.authURL, err = config.String("AUTH_URL"); err != nil {
+		return cfg, err
+	}
+	return cfg, checkHTTPURL("AUTH_URL", cfg.authURL)
+}
+
+// checkHTTPURL refuses a value that is not an absolute http or https URL with a host, so a typo fails at startup and
+// not on the first lookup. The error names the variable, never its value.
+func checkHTTPURL(name, value string) error {
+	parsed, err := url.Parse(value)
+	if err != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") || parsed.Host == "" {
+		return fmt.Errorf("%s must be an absolute http or https URL with a host", name)
+	}
+	return nil
 }
 
 // serve starts answering at once. A database that is not ready yet shows as not ready on /readyz, and Compose
@@ -122,7 +141,12 @@ func serve(logger *slog.Logger) error {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, os.Interrupt)
 	defer stop()
 
-	groups := application.NewGroups(store.Groups())
+	directory, err := authclient.New(cfg.authURL)
+	if err != nil {
+		return err
+	}
+	repo := store.Groups()
+	groups := application.NewGroups(repo, repo, repo, directory, systemclock.Clock{})
 	handler := transport.NewRouter(groups, store.Ping, logger)
 	return listen(ctx, logger, cfg.httpAddr, handler)
 }
