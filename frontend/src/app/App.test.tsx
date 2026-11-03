@@ -162,11 +162,21 @@ describe("logged in", () => {
     expect(logout).toHaveBeenCalledTimes(2);
   });
 
-  it("shows the invite placeholder on a protected page", async () => {
-    renderAt(loggedInClient(), "/invite/abc123");
+  it("shows the invite page on a protected page", async () => {
+    renderAt(
+      loggedInClient({
+        getInvite: () =>
+          Promise.resolve({
+            groupId: "g1",
+            groupName: "Friday crew",
+            isMember: false,
+          }),
+      }),
+      "/invite/abc123",
+    );
 
     expect(
-      await screen.findByRole("heading", { name: en.inviteHeading }),
+      await screen.findByRole("heading", { level: 1, name: "Friday crew" }),
     ).toBeTruthy();
   });
 
@@ -253,6 +263,23 @@ describe("group page", () => {
     expect(within(maja).getByText(en.groupAdminMarker)).toBeTruthy();
     expect(erik.textContent).toBe("Erik Berg");
     expect(client.getGroup).toHaveBeenCalledWith("g1");
+  });
+
+  it("shows the invite links to a member", async () => {
+    renderAt(
+      loggedInClient({
+        getGroup: () =>
+          Promise.resolve({ id: "g1", name: "Friday crew", members }),
+      }),
+      "/groups/g1",
+    );
+
+    expect(
+      await screen.findByRole("heading", {
+        level: 2,
+        name: en.inviteLinksHeading,
+      }),
+    ).toBeTruthy();
   });
 
   it("shows the not-found page without group content to a non-member", async () => {

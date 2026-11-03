@@ -1,4 +1,8 @@
-import { GROUP_NAME_MAX_LENGTH, type ApiErrorCode } from "../../api";
+import {
+  GROUP_NAME_MAX_LENGTH,
+  INVITE_MAX_USES_LIMIT,
+  type ApiErrorCode,
+} from "../../api";
 
 export const en = {
   appName: "OpenLobby",
@@ -33,8 +37,39 @@ export const en = {
   membersHeading: "Members",
   groupAdminMarker: "Group admin",
 
-  inviteHeading: "Invite",
-  invitePlaceholder: "Joining with an invite link is not available yet.",
+  inviteLoading: "Checking the invite link.",
+  inviteIntro: "You have been invited to this group.",
+  joinGroupSubmit: "Join group",
+  joinGroupBusy: "Joining the group.",
+  inviteAlreadyMember: "You are already a member of this group.",
+  inviteInvalidHeading: "Invite link not valid",
+
+  inviteLinksHeading: "Invite links",
+  inviteLinksLoading: "Loading invite links.",
+  inviteLinksEmpty:
+    "There are no active invite links. Create one to invite someone.",
+  inviteLinkCreatedBy: (name: string) => `Created by ${name}`,
+  inviteLinkUnknownCreator: "Unknown member",
+  inviteLinkUses: (used: number, max: number) => `${used}/${max}`,
+  inviteLinkUsesWord: "uses",
+  inviteLinkExpires: (time: string) => `Expires ${time}`,
+  inviteLinkUrlLabel: "Invite link",
+  inviteLinkCopy: "Copy link",
+  inviteLinkCopied: "Link copied.",
+  inviteLinkCopyFailed:
+    "The link could not be copied. Select the link and copy it by hand.",
+  inviteLinkRevoke: "Revoke link",
+  inviteLinkRevokeConfirm:
+    "Revoke this link? It stops working at once and cannot be restored.",
+  inviteLinkRevokeSubmit: "Yes, revoke link",
+  inviteLinkKeep: "Keep link",
+  inviteLinkRevoked: "Link revoked. It no longer works.",
+  inviteLinkCreated:
+    "Invite link created. Copy it and send it to the people you want to invite.",
+  inviteMaxUsesLabel: "Number of uses",
+  inviteMaxUsesHint:
+    "Each person who joins uses one. The link stops working when the uses run out or it expires.",
+  createInviteLinkSubmit: "Create invite link",
 
   notFoundHeading: "Page not found",
   notFoundText: "The address does not point to a page in OpenLobby.",
@@ -58,7 +93,7 @@ export const en = {
       "You have upcoming lobbies that you created. Delete them before you leave the group.",
     invalid_group_name: `The group name must be between 1 and ${GROUP_NAME_MAX_LENGTH} characters.`,
     invite_invalid: "This invite link is no longer valid. Ask for a new one.",
-    invalid_max_uses: "The number of uses must be between 1 and 10.",
+    invalid_max_uses: `The number of uses must be between 1 and ${INVITE_MAX_USES_LIMIT}.`,
     lobby_not_found: "This lobby does not exist anymore.",
     lobby_in_past: "The lobby must start in the future.",
     lobby_end_not_after_start: "The lobby must end after it starts.",

@@ -4,10 +4,14 @@ export type {
   AuthUser,
   Group,
   GroupSummary,
+  InviteInfo,
+  InviteLink,
 } from "./client";
 export {
   ApiError,
   GROUP_NAME_MAX_LENGTH,
+  INVITE_MAX_USES_DEFAULT,
+  INVITE_MAX_USES_LIMIT,
   errorCodeOf,
   isUnauthenticated,
   loginUrl,

@@ -4,7 +4,7 @@ import { routeFor } from "./route";
 describe("routeFor", () => {
   it.each([
     ["/", { name: "start" }],
-    ["/invite/abc123", { name: "invite" }],
+    ["/invite/abc123", { name: "invite", token: "abc123" }],
     ["/invite/", { name: "notFound" }],
     ["/invite/a/b", { name: "notFound" }],
     ["/groups/g1", { name: "group", groupId: "g1" }],
