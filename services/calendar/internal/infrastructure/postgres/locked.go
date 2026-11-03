@@ -62,3 +62,31 @@ func (t lockedTx) InsertInviteLink(ctx context.Context, link domain.InviteLink) 
 	).Scan(&link.ID)
 	return link, err
 }
+
+// LinkByID reads the link again under the lock. It returns false when the group has no such link.
+func (t lockedTx) LinkByID(ctx context.Context, groupID, linkID string) (domain.InviteLink, bool, error) {
+	link := domain.InviteLink{ID: linkID, GroupID: groupID}
+	var maxUses int
+	err := t.tx.QueryRowContext(ctx, selectLinkByIDSQL, linkID, groupID).Scan(
+		&link.ID, &link.CreatedByUserID, &link.ExpiresAt, &link.UseCount, &maxUses)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return domain.InviteLink{}, false, nil
+	case err != nil:
+		return domain.InviteLink{}, false, err
+	}
+	link.MaxUses = domain.InviteLinkMaxUses(maxUses)
+	return link, true, nil
+}
+
+// AddMember makes the user a member. The join is the only way to get the member role in MVP (ADR 0004).
+func (t lockedTx) AddMember(ctx context.Context, groupID, userID string, joinedAt time.Time) error {
+	_, err := t.tx.ExecContext(ctx, insertMemberSQL, groupID, userID, domain.RoleMember, joinedAt)
+	return err
+}
+
+// IncrementUse counts one join through the link.
+func (t lockedTx) IncrementUse(ctx context.Context, groupID, linkID string) error {
+	_, err := t.tx.ExecContext(ctx, incrementUseSQL, linkID, groupID)
+	return err
+}

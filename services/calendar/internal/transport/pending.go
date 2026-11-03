@@ -70,11 +70,3 @@ func (pendingOperations) JoinLobby(context.Context, publicapi.JoinLobbyRequestOb
 func (pendingOperations) LeaveGroup(context.Context, publicapi.LeaveGroupRequestObject) (publicapi.LeaveGroupResponseObject, error) {
 	return nil, errOperationPending
 }
-
-func (pendingOperations) GetInvite(context.Context, publicapi.GetInviteRequestObject) (publicapi.GetInviteResponseObject, error) {
-	return nil, errOperationPending
-}
-
-func (pendingOperations) JoinInvite(context.Context, publicapi.JoinInviteRequestObject) (publicapi.JoinInviteResponseObject, error) {
-	return nil, errOperationPending
-}

@@ -26,6 +26,39 @@ type linkStore struct {
 	inserted  []domain.InviteLink
 	cleaned   int
 	cleanedAt time.Time
+	// tokens is what the unlocked lookup by token sees; links is what the locked re-read and the lists see.
+	tokens  map[string]application.LinkLookup
+	added   []string
+	addedAt time.Time
+	counted []string
+	// useErr is returned by IncrementUse, so a test can show that a failed write is not swallowed.
+	useErr error
+}
+
+// FindLinkByToken answers from tokens, so a test can show a lookup that is stale under the lock.
+func (s *linkStore) FindLinkByToken(_ context.Context, token string) (application.LinkLookup, bool, error) {
+	lookup, found := s.tokens[token]
+	return lookup, found, nil
+}
+
+func (s *linkStore) LinkByID(_ context.Context, _, linkID string) (domain.InviteLink, bool, error) {
+	for _, link := range s.links {
+		if link.ID == linkID {
+			return link, true, nil
+		}
+	}
+	return domain.InviteLink{}, false, nil
+}
+
+func (s *linkStore) AddMember(_ context.Context, _, userID string, joinedAt time.Time) error {
+	s.added = append(s.added, userID)
+	s.addedAt = joinedAt
+	return nil
+}
+
+func (s *linkStore) IncrementUse(_ context.Context, _, linkID string) error {
+	s.counted = append(s.counted, linkID)
+	return s.useErr
 }
 
 func newLinkStore() *linkStore {

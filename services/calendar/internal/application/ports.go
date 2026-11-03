@@ -39,12 +39,24 @@ type GroupTx interface {
 	Membership(ctx context.Context, groupID, userID string) (domain.Member, bool, error)
 	DeleteInactiveInviteLinks(ctx context.Context, groupID string, now time.Time) error
 	InsertInviteLink(ctx context.Context, link domain.InviteLink) (domain.InviteLink, error)
+	// LinkByID returns false when the link is not in this group.
+	LinkByID(ctx context.Context, groupID, linkID string) (domain.InviteLink, bool, error)
+	AddMember(ctx context.Context, groupID, userID string, joinedAt time.Time) error
+	IncrementUse(ctx context.Context, groupID, linkID string) error
+}
+
+// LinkLookup is an invite link with its group, as found by its token.
+type LinkLookup struct {
+	Link  domain.InviteLink
+	Group domain.Group
 }
 
 // InviteLinkReader reads invite links without a lock. A rule that decides a write is read again under the lock (ADR 0006).
 type InviteLinkReader interface {
 	AllLinks(ctx context.Context, groupID string) ([]domain.InviteLink, error)
 	LinksCreatedBy(ctx context.Context, groupID, userID string) ([]domain.InviteLink, error)
+	// FindLinkByToken returns false when no link has the token, or its group is gone.
+	FindLinkByToken(ctx context.Context, token string) (LinkLookup, bool, error)
 }
 
 // TokenGenerator returns a new random invite token (ADR 0007). The token is a secret.
