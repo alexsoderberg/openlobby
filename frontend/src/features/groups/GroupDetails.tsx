@@ -1,6 +1,6 @@
 import { InviteLinks } from "../invites";
 import { useMessages } from "../../i18n";
-import { ErrorAlert } from "../../ui/ErrorAlert";
+import { ErrorAlert } from "../../ui";
 import type { GroupState } from "./useGroup";
 
 /** Shows a group with its members and invite links. The admin marker is text, so it does not depend on color. */

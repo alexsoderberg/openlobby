@@ -128,13 +128,13 @@ describe("logged in", () => {
     expect(client.logout).toHaveBeenCalledOnce();
   });
 
-  it("moves focus to the login heading after logout", async () => {
+  it("moves focus to the landing headline after logout", async () => {
     renderAt(loggedInClient(), "/");
 
     fireEvent.click(await screen.findByRole("button", { name: en.logOut }));
 
     const heading = await screen.findByRole("heading", {
-      name: en.loginHeading,
+      name: en.landing.headlineLines.join(" "),
     });
     await waitFor(() => expect(document.activeElement).toBe(heading));
   });

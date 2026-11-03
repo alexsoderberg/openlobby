@@ -1,3 +1,4 @@
+import { LandingPage } from "../features/landing";
 import { useSession } from "../features/session";
 import { Header } from "./Header";
 import { NotFoundPage, ProtectedPage } from "./Pages";
@@ -11,6 +12,17 @@ export function App() {
   const route = routeFor(entry.pathname);
   const displayName =
     session.status === "loggedIn" ? session.user.displayName : undefined;
+
+  // The logged-out start page is the landing page, which has its own top bar.
+  if (route.name === "start" && session.status === "loggedOut") {
+    return (
+      <LandingPage
+        returnTo={entry.returnTo}
+        loginError={entry.loginError}
+        reason={session.reason}
+      />
+    );
+  }
 
   return (
     <>

@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import type { SessionState } from "../features/session";
 import { LoginPanel } from "../features/login";
 import { useMessages, type LoginErrorCode } from "../i18n";
-import { ErrorAlert } from "../ui/ErrorAlert";
+import { ErrorAlert } from "../ui";
 
 type RequireLoginProps = {
   session: SessionState;

@@ -1,35 +1,20 @@
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import { loginUrl } from "../../api";
-import { useMessages, type LoginErrorCode, type Messages } from "../../i18n";
-import { Alert } from "../../ui/Alert";
-import type { LoggedOutReason } from "../session";
+import { useFocusAfterLogout } from "../../hooks";
+import { useMessages } from "../../i18n";
+import { Alert } from "../../ui";
+import { loggedOutNotice, type LoggedOutPageProps } from "../session";
 
-type LoginPanelProps = {
-  returnTo: string;
-  loginError?: LoginErrorCode;
-  reason: LoggedOutReason;
-};
-
-function noticeFor(
-  m: Messages,
-  loginError: LoginErrorCode | undefined,
-  reason: LoggedOutReason,
-): string | undefined {
-  if (loginError) return m.loginErrors[loginError];
-  return reason === "expired" ? m.sessionExpired : undefined;
-}
-
-export function LoginPanel({ returnTo, loginError, reason }: LoginPanelProps) {
+export function LoginPanel({
+  returnTo,
+  loginError,
+  reason,
+}: LoggedOutPageProps) {
   const m = useMessages();
   const headingRef = useRef<HTMLHeadingElement>(null);
-  const afterLogout = reason === "loggedOut";
+  useFocusAfterLogout(headingRef, reason === "loggedOut");
 
-  // After a logout the button the user pressed is gone, so focus moves to the new heading (WCAG 2.4.3).
-  useEffect(() => {
-    if (afterLogout) headingRef.current?.focus();
-  }, [afterLogout]);
-
-  const notice = noticeFor(m, loginError, reason);
+  const notice = loggedOutNotice(m, loginError, reason);
 
   return (
     <section className="login-panel">

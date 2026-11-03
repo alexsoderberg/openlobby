@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import type { Group } from "../../api";
 import { toUserMessage, useMessages } from "../../i18n";
-import { Alert } from "../../ui/Alert";
+import { Alert } from "../../ui";
 import { CreateInviteLinkForm } from "./CreateInviteLinkForm";
 import { InviteLinkList } from "./InviteLinkList";
 import { useCopyInviteLink } from "./useCopyInviteLink";
