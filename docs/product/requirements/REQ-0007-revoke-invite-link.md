@@ -1,5 +1,5 @@
 # REQ-0007. Revoke invite link
-Status: Decided
+Status: Implemented
 Feature: F-013
 Priority: Must
 
@@ -43,3 +43,4 @@ F-002 (Create and join group) creates the links and uses them. Revocation and ex
 - DECISION (user): Revocation does not create a new link. The group may therefore have no active link until someone creates one.
 - DECISION (user): When a link creator leaves the group, their links are revoked (REQ-0006). Replaces the earlier assumption that only a group admin could revoke them.
 - DECISION (user): Revocation requires confirmation.
+- DECISION (implementation): The "404 page" for revoked, expired and used-up links is the same dedicated view as for unknown links, with heading "Invite link not valid" and no group information. It is not an HTTP 404 status, because the single-page app cannot set a status code (ADR 0007). See REQ-0002.
