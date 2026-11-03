@@ -1,7 +1,6 @@
 import type { InviteInfo } from "../../api";
 import { toUserMessage, useMessages } from "../../i18n";
-import { Alert } from "../../ui/Alert";
-import { ErrorAlert } from "../../ui/ErrorAlert";
+import { Alert, ErrorAlert } from "../../ui";
 import { INVITE_INVALID } from "./inviteErrors";
 import { useInvite } from "./useInvite";
 import type { JoinState } from "./useJoinInvite";

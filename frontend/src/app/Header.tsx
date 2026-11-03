@@ -1,5 +1,5 @@
 import { useMessages } from "../i18n";
-import { ErrorAlert } from "../ui/ErrorAlert";
+import { Brand, ErrorAlert } from "../ui";
 
 type HeaderProps = {
   displayName?: string;
@@ -13,9 +13,7 @@ export function Header({ displayName, logoutError, onLogout }: HeaderProps) {
 
   return (
     <header className="app-header">
-      <a className="brand" href="/">
-        {m.appName}
-      </a>
+      <Brand />
       {displayName !== undefined && (
         <div className="account">
           <span className="account__name">{displayName}</span>

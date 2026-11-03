@@ -1,5 +1,5 @@
 import { useMessages } from "../../i18n";
-import { ErrorAlert } from "../../ui/ErrorAlert";
+import { ErrorAlert } from "../../ui";
 import { groupPath } from "./groupPath";
 import type { GroupsState } from "./useMyGroups";
 

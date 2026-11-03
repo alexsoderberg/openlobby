@@ -1,6 +1,6 @@
 import type { Group, InviteLink } from "../../api";
 import { useMessages } from "../../i18n";
-import { ErrorAlert } from "../../ui/ErrorAlert";
+import { ErrorAlert } from "../../ui";
 import { RevokeInviteLinkControl } from "./RevokeInviteLinkControl";
 import { formatExpiry, inviteUrl } from "./inviteLink";
 import type { InviteLinksState } from "./useInviteLinks";

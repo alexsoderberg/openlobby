@@ -122,6 +122,22 @@
   --press-scale: 0.97;
   --reveal-offset: 40px;
   --blur-glass: 8px;
+
+  --font-size-hero: clamp(2.75rem, 8vw, 5.5rem);
+  --font-size-section: clamp(2rem, 4.5vw, 3.25rem);
+  --line-hero: 0.98;
+  --width-landing: 64rem;
+  --radius-chip: 999px;
+  --rise-offset: 110%;
+  --stagger-rise: 0.12s;
+  --stagger-fade: 0.15s;
+  --stagger-step: 0.1s;
+  --reveal-delay: 0s;
+  --duration-meter: 1.6s;
+  --duration-rise: 1.1s;
+  --lift-card: -6px;
+  --spotlight-size: 16rem;
+  --scroll-offset: 5rem;
 }
 
 *,
@@ -339,7 +355,8 @@ a {
 }
 
 .panel,
-.login-panel {
+.login-panel,
+.preview {
   padding: var(--space-4);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -347,10 +364,11 @@ a {
   backdrop-filter: blur(var(--blur-glass));
 }
 
+/* Only the reveal (opacity, transform) takes --reveal-delay; hover lifts respond at once. */
 .panel {
   transition:
-    opacity var(--duration-slow) var(--ease-out),
-    transform var(--duration-slow) var(--ease-out),
+    opacity var(--duration-slow) var(--ease-out) var(--reveal-delay),
+    transform var(--duration-slow) var(--ease-out) var(--reveal-delay),
     translate var(--duration-base) var(--ease-out),
     border-color var(--duration-base) var(--ease-out);
 }
@@ -486,6 +504,238 @@ a {
   color: var(--color-danger);
 }
 
+/* Landing page. Start states live in the keyframes, so with animations off the final layout shows at once. */
+.brand__accent {
+  color: var(--color-accent);
+}
+
+.landing-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+}
+
+.landing {
+  max-width: var(--width-landing);
+  margin: 0 auto;
+  padding: 0 var(--space-4);
+}
+
+.landing-section {
+  padding-block: var(--space-6);
+}
+
+.landing-steps {
+  scroll-margin-top: var(--scroll-offset);
+}
+
+.landing-title {
+  margin: 0 0 var(--space-3);
+  font-family: var(--font-display);
+  font-size: var(--font-size-section);
+  font-weight: 600;
+  line-height: 1.05;
+}
+
+.hero {
+  padding-top: var(--space-6);
+}
+
+.hero__chip {
+  display: inline-block;
+  margin: 0 0 var(--space-3);
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-chip);
+  background: var(--color-surface);
+  color: var(--color-muted);
+  font-size: 0.875rem;
+  animation: fade-up var(--duration-slow) var(--ease-out) var(--stagger-fade)
+    both;
+}
+
+.hero__title {
+  margin: 0 0 var(--space-3);
+  font-family: var(--font-display);
+  font-size: var(--font-size-hero);
+  font-weight: 600;
+  line-height: var(--line-hero);
+  letter-spacing: var(--tracking-snug);
+}
+
+/* Descender room: the mask clips each line, so it needs space below the glyphs. */
+.hero__line {
+  display: block;
+  overflow: hidden;
+  padding-bottom: 0.12em;
+  margin-bottom: -0.12em;
+}
+
+.hero__line-inner {
+  display: block;
+  animation: rise var(--duration-rise) var(--ease-out) both;
+}
+
+.hero__line:nth-child(2) .hero__line-inner {
+  animation-delay: var(--stagger-rise);
+}
+
+.hero__accent {
+  color: var(--color-accent);
+}
+
+.hero__lead {
+  max-width: 32rem;
+  margin: 0 0 var(--space-4);
+  font-size: 1.125rem;
+  color: var(--color-muted);
+  animation: fade-up var(--duration-slow) var(--ease-out)
+    calc(var(--stagger-fade) * 2) both;
+}
+
+.hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+  animation: fade-up var(--duration-slow) var(--ease-out)
+    calc(var(--stagger-fade) * 3) both;
+}
+
+.steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  gap: var(--space-3);
+}
+
+.steps > :nth-child(2) {
+  --reveal-delay: var(--stagger-step);
+}
+
+.step-card {
+  position: relative;
+  overflow: hidden;
+}
+
+/* The spotlight sits under the text and follows the pointer (--spot-x / --spot-y, set by StepCard). */
+.step-card > * {
+  position: relative;
+}
+
+.step-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(
+    circle var(--spotlight-size) at var(--spot-x, 50%) var(--spot-y, 0%),
+    var(--color-accent-tint),
+    transparent 70%
+  );
+  transition: opacity var(--duration-base) var(--ease-out);
+}
+
+.step-card:hover::before {
+  opacity: 1;
+}
+
+.step-card:hover {
+  translate: 0 var(--lift-card);
+}
+
+.step-card__title {
+  margin: 0 0 var(--space-2);
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: var(--tracking-snug);
+}
+
+.step-card__text {
+  margin: 0;
+  color: var(--color-muted);
+}
+
+.preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  gap: var(--space-3);
+}
+
+.preview__title {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-weight: 600;
+}
+
+.preview__member {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-1) 0;
+}
+
+.preview__member .badge {
+  margin-left: auto;
+}
+
+.preview__avatar {
+  flex: none;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: linear-gradient(
+    135deg,
+    var(--color-bg-raised),
+    var(--color-border)
+  );
+}
+
+/* Fills from 0 to --meter-value (0 to 1) once revealed. Task 3 reuses this class. */
+.meter {
+  margin-top: var(--space-3);
+  height: 0.25rem;
+  border-radius: var(--radius-chip);
+  background: var(--color-border);
+  overflow: hidden;
+}
+
+.meter > span {
+  display: block;
+  width: calc(var(--meter-value, 0) * 100%);
+  height: 100%;
+  background: var(--color-accent);
+  transition: width var(--duration-meter) var(--ease-out);
+}
+
+[data-reveal="pending"] .meter > span {
+  width: 0;
+}
+
+.landing-footer {
+  max-width: var(--width-landing);
+  margin: 0 auto;
+  padding: var(--space-4);
+  border-top: 1px solid var(--color-border);
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+@keyframes rise {
+  from {
+    transform: translateY(var(--rise-offset));
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(var(--reveal-offset));
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -497,6 +747,26 @@ a {
 
   .button::after {
     display: none;
+  }
+
+  .step-card:hover {
+    translate: none;
+  }
+
+  .step-card::before {
+    display: none;
+  }
+
+  .panel:hover {
+    translate: none;
+  }
+
+  :is(.button, .button-ghost, .button--secondary):not(:disabled):hover {
+    transform: none;
+  }
+
+  :is(.button, .button-ghost, .button--secondary):not(:disabled):active {
+    transform: none;
   }
 
   [data-reveal="pending"],

@@ -5,7 +5,8 @@ import {
 } from "../../api";
 
 export const en = {
-  appName: "OpenLobby",
+  brandLead: "Open",
+  brandAccent: "Lobby",
   logInWithDiscord: "Log in with Discord",
   logOut: "Log out",
   tryAgain: "Try again",
@@ -21,6 +22,29 @@ export const en = {
       "You did not approve the login in Discord, so you are still logged out. Log in again and approve it to continue.",
     login_failed:
       "The login did not work, so you are still logged out. Try again.",
+  },
+
+  landing: {
+    topBarLogIn: "Log in",
+    eyebrow: "Game nights, without the group chat chaos",
+    // Two lines, each with its own reveal. Joined with a space they read as one headline.
+    headlineLines: ["Game night,", "planned properly."],
+    headlineHighlight: "planned",
+    lead: "Create a group, invite your friends with a link, and keep the whole crew in one place.",
+    howItWorks: "How it works",
+    stepsHeading: "How it works",
+    steps: [
+      {
+        title: "Gather your group",
+        text: "Log in with Discord and create a group for your crew. You become its admin.",
+      },
+      {
+        title: "Invite with a link",
+        text: "Share a link with the friends you want. Each link expires on its own, and you can revoke it any time.",
+      },
+    ],
+    previewHeading: "Inside the app, it feels the same.",
+    footer: "made for game nights",
   },
 
   groupsHeading: "Your groups",

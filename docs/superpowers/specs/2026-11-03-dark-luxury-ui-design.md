@@ -147,6 +147,8 @@ Strings (English, keys in `en.ts`):
 
 Accessibility notes for the builder: the top bar `Log in` and the primary `Log in with Discord` are different accessible names, so the existing name query for `Log in with Discord` stays unique. Every login link keeps the existing `/api/auth/login?returnTo=...` target.
 
+Amendment 2026-11-03. DECISION: this refines the Preview row above. The decorative preview may reuse existing app labels from `en.ts` (the `Group admin` badge and the `Invite links` heading) so it mirrors the real app. These are not new copy. The preview stays `aria-hidden="true"` and shows no numbers, expiry or lifetime.
+
 Deferred step (not shown now). Add it as the third card in the same PR as the lobby feature's frontend, only when REQ-0003, REQ-0004 and REQ-0005 are `Implemented` and F-003, F-004, F-005 are `Done`:
 
 | Element | Exact string |
