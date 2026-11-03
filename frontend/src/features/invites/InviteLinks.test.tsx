@@ -122,6 +122,17 @@ describe("invite link list", () => {
     expect(revokeNames[1]).toContain("Erik Berg");
   });
 
+  it("the invite uses meter exposes the value as a meter", async () => {
+    renderLinks(
+      fakeApiClient({ listInviteLinks: () => Promise.resolve([link]) }),
+    );
+
+    const meter = await screen.findByRole("meter", { name: /uses/ });
+    expect(meter.getAttribute("aria-valuemin")).toBe("0");
+    expect(meter.getAttribute("aria-valuenow")).toBe("3");
+    expect(meter.getAttribute("aria-valuemax")).toBe("10");
+  });
+
   it("shows an empty state when no link is active", async () => {
     renderLinks(fakeApiClient());
 
@@ -223,6 +234,51 @@ describe("copy invite link", () => {
     );
     expect(await screen.findByText(en.inviteLinkCopied)).toBeTruthy();
   });
+
+  it("copy confirmation still lands in the persistent status region", async () => {
+    stubClipboard();
+    renderLinks(
+      fakeApiClient({ listInviteLinks: () => Promise.resolve([link]) }),
+    );
+    const regions = await screen.findAllByRole("status");
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: named(en.inviteLinkCopy) }),
+    );
+
+    const confirmation = await screen.findByText(en.inviteLinkCopied);
+    expect(regions.some((region) => region.contains(confirmation))).toBe(true);
+  });
+
+  it.each([
+    ["copy", en.inviteLinkCopied, undefined],
+    ["failure", en.inviteLinkCopyFailed, new Error("denied")],
+  ])(
+    "announces a repeated copy (%s) again as a new message in the status region",
+    async (_, text, failure) => {
+      const writeText = stubClipboard();
+      if (failure) writeText.mockRejectedValue(failure);
+      renderLinks(
+        fakeApiClient({ listInviteLinks: () => Promise.resolve([link]) }),
+      );
+
+      fireEvent.click(
+        await screen.findByRole("button", { name: named(en.inviteLinkCopy) }),
+      );
+      const first = await screen.findByText(text);
+      const region = first.closest('[role="status"]');
+
+      fireEvent.click(
+        screen.getByRole("button", { name: named(en.inviteLinkCopy) }),
+      );
+
+      await waitFor(() => {
+        const second = screen.getByText(text);
+        expect(second).not.toBe(first);
+        expect(region?.contains(second)).toBe(true);
+      });
+    },
+  );
 
   it("shows a message when the browser cannot copy", async () => {
     const writeText = stubClipboard();

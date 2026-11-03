@@ -6,6 +6,7 @@ import {
 } from "../features/groups";
 import { InvitePage } from "../features/invites";
 import { useMessages } from "../i18n";
+import { Panel } from "../ui";
 import type { Route } from "./route";
 
 export function ProtectedPage({
@@ -75,8 +76,10 @@ export function NotFoundPage() {
   return (
     <>
       <h1>{m.notFoundHeading}</h1>
-      <p>{m.notFoundText}</p>
-      <a href="/">{m.backToStart}</a>
+      <Panel>
+        <p>{m.notFoundText}</p>
+        <a href="/">{m.backToStart}</a>
+      </Panel>
     </>
   );
 }

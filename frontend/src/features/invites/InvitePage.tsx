@@ -1,6 +1,6 @@
 import type { InviteInfo } from "../../api";
 import { toUserMessage, useMessages } from "../../i18n";
-import { Alert, ErrorAlert } from "../../ui";
+import { Alert, ErrorAlert, Panel } from "../../ui";
 import { INVITE_INVALID } from "./inviteErrors";
 import { useInvite } from "./useInvite";
 import type { JoinState } from "./useJoinInvite";
@@ -45,8 +45,10 @@ function InvalidInvite() {
   return (
     <>
       <h1>{m.inviteInvalidHeading}</h1>
-      <p>{toUserMessage(INVITE_INVALID)}</p>
-      <a href="/">{m.backToStart}</a>
+      <Panel>
+        <p>{toUserMessage(INVITE_INVALID)}</p>
+        <a href="/">{m.backToStart}</a>
+      </Panel>
     </>
   );
 }
@@ -66,21 +68,23 @@ function Invitation({
   return (
     <>
       <h1>{info.groupName}</h1>
-      <p>{m.inviteIntro}</p>
-      {joinState.status === "failed" && (
-        <Alert>{toUserMessage(joinState.code)}</Alert>
-      )}
-      <button
-        type="button"
-        className="button"
-        disabled={joining}
-        onClick={onJoin}
-      >
-        {m.joinGroupSubmit}
-      </button>
-      <p role="status" className="status">
-        {joining && m.joinGroupBusy}
-      </p>
+      <Panel>
+        <p>{m.inviteIntro}</p>
+        {joinState.status === "failed" && (
+          <Alert>{toUserMessage(joinState.code)}</Alert>
+        )}
+        <button
+          type="button"
+          className="button"
+          disabled={joining}
+          onClick={onJoin}
+        >
+          {m.joinGroupSubmit}
+        </button>
+        <p role="status" className="status">
+          {joining && m.joinGroupBusy}
+        </p>
+      </Panel>
     </>
   );
 }
