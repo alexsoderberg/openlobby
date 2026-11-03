@@ -29,7 +29,7 @@ One domain service: **`calendar`**. It owns groups, memberships with role, invit
 
 **Rules fixed here (so that the reviewer can check them):**
 
-1. **Names and games** are trimmed before validation. Length is measured in Unicode characters (code points). A trimmed empty string is invalid.
+1. **Names and games** are trimmed before validation with Go's `strings.TrimSpace` (all Unicode whitespace, ADR 0010 amendment 2026-11-03). Length is measured in Unicode characters (code points). A trimmed empty string is invalid.
 2. **Membership:** a non-member calling group or lobby endpoints gets `404 group_not_found`, not 403.
 3. **Links:** an unknown, revoked, expired or exhausted (max uses reached) link gives `404 invite_invalid`. The same response in all cases, with no group information. Validity is checked when viewing and when joining. See ADR 0007.
 4. **Roles:** the creator of the group becomes admin. A group can have several admins. As long as the group has members, at least one admin exists (rule 5e). An admin can make a member admin with `PUT /api/groups/{groupId}/admins/{userId}` (idempotent, 204; non-admin gets `403 not_allowed`, unknown member `404 member_not_found`). No one can remove an admin role in MVP. The admin role gives the right to revoke any link in the group and to make a member admin. Otherwise all members have the same rights. Replaces the earlier assumptions "exactly one admin" and "no admin role".

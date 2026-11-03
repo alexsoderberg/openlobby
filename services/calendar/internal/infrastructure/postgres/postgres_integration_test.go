@@ -138,7 +138,7 @@ func TestMigrationsUpDownUpAndRuntimeRoleCannotChangeHistory(t *testing.T) {
 	for _, step := range []struct {
 		name string
 		down bool
-	}{{"up", false}, {"down 0002", true}, {"down 0001", true}, {"up again", false}} {
+	}{{"up", false}, {"down 0003", true}, {"down 0002", true}, {"down 0001", true}, {"up again", false}} {
 		if err := store.Migrate(ctx, step.down); err != nil {
 			t.Fatalf("migrate %s: %v", step.name, err)
 		}
@@ -420,8 +420,11 @@ func TestInviteLinksDownDropsTable(t *testing.T) {
 	store := migratedStore(t)
 	ctx := context.Background()
 
-	if err := store.Migrate(ctx, true); err != nil {
-		t.Fatalf("migrate down: %v", err)
+	// Migration 0003 is newer and goes first, so two downs reach 0002.
+	for range 2 {
+		if err := store.Migrate(ctx, true); err != nil {
+			t.Fatalf("migrate down: %v", err)
+		}
 	}
 	var table sql.NullString
 	if err := store.db.QueryRowContext(ctx, `SELECT to_regclass('invite_links')::text`).Scan(&table); err != nil {

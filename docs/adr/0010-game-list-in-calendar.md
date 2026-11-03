@@ -13,13 +13,13 @@ The user has now decided that management happens in the app, by a system admin (
   ```sql
   create table games (
       id uuid primary key default gen_random_uuid(),
-      name text not null check (name = btrim(name) and char_length(name) between 1 and 50),
+      name text not null check (name !~ '^\s|\s$' and char_length(name) between 1 and 50),
       default_max_players integer check (default_max_players is null or default_max_players >= 1)
   );
   create unique index games_name_lower_key on games (lower(name));
   ```
   `id` is a uuid generated at creation (review 3). It never changes. No sort column and no `active` column, because REQ-0009 requires neither. The lists are sorted as the consolidated amendment says.
-- **The database has the schema's invariants and the same safety-net checks as the other tables (ADR 0006):** primary key, unique index on the name ignoring case, a trimmed name of 1–50 characters, and max ≥ 1. The reserved name `Other` is checked only in `application`, which is the only write path.
+- **The database has the schema's invariants and the same safety-net checks as the other tables (ADR 0006):** primary key, unique index on the name ignoring case, a name without leading or trailing whitespace and 1–50 characters, and max ≥ 1 (amendment 2026-11-03 for the form of the whitespace check). The reserved name `Other` is checked only in `application`, which is the only write path.
 - **Seed content** is inserted by a seed migration in `services/calendar/migrations/` (next sequence number, `*_games`). `up` creates the table and inserts the four rows with fixed ids (review 3). `down` drops the table. No other table is affected, because `lobbies.game_id` has no foreign key to `games`.
 - **Ports** in `application`, split by use (ISP):
   - `GameCatalog`: `List(ctx) ([]Game, error)`, `ListForGroup(ctx, groupID) ([]Game, error)` and `Find(ctx, id) (Game, error)`. Used by `ListGames`, `ListGroupGames` and `CreateLobby`.
@@ -133,3 +133,10 @@ Amendment 2026-11-01 (consolidated). The final cross-cutting rules are in ADR 00
 - **Fields of the write bodies are not `required`** (ADR 0001 consolidated, item 2). Omitted or `null` `name` gives `""` and `invalid_game`. Omitted or `null` `defaultMaxPlayers` means unlimited, also on `PUT`, which replaces the whole game. (The Decision states the same since review 5.)
 - **Rule order** is the one of the review 2 amendment (shape, permission, validation, existence, state), where the invalid-form path `gameId` is a shape error (404 `game_not_found`, before the body). The name conflict is on the name only, because IDs are generated (review 3).
 - **Sort order** is case-insensitive (`ORDER BY lower(name), id`) in `GET /api/games`. In `GET /api/groups/{groupId}/games` it is lobby count descending, then `lower(name)`, then `id` (ADR 0001 consolidated, item 6).
+
+Amendment 2026-11-03 (REQ-0009 review: whitespace check). The database check on `games.name` is `name !~ '^\s|\s$' and char_length(name) between 1 and 50`, not `btrim`. The Decision above is rewritten in place to match.
+- **Why not `btrim`:** `btrim` strips only spaces. A name with a leading tab or newline would pass the database check, although ADR 0004 rule 1 trims it.
+- **Why the regex:** it rejects a leading or trailing character of PostgreSQL's whitespace class `\s` (space, tab, newline, carriage return, form feed, vertical tab). That is the database form of "no leading or trailing whitespace".
+- **What stays in `application`:** the rule is ADR 0004 rule 1, `strings.TrimSpace`, which covers all Unicode whitespace. Names are trimmed there before validation and before any write.
+- **Accepted gap:** the database does not reproduce Go's Unicode whitespace exactly. A name with an exotic Unicode space that the database locale does not classify as `\s` can pass the database check. The shortcut is recorded in `services/calendar/migrations/0003_games.sql` and is upgraded if such a name gets in.
+- **Wording of the safety-net bullet above:** "the same safety-net checks as the other tables" holds for `games` only. The `groups` name has no whitespace check in the database. See the follow-up in ADR 0006, amendment 2026-11-03.

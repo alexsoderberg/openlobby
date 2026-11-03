@@ -35,10 +35,6 @@ func (pendingOperations) MakeGroupAdmin(context.Context, publicapi.MakeGroupAdmi
 	return nil, errOperationPending
 }
 
-func (pendingOperations) ListGroupGames(context.Context, publicapi.ListGroupGamesRequestObject) (publicapi.ListGroupGamesResponseObject, error) {
-	return nil, errOperationPending
-}
-
 func (pendingOperations) ListUpcomingLobbies(context.Context, publicapi.ListUpcomingLobbiesRequestObject) (publicapi.ListUpcomingLobbiesResponseObject, error) {
 	return nil, errOperationPending
 }
