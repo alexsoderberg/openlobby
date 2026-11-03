@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { ApiError, ApiProvider, type ApiClient } from "../api";
 import { en } from "../i18n/messages/en";
@@ -211,6 +217,93 @@ describe("logged in", () => {
     expect((await screen.findByRole("alert")).textContent).toBe(
       en.errors.service_unavailable,
     );
+  });
+});
+
+describe("group page", () => {
+  const members = [
+    { userId: "u1", displayName: "Maja Lind", role: "admin" as const },
+    { userId: "u2", displayName: "Erik Berg", role: "member" as const },
+  ];
+
+  it("sends a group page to login with returnTo set to that page", async () => {
+    renderAt(fakeApiClient(), "/groups/g1");
+
+    const login = await screen.findByRole("link", {
+      name: en.logInWithDiscord,
+    });
+    expect(login.getAttribute("href")).toBe(
+      "/api/auth/login?returnTo=%2Fgroups%2Fg1",
+    );
+  });
+
+  it("shows the name and the members, with the admin marked as text", async () => {
+    const client = loggedInClient({
+      getGroup: vi.fn(() =>
+        Promise.resolve({ id: "g1", name: "Friday crew", members }),
+      ),
+    });
+    renderAt(client, "/groups/g1");
+
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Friday crew" }),
+    ).toBeTruthy();
+    const [maja, erik] = screen.getAllByRole("listitem");
+    expect(maja.textContent).toBe(`Maja Lind ${en.groupAdminMarker}`);
+    expect(within(maja).getByText(en.groupAdminMarker)).toBeTruthy();
+    expect(erik.textContent).toBe("Erik Berg");
+    expect(client.getGroup).toHaveBeenCalledWith("g1");
+  });
+
+  it("shows the not-found page without group content to a non-member", async () => {
+    renderAt(
+      loggedInClient({
+        getGroup: () => Promise.reject(new ApiError(404, "group_not_found")),
+      }),
+      "/groups/g1",
+    );
+
+    expect(
+      await screen.findByRole("heading", { name: en.notFoundHeading }),
+    ).toBeTruthy();
+    expect(screen.queryByRole("list")).toBeNull();
+  });
+
+  it("sends the user to login with a notice when the session expired", async () => {
+    renderAt(
+      loggedInClient({
+        getGroup: () => Promise.reject(new ApiError(401, "unauthenticated")),
+      }),
+      "/groups/g1",
+    );
+
+    expect((await screen.findByRole("alert")).textContent).toBe(
+      en.sessionExpired,
+    );
+    expect(
+      screen.getByRole("link", { name: en.logInWithDiscord }),
+    ).toBeTruthy();
+    await waitFor(() =>
+      expect(screen.queryByText(testUser.displayName)).toBeNull(),
+    );
+  });
+
+  it("shows an error with a retry button when the group cannot be loaded", async () => {
+    const getGroup = vi
+      .fn<ApiClient["getGroup"]>()
+      .mockRejectedValueOnce(new ApiError(503, "service_unavailable"))
+      .mockResolvedValueOnce({ id: "g1", name: "Friday crew", members });
+    renderAt(loggedInClient({ getGroup }), "/groups/g1");
+
+    expect((await screen.findByRole("alert")).textContent).toBe(
+      en.errors.service_unavailable,
+    );
+    fireEvent.click(screen.getByRole("button", { name: en.tryAgain }));
+
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Friday crew" }),
+    ).toBeTruthy();
+    expect(getGroup).toHaveBeenCalledTimes(2);
   });
 });
 

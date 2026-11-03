@@ -1,4 +1,4 @@
-import type { ApiErrorCode } from "../../api";
+import { GROUP_NAME_MAX_LENGTH, type ApiErrorCode } from "../../api";
 
 export const en = {
   appName: "OpenLobby",
@@ -23,6 +23,15 @@ export const en = {
   groupsLoading: "Loading your groups.",
   groupsEmpty:
     "You are not in any group yet. Ask a member for an invite link to join one.",
+  createGroupHeading: "Create a group",
+  groupNameLabel: "Group name",
+  groupNameHint: `1 to ${GROUP_NAME_MAX_LENGTH} characters.`,
+  createGroupSubmit: "Create group",
+  groupCreated: "Group created. It is now in your groups.",
+
+  groupLoading: "Loading the group.",
+  membersHeading: "Members",
+  groupAdminMarker: "Group admin",
 
   inviteHeading: "Invite",
   invitePlaceholder: "Joining with an invite link is not available yet.",
@@ -47,7 +56,7 @@ export const en = {
     member_not_found: "This person is not a member of the group.",
     own_upcoming_lobbies_exist:
       "You have upcoming lobbies that you created. Delete them before you leave the group.",
-    invalid_group_name: "The group name must be between 1 and 50 characters.",
+    invalid_group_name: `The group name must be between 1 and ${GROUP_NAME_MAX_LENGTH} characters.`,
     invite_invalid: "This invite link is no longer valid. Ask for a new one.",
     invalid_max_uses: "The number of uses must be between 1 and 10.",
     lobby_not_found: "This lobby does not exist anymore.",

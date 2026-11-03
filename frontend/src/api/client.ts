@@ -3,9 +3,13 @@ import type { components as calendarComponents } from "./gen/calendar";
 
 export type AuthUser = authComponents["schemas"]["AuthUser"];
 export type GroupSummary = calendarComponents["schemas"]["GroupSummary"];
+export type Group = calendarComponents["schemas"]["Group"];
 export type ApiErrorCode =
   | authComponents["schemas"]["ErrorBody"]["code"]
   | calendarComponents["schemas"]["ErrorBody"]["code"];
+
+/** Contract rule: a group name is 1–50 characters after trim. Used by the local check and the messages. */
+export const GROUP_NAME_MAX_LENGTH = 50;
 
 const LOGIN_PATH = "/api/auth/login";
 const UNKNOWN_CODE = "internal_error";
@@ -19,6 +23,8 @@ export interface ApiClient {
   getCurrentUser(): Promise<AuthUser>;
   logout(): Promise<void>;
   listGroups(): Promise<GroupSummary[]>;
+  createGroup(name: string): Promise<GroupSummary>;
+  getGroup(groupId: string): Promise<Group>;
 }
 
 /** A failed call. `code` is the contract's error code, never a message from the server. */

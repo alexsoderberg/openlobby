@@ -3,12 +3,14 @@ import { routeFor } from "./route";
 
 describe("routeFor", () => {
   it.each([
-    ["/", "start"],
-    ["/invite/abc123", "invite"],
-    ["/invite/", "notFound"],
-    ["/invite/a/b", "notFound"],
-    ["/groups", "notFound"],
-  ])("maps %s to %s", (pathname, route) => {
-    expect(routeFor(pathname)).toBe(route);
+    ["/", { name: "start" }],
+    ["/invite/abc123", { name: "invite" }],
+    ["/invite/", { name: "notFound" }],
+    ["/invite/a/b", { name: "notFound" }],
+    ["/groups/g1", { name: "group", groupId: "g1" }],
+    ["/groups/", { name: "notFound" }],
+    ["/groups/g1/x", { name: "notFound" }],
+  ])("maps %s", (pathname, route) => {
+    expect(routeFor(pathname)).toEqual(route);
   });
 });

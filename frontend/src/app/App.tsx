@@ -20,7 +20,7 @@ export function App() {
         onLogout={logout}
       />
       <main className="page">
-        {route === "notFound" ? (
+        {route.name === "notFound" ? (
           <NotFoundPage />
         ) : (
           <RequireLogin

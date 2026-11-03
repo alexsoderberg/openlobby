@@ -19,6 +19,16 @@ export function createHttpApiClient(
       await receive(http.POST("/api/auth/logout"));
     },
     listGroups: async () => bodyOf(await receive(http.GET("/api/groups"))),
+    createGroup: async (name) =>
+      bodyOf(await receive(http.POST("/api/groups", { body: { name } }))),
+    getGroup: async (groupId) =>
+      bodyOf(
+        await receive(
+          http.GET("/api/groups/{groupId}", {
+            params: { path: { groupId } },
+          }),
+        ),
+      ),
   };
 }
 

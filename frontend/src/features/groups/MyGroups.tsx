@@ -1,4 +1,6 @@
+import { CreateGroupForm } from "./CreateGroupForm";
 import { GroupList } from "./GroupList";
+import { useCreateGroup } from "./useCreateGroup";
 import { useMyGroups } from "./useMyGroups";
 
 export function MyGroups({
@@ -7,5 +9,14 @@ export function MyGroups({
   onUnauthenticated: () => void;
 }) {
   const { state, reload } = useMyGroups(onUnauthenticated);
-  return <GroupList state={state} onRetry={reload} />;
+  const { state: createState, create } = useCreateGroup(
+    reload,
+    onUnauthenticated,
+  );
+  return (
+    <>
+      <GroupList state={state} onRetry={reload} />
+      <CreateGroupForm state={createState} onSubmit={create} />
+    </>
+  );
 }
