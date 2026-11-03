@@ -4,6 +4,7 @@ package domain
 import (
 	"errors"
 	"strings"
+	"time"
 	"unicode/utf8"
 )
 
@@ -15,6 +16,18 @@ var ErrGroupNotFound = errors.New("group not found")
 
 // ErrInvalidGroupName means the name is empty after trim or longer than maxGroupNameLength (REQ-0002).
 var ErrInvalidGroupName = errors.New("invalid group name")
+
+// ErrInvalidMaxUses means the requested max uses is outside 1 to InviteLinkMaxUsesLimit (ADR 0007).
+var ErrInvalidMaxUses = errors.New("invalid max uses")
+
+// InviteLinkLifetime is how long an invite link is valid after it is created (ADR 0007).
+const InviteLinkLifetime = 2 * time.Hour
+
+// InviteLinkMaxUsesLimit is the highest allowed max uses. The check in migration 0002 mirrors it (ADR 0007).
+const InviteLinkMaxUsesLimit = 10
+
+// InviteLinkDefaultMaxUses applies when the creator does not choose a value (ADR 0007).
+const InviteLinkDefaultMaxUses = InviteLinkMaxUsesLimit
 
 // maxGroupNameLength is counted in Unicode code points, the same as the database check (ADR 0004 rule 1).
 const maxGroupNameLength = 50
@@ -48,4 +61,34 @@ func NewGroupName(raw string) (string, error) {
 		return "", ErrInvalidGroupName
 	}
 	return name, nil
+}
+
+// InviteLinkMaxUses is how many joins an invite link allows, always from 1 to InviteLinkMaxUsesLimit.
+type InviteLinkMaxUses int
+
+// NewInviteLinkMaxUses returns the default when no value is requested, and checks the range otherwise (ADR 0007).
+func NewInviteLinkMaxUses(requested *int) (InviteLinkMaxUses, error) {
+	if requested == nil {
+		return InviteLinkDefaultMaxUses, nil
+	}
+	if *requested < 1 || *requested > InviteLinkMaxUsesLimit {
+		return 0, ErrInvalidMaxUses
+	}
+	return InviteLinkMaxUses(*requested), nil
+}
+
+// InviteLink is a link that lets a non-member join a group (ADR 0007). The token is a secret.
+type InviteLink struct {
+	ID              string
+	GroupID         string
+	Token           string
+	CreatedByUserID string
+	ExpiresAt       time.Time
+	UseCount        int
+	MaxUses         InviteLinkMaxUses
+}
+
+// IsActive reports whether the link can still be used at now: before expiry and with uses left (ADR 0007).
+func (link InviteLink) IsActive(now time.Time) bool {
+	return now.Before(link.ExpiresAt) && link.UseCount < int(link.MaxUses)
 }

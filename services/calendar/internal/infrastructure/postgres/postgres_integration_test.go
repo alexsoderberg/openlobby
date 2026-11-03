@@ -8,6 +8,7 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"maps"
 	"net/url"
 	"os"
@@ -137,7 +138,7 @@ func TestMigrationsUpDownUpAndRuntimeRoleCannotChangeHistory(t *testing.T) {
 	for _, step := range []struct {
 		name string
 		down bool
-	}{{"up", false}, {"down", true}, {"up again", false}} {
+	}{{"up", false}, {"down 0002", true}, {"down 0001", true}, {"up again", false}} {
 		if err := store.Migrate(ctx, step.down); err != nil {
 			t.Fatalf("migrate %s: %v", step.name, err)
 		}
@@ -341,5 +342,92 @@ func TestLockTimeoutIsUnavailable(t *testing.T) {
 
 	if !errors.Is(translate(err), domain.ErrUnavailable) {
 		t.Fatalf("lock wait error %v, want ErrUnavailable", err)
+	}
+}
+
+// insertInviteLink writes one link of Friday, created by Alex, and returns the database's answer.
+func insertInviteLink(store *Store, token string, maxUses, useCount int) error {
+	_, err := store.db.ExecContext(context.Background(),
+		`INSERT INTO invite_links (group_id, token, created_by_user_id, created_at, expires_at, max_uses, use_count)
+		VALUES ($1, $2, $3, now(), now() + interval '2 hours', $4, $5)`,
+		fridayID, token, alexID, maxUses, useCount)
+	return err
+}
+
+// The database is the safety net for the limits of ADR 0007 and the constraints of ADR 0006.
+func TestInviteLinkCountConstraints(t *testing.T) {
+	tests := []struct {
+		name     string
+		maxUses  int
+		useCount int
+		accepted bool
+	}{
+		{name: "max uses 1 is accepted", maxUses: 1, accepted: true},
+		{name: "max uses 10 is accepted", maxUses: 10, accepted: true},
+		{name: "max uses 0 is rejected", maxUses: 0, accepted: false},
+		{name: "max uses 11 is rejected", maxUses: 11, accepted: false},
+		{name: "use count equal to max uses is accepted", maxUses: 10, useCount: 10, accepted: true},
+		{name: "use count above max uses is rejected", maxUses: 10, useCount: 11, accepted: false},
+		{name: "negative use count is rejected", maxUses: 10, useCount: -1, accepted: false},
+	}
+	for i, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			store := migratedStore(t)
+			seedGroups(t, store)
+
+			err := insertInviteLink(store, fmt.Sprintf("token-%d", i), tc.maxUses, tc.useCount)
+			if (err == nil) != tc.accepted {
+				t.Fatalf("insert error %v, accepted want %v", err, tc.accepted)
+			}
+		})
+	}
+}
+
+func TestInviteLinkTokenIsUnique(t *testing.T) {
+	store := migratedStore(t)
+	seedGroups(t, store)
+
+	if err := insertInviteLink(store, "same-token", 1, 0); err != nil {
+		t.Fatalf("first insert: %v", err)
+	}
+	if err := insertInviteLink(store, "same-token", 1, 0); err == nil {
+		t.Fatal("second link with the same token accepted")
+	}
+}
+
+func TestDeletingGroupRemovesItsInviteLinks(t *testing.T) {
+	store := migratedStore(t)
+	seedGroups(t, store)
+	ctx := context.Background()
+
+	if err := insertInviteLink(store, "cascade", 1, 0); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := store.db.ExecContext(ctx, `DELETE FROM groups WHERE id = $1`, fridayID); err != nil {
+		t.Fatal(err)
+	}
+	var links int
+	if err := store.db.QueryRowContext(ctx, `SELECT count(*) FROM invite_links`).Scan(&links); err != nil {
+		t.Fatal(err)
+	}
+	if links != 0 {
+		t.Fatalf("%d invite links left after the group was deleted", links)
+	}
+}
+
+// Down of migration 0002 removes the table (ADR 0012).
+func TestInviteLinksDownDropsTable(t *testing.T) {
+	store := migratedStore(t)
+	ctx := context.Background()
+
+	if err := store.Migrate(ctx, true); err != nil {
+		t.Fatalf("migrate down: %v", err)
+	}
+	var table sql.NullString
+	if err := store.db.QueryRowContext(ctx, `SELECT to_regclass('invite_links')::text`).Scan(&table); err != nil {
+		t.Fatal(err)
+	}
+	if table.Valid {
+		t.Fatalf("invite_links still exists after down: %s", table.String)
 	}
 }
