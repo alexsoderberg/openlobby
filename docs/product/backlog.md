@@ -29,6 +29,14 @@ REQ-0004 contains both the list view (F-004) and the calendar view (F-017). Thes
 
 REQ-0002 and REQ-0007 have been extended with max uses on invite links (mandatory, 1–10) and group admins' overview of all links. The dependencies in the table are unchanged.
 
+## Should, after the MVP
+
+Not part of the MVP. The vision lists it as outside the MVP scope. It is prioritized after the MVP core flow (orders 1–10) is delivered and used. Timing is an open question for the user in REQ-0011. If the user moves it into the MVP, it goes between REQ-0005 and REQ-0007.
+
+| Order | Requirement | Title | Priority | Depends on |
+|---|---|---|---|---|
+| A1 | REQ-0011 | Game roles and role slots in lobbies | Should | REQ-0005, REQ-0009, REQ-0010 |
+
 ## Technical tasks (operations)
 
 Technical improvements found while building the operations base. They are not user functionality, so they have no requirement or feature entry. They are not ordered against the MVP requirements above, but all four must be done before the first production deployment.
