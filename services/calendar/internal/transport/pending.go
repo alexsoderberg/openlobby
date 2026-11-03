@@ -31,14 +31,6 @@ func (pendingOperations) ReplaceGame(context.Context, publicapi.ReplaceGameReque
 	return nil, errOperationPending
 }
 
-func (pendingOperations) CreateGroup(context.Context, publicapi.CreateGroupRequestObject) (publicapi.CreateGroupResponseObject, error) {
-	return nil, errOperationPending
-}
-
-func (pendingOperations) GetGroup(context.Context, publicapi.GetGroupRequestObject) (publicapi.GetGroupResponseObject, error) {
-	return nil, errOperationPending
-}
-
 func (pendingOperations) MakeGroupAdmin(context.Context, publicapi.MakeGroupAdminRequestObject) (publicapi.MakeGroupAdminResponseObject, error) {
 	return nil, errOperationPending
 }

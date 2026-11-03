@@ -6,6 +6,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 )
@@ -81,5 +82,53 @@ func TestListenReturnsNilWhenContextIsCancelled(t *testing.T) {
 		}
 	case <-time.After(listenStopTimeout):
 		t.Fatal("listen did not return after the context was cancelled")
+	}
+}
+
+// setServeEnv sets the variables that readServeConfig reads, with the given AUTH_URL.
+func setServeEnv(t *testing.T, authURL string) {
+	t.Helper()
+	t.Setenv("HTTP_ADDR", "0.0.0.0:8080")
+	t.Setenv("DATABASE_URL", "postgres://calendar@localhost/calendar")
+	t.Setenv("DATABASE_MAX_CONNECTIONS", "5")
+	t.Setenv("AUTH_URL", authURL)
+}
+
+// AUTH_URL is required at startup: calendar reads member names from auth, so it refuses to start without it.
+func TestReadServeConfigNeedsAuthURL(t *testing.T) {
+	setServeEnv(t, "")
+
+	_, err := readServeConfig()
+
+	if err == nil || !strings.Contains(err.Error(), "AUTH_URL") {
+		t.Fatalf("error %v, want the missing AUTH_URL error", err)
+	}
+}
+
+// AUTH_URL must be an absolute http or https URL with a host, so a typo fails at startup and not on the first lookup.
+func TestReadServeConfigRejectsMalformedAuthURL(t *testing.T) {
+	tests := []struct {
+		name    string
+		value   string
+		wantErr bool
+	}{
+		{name: "http with host", value: "http://auth:8080"},
+		{name: "https with host", value: "https://auth.example.com"},
+		{name: "no scheme", value: "auth:8080", wantErr: true},
+		{name: "other scheme", value: "ftp://auth:8080", wantErr: true},
+		{name: "no host", value: "http:///internal", wantErr: true},
+		{name: "not parseable", value: "http://[::1", wantErr: true},
+		{name: "relative path", value: "/auth", wantErr: true},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			setServeEnv(t, tc.value)
+
+			_, err := readServeConfig()
+
+			if (err != nil) != tc.wantErr || (err != nil && !strings.Contains(err.Error(), "AUTH_URL")) {
+				t.Fatalf("error %v, want an AUTH_URL error when wantErr is %v", err, tc.wantErr)
+			}
+		})
 	}
 }
