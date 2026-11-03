@@ -43,6 +43,7 @@ type GroupTx interface {
 	LinkByID(ctx context.Context, groupID, linkID string) (domain.InviteLink, bool, error)
 	AddMember(ctx context.Context, groupID, userID string, joinedAt time.Time) error
 	IncrementUse(ctx context.Context, groupID, linkID string) error
+	DeleteInviteLink(ctx context.Context, groupID, linkID string) error
 }
 
 // LinkLookup is an invite link with its group, as found by its token.

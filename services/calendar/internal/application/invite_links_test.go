@@ -32,7 +32,8 @@ type linkStore struct {
 	addedAt time.Time
 	counted []string
 	// useErr is returned by IncrementUse, so a test can show that a failed write is not swallowed.
-	useErr error
+	useErr  error
+	deleted []string
 }
 
 // FindLinkByToken answers from tokens, so a test can show a lookup that is stale under the lock.

@@ -440,7 +440,7 @@ func TestHealthzAndReadyz(t *testing.T) {
 
 // Operations of later requirements are in the contract but not built. They answer 500 internal_error, not a panic.
 func TestUnbuiltOperationAnswers500InternalError(t *testing.T) {
-	response := call(newRouter(fridayStore(), fridayDirectory()), http.MethodDelete, "/api/groups/"+fridayID+"/invite-links/"+linkID, asUser(alexID), "")
+	response := call(newRouter(fridayStore(), fridayDirectory()), http.MethodGet, "/api/games", asUser(alexID), "")
 
 	assertErrorEnvelope(t, response, http.StatusInternalServerError, "internal_error")
 }

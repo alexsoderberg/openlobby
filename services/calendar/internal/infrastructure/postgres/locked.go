@@ -85,6 +85,12 @@ func (t lockedTx) AddMember(ctx context.Context, groupID, userID string, joinedA
 	return err
 }
 
+// DeleteInviteLink removes the link of this group. A link of another group is not touched (ADR 0006 rule 12).
+func (t lockedTx) DeleteInviteLink(ctx context.Context, groupID, linkID string) error {
+	_, err := t.tx.ExecContext(ctx, deleteInviteLinkSQL, linkID, groupID)
+	return err
+}
+
 // IncrementUse counts one join through the link.
 func (t lockedTx) IncrementUse(ctx context.Context, groupID, linkID string) error {
 	_, err := t.tx.ExecContext(ctx, incrementUseSQL, linkID, groupID)
