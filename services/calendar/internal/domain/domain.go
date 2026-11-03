@@ -83,6 +83,7 @@ type InviteLink struct {
 	GroupID         string
 	Token           string
 	CreatedByUserID string
+	CreatedAt       time.Time
 	ExpiresAt       time.Time
 	UseCount        int
 	MaxUses         InviteLinkMaxUses

@@ -16,7 +16,7 @@ const (
 	insertGroupSQL      = `INSERT INTO groups (name) VALUES ($1) RETURNING id`
 	insertMemberSQL     = `INSERT INTO group_members (group_id, user_id, role, joined_at) VALUES ($1, $2, $3, $4)`
 	selectGroupSQL      = `SELECT id, name FROM groups WHERE id = $1`
-	selectMembershipSQL = `SELECT 1 FROM group_members WHERE group_id = $1 AND user_id = $2`
+	selectMembershipSQL = `SELECT user_id, role FROM group_members WHERE group_id = $1 AND user_id = $2`
 	// The tie-break on user_id keeps the order stable when two members joined at the same time.
 	selectMembersSQL = `SELECT user_id, role FROM group_members WHERE group_id = $1 ORDER BY joined_at, user_id`
 )
@@ -70,17 +70,30 @@ func (r groupRepo) Group(ctx context.Context, groupID string) (domain.Group, err
 	return group, nil
 }
 
-// IsMember reports whether the user is a member of the group. Not being one is no error.
-func (r groupRepo) IsMember(ctx context.Context, groupID, userID string) (bool, error) {
-	var found int
-	err := r.s.db.QueryRowContext(ctx, selectMembershipSQL, groupID, userID).Scan(&found)
+// Membership returns the user's membership of the group. Not being a member is no error.
+func (r groupRepo) Membership(ctx context.Context, groupID, userID string) (domain.Member, bool, error) {
+	member, found, err := membership(ctx, r.s.db, groupID, userID)
+	return member, found, translate(err)
+}
+
+// rowQuerier is implemented by the connection pool and by a transaction, so one query serves both.
+type rowQuerier interface {
+	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
+}
+
+// membership reads the user's membership. The error is not translated; the caller does that.
+func membership(ctx context.Context, querier rowQuerier, groupID, userID string) (domain.Member, bool, error) {
+	var member domain.Member
+	var role string
+	err := querier.QueryRowContext(ctx, selectMembershipSQL, groupID, userID).Scan(&member.UserID, &role)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
-		return false, nil
+		return domain.Member{}, false, nil
 	case err != nil:
-		return false, translate(err)
+		return domain.Member{}, false, err
 	}
-	return true, nil
+	member.Role = domain.Role(role)
+	return member, true, nil
 }
 
 // Members returns the members of the group with their roles. Names are not stored here (ADR 0003).

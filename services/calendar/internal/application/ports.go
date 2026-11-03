@@ -21,11 +21,35 @@ type GroupCreator interface {
 
 // GroupReader reads a group and its members. Reads outside the group lock are allowed (ADR 0006).
 type GroupReader interface {
-	// IsMember reports whether the user is a member of the group.
-	IsMember(ctx context.Context, groupID, userID string) (bool, error)
+	// Membership returns the user's membership and false when the user is not a member. Not being one is no error.
+	Membership(ctx context.Context, groupID, userID string) (domain.Member, bool, error)
 	// Group returns domain.ErrGroupNotFound when the group does not exist.
 	Group(ctx context.Context, groupID string) (domain.Group, error)
 	Members(ctx context.Context, groupID string) ([]domain.Member, error)
+}
+
+// GroupLocker runs a write that touches a group under the group's row lock (ADR 0006). The lock is taken first and
+// held until fn returns. It returns domain.ErrGroupNotFound when the group does not exist.
+type GroupLocker interface {
+	WithLockedGroup(ctx context.Context, groupID string, fn func(tx GroupTx) error) error
+}
+
+// GroupTx holds the operations that run under the group lock. Each one is scoped to the group (ADR 0006 rule 12).
+type GroupTx interface {
+	Membership(ctx context.Context, groupID, userID string) (domain.Member, bool, error)
+	DeleteInactiveInviteLinks(ctx context.Context, groupID string, now time.Time) error
+	InsertInviteLink(ctx context.Context, link domain.InviteLink) (domain.InviteLink, error)
+}
+
+// InviteLinkReader reads invite links without a lock. A rule that decides a write is read again under the lock (ADR 0006).
+type InviteLinkReader interface {
+	AllLinks(ctx context.Context, groupID string) ([]domain.InviteLink, error)
+	LinksCreatedBy(ctx context.Context, groupID, userID string) ([]domain.InviteLink, error)
+}
+
+// TokenGenerator returns a new random invite token (ADR 0007). The token is a secret.
+type TokenGenerator interface {
+	NewToken() (string, error)
 }
 
 // UserDirectory gives the display names of users. The names are read from auth and never stored (ADR 0003, 0004).

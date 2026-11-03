@@ -18,7 +18,8 @@ import (
 // pendingOperations.
 type publicHandler struct {
 	pendingOperations
-	groups *application.Groups
+	groups  *application.Groups
+	invites *application.InviteLinks
 }
 
 var _ publicapi.StrictServerInterface = publicHandler{}

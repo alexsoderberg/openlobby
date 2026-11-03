@@ -51,13 +51,13 @@ func (f *fakeStore) Create(_ context.Context, name, creatorID string, joinedAt t
 	return domain.Group{ID: newID, Name: name}, f.err
 }
 
-func (f *fakeStore) IsMember(_ context.Context, groupID, userID string) (bool, error) {
+func (f *fakeStore) Membership(_ context.Context, groupID, userID string) (domain.Member, bool, error) {
 	for _, member := range f.members[groupID] {
 		if member.UserID == userID {
-			return true, f.err
+			return member, true, f.err
 		}
 	}
-	return false, f.err
+	return domain.Member{}, false, f.err
 }
 
 func (f *fakeStore) Group(_ context.Context, groupID string) (domain.Group, error) {
