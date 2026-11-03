@@ -15,6 +15,8 @@ export function fakeApiClient(overrides: Partial<ApiClient> = {}): ApiClient {
     ),
     logout: vi.fn(() => Promise.resolve()),
     listGroups: vi.fn(() => Promise.resolve([])),
+    createGroup: vi.fn((name: string) => Promise.resolve({ id: "new", name })),
+    getGroup: vi.fn(() => Promise.reject(new ApiError(404, "group_not_found"))),
     ...overrides,
   };
 }

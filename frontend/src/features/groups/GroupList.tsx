@@ -1,5 +1,6 @@
 import { useMessages } from "../../i18n";
 import { ErrorAlert } from "../../ui/ErrorAlert";
+import { groupPath } from "./groupPath";
 import type { GroupsState } from "./useMyGroups";
 
 export function GroupList({
@@ -17,9 +18,11 @@ export function GroupList({
   if (state.groups.length === 0) return <p>{m.groupsEmpty}</p>;
 
   return (
-    <ul className="group-list">
+    <ul className="item-list">
       {state.groups.map((group) => (
-        <li key={group.id}>{group.name}</li>
+        <li key={group.id}>
+          <a href={groupPath(group.id)}>{group.name}</a>
+        </li>
       ))}
     </ul>
   );
