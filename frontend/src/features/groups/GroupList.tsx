@@ -18,9 +18,9 @@ export function GroupList({
   if (state.groups.length === 0) return <p>{m.groupsEmpty}</p>;
 
   return (
-    <ul className="item-list">
+    <ul className="row-list" role="list">
       {state.groups.map((group) => (
-        <li key={group.id}>
+        <li key={group.id} className="list-row">
           <a href={groupPath(group.id)}>{group.name}</a>
         </li>
       ))}

@@ -1,6 +1,7 @@
 import type { Group, InviteLink } from "../../api";
 import { useMessages } from "../../i18n";
-import { ErrorAlert } from "../../ui";
+import { ErrorAlert, Meter } from "../../ui";
+import { useReveal } from "../../hooks";
 import { RevokeInviteLinkControl } from "./RevokeInviteLinkControl";
 import { formatExpiry, inviteUrl } from "./inviteLink";
 import type { InviteLinksState } from "./useInviteLinks";
@@ -29,7 +30,7 @@ export function InviteLinkList({
   if (state.links.length === 0) return <p>{m.inviteLinksEmpty}</p>;
 
   return (
-    <ul className="item-list">
+    <ul className="row-list" role="list">
       {state.links.map((link) => (
         <InviteLinkItem
           key={link.id}
@@ -61,12 +62,18 @@ function InviteLinkItem({
   onRevoke: (linkId: string) => void;
 }) {
   const m = useMessages();
+  const revealRef = useReveal<HTMLLIElement>();
   const expires = formatExpiry(link.expiresAt);
   const description = `${m.inviteLinkCreatedBy(creator)}, ${m.inviteLinkExpires(expires)}`;
 
   return (
-    <li>
-      <InviteLinkMeta link={link} creator={creator} expires={expires} />
+    <li ref={revealRef} className="invite-link">
+      <InviteLinkMeta
+        link={link}
+        creator={creator}
+        expires={expires}
+        description={description}
+      />
       <div className="invite-link__actions">
         <input
           className="invite-link__url"
@@ -100,21 +107,30 @@ function InviteLinkMeta({
   link,
   creator,
   expires,
+  description,
 }: {
   link: InviteLink;
   creator: string;
   expires: string;
+  description: string;
 }) {
   const m = useMessages();
 
   return (
-    <p className="invite-link__meta">
-      <span>{m.inviteLinkCreatedBy(creator)}</span>
-      <span>
+    <>
+      <p className="invite-link__uses">
         <span>{m.inviteLinkUses(link.useCount, link.maxUses)}</span>
         <span className="visually-hidden"> {m.inviteLinkUsesWord}</span>
-      </span>
-      <time dateTime={link.expiresAt}>{m.inviteLinkExpires(expires)}</time>
-    </p>
+      </p>
+      <Meter
+        value={link.useCount}
+        max={link.maxUses}
+        label={`${m.inviteLinkUsesWord}, ${description}`}
+      />
+      <p className="invite-link__meta">
+        <span>{m.inviteLinkCreatedBy(creator)}</span>
+        <time dateTime={link.expiresAt}>{m.inviteLinkExpires(expires)}</time>
+      </p>
+    </>
   );
 }

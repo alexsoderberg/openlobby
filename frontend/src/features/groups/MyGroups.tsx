@@ -1,3 +1,4 @@
+import { Panel } from "../../ui";
 import { CreateGroupForm } from "./CreateGroupForm";
 import { GroupList } from "./GroupList";
 import { useCreateGroup } from "./useCreateGroup";
@@ -14,9 +15,11 @@ export function MyGroups({
     onUnauthenticated,
   );
   return (
-    <>
-      <GroupList state={state} onRetry={reload} />
+    <div className="panel-group">
+      <Panel>
+        <GroupList state={state} onRetry={reload} />
+      </Panel>
       <CreateGroupForm state={createState} onSubmit={create} />
-    </>
+    </div>
   );
 }

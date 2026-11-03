@@ -1,20 +1,33 @@
 import { useCallback, useState } from "react";
 import { inviteUrl } from "./inviteLink";
 
-type CopyState = "idle" | "copied" | "failed";
+type CopyOutcome = "copied" | "failed";
+
+/** `attempt` changes on every copy, so the confirmation can animate again even when the text is the same. */
+type CopyResult = { outcome: CopyOutcome; attempt: number };
 
 /** Copies the full address of a link. A browser that refuses leaves the address selectable by hand. */
 export function useCopyInviteLink() {
-  const [state, setState] = useState<CopyState>("idle");
+  const [result, setResult] = useState<CopyResult>();
 
-  const copy = useCallback(async (token: string) => {
-    try {
-      await navigator.clipboard.writeText(inviteUrl(token));
-      setState("copied");
-    } catch {
-      setState("failed");
-    }
+  const record = useCallback((outcome: CopyOutcome) => {
+    setResult((previous) => ({
+      outcome,
+      attempt: (previous?.attempt ?? 0) + 1,
+    }));
   }, []);
 
-  return { state, copy };
+  const copy = useCallback(
+    async (token: string) => {
+      try {
+        await navigator.clipboard.writeText(inviteUrl(token));
+        record("copied");
+      } catch {
+        record("failed");
+      }
+    },
+    [record],
+  );
+
+  return { result, copy };
 }

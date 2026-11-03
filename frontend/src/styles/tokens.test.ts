@@ -85,6 +85,8 @@ describe("design tokens", () => {
     "--color-bg": solid("--color-bg"),
     "--color-bg-raised": solid("--color-bg-raised"),
     "panel fill (--color-surface over --color-bg)": overPage("--color-surface"),
+    "list row hover (--color-row-hover over --color-bg)":
+      overPage("--color-row-hover"),
   };
 
   it.each(Object.entries(pagePlates))(
@@ -141,6 +143,12 @@ describe("design tokens", () => {
     expect(contrastRatio(solid("--color-muted"), tint)).toBeGreaterThanOrEqual(
       WCAG_AA_TEXT,
     );
+  });
+
+  it("the meter fill stands out at 3:1 or more on its track", () => {
+    expect(
+      contrastRatio(solid("--color-accent"), overPage("--color-border")),
+    ).toBeGreaterThanOrEqual(WCAG_AA_UI);
   });
 
   it.each(["--font-display", "--font-heading", "--font-sans"])(

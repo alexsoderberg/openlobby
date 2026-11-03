@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { toUserMessage, useMessages } from "../../i18n";
-import { Alert } from "../../ui";
+import { Alert, Panel } from "../../ui";
 import { INVALID_GROUP_NAME } from "./groupErrors";
 import type { CreateGroupState } from "./useCreateGroup";
 
@@ -36,7 +36,7 @@ export function CreateGroupForm({
       : undefined;
 
   return (
-    <section>
+    <Panel>
       <h2>{m.createGroupHeading}</h2>
       <form
         ref={formRef}
@@ -77,6 +77,6 @@ export function CreateGroupForm({
           {m.groupCreated}
         </p>
       )}
-    </section>
+    </Panel>
   );
 }

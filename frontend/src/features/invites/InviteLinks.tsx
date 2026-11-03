@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import type { Group } from "../../api";
 import { toUserMessage, useMessages } from "../../i18n";
-import { Alert } from "../../ui";
+import { Alert, Panel } from "../../ui";
 import { CreateInviteLinkForm } from "./CreateInviteLinkForm";
 import { InviteLinkList } from "./InviteLinkList";
 import { useCopyInviteLink } from "./useCopyInviteLink";
@@ -28,7 +28,7 @@ export function InviteLinks({
     create,
     revoke,
   } = useInviteLinkChanges(groupId, reload, onUnauthenticated);
-  const { state: copy, copy: copyLink } = useCopyInviteLink();
+  const { result: copy, copy: copyLink } = useCopyInviteLink();
   const changeRef = useRef<HTMLParagraphElement>(null);
   const saving = change.status === "saving";
 
@@ -37,7 +37,7 @@ export function InviteLinks({
   }, [change]);
 
   return (
-    <section>
+    <Panel>
       <h2>{m.inviteLinksHeading}</h2>
       <InviteLinkList
         state={state}
@@ -48,8 +48,13 @@ export function InviteLinks({
         onRevoke={revoke}
       />
       <p role="status" className="status">
-        {copy === "copied" && m.inviteLinkCopied}
-        {copy === "failed" && m.inviteLinkCopyFailed}
+        {copy && (
+          <span key={copy.attempt} className="status-flash">
+            {copy.outcome === "copied"
+              ? m.inviteLinkCopied
+              : m.inviteLinkCopyFailed}
+          </span>
+        )}
       </p>
       <CreateInviteLinkForm busy={saving} onSubmit={create} />
       <p ref={changeRef} tabIndex={-1} role="status" className="status">
@@ -61,6 +66,6 @@ export function InviteLinks({
       {change.status === "failed" && (
         <Alert>{toUserMessage(change.code)}</Alert>
       )}
-    </section>
+    </Panel>
   );
 }

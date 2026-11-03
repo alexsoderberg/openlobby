@@ -1,6 +1,6 @@
 import { InviteLinks } from "../invites";
 import { useMessages } from "../../i18n";
-import { ErrorAlert } from "../../ui";
+import { ErrorAlert, Panel } from "../../ui";
 import type { GroupState } from "./useGroup";
 
 /** Shows a group with its members and invite links. The admin marker is text, so it does not depend on color. */
@@ -21,27 +21,34 @@ export function GroupDetails({
 
   return (
     <>
+      <p className="crumb">
+        <a href="/">{m.backToStart}</a>
+      </p>
       <h1>{state.group.name}</h1>
-      <h2>{m.membersHeading}</h2>
-      <ul className="item-list">
-        {state.group.members.map((member) => (
-          <li key={member.userId}>
-            {member.displayName}
-            {member.role === "admin" && (
-              <>
-                {" "}
-                <span className="badge">{m.groupAdminMarker}</span>
-              </>
-            )}
-          </li>
-        ))}
-      </ul>
-      <InviteLinks
-        groupId={state.group.id}
-        members={state.group.members}
-        onUnauthenticated={onUnauthenticated}
-      />
-      <a href="/">{m.backToStart}</a>
+      <div className="panel-group">
+        <Panel>
+          <h2>{m.membersHeading}</h2>
+          <ul className="row-list" role="list">
+            {state.group.members.map((member) => (
+              <li key={member.userId} className="list-row">
+                <span className="avatar" />
+                {member.displayName}
+                {member.role === "admin" && (
+                  <>
+                    {" "}
+                    <span className="badge">{m.groupAdminMarker}</span>
+                  </>
+                )}
+              </li>
+            ))}
+          </ul>
+        </Panel>
+        <InviteLinks
+          groupId={state.group.id}
+          members={state.group.members}
+          onUnauthenticated={onUnauthenticated}
+        />
+      </div>
     </>
   );
 }
