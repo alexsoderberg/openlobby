@@ -17,6 +17,20 @@ export function fakeApiClient(overrides: Partial<ApiClient> = {}): ApiClient {
     listGroups: vi.fn(() => Promise.resolve([])),
     createGroup: vi.fn((name: string) => Promise.resolve({ id: "new", name })),
     getGroup: vi.fn(() => Promise.reject(new ApiError(404, "group_not_found"))),
+    listInviteLinks: vi.fn(() => Promise.resolve([])),
+    createInviteLink: vi.fn((_groupId: string, maxUses: number) =>
+      Promise.resolve({
+        id: "new",
+        token: "new-token",
+        createdByUserId: testUser.userId,
+        expiresAt: "2026-11-03T20:00:00Z",
+        useCount: 0,
+        maxUses,
+      }),
+    ),
+    revokeInviteLink: vi.fn(() => Promise.resolve()),
+    getInvite: vi.fn(() => Promise.reject(new ApiError(404, "invite_invalid"))),
+    joinInvite: vi.fn(() => Promise.resolve({ id: "g1", name: "Friday crew" })),
     ...overrides,
   };
 }

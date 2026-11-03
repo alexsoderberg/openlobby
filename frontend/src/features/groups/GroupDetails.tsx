@@ -1,14 +1,17 @@
+import { InviteLinks } from "../invites";
 import { useMessages } from "../../i18n";
 import { ErrorAlert } from "../../ui/ErrorAlert";
 import type { GroupState } from "./useGroup";
 
-/** Shows a group with its members. The admin marker is text, so it does not depend on color. */
+/** Shows a group with its members and invite links. The admin marker is text, so it does not depend on color. */
 export function GroupDetails({
   state,
   onRetry,
+  onUnauthenticated,
 }: {
   state: Exclude<GroupState, { status: "notFound" }>;
   onRetry: () => void;
+  onUnauthenticated: () => void;
 }) {
   const m = useMessages();
 
@@ -33,6 +36,11 @@ export function GroupDetails({
           </li>
         ))}
       </ul>
+      <InviteLinks
+        groupId={state.group.id}
+        members={state.group.members}
+        onUnauthenticated={onUnauthenticated}
+      />
       <a href="/">{m.backToStart}</a>
     </>
   );

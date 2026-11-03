@@ -1,4 +1,10 @@
-import { GroupDetails, MyGroups, useGroup } from "../features/groups";
+import {
+  GroupDetails,
+  MyGroups,
+  groupPath,
+  useGroup,
+} from "../features/groups";
+import { InvitePage } from "../features/invites";
 import { useMessages } from "../i18n";
 import type { Route } from "./route";
 
@@ -20,7 +26,13 @@ export function ProtectedPage({
         />
       );
     case "invite":
-      return <InvitePage />;
+      return (
+        <InvitePage
+          token={route.token}
+          onGroupOpened={openGroup}
+          onUnauthenticated={onUnauthenticated}
+        />
+      );
   }
 }
 
@@ -44,18 +56,18 @@ function GroupPage({
 }) {
   const { state, reload } = useGroup(groupId, onUnauthenticated);
   if (state.status === "notFound") return <NotFoundPage />;
-  return <GroupDetails state={state} onRetry={reload} />;
+  return (
+    <GroupDetails
+      state={state}
+      onRetry={reload}
+      onUnauthenticated={onUnauthenticated}
+    />
+  );
 }
 
-/** Placeholder: the invite flow is REQ-0002. */
-function InvitePage() {
-  const m = useMessages();
-  return (
-    <>
-      <h1>{m.inviteHeading}</h1>
-      <p>{m.invitePlaceholder}</p>
-    </>
-  );
+/** Full-page navigation, so the group page loads its own data from the start. */
+function openGroup(groupId: string) {
+  window.location.assign(groupPath(groupId));
 }
 
 export function NotFoundPage() {

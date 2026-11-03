@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
-import { errorCodeOf, isUnauthenticated, useApi, type Group } from "../../api";
+import { useCallback } from "react";
+import { errorCodeOf, useApi, type Group } from "../../api";
+import { useLoad, type LoadState } from "../../hooks";
 import { GROUP_NOT_FOUND } from "./groupErrors";
 
 export type GroupState =
@@ -8,35 +9,25 @@ export type GroupState =
   | { status: "notFound" }
   | { status: "error"; code: string };
 
+function groupStateOf(load: LoadState<Group>): GroupState {
+  switch (load.status) {
+    case "loading":
+      return { status: "loading" };
+    case "loaded":
+      return { status: "loaded", group: load.value };
+    case "failed": {
+      const code = errorCodeOf(load.error);
+      return code === GROUP_NOT_FOUND
+        ? { status: "notFound" }
+        : { status: "error", code };
+    }
+  }
+}
+
 /** Loads one group. A non-member gets notFound, the same as an unknown group, and no group data. */
 export function useGroup(groupId: string, onUnauthenticated: () => void) {
   const api = useApi();
-  const [state, setState] = useState<GroupState>({ status: "loading" });
-  const [attempt, setAttempt] = useState(0);
-
-  useEffect(() => {
-    let ignore = false;
-    api.getGroup(groupId).then(
-      (group) => {
-        if (!ignore) setState({ status: "loaded", group });
-      },
-      (error: unknown) => {
-        if (ignore) return;
-        if (isUnauthenticated(error)) onUnauthenticated();
-        else if (errorCodeOf(error) === GROUP_NOT_FOUND)
-          setState({ status: "notFound" });
-        else setState({ status: "error", code: errorCodeOf(error) });
-      },
-    );
-    return () => {
-      ignore = true;
-    };
-  }, [api, groupId, attempt, onUnauthenticated]);
-
-  const reload = useCallback(() => {
-    setState({ status: "loading" });
-    setAttempt((count) => count + 1);
-  }, []);
-
-  return { state, reload };
+  const getGroup = useCallback(() => api.getGroup(groupId), [api, groupId]);
+  const { state, reload } = useLoad(getGroup, onUnauthenticated);
+  return { state: groupStateOf(state), reload };
 }

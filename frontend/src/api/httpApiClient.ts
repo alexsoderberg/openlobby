@@ -29,6 +29,44 @@ export function createHttpApiClient(
           }),
         ),
       ),
+    listInviteLinks: async (groupId) =>
+      bodyOf(
+        await receive(
+          http.GET("/api/groups/{groupId}/invite-links", {
+            params: { path: { groupId } },
+          }),
+        ),
+      ),
+    createInviteLink: async (groupId, maxUses) =>
+      bodyOf(
+        await receive(
+          http.POST("/api/groups/{groupId}/invite-links", {
+            params: { path: { groupId } },
+            body: { maxUses },
+          }),
+        ),
+      ),
+    revokeInviteLink: async (groupId, linkId) => {
+      await receive(
+        http.DELETE("/api/groups/{groupId}/invite-links/{linkId}", {
+          params: { path: { groupId, linkId } },
+        }),
+      );
+    },
+    getInvite: async (token) =>
+      bodyOf(
+        await receive(
+          http.GET("/api/invites/{token}", { params: { path: { token } } }),
+        ),
+      ),
+    joinInvite: async (token) =>
+      bodyOf(
+        await receive(
+          http.POST("/api/invites/{token}/join", {
+            params: { path: { token } },
+          }),
+        ),
+      ),
   };
 }
 

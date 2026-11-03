@@ -4,12 +4,18 @@ import type { components as calendarComponents } from "./gen/calendar";
 export type AuthUser = authComponents["schemas"]["AuthUser"];
 export type GroupSummary = calendarComponents["schemas"]["GroupSummary"];
 export type Group = calendarComponents["schemas"]["Group"];
+export type InviteLink = calendarComponents["schemas"]["InviteLink"];
+export type InviteInfo = calendarComponents["schemas"]["InviteInfo"];
 export type ApiErrorCode =
   | authComponents["schemas"]["ErrorBody"]["code"]
   | calendarComponents["schemas"]["ErrorBody"]["code"];
 
 /** Contract rule: a group name is 1–50 characters after trim. Used by the local check and the messages. */
 export const GROUP_NAME_MAX_LENGTH = 50;
+/** Contract rule: an invite link allows 1–10 uses (ADR 0007). */
+export const INVITE_MAX_USES_LIMIT = 10;
+/** The form preselects this value. The API applies the same default when none is sent (ADR 0007). */
+export const INVITE_MAX_USES_DEFAULT = INVITE_MAX_USES_LIMIT;
 
 const LOGIN_PATH = "/api/auth/login";
 const UNKNOWN_CODE = "internal_error";
@@ -25,6 +31,11 @@ export interface ApiClient {
   listGroups(): Promise<GroupSummary[]>;
   createGroup(name: string): Promise<GroupSummary>;
   getGroup(groupId: string): Promise<Group>;
+  listInviteLinks(groupId: string): Promise<InviteLink[]>;
+  createInviteLink(groupId: string, maxUses: number): Promise<InviteLink>;
+  revokeInviteLink(groupId: string, linkId: string): Promise<void>;
+  getInvite(token: string): Promise<InviteInfo>;
+  joinInvite(token: string): Promise<GroupSummary>;
 }
 
 /** A failed call. `code` is the contract's error code, never a message from the server. */

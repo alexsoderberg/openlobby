@@ -11,6 +11,11 @@ const networkFailure = async (): Promise<Response> => {
 const failingCalls: Array<[string, (api: ApiClient) => Promise<unknown>]> = [
   ["createGroup", (api) => api.createGroup("Friday crew")],
   ["getGroup", (api) => api.getGroup("g1")],
+  ["listInviteLinks", (api) => api.listInviteLinks("g1")],
+  ["createInviteLink", (api) => api.createInviteLink("g1", 10)],
+  ["revokeInviteLink", (api) => api.revokeInviteLink("g1", "l1")],
+  ["getInvite", (api) => api.getInvite("t1")],
+  ["joinInvite", (api) => api.joinInvite("t1")],
 ];
 
 describe("createHttpApiClient", () => {
@@ -93,6 +98,57 @@ describe("createHttpApiClient", () => {
       createHttpApiClient(fetchImpl, BASE_URL).getGroup("g1"),
     ).resolves.toEqual(group);
     expect(new URL(sent[0].url).pathname).toBe("/api/groups/g1");
+  });
+
+  it("posts the chosen max uses and returns the created link", async () => {
+    const link = {
+      id: "l1",
+      token: "t1",
+      createdByUserId: "u1",
+      expiresAt: "2026-11-03T20:00:00Z",
+      useCount: 0,
+      maxUses: 3,
+    };
+    const sent: Request[] = [];
+    const fetchImpl = vi.fn<typeof fetch>(async (input) => {
+      sent.push(new Request(input));
+      return Response.json(link, { status: 201 });
+    });
+
+    await expect(
+      createHttpApiClient(fetchImpl, BASE_URL).createInviteLink("g1", 3),
+    ).resolves.toEqual(link);
+    expect(sent[0]).toMatchObject({ method: "POST" });
+    expect(new URL(sent[0].url).pathname).toBe("/api/groups/g1/invite-links");
+    await expect(sent[0].json()).resolves.toEqual({ maxUses: 3 });
+  });
+
+  it("deletes the link and resolves on 204", async () => {
+    const sent: Request[] = [];
+    const fetchImpl = vi.fn<typeof fetch>(async (input) => {
+      sent.push(new Request(input));
+      return new Response(null, { status: 204 });
+    });
+
+    await expect(
+      createHttpApiClient(fetchImpl, BASE_URL).revokeInviteLink("g1", "l1"),
+    ).resolves.toBeUndefined();
+    expect(sent[0]).toMatchObject({ method: "DELETE" });
+    expect(new URL(sent[0].url).pathname).toBe(
+      "/api/groups/g1/invite-links/l1",
+    );
+  });
+
+  it("maps a 404 from getInvite to invite_invalid without group data", async () => {
+    const fetchImpl = vi.fn(async () =>
+      Response.json(errorBody("invite_invalid"), { status: 404 }),
+    );
+
+    const failure = await createHttpApiClient(fetchImpl, BASE_URL)
+      .getInvite("t1")
+      .catch((error: unknown) => error);
+
+    expect(failure).toMatchObject({ status: 404, code: "invite_invalid" });
   });
 
   it("maps a 404 from getGroup to group_not_found", async () => {
