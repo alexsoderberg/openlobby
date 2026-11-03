@@ -132,3 +132,5 @@ Amendment 2026-11-02 (REQ-0002 design check). Decided by the architect before im
 **13. `getInvite` when the group row is gone (decided).** `getInvite` reads the link and the group name in one query. If the group row is gone, the query returns no row, so the answer is `invite_invalid`, the same as for an unknown token.
 
 **14. Backups and dumps are secrets (consequence, review COULD).** Database dumps and backups contain live tokens (item 1, plain text by decision). Access to dumps and backups is limited like access to the database. A dump is never added to the repository, never sent to a log, and never shared without the same care as the database itself.
+
+Amendment 2026-11-03 (REQ-0002 PR A). Item 11 of the amendment above says "after `requireUserID`", which reads the list order as the execution order. As built, `requireUserID` runs first and `httpapi.LimitBody` runs inside it, just before the handler. The router order is in ADR 0004, Amendment 2026-11-03.

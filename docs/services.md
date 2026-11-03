@@ -1,6 +1,6 @@
 # Service map
 
-Status: Accepted (see ADR 0001–0013). The amendment sections in the ADRs override earlier text that was not rewritten in place. ADR 0001 "Amendment 2026-11-01 (consolidated)" is the final statement of the cross-cutting rules, and ADR 0001 "review 4" and "review 5" list the text rewritten in place. This file reflects the state after review 5 and the operations base amendments of ADR 0008, 0009 and 0012 (2026-11-02). The contracts are `api/auth/openapi.yaml`, `api/auth/internal.yaml` and `api/calendar/openapi.yaml`.
+Status: Accepted (see ADR 0001–0013). The amendment sections in the ADRs override earlier text that was not rewritten in place. ADR 0001 "Amendment 2026-11-01 (consolidated)" is the final statement of the cross-cutting rules, and ADR 0001 "review 4" and "review 5" list the text rewritten in place. This file reflects the state after review 5 and the operations base amendments of ADR 0008, 0009 and 0012 (2026-11-02), and the REQ-0002 PR A amendments of ADR 0001 and 0004 (2026-11-03). The contracts are `api/auth/openapi.yaml`, `api/auth/internal.yaml` and `api/calendar/openapi.yaml`.
 
 ## Overview
 
@@ -120,7 +120,7 @@ Headers from the gateway to `calendar` (ADR 0002, 0011): `X-User-Id` (uuid) and 
 Notes:
 - A non-member gets `404 group_not_found` instead of 403, so that the group's existence is not revealed.
 - Unknown, revoked, expired or used-up invite link gives `404 invite_invalid`. The response is the same in all cases.
-- The member list shows role (`admin` or `member`).
+- The member list shows role (`admin` or `member`), ordered by `joined_at`, then `user_id` (ADR 0001, Amendment 2026-11-03). Display names come from `auth`. A missing or empty name there is a server error (`500 internal_error`), never an empty name in the list (ADR 0004, Amendment 2026-11-03).
 - A system admin has no rights in a group. Group and lobby endpoints give the same response as for anyone else (ADR 0004 rule 11).
 - Order of checks in every endpoint (shape before membership), the `required` rule and the defaults for omitted fields, and the shape rules (wrong JSON type, missing time, body over 16 KiB, invalid uuid in path): ADR 0001, "Amendment 2026-11-01 (consolidated)".
 - Times are RFC 3339. Any offset is accepted; responses are always UTC with `Z` (ADR 0001).
