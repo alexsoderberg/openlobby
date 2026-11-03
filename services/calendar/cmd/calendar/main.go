@@ -20,6 +20,7 @@ import (
 	"openlobby/pkg/logging"
 	"openlobby/services/calendar/internal/application"
 	"openlobby/services/calendar/internal/infrastructure/authclient"
+	"openlobby/services/calendar/internal/infrastructure/cryptotoken"
 	"openlobby/services/calendar/internal/infrastructure/postgres"
 	"openlobby/services/calendar/internal/infrastructure/systemclock"
 	"openlobby/services/calendar/internal/transport"
@@ -145,9 +146,11 @@ func serve(logger *slog.Logger) error {
 	if err != nil {
 		return err
 	}
+	clock := systemclock.Clock{}
 	repo := store.Groups()
-	groups := application.NewGroups(repo, repo, repo, directory, systemclock.Clock{})
-	handler := transport.NewRouter(groups, store.Ping, logger)
+	groups := application.NewGroups(repo, repo, repo, directory, clock)
+	invites := application.NewInviteLinks(repo, repo, store.InviteLinks(), cryptotoken.Generator{}, clock)
+	handler := transport.NewRouter(groups, invites, store.Ping, logger)
 	return listen(ctx, logger, cfg.httpAddr, handler)
 }
 

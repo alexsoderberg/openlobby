@@ -35,6 +35,7 @@ var clockNow = time.Date(2026, 11, 2, 18, 0, 0, 0, time.UTC)
 type memoryGroups struct {
 	groups  map[string]domain.Group
 	members map[string][]domain.Member
+	links   map[string][]domain.InviteLink
 	err     error
 	calls   int
 	created int
@@ -65,14 +66,14 @@ func (m *memoryGroups) Create(_ context.Context, name, creatorID string, _ time.
 	return group, m.err
 }
 
-func (m *memoryGroups) IsMember(_ context.Context, groupID, userID string) (bool, error) {
+func (m *memoryGroups) Membership(_ context.Context, groupID, userID string) (domain.Member, bool, error) {
 	m.calls++
 	for _, member := range m.members[groupID] {
 		if member.UserID == userID {
-			return true, m.err
+			return member, true, m.err
 		}
 	}
-	return false, m.err
+	return domain.Member{}, false, m.err
 }
 
 func (m *memoryGroups) Group(_ context.Context, groupID string) (domain.Group, error) {
@@ -109,6 +110,7 @@ func (fixedClock) Now() time.Time { return clockNow }
 func fridayStore() *memoryGroups {
 	return &memoryGroups{
 		groups: map[string]domain.Group{fridayID: {ID: fridayID, Name: "Friday"}},
+		links:  map[string][]domain.InviteLink{},
 		members: map[string][]domain.Member{fridayID: {
 			{UserID: alexID, Role: domain.RoleAdmin},
 			{UserID: otherID, Role: domain.RoleMember},
@@ -125,7 +127,8 @@ func newRouter(store *memoryGroups, directory *fakeDirectory) http.Handler {
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	ready := func(context.Context) error { return store.err }
 	groups := application.NewGroups(store, store, store, directory, fixedClock{})
-	return transport.NewRouter(groups, ready, logger)
+	invites := application.NewInviteLinks(store, store, store, fixedTokens{}, fixedClock{})
+	return transport.NewRouter(groups, invites, ready, logger)
 }
 
 func call(router http.Handler, method, target string, headers map[string]string, body string) *httptest.ResponseRecorder {
@@ -437,7 +440,7 @@ func TestHealthzAndReadyz(t *testing.T) {
 
 // Operations of later requirements are in the contract but not built. They answer 500 internal_error, not a panic.
 func TestUnbuiltOperationAnswers500InternalError(t *testing.T) {
-	response := call(newRouter(fridayStore(), fridayDirectory()), http.MethodGet, "/api/groups/"+fridayID+"/invite-links", asUser(alexID), "")
+	response := call(newRouter(fridayStore(), fridayDirectory()), http.MethodDelete, "/api/groups/"+fridayID+"/invite-links/"+linkID, asUser(alexID), "")
 
 	assertErrorEnvelope(t, response, http.StatusInternalServerError, "internal_error")
 }

@@ -264,11 +264,11 @@ func TestCreateMakesCreatorAdminAndListsTheGroup(t *testing.T) {
 	if err != nil || len(members) != 1 || members[0].UserID != alexID || members[0].Role != domain.RoleAdmin {
 		t.Fatalf("members %+v, error %v; want Alex as the only admin", members, err)
 	}
-	isMember, err := groups.IsMember(ctx, group.ID, alexID)
+	_, isMember, err := groups.Membership(ctx, group.ID, alexID)
 	if err != nil || !isMember {
 		t.Fatalf("creator is not a member: %v, error %v", isMember, err)
 	}
-	isMember, err = groups.IsMember(ctx, group.ID, otherID)
+	_, isMember, err = groups.Membership(ctx, group.ID, otherID)
 	if err != nil || isMember {
 		t.Fatalf("another user is a member: %v, error %v; want not a member", isMember, err)
 	}
