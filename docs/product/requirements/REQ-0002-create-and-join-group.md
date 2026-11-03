@@ -1,5 +1,5 @@
 # REQ-0002. Create and join group via invite link
-Status: Decided
+Status: Implemented
 Feature: F-002
 Priority: Must
 
@@ -63,3 +63,4 @@ F-001 (Log in with Discord) is required to join. No other feature in the feature
 - DECISION (sequencing): REQ-0002 may be implemented before REQ-0004. Until REQ-0004 is delivered, the group's page shows the member list and the invite links only, with no lobby section. The lobby part of the "after joining" criterion is covered by REQ-0004 ("Given that I am a member, when I open the group's page, then the lobbies are sorted...", and the empty-state text), which applies to every member regardless of how they joined. Both requirements must be delivered before the MVP is released.
 - DECISION (non-member access): A non-member who opens the group's page by direct address gets the same 404 page as for an unknown group (`group_not_found` in the contract). Group existence is not revealed. This is the same principle as for invite links.
 - DECISION (product owner, consistency with REQ-0007 and ADR 0007 section 7; no user decision asks otherwise): a used-up link is not shown in any list, including to its creator and group admins, because only active links are listed. The use count 10 of 10 is therefore verified in the data and by the 404 for the 11th person, not in the interface. If the user wants used-up links visible to creators or admins, this is a new decision and needs a new requirement or an amendment to REQ-0007.
+- DECISION (implementation): The "404 page" in the criteria above is a dedicated view, not an HTTP 404 status, because the single-page app cannot set a status code (ADR 0007). Its heading is "Invite link not valid" and its text is "This invite link is no longer valid. Ask for a new one." It shows no group information and is identical for every reason (unknown, expired, used up or revoked).
