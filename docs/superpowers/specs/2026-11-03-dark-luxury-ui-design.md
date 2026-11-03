@@ -81,7 +81,7 @@ Structure from the approved prototype:
 4. App preview: a static, decorative preview of a group page (members, invite link with 3/10 meter). It must be clearly decorative (no fake interactivity that looks real, `aria-hidden` or described as an illustration).
 5. Footer.
 
-**The copy is not decided.** The prototype text is a placeholder. The product owner decides the final copy (English, in `en.ts`, i18n-ready) and must not promise features that are not built; the lobby step describes upcoming MVP functionality, so the product owner decides whether to show it now or phrase it as coming soon.
+**The copy is decided by the product owner** (section "Landing page copy" at the end of this document). Strings go in `en.ts`, i18n-ready.
 
 Logged-in users keep landing on "my groups" as today.
 
@@ -114,3 +114,44 @@ The architect confirms beforehand that self-hosted font files under `frontend/` 
 - Icon approach (inline SVG only; no icon font or library).
 - How scroll reveal is implemented (e.g. a small `useReveal` hook with IntersectionObserver), as long as it is one shared mechanism.
 - Whether to keep a film-grain texture (the prototype had a faint one; optional, must be a local asset or CSS).
+
+## Landing page copy (decided by the product owner, 2026-11-03)
+
+Basis: `vision.md` and `features.md`. Built now: Discord login (F-001), groups and invite links with 2-hour validity, max uses and revocation (F-002, F-013). Not built: lobbies, game list, calendar (F-003 to F-005, F-017, F-024, F-025, REQ-0003/0004/0005/0009/0010 are `Decided`). Visible copy must not mention lobbies, the game list or the calendar.
+
+Decisions:
+- **Lobby step is left out** of the visible page until lobbies ship. A "coming soon" card would promise a feature on a public page and need re-copy later. The landing page shows two steps now. The layout must work with two cards on desktop and mobile.
+- **Lifetime and limits are left out of copy.** The 2-hour validity and the 1–10 uses are rules that may change, so no number appears in UI text (same rule as the rest of the design).
+- **Headline highlight:** the word "planned" in the headline, upright gold, Cormorant 600–700 (not italic).
+- **Lead** is rewritten: the placeholder mentioned lobbies, which are not built.
+- **Steps section** has a visually hidden heading "How it works" so the secondary button has a target and screen readers get a landmark. Its anchor id is `how-it-works`.
+
+Strings (English, keys in `en.ts`):
+
+| Element | Exact string |
+|---|---|
+| Top bar link (ghost) | `Log in` (same target as the primary button) |
+| Eyebrow | `Game nights, without the group chat chaos` |
+| Headline | `Game night, planned properly.` (highlight: `planned`) |
+| Lead | `Create a group, invite your friends with a link, and keep the whole crew in one place.` |
+| Primary button | `Log in with Discord` |
+| Secondary button | `How it works` (scrolls to `#how-it-works`) |
+| Steps section heading (visually hidden) | `How it works` |
+| Step 1 title | `Gather your group` |
+| Step 1 text | `Log in with Discord and create a group for your crew. You become its admin.` |
+| Step 2 title | `Invite with a link` |
+| Step 2 text | `Share a link with the friends you want. Each link expires on its own, and you can revoke it any time.` |
+| Preview section title | `Inside the app, it feels the same.` |
+| Preview | Decorative, `aria-hidden="true"`, no text copy. Use generic sample names only, never real people. |
+| Footer | `OpenLobby · made for game nights` |
+
+Accessibility notes for the builder: the top bar `Log in` and the primary `Log in with Discord` are different accessible names, so the existing name query for `Log in with Discord` stays unique. Every login link keeps the existing `/api/auth/login?returnTo=...` target.
+
+Deferred step (not shown now). Add it as the third card in the same PR as the lobby feature's frontend, only when REQ-0003, REQ-0004 and REQ-0005 are `Implemented` and F-003, F-004, F-005 are `Done`:
+
+| Element | Exact string |
+|---|---|
+| Step 3 title | `Book the lobby` |
+| Step 3 text | `Pick a game and a time, and see who is in and how many spots are left.` |
+
+Risk: the headline "planned properly" is a value claim rather than a feature claim. It becomes fully true when lobbies ship. The product owner accepts it now, because it names no feature.
