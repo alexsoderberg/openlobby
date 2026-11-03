@@ -24,6 +24,8 @@ func TestTranslate(t *testing.T) {
 		{name: "connection exception is unavailable", err: &pgconn.PgError{Code: "08006"}, wantUnavailable: true},
 		{name: "insufficient resources is unavailable", err: &pgconn.PgError{Code: "53300"}, wantUnavailable: true},
 		{name: "operator intervention is unavailable", err: &pgconn.PgError{Code: "57P01"}, wantUnavailable: true},
+		{name: "lock timeout is unavailable", err: &pgconn.PgError{Code: "55P03"}, wantUnavailable: true},
+		{name: "other object state error is not unavailable", err: &pgconn.PgError{Code: "55006"}},
 		{name: "connect error is unavailable", err: &pgconn.ConnectError{}, wantUnavailable: true},
 		{name: "network error is unavailable", err: &net.OpError{Op: "dial", Err: errors.New("refused")}, wantUnavailable: true},
 		{name: "bad connection is unavailable", err: driver.ErrBadConn, wantUnavailable: true},

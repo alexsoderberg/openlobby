@@ -64,28 +64,43 @@ func (s *Store) Migrate(ctx context.Context, down bool) error {
 // insufficient resources (53) and operator intervention (57) (ADR 0001).
 var unavailableClasses = []string{"08", "53", "57"}
 
+// lockNotAvailable is raised when the lock_timeout of a transaction expires (ADR 0006, ADR 0001 item 8).
+const lockNotAvailable = "55P03"
+
 // translate maps database errors to domain errors. A failure to reach the database is domain.ErrUnavailable (503).
 // Any other error is a SQL error or a bug and stays as it is (500).
 func translate(err error) error {
 	switch {
 	case err == nil:
 		return nil
-	case isConnectionFailure(err):
+	case isUnavailable(err):
 		return fmt.Errorf("%w: %w", domain.ErrUnavailable, err)
 	default:
 		return err
 	}
 }
 
-func isConnectionFailure(err error) bool {
+func isUnavailable(err error) bool {
 	var connectErr *pgconn.ConnectError
 	var netErr net.Error
 	var pgErr *pgconn.PgError
 	switch {
 	case errors.Is(err, driver.ErrBadConn), errors.As(err, &connectErr), errors.As(err, &netErr):
 		return true
-	case errors.As(err, &pgErr) && len(pgErr.Code) >= 2:
-		return slices.Contains(unavailableClasses, pgErr.Code[:2])
+	case errors.As(err, &pgErr):
+		return pgErr.Code == lockNotAvailable || (len(pgErr.Code) >= 2 && slices.Contains(unavailableClasses, pgErr.Code[:2]))
 	}
 	return false
+}
+
+// inTx runs fn in one transaction. The transaction is committed when fn succeeds and rolled back when it fails.
+func (s *Store) inTx(ctx context.Context, fn func(tx *sql.Tx) error) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	if err := fn(tx); err != nil {
+		return errors.Join(err, tx.Rollback())
+	}
+	return tx.Commit()
 }

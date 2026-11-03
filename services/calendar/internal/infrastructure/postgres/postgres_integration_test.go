@@ -8,9 +8,11 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"errors"
+	"maps"
 	"net/url"
 	"os"
 	"testing"
+	"time"
 
 	"openlobby/services/calendar/internal/domain"
 )
@@ -217,14 +219,8 @@ func TestListForUserReturnsOnlyGroupsWhereUserIsMember(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			got := namesOf(groups)
-			if len(got) != len(tc.want) {
+			if got := namesOf(groups); !maps.Equal(got, tc.want) {
 				t.Fatalf("groups %v, want %v", got, tc.want)
-			}
-			for id, name := range tc.want {
-				if got[id] != name {
-					t.Fatalf("groups %v, want %v", got, tc.want)
-				}
 			}
 		})
 	}
@@ -246,5 +242,104 @@ func TestUnreachableDatabaseIsUnavailable(t *testing.T) {
 	}
 	if err := store.Ping(context.Background()); !errors.Is(err, domain.ErrUnavailable) {
 		t.Fatalf("ping error %v, want ErrUnavailable", err)
+	}
+}
+
+var joinedAt = time.Date(2026, 11, 2, 18, 0, 0, 0, time.UTC)
+
+func TestCreateMakesCreatorAdminAndListsTheGroup(t *testing.T) {
+	store := migratedStore(t)
+	ctx := context.Background()
+	groups := store.Groups()
+
+	group, err := groups.Create(ctx, "Friday", alexID, joinedAt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if group.ID == "" || group.Name != "Friday" {
+		t.Fatalf("group %+v, want a generated ID and the name Friday", group)
+	}
+	members, err := groups.Members(ctx, group.ID)
+	if err != nil || len(members) != 1 || members[0].UserID != alexID || members[0].Role != domain.RoleAdmin {
+		t.Fatalf("members %+v, error %v; want Alex as the only admin", members, err)
+	}
+	isMember, err := groups.IsMember(ctx, group.ID, alexID)
+	if err != nil || !isMember {
+		t.Fatalf("creator is not a member: %v, error %v", isMember, err)
+	}
+	isMember, err = groups.IsMember(ctx, group.ID, otherID)
+	if err != nil || isMember {
+		t.Fatalf("another user is a member: %v, error %v; want not a member", isMember, err)
+	}
+	listed, err := groups.ListForUser(ctx, alexID)
+	if err != nil || len(listed) != 1 || listed[0].ID != group.ID {
+		t.Fatalf("listed %v, error %v; want the new group", listed, err)
+	}
+}
+
+func TestGroupAndMembersReadBackWithRoles(t *testing.T) {
+	store := migratedStore(t)
+	seedGroups(t, store)
+	ctx := context.Background()
+	groups := store.Groups()
+
+	group, err := groups.Group(ctx, sundayID)
+	if err != nil || group.Name != "Sunday" {
+		t.Fatalf("group %+v, error %v; want Sunday", group, err)
+	}
+	members, err := groups.Members(ctx, sundayID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Both rows were inserted with the same joined_at, so the order falls back to user_id.
+	want := []domain.Member{{UserID: otherID, Role: domain.RoleMember}, {UserID: alexID, Role: domain.RoleMember}}
+	if len(members) != len(want) || members[0] != want[0] || members[1] != want[1] {
+		t.Fatalf("members %+v, want %+v", members, want)
+	}
+}
+
+func TestUnknownGroupIsNotFound(t *testing.T) {
+	store := migratedStore(t)
+	seedGroups(t, store)
+
+	if _, err := store.Groups().Group(context.Background(), nobodyID); !errors.Is(err, domain.ErrGroupNotFound) {
+		t.Fatalf("error %v, want ErrGroupNotFound", err)
+	}
+}
+
+// beginTx starts a transaction that is rolled back when the test ends.
+func beginTx(t *testing.T, store *Store) *sql.Tx {
+	t.Helper()
+	tx, err := store.db.BeginTx(context.Background(), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := tx.Rollback(); err != nil && !errors.Is(err, sql.ErrTxDone) {
+			t.Errorf("rollback: %v", err)
+		}
+	})
+	return tx
+}
+
+// A lock that waits past lock_timeout fails with SQLSTATE 55P03, which translate maps to unavailable (ADR 0001, item 8).
+func TestLockTimeoutIsUnavailable(t *testing.T) {
+	store := migratedStore(t)
+	seedGroups(t, store)
+	ctx := context.Background()
+
+	holder := beginTx(t, store)
+	if _, err := holder.ExecContext(ctx, `SELECT 1 FROM groups WHERE id = $1 FOR UPDATE`, fridayID); err != nil {
+		t.Fatal(err)
+	}
+
+	waiter := beginTx(t, store)
+	if _, err := waiter.ExecContext(ctx, `SET LOCAL lock_timeout = '100ms'`); err != nil {
+		t.Fatal(err)
+	}
+	_, err := waiter.ExecContext(ctx, `SELECT 1 FROM groups WHERE id = $1 FOR UPDATE`, fridayID)
+
+	if !errors.Is(translate(err), domain.ErrUnavailable) {
+		t.Fatalf("lock wait error %v, want ErrUnavailable", err)
 	}
 }
