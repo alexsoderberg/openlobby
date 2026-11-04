@@ -165,7 +165,9 @@ describe("add", () => {
       fireEvent.click(screen.getByRole("button", { name: en.gameAddSubmit }));
 
       const error = await within(form).findByRole("alert");
-      expect(error.textContent).toBe(en.errors[code]);
+      expect(error.textContent).toBe(
+        code === "invalid_game" ? en.gameNameInvalid : en.errors[code],
+      );
       const field = within(form).getByLabelText(focusedLabel);
       expect(document.activeElement).toBe(field);
       expect(field.getAttribute("aria-describedby")).toContain(error.id);
@@ -177,7 +179,6 @@ describe("add", () => {
     ["invalid_game", en.gameNameLabel],
     ["invalid_capacity", en.gameMaxPlayersLabel],
     ["game_taken", en.gameNameLabel],
-    ["game_not_found", en.gameNameLabel],
     ["not_allowed", en.gameNameLabel],
   ] as const)(
     "shows the server error %s next to its field",
@@ -192,7 +193,7 @@ describe("add", () => {
       fireEvent.click(screen.getByRole("button", { name: en.gameAddSubmit }));
 
       expect((await within(form).findByRole("alert")).textContent).toBe(
-        en.errors[code],
+        code === "invalid_game" ? en.gameNameInvalid : en.errors[code],
       );
       expect(document.activeElement).toBe(within(form).getByLabelText(label));
       expect(valueOf(form, en.gameNameLabel)).toBe("Azul");
@@ -267,7 +268,23 @@ describe("change", () => {
     );
   });
 
-  it("refreshes the list when the game is gone", async () => {
+  it("denies a rename to Other and saves nothing", async () => {
+    const client = adminClient();
+    renderPage(client);
+    const form = await startEdit();
+
+    fill(form, " other ", "4");
+    fireEvent.click(
+      within(form).getByRole("button", { name: en.gameEditSubmit }),
+    );
+
+    expect((await within(form).findByRole("alert")).textContent).toBe(
+      en.gameNameInvalid,
+    );
+    expect(client.replaceGame).not.toHaveBeenCalled();
+  });
+
+  it("shows the vanished game once, closes the form and refreshes the list", async () => {
     const client = adminClient({
       replaceGame: () => Promise.reject(new ApiError(404, "game_not_found")),
     });
@@ -280,6 +297,10 @@ describe("change", () => {
     expect((await screen.findByRole("alert")).textContent).toBe(
       en.errors.game_not_found,
     );
+    expect(screen.getAllByRole("alert")).toHaveLength(1);
+    expect(
+      screen.queryByRole("button", { name: en.gameEditSubmit }),
+    ).toBeNull();
     await waitFor(() => expect(client.listGames).toHaveBeenCalledTimes(2));
   });
 });
@@ -328,7 +349,41 @@ describe("remove", () => {
     expect(screen.getByText("Catan")).toBeTruthy();
   });
 
-  it.each(["game_not_found", "not_allowed", "internal_error"] as const)(
+  it("closes the dialog and shows a vanished game once", async () => {
+    renderPage(
+      adminClient({
+        deleteGame: () => Promise.reject(new ApiError(404, "game_not_found")),
+      }),
+    );
+    const dialog = await openDialog();
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: en.gameRemoveSubmit }),
+    );
+
+    expect((await screen.findByRole("alert")).textContent).toBe(
+      en.errors.game_not_found,
+    );
+    expect(screen.getAllByRole("alert")).toHaveLength(1);
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("keeps the list on screen while it refreshes after a removal", async () => {
+    const listGames = vi
+      .fn<ApiClient["listGames"]>()
+      .mockResolvedValueOnce([catan, chess])
+      .mockReturnValueOnce(new Promise(() => {}));
+    renderPage(adminClient({ listGames }));
+    const dialog = await openDialog();
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: en.gameRemoveSubmit }),
+    );
+
+    await screen.findByText(en.gameRemoved);
+    expect(screen.getByText("Catan")).toBeTruthy();
+    expect(screen.queryByText(en.gameListLoading)).toBeNull();
+  });
+
+  it.each(["not_allowed", "internal_error"] as const)(
     "shows %s in the dialog and keeps it open",
     async (code) => {
       renderPage(

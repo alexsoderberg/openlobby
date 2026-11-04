@@ -7,11 +7,8 @@ export type Group = calendarComponents["schemas"]["Group"];
 export type Game = calendarComponents["schemas"]["Game"];
 export type InviteLink = calendarComponents["schemas"]["InviteLink"];
 export type InviteInfo = calendarComponents["schemas"]["InviteInfo"];
-/** What the system admin sets on a game. `null` means no player limit. */
-export type GameInput = {
-  name: string;
-  defaultMaxPlayers: number | null;
-};
+/** What the system admin sets on a game: the game without its generated ID. */
+export type GameInput = Omit<Game, "id">;
 export type ApiErrorCode =
   | authComponents["schemas"]["ErrorBody"]["code"]
   | calendarComponents["schemas"]["ErrorBody"]["code"];

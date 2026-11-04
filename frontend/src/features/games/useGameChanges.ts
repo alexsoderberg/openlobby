@@ -40,8 +40,8 @@ export function useGameChanges(
       } catch (error) {
         if (isUnauthenticated(error)) onUnauthenticated();
         const code = errorCodeOf(error);
-        // A game that is gone from the server is gone from the list too. The list reloads and takes
-        // the form with it, so the page keeps the message.
+        // A game that is gone from the server is gone from the list too. The page keeps the message
+        // and closes the form or dialog, so the message is shown once.
         if (code === GAME_NOT_FOUND) {
           setState({ status: "gone", code });
           onChanged();

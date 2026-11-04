@@ -22,6 +22,6 @@ function gamesStateOf(load: LoadState<Game[]>): GamesState {
 export function useGames(onUnauthenticated: () => void) {
   const api = useApi();
   const listGames = useCallback(() => api.listGames(), [api]);
-  const { state, reload } = useLoad(listGames, onUnauthenticated);
-  return { state: gamesStateOf(state), reload };
+  const { state, reload, refresh } = useLoad(listGames, onUnauthenticated);
+  return { state: gamesStateOf(state), reload, refresh };
 }

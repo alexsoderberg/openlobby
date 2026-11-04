@@ -1,7 +1,7 @@
 import { useId, useRef, useState } from "react";
 import type { Game, GameInput } from "../../api";
 import { toUserMessage, useMessages } from "../../i18n";
-import { INVALID_CAPACITY } from "./gameErrors";
+import { INVALID_CAPACITY, INVALID_GAME } from "./gameErrors";
 import { parseGameInput } from "./gameInput";
 
 /**
@@ -90,7 +90,9 @@ export function GameForm({
       </p>
       {errorCode !== undefined && (
         <p id={errorId} role="alert" className="field-error">
-          {toUserMessage(errorCode)}
+          {errorCode === INVALID_GAME
+            ? m.gameNameInvalid
+            : toUserMessage(errorCode)}
         </p>
       )}
       <div className="form-actions">

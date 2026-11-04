@@ -115,6 +115,7 @@ export const en = {
   gameEditSubmit: "Save changes",
   gameEditCancel: "Cancel",
   gameRemove: "Remove",
+  gameNameInvalid: `The name must be 1 to ${GAME_NAME_MAX_LENGTH} characters, and "${RESERVED_GAME_NAME}" is reserved.`,
   gameRemoveHeading: (name: string) => `Remove ${name}?`,
   gameRemoveConfirm:
     "The game leaves the game list for everyone. Lobbies that already use it keep their game name and max players.",

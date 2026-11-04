@@ -44,6 +44,22 @@ describe("useLoad", () => {
     expect(load).toHaveBeenCalledTimes(2);
   });
 
+  it("keeps the loaded value while a refresh loads again", async () => {
+    const load = vi
+      .fn<() => Promise<string>>()
+      .mockResolvedValueOnce("old")
+      .mockResolvedValueOnce("new");
+    const { result } = renderHook(() => useLoad(load));
+    await waitFor(() => expect(result.current.state.status).toBe("loaded"));
+
+    act(() => result.current.refresh());
+
+    expect(result.current.state).toEqual({ status: "loaded", value: "old" });
+    await waitFor(() =>
+      expect(result.current.state).toEqual({ status: "loaded", value: "new" }),
+    );
+  });
+
   it("hands an expired session to onUnauthenticated and stays loading", async () => {
     const onUnauthenticated = vi.fn();
     const load = () => Promise.reject(new ApiError(401, "unauthenticated"));
