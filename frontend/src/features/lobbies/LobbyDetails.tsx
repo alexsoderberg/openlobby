@@ -77,7 +77,7 @@ function DeleteLobby({
       </button>
       {confirming && (
         <DeleteLobbyDialog
-          lobby={lobby}
+          gameName={lobby.gameName}
           busy={busy}
           onConfirm={remove}
           onClose={() => setConfirming(false)}

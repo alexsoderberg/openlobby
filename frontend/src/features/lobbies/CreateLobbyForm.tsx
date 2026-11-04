@@ -3,7 +3,6 @@ import type { ChangeResult, CreateLobbyInput, Game } from "../../api";
 import { toUserMessage, useMessages } from "../../i18n";
 import { LobbyGameFields } from "./LobbyGameFields";
 import { LobbyTimeFields } from "./LobbyTimeFields";
-import { fieldOf } from "./lobbyFieldOf";
 import { LOBBY_TIME_MISSING } from "./lobbyErrors";
 import { useLobbyFormSubmit } from "./useLobbyFormSubmit";
 
@@ -19,15 +18,13 @@ export function CreateLobbyForm({
   busy: boolean;
   onSubmit: SubmitLobby;
 }) {
-  const m = useMessages();
   const id = useId();
   const [gameValue, setGameValue] = useState("");
-  const { errorCode, submit } = useLobbyFormSubmit(
+  const { errorCode, errorField, submit } = useLobbyFormSubmit(
     gameValue,
     setGameValue,
     onSubmit,
   );
-  const errorField = errorCode && fieldOf(errorCode, gameValue);
   const errorId = `${id}-error`;
   const errorFor = (name: string) =>
     errorField === name ? errorId : undefined;
@@ -50,9 +47,7 @@ export function CreateLobbyForm({
       />
       <LobbyTimeFields id={id} errorId={errorFor("date")} />
       {errorCode && <LobbyFormError id={errorId} code={errorCode} />}
-      <button type="submit" className="button" disabled={busy}>
-        {m.lobbyCreateSubmit}
-      </button>
+      <LobbySubmitButton busy={busy} />
     </form>
   );
 }
@@ -63,5 +58,14 @@ function LobbyFormError({ id, code }: { id: string; code: string }) {
     <p id={id} role="alert" className="field-error">
       {code === LOBBY_TIME_MISSING ? m.lobbyTimeMissing : toUserMessage(code)}
     </p>
+  );
+}
+
+function LobbySubmitButton({ busy }: { busy: boolean }) {
+  const m = useMessages();
+  return (
+    <button type="submit" className="button" disabled={busy}>
+      {m.lobbyCreateSubmit}
+    </button>
   );
 }

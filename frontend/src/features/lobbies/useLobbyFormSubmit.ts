@@ -24,5 +24,6 @@ export function useLobbyFormSubmit(
     if (field instanceof HTMLElement) field.focus();
   }
 
-  return { errorCode, submit };
+  const errorField = errorCode && fieldOf(errorCode, gameValue);
+  return { errorCode, errorField, submit };
 }

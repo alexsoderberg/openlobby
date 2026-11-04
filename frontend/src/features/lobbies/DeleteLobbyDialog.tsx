@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react";
-import type { ChangeResult, Lobby } from "../../api";
+import type { ChangeResult } from "../../api";
 import { toUserMessage, useMessages } from "../../i18n";
 import { Alert } from "../../ui";
 
@@ -8,12 +8,12 @@ import { Alert } from "../../ui";
  * where it is read. `onConfirm` resolves to the error code of a failure. After a success the owner leaves the page.
  */
 export function DeleteLobbyDialog({
-  lobby,
+  gameName,
   busy,
   onConfirm,
   onClose,
 }: {
-  lobby: Lobby;
+  gameName: string;
   busy: boolean;
   onConfirm: () => ChangeResult;
   onClose: () => void;
@@ -34,7 +34,7 @@ export function DeleteLobbyDialog({
       aria-labelledby={headingId}
       onClose={onClose}
     >
-      <h2 id={headingId}>{m.lobbyDeleteHeading(lobby.gameName)}</h2>
+      <h2 id={headingId}>{m.lobbyDeleteHeading(gameName)}</h2>
       <p>{m.lobbyDeleteConfirm}</p>
       {errorCode !== undefined && <Alert>{toUserMessage(errorCode)}</Alert>}
       <DeleteLobbyActions
