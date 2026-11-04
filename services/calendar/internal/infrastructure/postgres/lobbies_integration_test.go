@@ -5,13 +5,19 @@ package postgres
 import (
 	"context"
 	"errors"
+	"slices"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgconn"
+
 	"openlobby/services/calendar/internal/application"
 	"openlobby/services/calendar/internal/domain"
 )
+
+// checkViolation is the SQLSTATE of a failed CHECK constraint.
+const checkViolation = "23514"
 
 const counterStrikeID = "ce3ff9c1-dabb-4270-b5e0-7b34de37410b"
 
@@ -182,8 +188,10 @@ func TestDatabaseRefusesWhatTheDomainRefuses(t *testing.T) {
 	}
 	for _, tc := range refused {
 		t.Run(tc.name, func(t *testing.T) {
-			if _, err := store.db.Exec(insert, fridayID, alexID, tc.game, tc.max, start, tc.end, joinedAt); err == nil {
-				t.Fatal("database accepted the lobby")
+			_, err := store.db.Exec(insert, fridayID, alexID, tc.game, tc.max, start, tc.end, joinedAt)
+			var pgErr *pgconn.PgError
+			if !errors.As(err, &pgErr) || pgErr.Code != checkViolation {
+				t.Fatalf("error %v, want a check violation (23514)", err)
 			}
 		})
 	}
@@ -272,5 +280,127 @@ func TestListForGroupCountsLobbiesOfTheGroupPerGame(t *testing.T) {
 		if game.ID != counterStrikeID && byID[game.ID].LobbyCount != 0 {
 			t.Fatalf("%s count %d, want 0", game.Name, byID[game.ID].LobbyCount)
 		}
+	}
+}
+
+// addPlayer joins a user to a lobby at the given time. Joining is built in REQ-0005, so the test writes the row itself.
+func addPlayer(t *testing.T, store *Store, lobbyID, userID string, at time.Time) {
+	t.Helper()
+	if _, err := store.db.Exec(`INSERT INTO lobby_players (lobby_id, user_id, joined_at) VALUES ($1, $2, $3)`, lobbyID, userID, at); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestUpcomingFiltersOnEndSortsAndCountsPlayers(t *testing.T) {
+	store := migratedStore(t)
+	seedGroups(t, store)
+	at := joinedAt.Add(2 * time.Hour)
+	mk := func(group string, start, end time.Time) domain.Lobby {
+		lobby := newLobby(group, alexID, nil, "Go")
+		lobby.StartsAt, lobby.EndsAt = start, end
+		return insertLobby(t, store, lobby)
+	}
+	later := mk(fridayID, at.Add(time.Hour), at.Add(2*time.Hour))
+	endsNow := mk(fridayID, at.Add(-time.Hour), at)
+	running := mk(fridayID, at.Add(-time.Hour), at.Add(time.Minute))
+	sooner := mk(fridayID, at.Add(30*time.Minute), at.Add(time.Hour))
+	mk(sundayID, at.Add(time.Minute), at.Add(time.Hour))
+	addPlayer(t, store, sooner.ID, nobodyID, joinedAt)
+	addPlayer(t, store, sooner.ID, otherID, joinedAt)
+
+	lobbies, err := store.Lobbies().Upcoming(context.Background(), fridayID, at)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	var ids []string
+	counts := map[string]int{}
+	for _, lobby := range lobbies {
+		ids = append(ids, lobby.ID)
+		counts[lobby.ID] = lobby.PlayerCount
+	}
+	if want := []string{running.ID, sooner.ID, later.ID}; !slices.Equal(ids, want) {
+		t.Fatalf("lobbies %v (ended-now was %s), want %v", ids, endsNow.ID, want)
+	}
+	if counts[sooner.ID] != 3 || counts[running.ID] != 1 {
+		t.Fatalf("player counts %v, want 3 for the lobby with two joiners and 1 for the other", counts)
+	}
+	if lobbies[0].GroupID != fridayID || lobbies[0].CreatedByUserID != alexID || lobbies[0].GameName != "Go" {
+		t.Fatalf("lobby %+v not filled in", lobbies[0])
+	}
+}
+
+func TestUpcomingOfAnEmptyGroupIsEmpty(t *testing.T) {
+	store := migratedStore(t)
+	seedGroups(t, store)
+
+	lobbies, err := store.Lobbies().Upcoming(context.Background(), fridayID, joinedAt)
+
+	if err != nil || len(lobbies) != 0 {
+		t.Fatalf("lobbies %v, error %v; want none", lobbies, err)
+	}
+}
+
+func TestLobbyIsScopedToTheGroupAndNotEnded(t *testing.T) {
+	store := migratedStore(t)
+	seedGroups(t, store)
+	lobby := insertLobby(t, store, newLobby(fridayID, alexID, nil, "Go"))
+	ctx := context.Background()
+
+	got, err := store.Lobbies().Lobby(ctx, fridayID, lobby.ID, lobby.StartsAt)
+	if err != nil || got.ID != lobby.ID || got.PlayerCount != 1 || got.GroupID != fridayID {
+		t.Fatalf("lobby %+v, error %v; want the lobby with one player", got, err)
+	}
+	for name, tc := range map[string]struct {
+		groupID, lobbyID string
+		at               time.Time
+	}{
+		"other group": {sundayID, lobby.ID, lobby.StartsAt},
+		"ended":       {fridayID, lobby.ID, lobby.EndsAt},
+		"unknown":     {fridayID, nobodyID, lobby.StartsAt},
+		"not a uuid":  {fridayID, "not-a-uuid", lobby.StartsAt},
+	} {
+		_, err := store.Lobbies().Lobby(ctx, tc.groupID, tc.lobbyID, tc.at)
+		if name == "not a uuid" {
+			// The router answers a malformed ID before the use case runs; the adapter must not report it as found.
+			if err == nil {
+				t.Fatalf("%s: no error", name)
+			}
+			continue
+		}
+		if !errors.Is(err, domain.ErrLobbyNotFound) {
+			t.Fatalf("%s: error %v, want ErrLobbyNotFound", name, err)
+		}
+	}
+}
+
+func TestPlayerIDsAreSortedByJoinTimeThenUserID(t *testing.T) {
+	store := migratedStore(t)
+	seedGroups(t, store)
+	lobby := insertLobby(t, store, newLobby(fridayID, alexID, nil, "Go"))
+	addPlayer(t, store, lobby.ID, otherID, joinedAt)
+	addPlayer(t, store, lobby.ID, nobodyID, joinedAt.Add(-time.Minute))
+
+	ids, err := store.Lobbies().PlayerIDs(context.Background(), lobby.ID)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []string{nobodyID, otherID, alexID} // otherID sorts before alexID
+	if !slices.Equal(ids, want) {
+		t.Fatalf("players %v, want %v", ids, want)
+	}
+}
+
+func TestLobbyReaderMembershipAndUnavailable(t *testing.T) {
+	store := migratedStore(t)
+	seedGroups(t, store)
+	ctx := context.Background()
+
+	if member, ok, err := store.Lobbies().Membership(ctx, fridayID, alexID); err != nil || !ok || member.Role != domain.RoleAdmin {
+		t.Fatalf("Alex: %+v %v %v, want an admin member", member, ok, err)
+	}
+	if _, ok, err := store.Lobbies().Membership(ctx, fridayID, otherID); err != nil || ok {
+		t.Fatalf("Other: %v %v, want no membership", ok, err)
 	}
 }

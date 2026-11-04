@@ -1,11 +1,14 @@
 package transport_test
 
 import (
+	"cmp"
 	"context"
 	"encoding/json"
 	"net/http"
+	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	"openlobby/services/calendar/internal/application"
 	"openlobby/services/calendar/internal/domain"
@@ -56,6 +59,33 @@ func (t memoryLobbyTx) CreatorOf(_ context.Context, groupID, lobbyID string) (st
 func (t memoryLobbyTx) DeleteLobby(_ context.Context, _, lobbyID string) error {
 	delete(t.store.lobbies, lobbyID)
 	return nil
+}
+
+// Upcoming and the methods after it make memoryGroups the lobby reader. The clock of the router is the zero time, so
+// every lobby with a later end is upcoming.
+func (m *memoryGroups) Upcoming(_ context.Context, groupID string, at time.Time) ([]domain.Lobby, error) {
+	var upcoming []domain.Lobby
+	for _, lobby := range m.lobbies {
+		if lobby.GroupID == groupID && lobby.EndsAt.After(at) {
+			upcoming = append(upcoming, lobby)
+		}
+	}
+	slices.SortFunc(upcoming, func(a, b domain.Lobby) int {
+		return cmp.Or(a.StartsAt.Compare(b.StartsAt), cmp.Compare(a.ID, b.ID))
+	})
+	return upcoming, m.err
+}
+
+func (m *memoryGroups) Lobby(_ context.Context, groupID, lobbyID string, at time.Time) (domain.Lobby, error) {
+	lobby, ok := m.lobbies[lobbyID]
+	if !ok || lobby.GroupID != groupID || !lobby.EndsAt.After(at) {
+		return domain.Lobby{}, domain.ErrLobbyNotFound
+	}
+	return lobby, m.err
+}
+
+func (m *memoryGroups) PlayerIDs(_ context.Context, _ string) ([]string, error) {
+	return []string{otherID, alexID}, m.err
 }
 
 func (m *memoryGroups) Find(_ context.Context, id string) (domain.Game, error) {
@@ -261,4 +291,115 @@ func TestDeleteLobbyNeedsALoggedInUserAndADatabase(t *testing.T) {
 	store.err = domain.ErrUnavailable
 	assertErrorEnvelope(t, call(newRouter(store, fridayDirectory()), http.MethodDelete, target, asUser(otherID), ""),
 		http.StatusServiceUnavailable, "service_unavailable")
+}
+
+// upcomingStore adds an ended lobby to lobbyStore and gives the other two an end time. The router clock is the zero time.
+func upcomingStore() *memoryGroups {
+	store := lobbyStore()
+	start := time.Date(2026, 11, 2, 19, 0, 0, 0, time.UTC)
+	store.lobbies[otherLobby] = domain.Lobby{ID: otherLobby, GroupID: fridayID, CreatedByUserID: otherID, GameName: "Chess",
+		StartsAt: start.Add(time.Hour), EndsAt: start.Add(2 * time.Hour), PlayerCount: 1}
+	store.lobbies[aliceLobby] = domain.Lobby{ID: aliceLobby, GroupID: fridayID, CreatedByUserID: alexID, GameName: "Go",
+		StartsAt: start, EndsAt: start.Add(time.Hour), PlayerCount: 2}
+	store.lobbies[endedLobby] = domain.Lobby{ID: endedLobby, GroupID: fridayID, CreatedByUserID: alexID, GameName: "Old"}
+	return store
+}
+
+const endedLobby = "a3a3a3a3-a3a3-4a3a-8a3a-a3a3a3a3a3a3"
+
+func TestListUpcomingLobbiesReturns200WithTheContractShape(t *testing.T) {
+	response := call(newRouter(upcomingStore(), fridayDirectory()), http.MethodGet, lobbiesPath, asUser(otherID), "")
+
+	if response.Code != http.StatusOK {
+		t.Fatalf("status %d, want 200; body %q", response.Code, response.Body.String())
+	}
+	var got []map[string]any
+	if err := json.Unmarshal(response.Body.Bytes(), &got); err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 2 || got[0]["id"] != aliceLobby || got[1]["id"] != otherLobby {
+		t.Fatalf("body %v, want the lobbies of Alex then Other, without the ended one", got)
+	}
+	want := map[string]any{
+		"id": aliceLobby, "gameName": "Go", "maxPlayers": nil, "startsAt": "2026-11-02T19:00:00Z",
+		"endsAt": "2026-11-02T20:00:00Z", "createdByUserId": alexID, "playerCount": float64(2),
+	}
+	for key, value := range want {
+		if got[0][key] != value {
+			t.Errorf("%s = %v, want %v", key, got[0][key], value)
+		}
+	}
+	if len(got[0]) != len(want) {
+		t.Errorf("body %v has fields other than %v", got[0], want)
+	}
+}
+
+func TestListUpcomingLobbiesWithNoLobbiesIsAnEmptyList(t *testing.T) {
+	store := lobbyStore()
+	store.lobbies = map[string]domain.Lobby{}
+
+	response := call(newRouter(store, fridayDirectory()), http.MethodGet, lobbiesPath, asUser(otherID), "")
+
+	if response.Code != http.StatusOK || strings.TrimSpace(response.Body.String()) != "[]" {
+		t.Fatalf("status %d, body %q; want 200 and []", response.Code, response.Body.String())
+	}
+}
+
+func TestGetLobbyReturns200WithPlayers(t *testing.T) {
+	response := call(newRouter(upcomingStore(), fridayDirectory()), http.MethodGet, lobbiesPath+"/"+otherLobby, asUser(otherID), "")
+
+	if response.Code != http.StatusOK {
+		t.Fatalf("status %d, want 200; body %q", response.Code, response.Body.String())
+	}
+	var got struct {
+		ID      string `json:"id"`
+		Players []struct {
+			UserID      string `json:"userId"`
+			DisplayName string `json:"displayName"`
+		} `json:"players"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &got); err != nil {
+		t.Fatal(err)
+	}
+	if got.ID != otherLobby || len(got.Players) != 2 || got.Players[0].UserID != otherID || got.Players[0].DisplayName == "" || got.Players[1].UserID != alexID {
+		t.Fatalf("body %q, want the lobby with Other and Alex as named players", response.Body.String())
+	}
+}
+
+func TestUpcomingAndGetLobbyGiveTheContractErrors(t *testing.T) {
+	tests := []struct {
+		name     string
+		caller   string
+		target   string
+		wantCode string
+		want     int
+	}{
+		{name: "list: non-member", caller: missingID, target: lobbiesPath, wantCode: "group_not_found", want: 404},
+		{name: "list: unknown group", caller: otherID, target: "/api/groups/" + missingID + "/lobbies", wantCode: "group_not_found", want: 404},
+		{name: "list: malformed group ID", caller: otherID, target: "/api/groups/" + malformedUUIDs + "/lobbies", wantCode: "group_not_found", want: 404},
+		{name: "get: non-member", caller: missingID, target: lobbiesPath + "/" + otherLobby, wantCode: "group_not_found", want: 404},
+		{name: "get: non-member on a missing lobby", caller: missingID, target: lobbiesPath + "/" + missingID, wantCode: "group_not_found", want: 404},
+		{name: "get: ended lobby", caller: otherID, target: lobbiesPath + "/" + endedLobby, wantCode: "lobby_not_found", want: 404},
+		{name: "get: missing lobby", caller: otherID, target: lobbiesPath + "/" + missingID, wantCode: "lobby_not_found", want: 404},
+		{name: "get: malformed lobby ID", caller: otherID, target: lobbiesPath + "/" + malformedUUIDs, wantCode: "lobby_not_found", want: 404},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			response := call(newRouter(upcomingStore(), fridayDirectory()), http.MethodGet, tc.target, asUser(tc.caller), "")
+
+			assertErrorEnvelope(t, response, tc.want, tc.wantCode)
+		})
+	}
+}
+
+func TestUpcomingAndGetLobbyNeedALoggedInUserAndADatabase(t *testing.T) {
+	for _, target := range []string{lobbiesPath, lobbiesPath + "/" + otherLobby} {
+		assertErrorEnvelope(t, call(newRouter(upcomingStore(), fridayDirectory()), http.MethodGet, target, nil, ""),
+			http.StatusUnauthorized, "unauthenticated")
+
+		store := upcomingStore()
+		store.err = domain.ErrUnavailable
+		assertErrorEnvelope(t, call(newRouter(store, fridayDirectory()), http.MethodGet, target, asUser(otherID), ""),
+			http.StatusServiceUnavailable, "service_unavailable")
+	}
 }

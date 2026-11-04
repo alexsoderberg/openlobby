@@ -1,8 +1,10 @@
 package application_test
 
 import (
+	"cmp"
 	"context"
 	"errors"
+	"slices"
 	"testing"
 	"time"
 
@@ -24,6 +26,33 @@ type lobbyStore struct {
 	// insertErr fails InsertLobby, to show that nothing is committed.
 	insertErr error
 	inserted  []domain.Lobby
+	// players lists the player IDs of a lobby in join order.
+	players map[string][]string
+}
+
+func (s *lobbyStore) Upcoming(_ context.Context, groupID string, at time.Time) ([]domain.Lobby, error) {
+	var upcoming []domain.Lobby
+	for _, lobby := range s.lobbies {
+		if lobby.GroupID == groupID && lobby.EndsAt.After(at) {
+			upcoming = append(upcoming, lobby)
+		}
+	}
+	slices.SortFunc(upcoming, func(a, b domain.Lobby) int {
+		return cmp.Or(a.StartsAt.Compare(b.StartsAt), cmp.Compare(a.ID, b.ID))
+	})
+	return upcoming, s.err
+}
+
+func (s *lobbyStore) Lobby(_ context.Context, groupID, id string, at time.Time) (domain.Lobby, error) {
+	lobby, ok := s.lobbies[id]
+	if !ok || lobby.GroupID != groupID || !lobby.EndsAt.After(at) {
+		return domain.Lobby{}, domain.ErrLobbyNotFound
+	}
+	return lobby, s.err
+}
+
+func (s *lobbyStore) PlayerIDs(_ context.Context, id string) ([]string, error) {
+	return s.players[id], s.err
 }
 
 func newLobbyStore() *lobbyStore {
@@ -90,7 +119,11 @@ func (c *fakeCatalog) Find(_ context.Context, id string) (domain.Game, error) {
 }
 
 func newLobbies(store *lobbyStore, catalog *fakeCatalog) *application.Lobbies {
-	return application.NewLobbies(store, catalog, fixedClock{at: now})
+	return newLobbiesWithNames(store, catalog, &fakeDirectory{})
+}
+
+func newLobbiesWithNames(store *lobbyStore, catalog *fakeCatalog, names *fakeDirectory) *application.Lobbies {
+	return application.NewLobbies(store, store, catalog, names, fixedClock{at: now})
 }
 
 func chessCatalog() *fakeCatalog {
@@ -264,5 +297,107 @@ func TestCreateLobbySavesOverlappingLobbies(t *testing.T) {
 
 	if len(store.inserted) != 2 {
 		t.Fatalf("%d lobbies stored, want both", len(store.inserted))
+	}
+}
+
+// upcomingStore has three lobbies in Friday and one in another group. Only Late and Early have not ended.
+func upcomingStore() *lobbyStore {
+	store := newLobbyStore()
+	store.groups[emptyID] = domain.Group{ID: emptyID}
+	store.lobbies = map[string]domain.Lobby{
+		"l3":      {ID: "l3", GroupID: fridayID, StartsAt: now.Add(2 * time.Hour), EndsAt: now.Add(4 * time.Hour), PlayerCount: 1},
+		"l2":      {ID: "l2", GroupID: fridayID, StartsAt: now.Add(time.Hour), EndsAt: now.Add(2 * time.Hour), PlayerCount: 2},
+		"l1":      {ID: "l1", GroupID: fridayID, StartsAt: now.Add(time.Hour), EndsAt: now.Add(3 * time.Hour), PlayerCount: 1},
+		"ended":   {ID: "ended", GroupID: fridayID, StartsAt: now.Add(-2 * time.Hour), EndsAt: now},
+		"started": {ID: "started", GroupID: fridayID, StartsAt: now.Add(-time.Hour), EndsAt: now.Add(time.Minute)},
+		"other":   {ID: "other", GroupID: emptyID, StartsAt: now.Add(time.Hour), EndsAt: now.Add(2 * time.Hour)},
+	}
+	store.players = map[string][]string{"started": {bobID, aliceID}, "ended": {bobID}, "other": {bobID}}
+	return store
+}
+
+// Upcoming means ends_at > now: a lobby that ended exactly now is gone, one that has started but not ended stays.
+func TestUpcomingListsLobbiesNotEndedSortedByStartThenID(t *testing.T) {
+	lobbies, err := newLobbies(upcomingStore(), chessCatalog()).Upcoming(context.Background(), fridayID, bobID)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	var ids []string
+	for _, lobby := range lobbies {
+		ids = append(ids, lobby.ID)
+	}
+	if want := []string{"started", "l1", "l2", "l3"}; !slices.Equal(ids, want) {
+		t.Fatalf("lobbies %v, want %v", ids, want)
+	}
+}
+
+func TestUpcomingRefusesAndKeepsFailures(t *testing.T) {
+	for name, groupID := range map[string]string{"non-member": fridayID, "missing group": missingID} {
+		t.Run(name, func(t *testing.T) {
+			_, err := newLobbies(upcomingStore(), chessCatalog()).Upcoming(context.Background(), groupID, strangerID)
+			if !errors.Is(err, domain.ErrGroupNotFound) {
+				t.Fatalf("error %v, want ErrGroupNotFound", err)
+			}
+		})
+	}
+	store := upcomingStore()
+	store.err = domain.ErrUnavailable
+	if _, err := newLobbies(store, chessCatalog()).Upcoming(context.Background(), fridayID, bobID); !errors.Is(err, domain.ErrUnavailable) {
+		t.Fatalf("error %v, want ErrUnavailable", err)
+	}
+}
+
+func TestGetReturnsLobbyWithPlayersInStoredOrderAndOneNameLookup(t *testing.T) {
+	names := &fakeDirectory{names: map[string]string{bobID: "Bob", aliceID: "Alice"}}
+
+	lobby, players, err := newLobbiesWithNames(upcomingStore(), chessCatalog(), names).Get(context.Background(), fridayID, "started", aliceID)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []domain.Player{{UserID: bobID, DisplayName: "Bob"}, {UserID: aliceID, DisplayName: "Alice"}}
+	if lobby.ID != "started" || !slices.Equal(players, want) || names.calls != 1 {
+		t.Fatalf("lobby %q, players %v, name lookups %d; want started, %v and 1 lookup", lobby.ID, players, names.calls, want)
+	}
+}
+
+func TestGetRefuses(t *testing.T) {
+	tests := []struct {
+		name    string
+		groupID string
+		lobbyID string
+		caller  string
+		want    error
+	}{
+		{name: "non-member", groupID: fridayID, lobbyID: "started", caller: strangerID, want: domain.ErrGroupNotFound},
+		{name: "non-member on a missing lobby", groupID: fridayID, lobbyID: missingID, caller: strangerID, want: domain.ErrGroupNotFound},
+		{name: "ended lobby", groupID: fridayID, lobbyID: "ended", caller: bobID, want: domain.ErrLobbyNotFound},
+		{name: "missing lobby", groupID: fridayID, lobbyID: missingID, caller: bobID, want: domain.ErrLobbyNotFound},
+		{name: "lobby of another group", groupID: fridayID, lobbyID: "other", caller: bobID, want: domain.ErrLobbyNotFound},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			names := &fakeDirectory{}
+
+			_, _, err := newLobbiesWithNames(upcomingStore(), chessCatalog(), names).Get(context.Background(), tc.groupID, tc.lobbyID, tc.caller)
+
+			if !errors.Is(err, tc.want) {
+				t.Fatalf("error %v, want %v", err, tc.want)
+			}
+			if names.calls != 0 {
+				t.Fatalf("auth asked %d times, want none", names.calls)
+			}
+		})
+	}
+}
+
+func TestGetFailsWhenAuthFails(t *testing.T) {
+	names := &fakeDirectory{err: domain.ErrUnavailable}
+
+	_, _, err := newLobbiesWithNames(upcomingStore(), chessCatalog(), names).Get(context.Background(), fridayID, "started", bobID)
+
+	if !errors.Is(err, domain.ErrUnavailable) {
+		t.Fatalf("error %v, want ErrUnavailable", err)
 	}
 }
