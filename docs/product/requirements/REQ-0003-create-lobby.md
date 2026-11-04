@@ -1,5 +1,5 @@
 # REQ-0003. Create lobby
-Status: Decided
+Status: Implemented
 Feature: F-003
 Priority: Must
 
