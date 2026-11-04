@@ -5,7 +5,7 @@ import {
   useApi,
   type GameInput,
 } from "../../api";
-import { GAME_NOT_FOUND } from "./gameErrors";
+import { GAME_NOT_FOUND, type ChangeResult } from "./gameErrors";
 
 export type GameChange = "added" | "changed" | "removed";
 
@@ -27,10 +27,7 @@ export function useGameChanges(
   const [state, setState] = useState<GameChangeState>({ status: "idle" });
 
   const change = useCallback(
-    async (
-      done: GameChange,
-      action: () => Promise<unknown>,
-    ): Promise<string | undefined> => {
+    async (done: GameChange, action: () => Promise<unknown>): ChangeResult => {
       setState({ status: "saving" });
       try {
         await action();

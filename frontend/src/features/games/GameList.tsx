@@ -2,6 +2,7 @@ import type { Game, GameInput } from "../../api";
 import { useMessages } from "../../i18n";
 import { ErrorAlert } from "../../ui";
 import { GameForm } from "./GameForm";
+import type { ChangeResult } from "./gameErrors";
 import type { GamesState } from "./useGames";
 
 /** Shows the games as the server orders them. A game being changed shows its form in place of its row. */
@@ -20,7 +21,7 @@ export function GameList({
   busy: boolean;
   onRetry: () => void;
   onEdit: (gameId: string) => void;
-  onSave: (gameId: string, input: GameInput) => Promise<string | undefined>;
+  onSave: (gameId: string, input: GameInput) => ChangeResult;
   onCancelEdit: () => void;
   onRemove: (game: Game) => void;
 }) {
@@ -101,7 +102,7 @@ function GameEditRow({
 }: {
   game: Game;
   busy: boolean;
-  onSave: (input: GameInput) => Promise<string | undefined>;
+  onSave: (input: GameInput) => ChangeResult;
   onCancel: () => void;
 }) {
   const m = useMessages();

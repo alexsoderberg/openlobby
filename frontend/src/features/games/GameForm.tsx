@@ -1,10 +1,14 @@
-import { useId, useRef, useState, type ComponentProps } from "react";
+import { useId, useRef, useState, type ComponentProps, type Ref } from "react";
 import type { Game, GameInput } from "../../api";
 import { toUserMessage, useMessages } from "../../i18n";
-import { INVALID_CAPACITY, INVALID_GAME } from "./gameErrors";
+import {
+  INVALID_CAPACITY,
+  INVALID_GAME,
+  type ChangeResult,
+} from "./gameErrors";
 import { parseGameInput } from "./gameInput";
 
-type SubmitGame = (input: GameInput) => Promise<string | undefined>;
+type SubmitGame = (input: GameInput) => ChangeResult;
 
 /**
  * Name and default max players, nothing else (the ID is made by the server). A failure, local or from
@@ -24,11 +28,9 @@ export function GameForm({
   onSubmit: SubmitGame;
   onCancel?: () => void;
 }) {
-  const m = useMessages();
   const id = useId();
   const { errorCode, nameRef, maxRef, submit } = useGameFormSubmit(onSubmit);
   const errorId = `${id}-error`;
-  const aboutMax = errorCode === INVALID_CAPACITY;
 
   return (
     <form
@@ -39,6 +41,46 @@ export function GameForm({
         void submit(event.currentTarget);
       }}
     >
+      <GameFormFields
+        id={id}
+        game={game}
+        errorCode={errorCode}
+        errorId={errorId}
+        nameRef={nameRef}
+        maxRef={maxRef}
+      />
+      {errorCode !== undefined && (
+        <GameFormError id={errorId} code={errorCode} />
+      )}
+      <GameFormActions
+        submitLabel={submitLabel}
+        busy={busy}
+        onCancel={onCancel}
+      />
+    </form>
+  );
+}
+
+/** The name and max fields. The form's error describes the field it is about. */
+function GameFormFields({
+  id,
+  game,
+  errorCode,
+  errorId,
+  nameRef,
+  maxRef,
+}: {
+  id: string;
+  game?: Game;
+  errorCode?: string;
+  errorId: string;
+  nameRef: Ref<HTMLInputElement>;
+  maxRef: Ref<HTMLInputElement>;
+}) {
+  const m = useMessages();
+  const aboutMax = errorCode === INVALID_CAPACITY;
+  return (
+    <>
       <GameFormField
         id={`${id}-name`}
         ref={nameRef}
@@ -58,15 +100,7 @@ export function GameForm({
         defaultValue={game?.defaultMaxPlayers ?? ""}
         errorId={aboutMax ? errorId : undefined}
       />
-      {errorCode !== undefined && (
-        <GameFormError id={errorId} code={errorCode} />
-      )}
-      <GameFormActions
-        submitLabel={submitLabel}
-        busy={busy}
-        onCancel={onCancel}
-      />
-    </form>
+    </>
   );
 }
 
