@@ -23,14 +23,6 @@ func (pendingOperations) ListUpcomingLobbies(context.Context, publicapi.ListUpco
 	return nil, errOperationPending
 }
 
-func (pendingOperations) CreateLobby(context.Context, publicapi.CreateLobbyRequestObject) (publicapi.CreateLobbyResponseObject, error) {
-	return nil, errOperationPending
-}
-
-func (pendingOperations) DeleteLobby(context.Context, publicapi.DeleteLobbyRequestObject) (publicapi.DeleteLobbyResponseObject, error) {
-	return nil, errOperationPending
-}
-
 func (pendingOperations) GetLobby(context.Context, publicapi.GetLobbyRequestObject) (publicapi.GetLobbyResponseObject, error) {
 	return nil, errOperationPending
 }

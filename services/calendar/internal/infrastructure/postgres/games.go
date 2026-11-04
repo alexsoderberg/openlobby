@@ -11,10 +11,15 @@ import (
 	"openlobby/services/calendar/internal/domain"
 )
 
-// shortcut: every lobby count is 0 until REQ-0003 creates the lobbies table. Then this query counts the lobbies of
-// groupID per game_id (ADR 0010, amendment review 3) and the application orders by that count. groupID is unused until then.
 // The order is the system admin's list order (ADR 0010); the group order is decided in application.
 const listGamesSQL = `SELECT id, name, default_max_players FROM games ORDER BY lower(name), id`
+
+const selectGameSQL = `SELECT id, name, default_max_players FROM games WHERE id = $1`
+
+// Lobbies of other groups and lobbies with a custom name (game_id NULL) or a removed game do not join, so they do not count.
+const listGroupGamesSQL = `SELECT g.id, g.name, g.default_max_players, count(l.id)
+	FROM games g LEFT JOIN lobbies l ON l.game_id = g.id AND l.group_id = $1
+	GROUP BY g.id ORDER BY lower(g.name), g.id`
 
 const insertGameSQL = `INSERT INTO games (name, default_max_players) VALUES ($1, $2) RETURNING id`
 
@@ -56,17 +61,35 @@ func (r gameRepo) List(ctx context.Context) (games []domain.Game, err error) {
 	return games, translate(rows.Err())
 }
 
-// ListForGroup returns every game of the list with no lobby count yet (see the shortcut above).
-func (r gameRepo) ListForGroup(ctx context.Context, _ string) ([]application.GameUsage, error) {
-	games, err := r.List(ctx)
+// ListForGroup returns every game of the list with the number of lobbies the group created with it.
+func (r gameRepo) ListForGroup(ctx context.Context, groupID string) (usages []application.GameUsage, err error) {
+	rows, err := r.s.db.QueryContext(ctx, listGroupGamesSQL, groupID)
 	if err != nil {
-		return nil, err
+		return nil, translate(err)
 	}
-	usages := make([]application.GameUsage, 0, len(games))
-	for _, game := range games {
-		usages = append(usages, application.GameUsage{Game: game})
+	defer func() { err = errors.Join(err, translate(rows.Close())) }()
+	for rows.Next() {
+		var usage application.GameUsage
+		game := &usage.Game
+		if scanErr := rows.Scan(&game.ID, &game.Name, &game.DefaultMaxPlayers, &usage.LobbyCount); scanErr != nil {
+			return nil, translate(scanErr)
+		}
+		usages = append(usages, usage)
 	}
-	return usages, nil
+	return usages, translate(rows.Err())
+}
+
+// Find returns the game, or ErrGameNotFound when no game has the ID, also when it is not a uuid (ADR 0010).
+func (r gameRepo) Find(ctx context.Context, id string) (domain.Game, error) {
+	var game domain.Game
+	err := r.s.db.QueryRowContext(ctx, selectGameSQL, id).Scan(&game.ID, &game.Name, &game.DefaultMaxPlayers)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return domain.Game{}, application.ErrGameNotFound
+	case err != nil:
+		return domain.Game{}, gameWriteError(err)
+	}
+	return game, nil
 }
 
 // Create inserts the game and returns it with the ID the database generated.

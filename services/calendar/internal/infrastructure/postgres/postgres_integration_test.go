@@ -138,7 +138,7 @@ func TestMigrationsUpDownUpAndRuntimeRoleCannotChangeHistory(t *testing.T) {
 	for _, step := range []struct {
 		name string
 		down bool
-	}{{"up", false}, {"down 0003", true}, {"down 0002", true}, {"down 0001", true}, {"up again", false}} {
+	}{{"up", false}, {"down 0004", true}, {"down 0003", true}, {"down 0002", true}, {"down 0001", true}, {"up again", false}} {
 		if err := store.Migrate(ctx, step.down); err != nil {
 			t.Fatalf("migrate %s: %v", step.name, err)
 		}

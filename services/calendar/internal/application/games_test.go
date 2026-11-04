@@ -19,6 +19,7 @@ type fakeCatalog struct {
 	listed    []domain.Game
 	listErr   error
 	listCalls int
+	findCalls int
 }
 
 func (c *fakeCatalog) ListForGroup(_ context.Context, groupID string) ([]application.GameUsage, error) {

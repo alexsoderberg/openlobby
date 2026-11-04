@@ -19,10 +19,28 @@ type GroupCreator interface {
 	Create(ctx context.Context, name, creatorID string, joinedAt time.Time) (domain.Group, error)
 }
 
-// GroupReader reads a group and its members. Reads outside the group lock are allowed (ADR 0006).
-type GroupReader interface {
+// MembershipReader reads one user's membership of a group.
+type MembershipReader interface {
 	// Membership returns the user's membership and false when the user is not a member. Not being one is no error.
 	Membership(ctx context.Context, groupID, userID string) (domain.Member, bool, error)
+}
+
+// requireMember returns the caller's membership, or domain.ErrGroupNotFound for a non-member: the same answer as for
+// an unknown group (ADR 0004 rule 2). It is the one place for that rule.
+func requireMember(ctx context.Context, reader MembershipReader, groupID, userID string) (domain.Member, error) {
+	member, isMember, err := reader.Membership(ctx, groupID, userID)
+	if err != nil {
+		return domain.Member{}, err
+	}
+	if !isMember {
+		return domain.Member{}, domain.ErrGroupNotFound
+	}
+	return member, nil
+}
+
+// GroupReader reads a group and its members. Reads outside the group lock are allowed (ADR 0006).
+type GroupReader interface {
+	MembershipReader
 	// Group returns domain.ErrGroupNotFound when the group does not exist.
 	Group(ctx context.Context, groupID string) (domain.Group, error)
 	Members(ctx context.Context, groupID string) ([]domain.Member, error)
@@ -36,7 +54,7 @@ type GroupLocker interface {
 
 // GroupTx holds the operations that run under the group lock. Each one is scoped to the group (ADR 0006 rule 12).
 type GroupTx interface {
-	Membership(ctx context.Context, groupID, userID string) (domain.Member, bool, error)
+	MembershipReader
 	DeleteInactiveInviteLinks(ctx context.Context, groupID string, now time.Time) error
 	InsertInviteLink(ctx context.Context, link domain.InviteLink) (domain.InviteLink, error)
 	// LinkByID returns false when the link is not in this group.
@@ -77,6 +95,8 @@ type GameCatalog interface {
 	// List returns every game, sorted by name ignoring case, then ID (ADR 0010).
 	List(ctx context.Context) ([]domain.Game, error)
 	ListForGroup(ctx context.Context, groupID string) ([]GameUsage, error)
+	// Find returns ErrGameNotFound when no game has the ID, also when the ID is not a uuid.
+	Find(ctx context.Context, id string) (domain.Game, error)
 }
 
 // GameCatalogEditor changes the game list. Only the system admin use cases call it (ADR 0010). Each method returns
@@ -96,4 +116,21 @@ type UserDirectory interface {
 // Clock gives the current time. Tests inject a fixed time.
 type Clock interface {
 	Now() time.Time
+}
+
+// LobbyRepository runs lobby writes under the group's row lock (ADR 0006). The lock is taken first and held until fn
+// returns. It returns domain.ErrGroupNotFound when the group does not exist.
+type LobbyRepository interface {
+	WithLockedGroup(ctx context.Context, groupID string, fn func(tx LobbyTx) error) error
+}
+
+// LobbyTx holds the operations that run under the group lock. Each one is scoped to the group (ADR 0006 rule 12).
+type LobbyTx interface {
+	MembershipReader
+	// InsertLobby stores the lobby and its creator as the first player, and returns the lobby with its ID.
+	InsertLobby(ctx context.Context, lobby domain.Lobby) (domain.Lobby, error)
+	// CreatorOf returns the lobby creator's user ID, and false when the lobby is not in this group.
+	CreatorOf(ctx context.Context, groupID, lobbyID string) (string, bool, error)
+	// DeleteLobby removes the lobby of this group with its players.
+	DeleteLobby(ctx context.Context, groupID, lobbyID string) error
 }

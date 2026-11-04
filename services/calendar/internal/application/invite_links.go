@@ -39,12 +39,8 @@ func (l *InviteLinks) Create(ctx context.Context, groupID, callerID string, requ
 
 // createLocked runs under the group lock. Membership is checked before the max uses, as the contract orders them.
 func (l *InviteLinks) createLocked(ctx context.Context, tx GroupTx, groupID, callerID string, requested *int) (domain.InviteLink, error) {
-	_, isMember, err := tx.Membership(ctx, groupID, callerID)
-	if err != nil {
+	if _, err := requireMember(ctx, tx, groupID, callerID); err != nil {
 		return domain.InviteLink{}, err
-	}
-	if !isMember {
-		return domain.InviteLink{}, domain.ErrGroupNotFound
 	}
 	maxUses, err := domain.NewInviteLinkMaxUses(requested)
 	if err != nil {
@@ -71,12 +67,9 @@ func (l *InviteLinks) createLocked(ctx context.Context, tx GroupTx, groupID, cal
 // List returns the active links the caller may see: a member's own links, and every link for an admin (ADR 0007).
 // A non-member gets domain.ErrGroupNotFound.
 func (l *InviteLinks) List(ctx context.Context, groupID, callerID string) ([]domain.InviteLink, error) {
-	member, isMember, err := l.reader.Membership(ctx, groupID, callerID)
+	member, err := requireMember(ctx, l.reader, groupID, callerID)
 	if err != nil {
 		return nil, fmt.Errorf("list invite links: %w", err)
-	}
-	if !isMember {
-		return nil, domain.ErrGroupNotFound
 	}
 	var links []domain.InviteLink
 	if member.Role == domain.RoleAdmin {
@@ -145,12 +138,9 @@ func (l *InviteLinks) Revoke(ctx context.Context, groupID, linkID, callerID stri
 
 // revokeLocked runs under the group lock, so the rules read the committed membership and link.
 func (l *InviteLinks) revokeLocked(ctx context.Context, tx GroupTx, groupID, linkID, callerID string) error {
-	member, isMember, err := tx.Membership(ctx, groupID, callerID)
+	member, err := requireMember(ctx, tx, groupID, callerID)
 	if err != nil {
 		return err
-	}
-	if !isMember {
-		return domain.ErrGroupNotFound
 	}
 	link, found, err := tx.LinkByID(ctx, groupID, linkID)
 	if err != nil {
