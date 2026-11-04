@@ -11,7 +11,8 @@ import { useUpcomingLobbies } from "./useUpcomingLobbies";
 
 /**
  * The lobby sections of a group page: the upcoming lobbies as a list or a week calendar, and the popover
- * form that adds one, opened by the Create lobby button or from a day of the calendar. The list is the first view of every visit, because the choice is not saved (REQ-0004).
+ * form that adds one, opened by the Create lobby button or from a day of the calendar. The list is the first
+ * view of every visit, because the choice is not saved (REQ-0004).
  */
 export function Lobbies({
   groupId,
@@ -29,7 +30,7 @@ export function Lobbies({
   const upcoming = useUpcomingLobbies(groupId, onUnauthenticated);
   const popover = usePopover();
 
-  const openForm = (button: HTMLElement, date?: Date) => {
+  const openForm = (date: Date | undefined, button: HTMLElement) => {
     setInitialDate(date);
     setCreated(false);
     popover.press(button);
@@ -50,7 +51,7 @@ export function Lobbies({
             className="button"
             aria-haspopup="dialog"
             aria-expanded={popover.open}
-            onClick={(event) => openForm(event.currentTarget)}
+            onClick={(event) => openForm(undefined, event.currentTarget)}
           >
             {m.lobbyCreateButton}
           </button>
@@ -64,7 +65,7 @@ export function Lobbies({
           members={members}
           view={view}
           upcoming={upcoming}
-          onCreateOn={openForm}
+          onCreate={openForm}
         />
       </Panel>
       <Popover
@@ -97,13 +98,13 @@ function LobbyViews({
   members,
   view,
   upcoming: { state, reload },
-  onCreateOn,
+  onCreate,
 }: {
   groupId: string;
   members: Group["members"];
   view: LobbyView;
   upcoming: ReturnType<typeof useUpcomingLobbies>;
-  onCreateOn: (button: HTMLElement, day: Date) => void;
+  onCreate: (day: Date, button: HTMLElement) => void;
 }) {
   const m = useMessages();
   if (state.status === "loading")
@@ -117,7 +118,7 @@ function LobbyViews({
     <LobbyCalendar
       groupId={groupId}
       lobbies={state.value}
-      onCreate={(day, button) => onCreateOn(button, day)}
+      onCreate={onCreate}
     />
   );
 }

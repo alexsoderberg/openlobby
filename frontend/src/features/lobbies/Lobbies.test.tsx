@@ -379,6 +379,22 @@ describe("create lobby popover", () => {
     expect(await screen.findByText(en.lobbyCreated)).toBeTruthy();
     expect(dialog()).toBeNull();
     expect(client.listUpcomingLobbies).toHaveBeenCalledTimes(2);
+    expect(document.activeElement).toBe(openButton());
+  });
+
+  it("keeps Tab and Shift+Tab inside the form, through the game select", async () => {
+    renderLobbies(withLobbies(catan));
+    await screen.findByRole("link", { name: "Catan" });
+    fireEvent.click(openButton());
+    const game = await screen.findByLabelText(en.lobbyGameLabel);
+    const cancel = screen.getByRole("button", { name: en.cancel });
+
+    cancel.focus();
+    fireEvent.keyDown(document, { key: "Tab" });
+    expect(document.activeElement).toBe(game);
+
+    fireEvent.keyDown(document, { key: "Tab", shiftKey: true });
+    expect(document.activeElement).toBe(cancel);
   });
 });
 
@@ -398,7 +414,34 @@ describe("create lobby from the calendar", () => {
     fireEvent.click(calendarButton());
   }
 
-  it("opens the form with that day's date, from the day's button", async () => {
+  it("closes after a save with focus back on the day's control", async () => {
+    renderLobbies({
+      ...withLobbies(catan),
+      createLobby: vi.fn(() => Promise.resolve(catan)),
+    });
+    await screen.findByRole("link", { name: "Catan" });
+    fireEvent.click(calendarButton());
+    const day = dayButton(dayName(6));
+    fireEvent.click(day);
+    for (const [label, value] of [
+      [en.lobbyGameLabel, "g-catan"],
+      [en.lobbyStartLabel, "18:00"],
+      [en.lobbyEndLabel, "20:00"],
+    ])
+      fireEvent.change(await screen.findByLabelText(label), {
+        target: { value },
+      });
+
+    fireEvent.click(
+      within(dialog()!).getByRole("button", { name: en.lobbyCreateSubmit }),
+    );
+
+    expect(await screen.findByText(en.lobbyCreated)).toBeTruthy();
+    expect(dialog()).toBeNull();
+    expect(document.activeElement).toBe(day);
+  });
+
+  it("opens the form with that day's date, from the day's control", async () => {
     await showCalendar();
 
     fireEvent.click(dayButton(dayName(6)));
@@ -411,20 +454,17 @@ describe("create lobby from the calendar", () => {
     ).toBeNull();
   });
 
-  it("opens it from a click on empty space in the day, but a lobby link still goes to its page", async () => {
+  it("does not open from a click on a lobby card, which still links to its page", async () => {
     await showCalendar();
+    const card = screen.getByRole("link", { name: "Catan" }).closest("li")!;
 
-    fireEvent.click(screen.getByRole("link", { name: "Catan" }));
+    fireEvent.click(within(card).getByText(/2\/4 players/));
+    fireEvent.click(within(card).getByRole("link", { name: "Catan" }));
+
     expect(dialog()).toBeNull();
-    const friday = screen.getAllByRole("heading", { level: 4 })[4];
-    fireEvent.click(friday);
-
-    expect(
-      (await screen.findByLabelText<HTMLInputElement>(en.lobbyDateLabel)).value,
-    ).toBe("2026-11-06");
   });
 
-  it("has no button on days before today, and returns focus to the day's button on close", async () => {
+  it("has no control on days before today, and returns focus to the day's control on close", async () => {
     await showCalendar();
 
     expect(
@@ -437,8 +477,5 @@ describe("create lobby from the calendar", () => {
     await screen.findByLabelText(en.lobbyGameLabel);
     fireEvent.keyDown(document, { key: "Escape" });
     expect(document.activeElement).toBe(today);
-
-    fireEvent.click(screen.getAllByRole("heading", { level: 4 })[0]);
-    expect(dialog()).toBeNull();
   });
 });

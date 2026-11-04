@@ -194,7 +194,7 @@ export const en = {
     groupStripLabel: "Your groups",
     noGroups: "You are not in a group yet",
     noGroupsHint:
-      "Create one on the Groups page, or open an invite link from a friend.",
+      "Create one on the Group list, or open an invite link from a friend.",
     noGroupsLink: "Go to Groups",
     nextUpHeading: "Next up",
     thisWeekHeading: "This week",

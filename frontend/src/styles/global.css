@@ -733,25 +733,35 @@ a {
   border-radius: var(--radius-control);
 }
 
-.calendar-day__head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
+/* The day is one click target: a button fills the column and the content sits above it. Clicks pass through
+   the content to the button, except on the lobby cards and their links. Only colour changes on hover. */
+.calendar-day {
+  position: relative;
 }
 
-.calendar-day__add {
-  flex: none;
-  width: var(--size-tap);
-  height: var(--size-tap);
+.calendar-day__create {
+  position: absolute;
+  inset: 0;
   padding: 0;
-  border: 1px solid var(--color-accent-line);
-  border-radius: 50%;
-  background: var(--color-accent-tint);
-  color: var(--color-accent);
-  font-size: 1.25rem;
-  line-height: 1;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
   cursor: pointer;
+  transition: background-color var(--duration-fast) var(--ease-out);
+}
+
+.calendar-day__create:hover {
+  background: var(--color-accent-wash);
+}
+
+.calendar-day__name,
+.calendar-day__lobbies {
+  position: relative;
+  pointer-events: none;
+}
+
+.calendar-lobby {
+  pointer-events: auto;
 }
 
 @media (min-width: 40rem) {

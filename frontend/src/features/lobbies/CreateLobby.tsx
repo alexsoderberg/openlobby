@@ -6,7 +6,8 @@ import { useGroupGames } from "./useGroupGames";
 
 /**
  * The create-lobby form with its hook, shown in a popover. A saved lobby is handed to `onCreated`, which
- * closes the popover and refreshes the list. A failed save stays in the form, next to the field it is about.
+ * closes the popover and refreshes the list. A failed save stays in the form, next to the field it is
+ * about.
  */
 export function CreateLobby({
   groupId,

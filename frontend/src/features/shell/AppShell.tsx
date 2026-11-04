@@ -12,7 +12,8 @@ import { TopBar } from "./TopBar";
 
 /**
  * The layout of every logged-in page: Top bar, Group rail (wide) or Tab bar (phones), and the page in the
- * main area. The "+" creates a group and shows only on the Group list; what happens to the new group is the caller's choice.
+ * main area. The "+" creates a group and shows only on the Group list; what happens to the new group is
+ * the caller's choice.
  */
 export function AppShell({
   user,

@@ -6,7 +6,10 @@ import { HOME_PATH, type ActiveNav } from "./activeNav";
 import { CreateGroupButton } from "./CreateGroupButton";
 import { HomeIcon } from "./icons";
 
-/** Wide screens: Home, one icon per group, and the "+" at the bottom. A failed group list leaves only Home and "+"; the page shows the error. */
+/**
+ * Wide screens: Home, one icon per group, and the "+" at the bottom. A failed group list leaves only Home
+ * and "+"; the page shows the error.
+ */
 export function GroupRail({
   groups,
   active,
