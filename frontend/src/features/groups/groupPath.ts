@@ -1,3 +1,5 @@
+/** The address of the list of the caller's groups. */
+export const GROUPS_PATH = "/groups";
 const GROUP_PATH_PREFIX = "/groups/";
 const GROUP_PATH = new RegExp(`^${GROUP_PATH_PREFIX}([^/]+)$`);
 

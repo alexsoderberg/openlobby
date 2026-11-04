@@ -1,7 +1,6 @@
 import { useCallback } from "react";
 import { useApi } from "../../api";
-import { useLoad } from "../../hooks";
-import { loadViewOf } from "./loadView";
+import { loadViewOf, useLoad } from "../../hooks";
 
 /** Loads the group's games, most used first. "Other" is not among them. */
 export function useGroupGames(groupId: string, onUnauthenticated: () => void) {

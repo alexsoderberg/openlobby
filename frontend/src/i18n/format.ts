@@ -13,6 +13,8 @@ const FORMATS = {
   time: { hour: "numeric", minute: "2-digit" },
   weekday: { weekday: "long", day: "numeric", month: "short" },
   day: { day: "numeric", month: "short" },
+  weekdayShort: { weekday: "short" },
+  dayOfMonth: { day: "numeric" },
 } satisfies Record<string, Intl.DateTimeFormatOptions>;
 
 const formatter = (options: Intl.DateTimeFormatOptions) =>
@@ -21,6 +23,8 @@ const dateTime = formatter(FORMATS.dateTime);
 const time = formatter(FORMATS.time);
 const weekday = formatter(FORMATS.weekday);
 const day = formatter(FORMATS.day);
+const weekdayShort = formatter(FORMATS.weekdayShort);
+const dayOfMonth = formatter(FORMATS.dayOfMonth);
 
 const asDate = (moment: Moment) => new Date(moment);
 
@@ -36,3 +40,9 @@ export const formatTimeRange = (start: Moment, end: Moment) =>
 export const formatWeekday = (moment: Moment) => weekday.format(asDate(moment));
 export const formatDayRange = (start: Moment, end: Moment) =>
   day.formatRange(asDate(start), asDate(end));
+
+/** Short weekday name, e.g. a column or pill title. */
+export const formatWeekdayShort = (moment: Moment) =>
+  weekdayShort.format(asDate(moment));
+export const formatDayOfMonth = (moment: Moment) =>
+  dayOfMonth.format(asDate(moment));

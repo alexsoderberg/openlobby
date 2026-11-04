@@ -1,24 +1,33 @@
 import { useEffect, useRef } from "react";
 import { toUserMessage, useMessages } from "../../i18n";
-import { Alert, Panel } from "../../ui";
+import { Alert } from "../../ui";
 import { INVALID_GROUP_NAME } from "./groupErrors";
 import type { CreateGroupState } from "./useCreateGroup";
 
 const HINT_ID = "group-name-hint";
 const ERROR_ID = "group-name-error";
 
-/** Focus moves to the field after an error and to the success message after creation. */
+/**
+ * Focus moves to the field when the form opens and after an error, and to the success message after
+ * creation. The form is opened by remounting it, so it starts empty each time.
+ */
 export function CreateGroupForm({
   state,
   onSubmit,
+  onCancel,
 }: {
   state: CreateGroupState;
   onSubmit: (name: string) => void;
+  onCancel: () => void;
 }) {
   const m = useMessages();
   const formRef = useRef<HTMLFormElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const statusRef = useRef<HTMLParagraphElement>(null);
+
+  useEffect(() => {
+    inputRef.current?.focus({ preventScroll: true });
+  }, []);
 
   useEffect(() => {
     if (state.status === "failed") inputRef.current?.focus();
@@ -36,7 +45,7 @@ export function CreateGroupForm({
       : undefined;
 
   return (
-    <Panel>
+    <>
       <h2>{m.createGroupHeading}</h2>
       <form
         ref={formRef}
@@ -63,13 +72,22 @@ export function CreateGroupForm({
             {toUserMessage(INVALID_GROUP_NAME)}
           </p>
         )}
-        <button
-          type="submit"
-          className="button"
-          disabled={state.status === "saving"}
-        >
-          {m.createGroupSubmit}
-        </button>
+        <div className="form-actions">
+          <button
+            type="submit"
+            className="button"
+            disabled={state.status === "saving"}
+          >
+            {m.createGroupSubmit}
+          </button>
+          <button
+            type="button"
+            className="button button--secondary"
+            onClick={onCancel}
+          >
+            {m.cancel}
+          </button>
+        </div>
       </form>
       {otherFailure && <Alert>{toUserMessage(otherFailure)}</Alert>}
       {state.status === "created" && (
@@ -77,6 +95,6 @@ export function CreateGroupForm({
           {m.groupCreated}
         </p>
       )}
-    </Panel>
+    </>
   );
 }

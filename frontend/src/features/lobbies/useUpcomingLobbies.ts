@@ -1,7 +1,6 @@
 import { useCallback } from "react";
 import { useApi } from "../../api";
-import { useLoad } from "../../hooks";
-import { loadViewOf } from "./loadView";
+import { loadViewOf, useLoad } from "../../hooks";
 
 /** Loads the group's upcoming lobbies, sorted by the server. `refresh` reloads without a loading flash. */
 export function useUpcomingLobbies(
