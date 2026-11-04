@@ -34,6 +34,12 @@ type Lobby struct {
 	PlayerCount     int
 }
 
+// Player is a person in a lobby, with the name shown to the group.
+type Player struct {
+	UserID      string
+	DisplayName string
+}
+
 // NewLobbyRequest is what a member asks for. Game is the game found for GameID in the game list, nil when none was found.
 type NewLobbyRequest struct {
 	GroupID        string

@@ -19,14 +19,6 @@ func (pendingOperations) MakeGroupAdmin(context.Context, publicapi.MakeGroupAdmi
 	return nil, errOperationPending
 }
 
-func (pendingOperations) ListUpcomingLobbies(context.Context, publicapi.ListUpcomingLobbiesRequestObject) (publicapi.ListUpcomingLobbiesResponseObject, error) {
-	return nil, errOperationPending
-}
-
-func (pendingOperations) GetLobby(context.Context, publicapi.GetLobbyRequestObject) (publicapi.GetLobbyResponseObject, error) {
-	return nil, errOperationPending
-}
-
 func (pendingOperations) LeaveLobby(context.Context, publicapi.LeaveLobbyRequestObject) (publicapi.LeaveLobbyResponseObject, error) {
 	return nil, errOperationPending
 }

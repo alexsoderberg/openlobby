@@ -11,13 +11,52 @@ import (
 // Lobbies holds the use cases about lobbies. Each one is given the verified caller by the transport layer.
 type Lobbies struct {
 	repo    LobbyRepository
+	reader  LobbyReader
 	catalog GameCatalog
+	names   UserDirectory
 	clock   Clock
 }
 
 // NewLobbies returns the lobby use cases with their ports.
-func NewLobbies(repo LobbyRepository, catalog GameCatalog, clock Clock) *Lobbies {
-	return &Lobbies{repo: repo, catalog: catalog, clock: clock}
+func NewLobbies(repo LobbyRepository, reader LobbyReader, catalog GameCatalog, names UserDirectory, clock Clock) *Lobbies {
+	return &Lobbies{repo: repo, reader: reader, catalog: catalog, names: names, clock: clock}
+}
+
+// Upcoming returns the group's lobbies that have not ended, for a member (ADR 0004 rules 2 and 8).
+func (l *Lobbies) Upcoming(ctx context.Context, groupID, callerID string) ([]domain.Lobby, error) {
+	if _, err := requireMember(ctx, l.reader, groupID, callerID); err != nil {
+		return nil, fmt.Errorf("list lobbies: %w", err)
+	}
+	lobbies, err := l.reader.Upcoming(ctx, groupID, l.clock.Now())
+	if err != nil {
+		return nil, fmt.Errorf("list lobbies: %w", err)
+	}
+	return lobbies, nil
+}
+
+// Get returns an upcoming lobby of the group with its players' names, for a member. A non-member gets
+// domain.ErrGroupNotFound before auth is asked; an ended or unknown lobby is domain.ErrLobbyNotFound.
+func (l *Lobbies) Get(ctx context.Context, groupID, lobbyID, callerID string) (domain.Lobby, []domain.Player, error) {
+	if _, err := requireMember(ctx, l.reader, groupID, callerID); err != nil {
+		return domain.Lobby{}, nil, fmt.Errorf("get lobby: %w", err)
+	}
+	lobby, err := l.reader.Lobby(ctx, groupID, lobbyID, l.clock.Now())
+	if err != nil {
+		return domain.Lobby{}, nil, fmt.Errorf("get lobby: %w", err)
+	}
+	ids, err := l.reader.PlayerIDs(ctx, lobby.ID)
+	if err != nil {
+		return domain.Lobby{}, nil, fmt.Errorf("get lobby players: %w", err)
+	}
+	names, err := l.names.DisplayNames(ctx, ids)
+	if err != nil {
+		return domain.Lobby{}, nil, fmt.Errorf("look up display names: %w", err)
+	}
+	players := make([]domain.Player, len(ids))
+	for i, id := range ids {
+		players[i] = domain.Player{UserID: id, DisplayName: names[id]}
+	}
+	return lobby, players, nil
 }
 
 // Create saves a lobby and the creator's player row in one transaction under the group lock (ADR 0004 rule 6). A

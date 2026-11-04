@@ -124,6 +124,17 @@ type LobbyRepository interface {
 	WithLockedGroup(ctx context.Context, groupID string, fn func(tx LobbyTx) error) error
 }
 
+// LobbyReader reads lobbies without the group lock. "Upcoming" means ends_at > now (ADR 0004 rule 8).
+type LobbyReader interface {
+	MembershipReader
+	// Upcoming returns the group's upcoming lobbies with their player counts, sorted by start time, then ID.
+	Upcoming(ctx context.Context, groupID string, now time.Time) ([]domain.Lobby, error)
+	// Lobby returns the upcoming lobby of this group, or domain.ErrLobbyNotFound.
+	Lobby(ctx context.Context, groupID, lobbyID string, now time.Time) (domain.Lobby, error)
+	// PlayerIDs returns the user IDs of the lobby's players, sorted by join time, then user ID.
+	PlayerIDs(ctx context.Context, lobbyID string) ([]string, error)
+}
+
 // LobbyTx holds the operations that run under the group lock. Each one is scoped to the group (ADR 0006 rule 12).
 type LobbyTx interface {
 	MembershipReader

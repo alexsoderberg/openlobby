@@ -66,6 +66,55 @@ func (h publicHandler) DeleteLobby(ctx context.Context, request publicapi.Delete
 	return publicapi.DeleteLobby204Response{}, nil
 }
 
+// ListUpcomingLobbies returns the group's lobbies that have not ended, to a member.
+func (h publicHandler) ListUpcomingLobbies(ctx context.Context, request publicapi.ListUpcomingLobbiesRequestObject) (publicapi.ListUpcomingLobbiesResponseObject, error) {
+	lobbies, err := h.lobbies.Upcoming(ctx, request.GroupId, userIDFrom(ctx))
+	if errors.Is(err, domain.ErrGroupNotFound) {
+		return publicapi.ListUpcomingLobbies404JSONResponse{Error: publicErrorBody(ctx, publicapi.ErrorBodyCodeGroupNotFound)}, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	list := make(publicapi.ListUpcomingLobbies200JSONResponse, 0, len(lobbies))
+	for _, lobby := range lobbies {
+		body, err := lobbyBody(lobby)
+		if err != nil {
+			return nil, err
+		}
+		list = append(list, publicapi.Lobby(body))
+	}
+	return list, nil
+}
+
+// GetLobby returns an upcoming lobby with its players to a member.
+func (h publicHandler) GetLobby(ctx context.Context, request publicapi.GetLobbyRequestObject) (publicapi.GetLobbyResponseObject, error) {
+	lobby, players, err := h.lobbies.Get(ctx, request.GroupId, request.LobbyId, userIDFrom(ctx))
+	switch {
+	case errors.Is(err, domain.ErrGroupNotFound):
+		return publicapi.GetLobby404JSONResponse{Error: publicErrorBody(ctx, publicapi.ErrorBodyCodeGroupNotFound)}, nil
+	case errors.Is(err, domain.ErrLobbyNotFound):
+		return publicapi.GetLobby404JSONResponse{Error: publicErrorBody(ctx, publicapi.ErrorBodyCodeLobbyNotFound)}, nil
+	case err != nil:
+		return nil, err
+	}
+	body, err := lobbyBody(lobby)
+	if err != nil {
+		return nil, err
+	}
+	refs := make([]publicapi.UserRef, 0, len(players))
+	for _, player := range players {
+		userID, err := parseUUID(player.UserID)
+		if err != nil {
+			return nil, err
+		}
+		refs = append(refs, publicapi.UserRef{UserId: userID, DisplayName: player.DisplayName})
+	}
+	return publicapi.GetLobby200JSONResponse{
+		Id: body.Id, GameName: body.GameName, MaxPlayers: body.MaxPlayers, StartsAt: body.StartsAt, EndsAt: body.EndsAt,
+		CreatedByUserId: body.CreatedByUserId, PlayerCount: body.PlayerCount, Players: refs,
+	}, nil
+}
+
 // lobbyBody converts a new lobby into the contract shape. Times are sent in UTC (ADR 0001).
 func lobbyBody(lobby domain.Lobby) (publicapi.CreateLobby201JSONResponse, error) {
 	id, err := parseUUID(lobby.ID)
