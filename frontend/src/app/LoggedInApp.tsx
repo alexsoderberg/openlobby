@@ -66,6 +66,6 @@ function useFocusMainOnNavigation(pathname: string) {
   useEffect(() => {
     if (previous.current === pathname) return;
     previous.current = pathname;
-    document.querySelector<HTMLElement>("main")?.focus();
+    document.querySelector<HTMLElement>("main")?.focus({ preventScroll: true });
   }, [pathname]);
 }

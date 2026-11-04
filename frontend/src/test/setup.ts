@@ -19,3 +19,6 @@ if (!window.matchMedia) {
   window.matchMedia = (query: string) =>
     ({ matches: false, media: query }) as MediaQueryList;
 }
+
+// jsdom has no scrolling; page changes scroll to the top.
+window.scrollTo = () => undefined;

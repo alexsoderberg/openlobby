@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 
 const NAVIGATE_EVENT = "app:navigate";
 const API_PREFIX = "/api/";
 
 /** Runs a synchronous screen update inside a view transition, or plainly when the browser or the user opts out of motion. */
-export function withTransition(update: () => void) {
+function withTransition(update: () => void) {
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   if (reduced || !document.startViewTransition) return update();
   document.startViewTransition(update);
@@ -13,6 +13,7 @@ export function withTransition(update: () => void) {
 
 /** Moves to another page of the app without a page load. */
 export function navigate(path: string) {
+  if (path === window.location.pathname + window.location.search) return;
   window.history.pushState(null, "", path);
   window.dispatchEvent(new Event(NAVIGATE_EVENT));
 }
@@ -22,8 +23,9 @@ function isAppLink(anchor: HTMLAnchorElement) {
   return (
     href.startsWith("/") &&
     !href.startsWith("//") &&
+    !href.startsWith("/\\") &&
     !href.startsWith(API_PREFIX) &&
-    !anchor.target &&
+    !anchor.getAttribute("target") &&
     !anchor.hasAttribute("download")
   );
 }
@@ -38,13 +40,19 @@ function isPlainClick(event: MouseEvent) {
 
 /** The current address path. Link clicks, `navigate` and back/forward change it, each through a view transition. */
 export function usePathname() {
-  const [pathname, setPathname] = useState(() => window.location.pathname);
+  const [current, setPathname] = useState(() => window.location.pathname);
+  const pathname = useRef(current);
 
   useEffect(() => {
-    const sync = () =>
-      withTransition(() =>
-        flushSync(() => setPathname(window.location.pathname)),
-      );
+    const sync = (event: Event) => {
+      if (window.location.pathname === pathname.current) return;
+      pathname.current = window.location.pathname;
+      withTransition(() => {
+        flushSync(() => setPathname(pathname.current));
+        // Back and forward keep the scroll the browser restores; a new page starts at the top.
+        if (event.type === NAVIGATE_EVENT) window.scrollTo(0, 0);
+      });
+    };
     const onClick = (event: MouseEvent) => {
       const anchor = (event.target as Element).closest("a");
       if (!anchor || !isPlainClick(event) || !isAppLink(anchor)) return;
@@ -61,5 +69,5 @@ export function usePathname() {
     };
   }, []);
 
-  return pathname;
+  return current;
 }

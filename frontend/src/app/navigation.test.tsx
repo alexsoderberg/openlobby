@@ -9,6 +9,14 @@ function Probe() {
       <output>{pathname}</output>
       <a href="/groups">Groups</a>
       <a href="/api/auth/login">Login</a>
+      <a href="/groups" target="_blank">
+        Blank
+      </a>
+      <a href="/groups" download>
+        Download
+      </a>
+      <a href="https://example.com/groups">External</a>
+      <a href="/\evil.example">Backslash</a>
     </>
   );
 }
@@ -51,21 +59,66 @@ describe("page navigation", () => {
     expect(screen.getByRole("status").textContent).toBe("/games");
   });
 
-  it("leaves the login endpoint to the browser", () => {
+  it("changes the page directly when the user prefers reduced motion", () => {
+    const start = vi.fn();
+    Object.assign(document, { startViewTransition: start });
+    const matchMedia = window.matchMedia;
+    window.matchMedia = () => ({ matches: true }) as MediaQueryList;
     render(<Probe />);
-    let handledByApp = true;
-    window.addEventListener(
-      "click",
-      (event) => {
-        handledByApp = event.defaultPrevented;
-        event.preventDefault(); // jsdom cannot load another document
-      },
-      { once: true },
-    );
 
-    fireEvent.click(screen.getByRole("link", { name: "Login" }));
+    act(() => navigate("/profile"));
 
-    expect(handledByApp).toBe(false);
-    expect(window.location.pathname).toBe("/");
+    window.matchMedia = matchMedia;
+    expect(start).not.toHaveBeenCalled();
+    expect(screen.getByRole("status").textContent).toBe("/profile");
+  });
+
+  it("does not add a history entry for the page it is already on", () => {
+    render(<Probe />);
+    const push = vi.spyOn(window.history, "pushState");
+
+    act(() => navigate("/"));
+
+    expect(push).not.toHaveBeenCalled();
+    push.mockRestore();
+  });
+
+  describe("leaves to the browser", () => {
+    function clickIsHandledByApp(
+      name: string,
+      init: MouseEventInit = {},
+    ): boolean {
+      render(<Probe />);
+      const push = vi.spyOn(window.history, "pushState");
+      let prevented = true;
+      window.addEventListener(
+        "click",
+        (event) => {
+          prevented = event.defaultPrevented;
+          event.preventDefault(); // jsdom cannot load another document
+        },
+        { once: true },
+      );
+      fireEvent.click(screen.getByRole("link", { name }), init);
+      const pushed = push.mock.calls.length > 0;
+      push.mockRestore();
+      return prevented && pushed;
+    }
+
+    it.each([
+      ["Login", {}],
+      ["Blank", {}],
+      ["Download", {}],
+      ["External", {}],
+      ["Backslash", {}],
+      ["Groups", { ctrlKey: true }],
+      ["Groups", { metaKey: true }],
+      ["Groups", { shiftKey: true }],
+      ["Groups", { altKey: true }],
+      ["Groups", { button: 1 }],
+    ] as [string, MouseEventInit][])("%s %j", (name, init) => {
+      expect(clickIsHandledByApp(name, init)).toBe(false);
+      expect(window.location.pathname).toBe("/");
+    });
   });
 });
