@@ -31,6 +31,7 @@ Use suitable skills, e.g. ponytail to judge whether the code could be smaller.
 - `BLOCKER`: must be fixed. The change is not approved.
 - `SHOULD`: must be fixed. May only be left if the agent gives a justification that you accept, and that justification is written into the report.
 - `COULD`: suggestion.
+- **Severity discipline:** `BLOCKER` only for real defects, failing checks, security or data-loss risks, and violations of an ADR, requirement or contract. Style and size preferences are `COULD`. Length of JSX-heavy React components is `COULD` (CLAUDE.md, Code standard). On a re-review, check only the previous findings and regressions; do not raise new style points.
 
 **The following are always `BLOCKER`:**
 

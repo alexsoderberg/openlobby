@@ -214,7 +214,7 @@ Interfaces are **not** used for pure domain logic with a single implementation a
 ## Code standard
 
 - Names describe *what*, not *how*. No abbreviations beyond established ones (`id`, `url`, `db`, `ctx`).
-- Functions are kept short (guideline: under 30 lines) and at one level of abstraction.
+- Functions are kept short (guideline: under 30 lines) and at one level of abstraction. For React components whose length is mostly JSX markup, the guideline is a `COULD` in review, never a `SHOULD` or `BLOCKER`; it stays a `SHOULD` for logic, hooks and Go code.
 - No magic numbers or strings; use named constants.
 - Comments explain *why*, not *what*.
 - Errors are handled explicitly; no silent `catch` and no ignored `err`. Log with context and never expose internal details to the client.
