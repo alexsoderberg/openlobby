@@ -150,7 +150,7 @@ func serve(logger *slog.Logger) error {
 	repo := store.Groups()
 	groups := application.NewGroups(repo, repo, repo, directory, clock)
 	invites := application.NewInviteLinks(repo, repo, store.InviteLinks(), cryptotoken.Generator{}, clock)
-	games := application.NewGames(repo, store.Games())
+	games := application.NewGames(repo, store.Games(), store.Games(), logger)
 	handler := transport.NewRouter(groups, invites, games, store.Ping, logger)
 	return listen(ctx, logger, cfg.httpAddr, handler)
 }

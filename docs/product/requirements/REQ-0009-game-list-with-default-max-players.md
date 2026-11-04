@@ -64,7 +64,7 @@ F-025 (Manage game list as system admin) is the only way to change the list. Not
 - DECISION ("Other"): Free-text names are not added to the game list. The same game can therefore exist both in the game list and under "Other".
 - DECISION (empty max): An empty max players means unlimited, both for games from the list and for "Other".
 - DECISION (max does not change): Max players is set at creation and does not change in the MVP (F-011).
-- DECISION (no upper limit): No upper limit for max players. The value must be an integer of at least 1, or empty.
+- DECISION (no upper limit): No upper limit for max players. The value must be an integer of at least 1, or empty. Amendment 2026-11-04: the technical upper bound is 2147483647 (ADR 0010); there is no product cap.
 - DECISION (members do not propose): In the MVP, members cannot propose games.
 - DECISION (rename): If a system admin renames a game, existing lobbies keep the name they were saved with, in line with the rule for removed games.
 - DECISION (default max missing): A game in the game list may lack a default max. Then max players is empty (unlimited), just as for "Other".

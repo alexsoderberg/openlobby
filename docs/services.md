@@ -102,7 +102,7 @@ Public endpoints (via `gateway`, which receives traffic from `edge`):
 | DELETE | `/api/games/{gameId}` | calendar | yes, system admin | REQ-0010 (ADR 0010 review 3. 204. Order: `game_not_found` (invalid form in path), `not_allowed`, `game_not_found` (unknown). Lobbies keep their game name) |
 | GET | `/api/groups/{groupId}/games` | calendar | yes, member | REQ-0009 (ADR 0010 review 3. The game list in the order of use in the group: most lobbies first, then by name ignoring case, then `id`; `Other` is not included and is shown last by the client. Non-member `group_not_found`) |
 | GET | `/api/groups/{groupId}/lobbies` | calendar | yes, member | REQ-0004 (all upcoming lobbies, sorted by start time, without interval filter; shows `gameName`, `maxPlayers`, `playerCount`) |
-| POST | `/api/groups/{groupId}/lobbies` | calendar | yes, member | REQ-0003, REQ-0009 (`startsAt`, `endsAt` as RFC 3339, both required. Exactly one of `gameId` or `customGameName`. `maxPlayers` omitted, `null` (unlimited) or an integer ≥ 1. Order: `invalid_request`, `group_not_found`, then the lobby rules. 201 response `Lobby` without `players`) |
+| POST | `/api/groups/{groupId}/lobbies` | calendar | yes, member | REQ-0003, REQ-0009 (`startsAt`, `endsAt` as RFC 3339, both required. Exactly one of `gameId` or `customGameName`. `maxPlayers` omitted, `null` (unlimited) or an integer from 1 to 2147483647. Order: `invalid_request`, `group_not_found`, then the lobby rules. 201 response `Lobby` without `players`) |
 | GET | `/api/groups/{groupId}/lobbies/{lobbyId}` | calendar | yes, member | REQ-0004, REQ-0005 (shows the players who have joined. `lobby_not_found` also after the end time, since past lobbies are not shown, ADR 0004) |
 | DELETE | `/api/groups/{groupId}/lobbies/{lobbyId}` | calendar | yes, creator | REQ-0003 |
 | PUT | `/api/groups/{groupId}/lobbies/{lobbyId}/players/me` | calendar | yes, member | REQ-0005, F-018 (order: `lobby_not_found`, `lobby_has_ended` (also for a caller who is already a player), already a player → 204, `lobby_full`. ADR 0004 rule 7) |
@@ -150,7 +150,7 @@ The source is `enum` in `api/` (`auth/openapi.yaml` and `calendar/openapi.yaml` 
 | `lobby_end_not_after_start` | 400 | `endsAt` is not after `startsAt` |
 | `lobby_too_long` | 400 | The lobby is 24 hours or longer |
 | `invalid_game` | 400 | Lobby: unknown `gameId` (also a value not in uuid form), both or neither of `gameId` and `customGameName`, invalid `customGameName`. Game list: name missing, empty after trim, over 50 characters, or `Other` (ignoring case) |
-| `invalid_capacity` | 400 | `maxPlayers` or `defaultMaxPlayers` is an integer under 1 (`null` means unlimited) |
+| `invalid_capacity` | 400 | `maxPlayers` or `defaultMaxPlayers` is an integer under 1 or over 2147483647 (`null` means unlimited) |
 | `lobby_has_ended` | 409 | Joining when the end time has passed, also for a player who is already in the lobby |
 | `lobby_full` | 409 | Joining when all spots are taken |
 | `own_upcoming_lobbies_exist` | 409 | Leaving a group with own upcoming lobbies |

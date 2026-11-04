@@ -1,7 +1,7 @@
 -- +goose Up
 -- The game list (ADR 0010). A system admin changes it in a later requirement (REQ-0010). The checks are the safety net
--- of ADR 0010; the reserved name "Other" is not a row and is checked in application only. The runtime role gets DML
--- through default privileges (infra/postgres/init), so no GRANT is needed here.
+-- of ADR 0010; the reserved name "Other" is not a row and is checked in domain.NewGame (ADR 0010 amendment
+-- 2026-11-03). The runtime role gets DML through default privileges (infra/postgres/init), so no GRANT is needed here.
 -- shortcut: the name check uses the whitespace class of PostgreSQL, so an exotic Unicode space can pass it while
 -- application trims all Unicode whitespace (ADR 0004 rule 1); upgrade if such a name ever gets in.
 CREATE TABLE games (

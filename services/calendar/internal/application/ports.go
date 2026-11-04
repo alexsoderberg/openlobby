@@ -74,7 +74,18 @@ type GameUsage struct {
 
 // GameCatalog reads the game list with the lobby counts of one group (ADR 0010).
 type GameCatalog interface {
+	// List returns every game, sorted by name ignoring case, then ID (ADR 0010).
+	List(ctx context.Context) ([]domain.Game, error)
 	ListForGroup(ctx context.Context, groupID string) ([]GameUsage, error)
+}
+
+// GameCatalogEditor changes the game list. Only the system admin use cases call it (ADR 0010). Each method returns
+// ErrGameNotFound or ErrGameTaken for the rules it cannot check without the database.
+type GameCatalogEditor interface {
+	// Create stores the game with a generated ID and returns it.
+	Create(ctx context.Context, game domain.Game) (domain.Game, error)
+	Replace(ctx context.Context, game domain.Game) error
+	Delete(ctx context.Context, id string) error
 }
 
 // UserDirectory gives the display names of users. The names are read from auth and never stored (ADR 0003, 0004).

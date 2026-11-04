@@ -12,10 +12,13 @@ import (
 
 // fakeCatalog returns the usages it holds and counts the reads, so a test can show that a non-member's read never ran.
 type fakeCatalog struct {
-	usages []application.GameUsage
-	err    error
-	calls  int
-	asked  string
+	usages    []application.GameUsage
+	err       error
+	calls     int
+	asked     string
+	listed    []domain.Game
+	listErr   error
+	listCalls int
 }
 
 func (c *fakeCatalog) ListForGroup(_ context.Context, groupID string) ([]application.GameUsage, error) {
@@ -24,8 +27,13 @@ func (c *fakeCatalog) ListForGroup(_ context.Context, groupID string) ([]applica
 	return slices.Clone(c.usages), c.err
 }
 
+func (c *fakeCatalog) List(_ context.Context) ([]domain.Game, error) {
+	c.listCalls++
+	return slices.Clone(c.listed), c.listErr
+}
+
 func newGames(store *fakeStore, catalog *fakeCatalog) *application.Games {
-	return application.NewGames(store, catalog)
+	return application.NewGames(store, catalog, &fakeEditor{}, discardLog())
 }
 
 func gameUsage(id, name string, lobbies int) application.GameUsage {
