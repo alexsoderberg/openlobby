@@ -20,6 +20,7 @@ type publicHandler struct {
 	groups  *application.Groups
 	games   *application.Games
 	invites *application.InviteLinks
+	lobbies *application.Lobbies
 }
 
 var _ publicapi.StrictServerInterface = publicHandler{}

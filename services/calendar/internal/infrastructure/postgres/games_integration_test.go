@@ -113,9 +113,7 @@ func TestGamesDownDropsTableAndUpRestoresStartingGames(t *testing.T) {
 	store := migratedStore(t)
 	ctx := context.Background()
 
-	if err := store.Migrate(ctx, true); err != nil {
-		t.Fatalf("migrate down: %v", err)
-	}
+	migrateDownTo(t, store, 2)
 	var table sql.NullString
 	if err := store.db.QueryRowContext(ctx, `SELECT to_regclass('games')::text`).Scan(&table); err != nil {
 		t.Fatal(err)

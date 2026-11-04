@@ -80,7 +80,6 @@ func (g *Games) ReplaceGame(ctx context.Context, actor domain.Actor, gameID, raw
 
 // DeleteGame removes a game from the list. Lobbies keep their own copy of the game name and max players, so nothing else
 // changes (ADR 0010).
-// shortcut: no test that deleting a game leaves lobbies alone (no lobbies table exists yet), add it with the first lobby write (REQ-0003, ADR 0010).
 func (g *Games) DeleteGame(ctx context.Context, actor domain.Actor, gameID string) error {
 	if err := requireSystemAdmin(actor); err != nil {
 		return fmt.Errorf("delete game: %w", err)
@@ -95,12 +94,8 @@ func (g *Games) DeleteGame(ctx context.Context, actor domain.Actor, gameID strin
 // ListGroupGames returns the game list to a member, most used first: lobby count descending, then name ignoring case,
 // then ID (ADR 0010). A non-member gets domain.ErrGroupNotFound, the same as an unknown group (ADR 0004 rule 2).
 func (g *Games) ListGroupGames(ctx context.Context, groupID, callerID string) ([]domain.Game, error) {
-	_, isMember, err := g.reader.Membership(ctx, groupID, callerID)
-	if err != nil {
+	if _, err := requireMember(ctx, g.reader, groupID, callerID); err != nil {
 		return nil, fmt.Errorf("list group games: %w", err)
-	}
-	if !isMember {
-		return nil, domain.ErrGroupNotFound
 	}
 	usages, err := g.catalog.ListForGroup(ctx, groupID)
 	if err != nil {

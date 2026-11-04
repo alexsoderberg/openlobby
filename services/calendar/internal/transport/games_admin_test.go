@@ -243,6 +243,7 @@ func TestCreateAndReplaceRefuseInvalidInputAndSaveNothing(t *testing.T) {
 		{name: "max negative", body: `{"name":"Chess","defaultMaxPlayers":-3}`, code: "invalid_capacity"},
 		{name: "max above int4", body: `{"name":"Chess","defaultMaxPlayers":2147483648}`, code: "invalid_capacity"},
 		{name: "max far above int4", body: `{"name":"Chess","defaultMaxPlayers":3000000000}`, code: "invalid_capacity"},
+		{name: "max beyond int64", body: `{"name":"Chess","defaultMaxPlayers":99999999999999999999}`, code: "invalid_request"},
 		{name: "max not an integer", body: `{"name":"Chess","defaultMaxPlayers":2.5}`, code: "invalid_request"},
 		{name: "max is text", body: `{"name":"Chess","defaultMaxPlayers":"five"}`, code: "invalid_request"},
 		{name: "invalid JSON", body: `{"name":`, code: "invalid_request"},

@@ -28,7 +28,12 @@ type lockedTx struct{ tx *sql.Tx }
 // WithLockedGroup runs fn in one transaction that holds the group's row lock (ADR 0006). The transaction is committed
 // when fn succeeds. It returns domain.ErrGroupNotFound when the group does not exist.
 func (r groupRepo) WithLockedGroup(ctx context.Context, groupID string, fn func(application.GroupTx) error) error {
-	err := r.s.inTx(ctx, func(tx *sql.Tx) error {
+	return r.s.withGroupLock(ctx, groupID, func(tx *sql.Tx) error { return fn(lockedTx{tx}) })
+}
+
+// withGroupLock is the one place that takes the group lock, for every port that writes group-owned rows.
+func (s *Store) withGroupLock(ctx context.Context, groupID string, fn func(tx *sql.Tx) error) error {
+	err := s.inTx(ctx, func(tx *sql.Tx) error {
 		if _, err := tx.ExecContext(ctx, setLockTimeoutSQL); err != nil {
 			return err
 		}
@@ -40,7 +45,7 @@ func (r groupRepo) WithLockedGroup(ctx context.Context, groupID string, fn func(
 		if err != nil {
 			return err
 		}
-		return fn(lockedTx{tx})
+		return fn(tx)
 	})
 	return translate(err)
 }

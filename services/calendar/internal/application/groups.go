@@ -46,12 +46,8 @@ func (g *Groups) Create(ctx context.Context, creatorID, rawName string) (domain.
 // Get returns a group with its members and their display names. A non-member gets domain.ErrGroupNotFound before
 // auth is asked, so a non-member never causes a lookup (ADR 0004 rule 2, amendment 2026-11-02).
 func (g *Groups) Get(ctx context.Context, userID, groupID string) (domain.Group, []domain.Member, error) {
-	_, isMember, err := g.reader.Membership(ctx, groupID, userID)
-	if err != nil {
+	if _, err := requireMember(ctx, g.reader, groupID, userID); err != nil {
 		return domain.Group{}, nil, fmt.Errorf("get group: %w", err)
-	}
-	if !isMember {
-		return domain.Group{}, nil, domain.ErrGroupNotFound
 	}
 	group, err := g.reader.Group(ctx, groupID)
 	if err != nil {
