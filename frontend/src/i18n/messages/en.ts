@@ -141,8 +141,10 @@ export const en = {
   calendarWeekHeading: (range: string) => `Week ${range}`,
   calendarNextWeek: "Next week",
   calendarNoLobbiesOnDay: "No lobbies",
+  calendarCreateOnDay: (day: string) => `Create lobby on ${day}`,
 
   lobbyCreateHeading: "Create a lobby",
+  lobbyCreateButton: "Create lobby",
   gamesLoading: "Loading the games.",
   lobbyGameLabel: "Game",
   lobbyGameChoose: "Choose a game",
@@ -192,7 +194,8 @@ export const en = {
     groupStripLabel: "Your groups",
     noGroups: "You are not in a group yet",
     noGroupsHint:
-      "Press + to create one, or open an invite link from a friend.",
+      "Create one on the Groups page, or open an invite link from a friend.",
+    noGroupsLink: "Go to Groups",
     nextUpHeading: "Next up",
     thisWeekHeading: "This week",
     nothingBooked: "Nothing booked",

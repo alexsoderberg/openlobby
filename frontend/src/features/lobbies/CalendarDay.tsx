@@ -1,5 +1,7 @@
+import { useRef } from "react";
 import type { Lobby } from "../../api";
 import { formatTimeRange, formatWeekday, useMessages } from "../../i18n";
+import { isBeforeToday } from "./calendarWeek";
 import { endsNextDay } from "./lobbyTime";
 import { lobbyPath } from "./lobbyPath";
 
@@ -8,15 +10,40 @@ export function CalendarDay({
   groupId,
   day,
   clusters,
+  onCreate,
 }: {
   groupId: string;
   day: Date;
   clusters: Lobby[][];
+  onCreate: (day: Date, button: HTMLElement) => void;
 }) {
   const m = useMessages();
+  const addRef = useRef<HTMLButtonElement>(null);
+  const canCreate = !isBeforeToday(day);
+  // A click on empty space in the column does what the "+" does; the keyboard uses the "+".
+  const createFromColumn = (target: HTMLElement) => {
+    if (canCreate && addRef.current && !target.closest("a, button"))
+      onCreate(day, addRef.current);
+  };
   return (
-    <li className="calendar-day">
-      <h4 className="calendar-day__name">{formatWeekday(day)}</h4>
+    <li
+      className="calendar-day"
+      onClick={(event) => createFromColumn(event.target as HTMLElement)}
+    >
+      <div className="calendar-day__head">
+        <h4 className="calendar-day__name">{formatWeekday(day)}</h4>
+        {canCreate && (
+          <button
+            ref={addRef}
+            type="button"
+            className="calendar-day__add"
+            aria-label={m.calendarCreateOnDay(formatWeekday(day))}
+            onClick={(event) => onCreate(day, event.currentTarget)}
+          >
+            <span aria-hidden="true">+</span>
+          </button>
+        )}
+      </div>
       <div className="calendar-day__lobbies">
         {clusters.length === 0 && (
           <p className="calendar-day__empty">{m.calendarNoLobbiesOnDay}</p>

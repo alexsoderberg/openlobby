@@ -24,3 +24,8 @@ export function clusterOverlapping(lobbies: Lobby[]): Lobby[][] {
   }
   return clusters;
 }
+
+/** True for a day before today, where no lobby can be created. `day` is midnight. */
+export function isBeforeToday(day: Date): boolean {
+  return day.getTime() < new Date().setHours(0, 0, 0, 0);
+}

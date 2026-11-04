@@ -40,6 +40,7 @@ function renderForm(overrides: Partial<ApiClient> = {}) {
       <CreateLobby
         groupId="g1"
         onCreated={onCreated}
+        onCancel={vi.fn()}
         onUnauthenticated={vi.fn()}
       />
     </ApiProvider>,
@@ -114,7 +115,7 @@ describe("game choice", () => {
 });
 
 describe("saving a lobby", () => {
-  it("sends the game, max players and local times, refreshes, and confirms with focus", async () => {
+  it("sends the game, max players and local times, and hands over", async () => {
     const { client, onCreated } = renderForm();
     await fillValid();
 
@@ -127,9 +128,6 @@ describe("saving a lobby", () => {
       startsAt: new Date(2026, 10, 5, 18).toISOString(),
       endsAt: new Date(2026, 10, 5, 20).toISOString(),
     });
-    const status = await screen.findByText(en.lobbyCreated);
-    expect(document.activeElement).toBe(status);
-    expect((await field(en.lobbyGameLabel)).value).toBe("");
   });
 
   it("sends a free-text game with the unlimited max as null", async () => {
@@ -252,6 +250,14 @@ describe("server errors", () => {
     expect(document.activeElement).toBe(await field(focused));
     expect((await field(en.lobbyStartLabel)).value).toBe("18:00");
     expect(onCreated).not.toHaveBeenCalled();
-    expect(screen.queryByText(en.lobbyCreated)).toBeNull();
+  });
+});
+
+describe("opening", () => {
+  it("focuses the game field", async () => {
+    renderForm();
+
+    const game = await field(en.lobbyGameLabel);
+    expect(document.activeElement).toBe(game);
   });
 });

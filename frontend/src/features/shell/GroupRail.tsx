@@ -10,13 +10,14 @@ import { HomeIcon } from "./icons";
 export function GroupRail({
   groups,
   active,
-  createOpen,
   onCreate,
+  createOpen,
 }: {
   groups: GroupSummary[];
   active: ActiveNav;
+  /** Without it there is no "+". */
+  onCreate?: (button: HTMLElement) => void;
   createOpen: boolean;
-  onCreate: (button: HTMLElement) => void;
 }) {
   const m = useMessages();
   return (
@@ -42,7 +43,7 @@ export function GroupRail({
           </li>
         ))}
       </ul>
-      <CreateGroupButton open={createOpen} onPress={onCreate} />
+      {onCreate && <CreateGroupButton open={createOpen} onPress={onCreate} />}
     </nav>
   );
 }
