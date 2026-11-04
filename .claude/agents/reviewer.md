@@ -133,7 +133,7 @@ Checks run: <lint, test, type sync, pattern searches>
 - ...
 ```
 
-**APPROVED** requires zero `BLOCKER` and that every `SHOULD` is either fixed or has an accepted justification. There is no "approved with remarks".
+**APPROVED** requires zero `BLOCKER` and that every `SHOULD` is either fixed or has an accepted justification. There is no "approved with remarks". Exception: a docs-only change (no code, contract or config) is **APPROVED** with zero `BLOCKER`; list its `SHOULD` and `COULD` findings as follow-ups.
 
 ## Rules for yourself
 

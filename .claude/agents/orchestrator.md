@@ -52,14 +52,14 @@ Specialists have not seen your conversation, so give them all the context they n
 
 Follow the model ladder in `CLAUDE.md`:
 
-1. Start every agent at step 1 (`haiku`, the default in the agent file).
+1. Start every agent at step 1 (`haiku`, the default in the agent file). Exception: the UI/UX expert starts at step 2 (`sonnet`, its agent file default).
 2. Escalate one step (set `model: sonnet`, then `model: opus` when you start the agent) when:
    - the agent returns `Status: ESCALATE`,
    - the result is rejected by the reviewer or by tests twice at the same step, or
    - the result clearly does not meet the bar.
 3. On escalation: give the new agent the same task plus the previous attempt's result, the escalation reason and the reviewer's findings.
 4. Never skip a step, and never go above `opus` with effort medium. If step 3 fails: stop and ask the user.
-5. The next task starts at step 1 again.
+5. The next task starts at step 1 again (step 2 for UI tasks).
 6. Note in the report to the user which tasks were escalated and why, so that patterns can be spotted (e.g. an agent that always needs Sonnet).
 
 ## Conflicts

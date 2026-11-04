@@ -2,7 +2,7 @@
 name: ui-ux-expert
 description: UI/UX expert. Used for interfaces, React components, user flows, forms, the login flow on the client, accessibility and visual design in frontend/.
 tools: Read, Grep, Glob, Bash, Write, Edit, Skill
-model: haiku
+model: sonnet
 effort: medium
 ---
 
