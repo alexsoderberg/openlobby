@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { useLoad } from "../hooks";
 import { navigate, usePathname } from "./navigation";
 
 function Probe() {
@@ -37,6 +38,34 @@ describe("page navigation", () => {
     expect(start).toHaveBeenCalledTimes(1);
     expect(screen.getByRole("status").textContent).toBe("/profile");
     expect(window.location.pathname).toBe("/profile");
+  });
+
+  it("holds the transition until the new page has loaded", async () => {
+    let finish!: () => void;
+    const load = () => new Promise<void>((resolve) => (finish = resolve));
+    function Page() {
+      useLoad(load);
+      return null;
+    }
+    function Router() {
+      return usePathname() === "/slow" ? <Page /> : null;
+    }
+    let transition!: Promise<void>;
+    Object.assign(document, {
+      startViewTransition: (update: () => Promise<void>) => {
+        transition = update();
+      },
+    });
+    render(<Router />);
+    let released = false;
+
+    act(() => navigate("/slow"));
+    void transition.then(() => (released = true));
+    await act(async () => {});
+    expect(released).toBe(false);
+    await act(async () => finish());
+
+    expect(released).toBe(true);
   });
 
   it("changes the page directly when there are no view transitions", () => {

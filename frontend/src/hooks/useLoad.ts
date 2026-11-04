@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useLayoutEffect, useState } from "react";
 import { isUnauthenticated } from "../api";
+import { trackLoad } from "./pageLoads";
 
 export type LoadState<T> =
   | { status: "loading" }
@@ -18,9 +19,12 @@ export function useLoad<T>(
   const [state, setState] = useState<LoadState<T>>({ status: "loading" });
   const [attempt, setAttempt] = useState(0);
 
-  useEffect(() => {
+  // A layout effect, so the first load is already registered when a view transition has committed the page.
+  useLayoutEffect(() => {
     let ignore = false;
-    load().then(
+    const loading = load();
+    if (attempt === 0) trackLoad(loading);
+    loading.then(
       (value) => {
         if (!ignore) setState({ status: "loaded", value });
       },

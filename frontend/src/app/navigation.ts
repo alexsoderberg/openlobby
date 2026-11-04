@@ -1,14 +1,23 @@
 import { useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
+import { pageLoadsSettled } from "../hooks";
 
 const NAVIGATE_EVENT = "app:navigate";
 const API_PREFIX = "/api/";
+/** How long a transition holds the old page for the new page's data before animating anyway. */
+const PAGE_LOAD_WAIT_MS = 400;
 
-/** Runs a synchronous screen update inside a view transition, or plainly when the browser or the user opts out of motion. */
+/**
+ * Runs a screen update inside a view transition, or plainly when the browser or the user opts out of motion.
+ * The transition waits for the new page's first load, so it animates to the loaded page instead of a loading one.
+ */
 function withTransition(update: () => void) {
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   if (reduced || !document.startViewTransition) return update();
-  document.startViewTransition(update);
+  document.startViewTransition(async () => {
+    update();
+    await pageLoadsSettled(PAGE_LOAD_WAIT_MS);
+  });
 }
 
 /** Moves to another page of the app without a page load. */
