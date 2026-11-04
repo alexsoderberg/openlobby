@@ -8,6 +8,8 @@ describe("routeFor", () => {
     ["/invite/", { name: "notFound" }],
     ["/invite/a/b", { name: "notFound" }],
     ["/groups/g1", { name: "group", groupId: "g1" }],
+    ["/games", { name: "games" }],
+    ["/games/", { name: "notFound" }],
     ["/groups/", { name: "notFound" }],
     ["/groups/g1/x", { name: "notFound" }],
   ])("maps %s", (pathname, route) => {

@@ -10,8 +10,7 @@ export function App() {
   const entry = useEntryLocation();
   const { session, reload, logout, logoutError, markExpired } = useSession();
   const route = routeFor(entry.pathname);
-  const displayName =
-    session.status === "loggedIn" ? session.user.displayName : undefined;
+  const user = session.status === "loggedIn" ? session.user : undefined;
 
   // The logged-out start page is the landing page, which has its own top bar.
   if (route.name === "start" && session.status === "loggedOut") {
@@ -27,7 +26,8 @@ export function App() {
   return (
     <>
       <Header
-        displayName={displayName}
+        displayName={user?.displayName}
+        showGameList={user?.isSystemAdmin}
         logoutError={logoutError}
         onLogout={logout}
       />
@@ -41,7 +41,11 @@ export function App() {
             loginError={entry.loginError}
             onRetry={reload}
           >
-            <ProtectedPage route={route} onUnauthenticated={markExpired} />
+            <ProtectedPage
+              route={route}
+              isSystemAdmin={user?.isSystemAdmin ?? false}
+              onUnauthenticated={markExpired}
+            />
           </RequireLogin>
         )}
       </main>

@@ -35,10 +35,14 @@ export function useLoad<T>(
     };
   }, [load, onUnauthenticated, attempt]);
 
+  /** Loads again and keeps showing the current value until the new one arrives. */
+  const refresh = useCallback(() => setAttempt((count) => count + 1), []);
+
+  /** Loads again from the loading state, e.g. to retry after a failure. */
   const reload = useCallback(() => {
     setState({ status: "loading" });
-    setAttempt((count) => count + 1);
-  }, []);
+    refresh();
+  }, [refresh]);
 
-  return { state, reload };
+  return { state, reload, refresh };
 }

@@ -1,6 +1,8 @@
 import {
+  GAME_NAME_MAX_LENGTH,
   GROUP_NAME_MAX_LENGTH,
   INVITE_MAX_USES_LIMIT,
+  RESERVED_GAME_NAME,
   type ApiErrorCode,
 } from "../../api";
 
@@ -94,6 +96,34 @@ export const en = {
   inviteMaxUsesHint:
     "Each person who joins uses one. The link stops working when the uses run out or it expires.",
   createInviteLinkSubmit: "Create invite link",
+
+  gameListLink: "Game list",
+  gameListHeading: "Game list",
+  gameListLoading: "Loading the game list.",
+  gameListEmpty: "There are no games in the list yet. Add the first one below.",
+  gameListDenied:
+    "Only a system admin can change the game list. You do not have access to this page.",
+  gameUnlimited: "No player limit",
+  gameMaxPlayers: (max: number) => `Up to ${max} players`,
+  gameNameLabel: "Game name",
+  gameNameHint: `1 to ${GAME_NAME_MAX_LENGTH} characters. "${RESERVED_GAME_NAME}" is reserved.`,
+  gameMaxPlayersLabel: "Default max players",
+  gameMaxPlayersHint: "Leave empty for no limit.",
+  gameAddHeading: "Add a game",
+  gameAddSubmit: "Add game",
+  gameEdit: "Change",
+  gameEditSubmit: "Save changes",
+  gameEditCancel: "Cancel",
+  gameRemove: "Remove",
+  gameNameInvalid: `The name must be 1 to ${GAME_NAME_MAX_LENGTH} characters, and "${RESERVED_GAME_NAME}" is reserved.`,
+  gameRemoveHeading: (name: string) => `Remove ${name}?`,
+  gameRemoveConfirm:
+    "The game leaves the game list for everyone. Lobbies that already use it keep their game name and max players.",
+  gameRemoveSubmit: "Yes, remove game",
+  gameRemoveKeep: "Keep game",
+  gameAdded: "Game added.",
+  gameChanged: "Game changed.",
+  gameRemoved: "Game removed.",
 
   notFoundHeading: "Page not found",
   notFoundText: "The address does not point to a page in OpenLobby.",
