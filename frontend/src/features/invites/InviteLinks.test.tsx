@@ -35,16 +35,19 @@ const named = (text: string) => new RegExp(`^${text}`);
 
 function renderLinks(client: ApiClient) {
   const onUnauthenticated = vi.fn();
+  const onClose = vi.fn();
   render(
     <ApiProvider client={client}>
       <InviteLinks
         groupId="g1"
+        groupName="Friday crew"
         members={members}
         onUnauthenticated={onUnauthenticated}
+        onClose={onClose}
       />
     </ApiProvider>,
   );
-  return { onUnauthenticated };
+  return { onUnauthenticated, onClose };
 }
 
 function stubClipboard() {
@@ -151,8 +154,28 @@ describe("invite link list", () => {
   });
 });
 
+describe("invite popover body", () => {
+  it("names the group in the heading and closes with the Close button", async () => {
+    const { onClose } = renderLinks(fakeApiClient());
+    await screen.findByText(en.inviteLinksEmpty);
+
+    expect(
+      screen.getByRole("heading", { name: en.inviteHeading("Friday crew") }),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: en.inviteClose }));
+    expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it("starts with one use selected", async () => {
+    renderLinks(fakeApiClient());
+    await screen.findByText(en.inviteLinksEmpty);
+
+    expect(INVITE_MAX_USES_DEFAULT).toBe(1);
+  });
+});
+
 describe("create invite link", () => {
-  it("creates a link with the default of 10 uses", async () => {
+  it("creates a link with the default of 1 use", async () => {
     const client = fakeApiClient();
     renderLinks(client);
     await screen.findByText(en.inviteLinksEmpty);
@@ -169,7 +192,10 @@ describe("create invite link", () => {
     );
 
     await waitFor(() =>
-      expect(client.createInviteLink).toHaveBeenCalledWith("g1", 10),
+      expect(client.createInviteLink).toHaveBeenCalledWith(
+        "g1",
+        INVITE_MAX_USES_DEFAULT,
+      ),
     );
   });
 

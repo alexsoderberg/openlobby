@@ -117,7 +117,7 @@ func TestCreateInviteLinkReturns201WithTokenAndNoStore(t *testing.T) {
 	if err := json.Unmarshal(response.Body.Bytes(), &link); err != nil {
 		t.Fatal(err)
 	}
-	want := inviteLinkJSON{ID: linkID, Token: issuedToken, CreatedByUserID: alexID, ExpiresAt: clockNow.Add(2 * time.Hour).Format(time.RFC3339), MaxUses: 10}
+	want := inviteLinkJSON{ID: linkID, Token: issuedToken, CreatedByUserID: alexID, ExpiresAt: clockNow.Add(10 * time.Minute).Format(time.RFC3339), MaxUses: 1}
 	if link != want {
 		t.Fatalf("link %+v, want %+v", link, want)
 	}
@@ -129,9 +129,9 @@ func TestCreateInviteLinkTakesMaxUsesOrDefault(t *testing.T) {
 		body string
 		want int
 	}{
-		{name: "empty body gives the default", body: "", want: 10},
-		{name: "empty object gives the default", body: `{}`, want: 10},
-		{name: "null gives the default", body: `{"maxUses":null}`, want: 10},
+		{name: "empty body gives the default", body: "", want: 1},
+		{name: "empty object gives the default", body: `{}`, want: 1},
+		{name: "null gives the default", body: `{"maxUses":null}`, want: 1},
 		{name: "chosen value is kept", body: `{"maxUses":3}`, want: 3},
 	}
 	for _, tc := range tests {

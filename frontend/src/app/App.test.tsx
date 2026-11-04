@@ -296,21 +296,30 @@ describe("group page", () => {
     expect(client.getGroup).toHaveBeenCalledWith("g1");
   });
 
-  it("shows the invite links to a member", async () => {
-    renderAt(
-      loggedInClient({
-        getGroup: () =>
-          Promise.resolve({ id: "g1", name: "Friday crew", members }),
-      }),
-      "/groups/g1",
-    );
+  it("has no invite section, only an Invite button that opens the invite popover", async () => {
+    const client = loggedInClient({
+      getGroup: () =>
+        Promise.resolve({ id: "g1", name: "Friday crew", members }),
+    });
+    renderAt(client, "/groups/g1");
+
+    const button = await screen.findByRole("button", { name: en.inviteButton });
+    expect(
+      screen.queryByRole("heading", { name: en.inviteLinksHeading }),
+    ).toBeNull();
+    fireEvent.click(button);
 
     expect(
-      await screen.findByRole("heading", {
-        level: 2,
-        name: en.inviteLinksHeading,
+      await screen.findByRole("dialog", {
+        name: en.inviteHeading("Friday crew"),
       }),
     ).toBeTruthy();
+    const uses = (await screen.findByRole("combobox", {
+      name: en.inviteMaxUsesLabel,
+    })) as HTMLSelectElement;
+    expect(uses.value).toBe("1");
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(document.activeElement).toBe(button);
   });
 
   it("shows the not-found page without group content to a non-member", async () => {

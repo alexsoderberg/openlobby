@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { INVITE_MAX_USES_DEFAULT, INVITE_MAX_USES_LIMIT } from "../../api";
 import { useMessages } from "../../i18n";
 
@@ -18,6 +18,11 @@ export function CreateInviteLinkForm({
 }) {
   const m = useMessages();
   const [maxUses, setMaxUses] = useState(INVITE_MAX_USES_DEFAULT);
+  const selectRef = useRef<HTMLSelectElement>(null);
+
+  useEffect(() => {
+    selectRef.current?.focus({ preventScroll: true });
+  }, []);
 
   return (
     <form
@@ -29,6 +34,7 @@ export function CreateInviteLinkForm({
     >
       <label htmlFor="invite-max-uses">{m.inviteMaxUsesLabel}</label>
       <select
+        ref={selectRef}
         id="invite-max-uses"
         value={maxUses}
         aria-describedby={HINT_ID}

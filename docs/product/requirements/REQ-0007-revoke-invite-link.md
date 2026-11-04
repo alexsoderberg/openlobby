@@ -10,14 +10,14 @@ An invite link that leaks, e.g. to the wrong person or publicly in a chat, lets 
 As a group admin or link creator, I want to revoke an invite link so that a leaked link no longer gives access to the group.
 
 ## Acceptance criteria
-- Given that I am the link creator of an active invite link, when I select "Revoke link" and confirm, then that link stops working. No new link is created automatically (DECISION).
-- Given that I am a group admin, when I select "Revoke link" on any active link in the group and confirm, then that link stops working.
+- Given that I am the link creator of an active invite link, when I select "Revoke link" for it in the invite popover and confirm, then that link stops working. No new link is created automatically (DECISION).
+- Given that I am a group admin, when I select "Revoke link" on any active link in the invite popover and confirm, then that link stops working.
 - Given that I am a member but neither a group admin nor the creator of the link, when I try to revoke it, then it is denied with an error message and no link is changed.
 - Given that I select "Revoke link" and cancel the confirmation, when I close the dialog, then the link remains active and nothing changes. Confirmation is required when revoking (DECISION).
-- Given that a link has been revoked, expired or reached its max uses, when I open the group's page, then it is not shown among the active links.
+- Given that a link has been revoked, expired or reached its max uses, when I open the invite popover, then it is not shown among the active links.
 - Given that a link has been revoked or has reached its max uses, when I, as a logged-in non-member, open it, then the 404 page is shown, exactly the same as for a link that does not correspond to any group (REQ-0002). The group's name is not shown.
 - Given that a link has been revoked or has reached its max uses, when someone who is already on the "Join group" page clicks "Join group", then the 404 page is shown and no membership is created. Validity is checked at the click (DECISION).
-- Given that a link has expired (more than 2 hours after creation) or has reached its max uses, when someone opens it or clicks "Join group", then the 404 page is shown, exactly the same as for a revoked link. No membership is created at the click (DECISION).
+- Given that a link has expired (more than 10 minutes after creation) or has reached its max uses, when someone opens it or clicks "Join group", then the 404 page is shown, exactly the same as for a revoked link. No membership is created at the click (DECISION).
 - Given that a link has expired or has reached its max uses, when someone tries to revoke it, then it is denied with an error message and no link is changed. An expired or used-up link is treated as already dead and does not need to be revoked (DECISION).
 - Given that a member is already in the group when a link is revoked, expires or is used up, then they are not affected: they remain a member, keep their player status and see the group's lobbies as before.
 - Given that I am not a member of the group, when I try to revoke a link, then it is denied and no link is changed.
@@ -36,7 +36,7 @@ F-002 (Create and join group) creates the links and uses them. Revocation and ex
 ## Open questions
 - DECISION (user): Only the group admin or the person who created a link may revoke that specific link. Other members are denied.
 - DECISION (user): A person who opens an old, revoked link sees the 404 page.
-- DECISION (user): Invite links are valid for 2 hours from creation. An expired link is treated as revoked and gives the 404 page.
+- DECISION (user, 2026-11-04): Invite links are valid for 10 minutes from creation (was 2 hours). An expired link is treated as revoked and gives the 404 page.
 - DECISION (user): A link whose max uses has been reached is treated as expired: the 404 page, not in the list of active links, and it cannot be revoked.
 - DECISION (user): Validity is checked when "Join group" is clicked. A link that expires while the page is open is denied.
 - DECISION (user): Members can create links themselves, and several can be active at once (REQ-0002).
@@ -44,3 +44,11 @@ F-002 (Create and join group) creates the links and uses them. Revocation and ex
 - DECISION (user): When a link creator leaves the group, their links are revoked (REQ-0006). Replaces the earlier assumption that only a group admin could revoke them.
 - DECISION (user): Revocation requires confirmation.
 - DECISION (implementation): The "404 page" for revoked, expired and used-up links is the same dedicated view as for unknown links, with heading "Invite link not valid" and no group information. It is not an HTTP 404 status, because the single-page app cannot set a status code (ADR 0007). See REQ-0002.
+
+## Amendment 2026-11-04
+Decided by the user, recorded as DECISION, user, 2026-11-04. Status stays Implemented. The rules for who may revoke, the confirmation and the 404 behavior are unchanged.
+
+1. Revoke is done in the invite popover, not in a section of the group view (REQ-0002, Amendment 2026-11-04).
+   - Replaced wording (kept for reference): "when I select "Revoke link" and confirm" (link creator), "when I select "Revoke link" on any active link in the group and confirm" (group admin), "when I open the group's page, then it is not shown among the active links".
+2. Invite links are valid for 10 minutes from creation (was 2 hours). An expired link is still treated as revoked.
+   - Replaced wording (kept for reference): "more than 2 hours after creation" and "Invite links are valid for 2 hours from creation."

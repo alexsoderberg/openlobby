@@ -67,7 +67,7 @@ The addition is made additively (optional query parameters) when the list become
 
 **Assumptions and how they affect the design:**
 - *Admin role (replaces "one admin per group"):* a role column `role` in `group_members` without a unique index on role. Several admins are allowed. No separate role table. "At least one admin" is an application rule in the leave transaction (point 5e), because the database cannot express it.
-- *Several invite links (replaces "one link per group"):* a separate table `invite_links` (ADR 0006, 0007). Links are valid 2 hours from creation (the user's decision). Links are created only on request, not when the group is created or when a link is revoked.
+- *Several invite links (replaces "one link per group"):* a separate table `invite_links` (ADR 0006, 0007). Links are valid 10 minutes from creation (ADR 0007, Amendment 2026-11-04). Links are created only on request, not when the group is created or when a link is revoked.
 - *Link list: members see their own links, admins see all active links in the group, with token so that admins can copy and revoke them.* The user's decision. Since the list only contains links the caller may revoke, there is no `canRevoke` field. Links have an optional max number of uses (ADR 0007).
 - *Time zone (REQ-0003):* lobby times are stored as exact moments. If the requirement changes to a fixed time zone per group, only input and display in the frontend are affected. No migration.
 - *Crossing midnight (REQ-0003):* the user has decided that lobbies may cross midnight. REQ-0003 records it as a DECISION.
@@ -156,7 +156,7 @@ Amendment 2026-11-02 (REQ-0002 ports and adapters). Decided by the architect bef
 
 **Compose (decided; ADR 0008 item 1 applies now).** `calendar` gets `AUTH_URL: http://auth:8080` and `depends_on: auth` with the same condition as `gateway` (`service_healthy`). The `services` network already contains `calendar` and `auth`.
 
-**Test rules for REQ-0002 (decided).** Domain tests: `NewGroupName`; `NewInviteLinkMaxUses` (nil gives 10; 1 and 10 are valid; 0, 11 and -2 give `invalid_max_uses`); `IsActive` at the boundaries. Application tests with fakes, including the fake of `WithLockedGroup`. Integration test (tag `integration`, real PostgreSQL): two concurrent joins on the last use give one membership and `use_count` = `max_uses`; migration `0002` up and down; deleting a group removes its links. Transport test: the bodies of unknown, inactive and invalid-token 404 responses are equal except `requestId`.
+**Test rules for REQ-0002 (decided).** Domain tests: `NewGroupName`; `NewInviteLinkMaxUses` (nil gives 1; 1 and 10 are valid; 0, 11 and -2 give `invalid_max_uses`); `IsActive` at the boundaries. Application tests with fakes, including the fake of `WithLockedGroup`. Integration test (tag `integration`, real PostgreSQL): two concurrent joins on the last use give one membership and `use_count` = `max_uses`; migration `0002` up and down; deleting a group removes its links. Transport test: the bodies of unknown, inactive and invalid-token 404 responses are equal except `requestId`.
 
 Amendment 2026-11-02 (review of the REQ-0002 design). Decided by the architect. This section supersedes the bullet "`GroupRepository`" and the test rules of the previous amendment 2026-11-02. The other text of that amendment stands.
 
@@ -177,12 +177,12 @@ Amendment 2026-11-02 (review of the REQ-0002 design). Decided by the architect. 
 **Error mapping of `authclient` (decided, restated).** Connection error, timeout or `503` from `auth`: `ErrUnavailable`, so `503`. `400`, `500`, a malformed response body, or a requested ID missing from the response: a plain error, so `500 internal_error`, logged with the request ID. A member is never shown with an empty name.
 
 **Test rules for REQ-0002 (decided; replaces the list of the previous amendment).**
-- Domain: `NewGroupName` (trim, 1 and 50 valid, empty and 51 invalid, code points); `NewInviteLinkMaxUses` (nil gives 10; 1 and 10 valid; 0, 11 and -2 give `invalid_max_uses`; 2.5 and text give `invalid_request` in the transport); `IsActive` at the boundaries (`expires_at == now` is not active, `use_count == max_uses` is not active).
+- Domain: `NewGroupName` (trim, 1 and 50 valid, empty and 51 invalid, code points); `NewInviteLinkMaxUses` (nil gives 1; 1 and 10 valid; 0, 11 and -2 give `invalid_max_uses`; 2.5 and text give `invalid_request` in the transport); `IsActive` at the boundaries (`expires_at == now` is not active, `use_count == max_uses` is not active).
 - `authclient` error mapping: connection error, timeout and `503` give `service_unavailable` (503); `400`, `500`, a malformed body and a missing ID give `internal_error` (500); no member is ever returned with an empty name.
 - `authclient` contract test with an `httptest` server that implements `api/auth/internal.yaml`: 100 IDs in one call, 101 IDs in two calls, one deadline for the whole lookup.
 - Authorization: a non-member gets `group_not_found` on `getGroup`, `listInviteLinks`, `createInviteLink` and `joinInvite`. A member sees only their own links in `listInviteLinks`; an admin sees all of them.
 - A member opening an active link through `getInvite` gets 200 with `isMember` true; `useCount` is unchanged and no row is inserted. Joining as a member through `joinInvite` also changes nothing.
-- An empty `createInviteLink` body gives 201 with `maxUses` 10.
+- An empty `createInviteLink` body gives 201 with `maxUses` 1.
 - A body over 16 KiB gives 400 `invalid_request`.
 - Max-uses values: 0 gives `invalid_max_uses`; 11 gives `invalid_max_uses`; -2 gives `invalid_max_uses`; 2.5 gives `invalid_request`; text gives `invalid_request`.
 - Cross-group link for revoke: a member of group A calls `DELETE /api/groups/{A}/invite-links/{linkId}` with a link of group B and gets 404 `invite_invalid`, the same as for a random uuid (ADR 0004 rule 12).

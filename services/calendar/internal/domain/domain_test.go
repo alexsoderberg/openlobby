@@ -63,7 +63,7 @@ func TestNewInviteLinkMaxUses(t *testing.T) {
 		want      domain.InviteLinkMaxUses
 		wantErr   bool
 	}{
-		{name: "omitted gives the default of 10", requested: nil, want: 10},
+		{name: "omitted gives the default of 1", requested: nil, want: 1},
 		{name: "lowest allowed value 1", requested: intPtr(1), want: 1},
 		{name: "highest allowed value 10", requested: intPtr(10), want: 10},
 		{name: "middle value", requested: intPtr(5), want: 5},

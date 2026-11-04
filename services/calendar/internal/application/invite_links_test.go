@@ -126,7 +126,7 @@ func TestCreateStoresLinkWithDefaultMaxUsesAndTwoHourLifetime(t *testing.T) {
 		t.Fatalf("max uses %d and use count %d, want the default and 0", link.MaxUses, link.UseCount)
 	}
 	if !link.CreatedAt.Equal(now) || !link.ExpiresAt.Equal(now.Add(domain.InviteLinkLifetime)) {
-		t.Fatalf("created %v and expires %v, want now and two hours later", link.CreatedAt, link.ExpiresAt)
+		t.Fatalf("created %v and expires %v, want now and ten minutes later", link.CreatedAt, link.ExpiresAt)
 	}
 	if store.cleaned != 1 || !store.cleanedAt.Equal(now) {
 		t.Fatalf("cleanup ran %d times at %v, want once at now", store.cleaned, store.cleanedAt)

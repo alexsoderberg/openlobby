@@ -1,2 +1,3 @@
 export { InvitePage } from "./InvitePage";
-export { InviteLinks } from "./InviteLinks";
+export { InviteAction } from "./InviteAction";
+export { InvitePopover } from "./InvitePopover";

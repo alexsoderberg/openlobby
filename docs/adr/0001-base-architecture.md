@@ -60,7 +60,7 @@ Consequences: a non-admin with a malformed body gets 400 `invalid_request`, whic
 
 **Values and missing fields:**
 - A wrong JSON type gives `invalid_request`. Domain codes are given only for values of the right type that break a rule.
-- A missing or `null` nullable field is `null`. For `maxPlayers` and `defaultMaxPlayers`, `null` means unlimited. For `maxUses`, `null` means 10. For `gameId` and `customGameName`, `null` means not given.
+- A missing or `null` nullable field is `null`. For `maxPlayers` and `defaultMaxPlayers`, `null` means unlimited. For `maxUses`, `null` means 1. For `gameId` and `customGameName`, `null` means not given.
 - A missing or `null` string field that is not `required` is read as `""` and gets its domain code (for example `invalid_group_name`). See "Amendment (consolidated)" for the rule on `required`.
 - A missing required time field gives `invalid_request`.
 - Unknown fields are ignored (unchanged).
@@ -103,7 +103,7 @@ Shape comes before membership. Reason: the strict server decodes the body before
 | Schema.field | Omitted or `null` gives |
 |---|---|
 | `CreateGroupRequest.name` | `""`, which gives `invalid_group_name` |
-| `CreateInviteLinkRequest.maxUses` (and an omitted body) | 10 |
+| `CreateInviteLinkRequest.maxUses` (and an omitted body) | 1 |
 | `CreateLobbyRequest.maxPlayers` | unlimited |
 | `CreateLobbyRequest.gameId`, `customGameName` | not given (exactly one must be given, else `invalid_game`) |
 | `CreateGameRequest.name`, `ReplaceGameRequest.name` | `""`, which gives `invalid_game` |
