@@ -12,9 +12,11 @@ import { calendarWeek } from "./calendarWeek";
 export function LobbyCalendar({
   groupId,
   lobbies,
+  onCreate,
 }: {
   groupId: string;
   lobbies: Lobby[];
+  onCreate: (day: Date, button: HTMLElement) => void;
 }) {
   const m = useMessages();
   const [weekStart, setWeekStart] = useState(() => weekStartOf(new Date()));
@@ -36,7 +38,12 @@ export function LobbyCalendar({
       </div>
       <ol className="row-list" role="list">
         {week.map((entry) => (
-          <CalendarDay key={entry.day.getTime()} groupId={groupId} {...entry} />
+          <CalendarDay
+            key={entry.day.getTime()}
+            groupId={groupId}
+            onCreate={onCreate}
+            {...entry}
+          />
         ))}
       </ol>
     </div>

@@ -43,3 +43,22 @@ F-004 (View upcoming lobbies) shows what is created here. F-005 (Join and leave 
 - ASSUMPTION (wrong max): A wrong max value is corrected by deleting the lobby and creating a new one (F-011).
 - DECISION (lobby in the past): It is not possible to create a lobby whose start time has already passed.
 - DECISION (concurrent editing): No locking. Two members can create lobbies at the same time.
+
+## Amendment 2026-11-04
+Status stays Implemented. Decided by the user on 2026-11-04 and not yet built. Before this amendment the Create lobby form was shown at all times in the group view. All rules above stay the same; only the way the form is opened changes. A calendar day is a second way to open the form (REQ-0004, Amendment 2026-11-04). It is not a new feature.
+
+1. The form is hidden until a member asks for it (DECISION, user, 2026-11-04). User's words (translated): "The form for create a lobby should only come up when you have pressed a button to create a lobby; it should not be visible all the time."
+   - Given that I am a member and I open a group view, when the page opens, then the Create lobby form is not shown, and a "Create lobby" button is shown in the upcoming lobbies section, in both the list view and the calendar view.
+   - Given that I press "Create lobby", when the form opens, then it appears with the same scale-in motion as the Create group form (REQ-0012), its first field is focused, and with reduced motion it appears without animation (ASSUMPTION: copied from the Create group pattern).
+   - Given that the form is open, when I press Esc or "Cancel", then the form closes without saving and focus returns to the control that opened it (ASSUMPTION: copied from the Create group pattern). Tapping outside the form does not close it, so typed input is not lost (ASSUMPTION).
+   - Given that the form is open, when I save and the lobby is saved, then the form closes, focus returns to the control that opened it, and the new lobby appears in the list or the calendar (DECISION, user, 2026-11-04: the form closes after a successful create).
+   - Given that the form is open, when I save and the save is denied by any rule above, then the form stays open with the entered values and the error message (ASSUMPTION).
+   - Given that the form is opened from a calendar day (REQ-0004, Amendment 2026-11-04), when I save, then the same fields and rules as above apply, and the date is prefilled.
+
+2. Out of scope in this amendment: creating a lobby from the Dashboard "This week" (REQ-0012). That section spans groups and the form needs one group (DECISION, product owner, 2026-11-04).
+
+## Open questions (amendment)
+- ASSUMPTION: The Esc, Cancel and tap-outside behavior above follows the Create group form. The user may overrule the tap-outside part.
+
+## Related features (amendment)
+F-002: the Create group form is the pattern for the open and close behavior, and is not changed by this amendment.

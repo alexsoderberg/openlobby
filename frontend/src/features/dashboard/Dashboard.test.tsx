@@ -237,11 +237,14 @@ describe("This week", () => {
 });
 
 describe("empty and error states", () => {
-  it("tells a user without groups to use the plus, and shows no card or week", () => {
+  it("sends a user without groups to the Groups page, and shows no card or week", () => {
     renderDashboard({}, []);
 
     expect(screen.getByText(t.noGroups)).toBeTruthy();
     expect(screen.getByText(t.noGroupsHint)).toBeTruthy();
+    expect(
+      screen.getByRole("link", { name: t.noGroupsLink }).getAttribute("href"),
+    ).toBe("/groups");
     expect(screen.queryByRole("region")).toBeNull();
   });
 

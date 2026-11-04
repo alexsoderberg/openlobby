@@ -54,3 +54,24 @@ F-003 (Create lobby), F-005 (Join and leave lobby) and F-018 (Max players per lo
 ## Amendment 2026-11-04
 - The term "Spot / max players" (glossary) is used for the "X/Y players" and "X players" display in the list and calendar criteria.
 - The out-of-scope line "Showing lobbies from several groups together" now has one exception: the dashboard (REQ-0012, F-028). Group views are unchanged.
+
+## Amendment 2026-11-04 (create from the calendar)
+Status stays Implemented. Decided by the user on 2026-11-04 and not yet built. The week calendar gets a second way to open Create lobby (REQ-0003, F-003). The form, its rules and its data are those of REQ-0003. This is not a new feature and not a duplicate of F-003.
+
+Criteria added (binding for the UI expert):
+- Given that I am a member and in the calendar view, when I select an empty part of a day's column, then the Create lobby form (REQ-0003) opens with that day's date in the date field (DECISION, user, 2026-11-04). User's words (translated): "The user should also be able to click directly in a calendar to create a new lobby."
+- Given that I select a lobby shown in a day's column, when the calendar shows it, then its detail view opens, not the form (ASSUMPTION: a click on a lobby keeps its current meaning).
+- Given that I use the keyboard, when I focus a day's create control and press Enter or Space, then the form opens with that day's date. Each day that can take a lobby has a visible create control whose accessible name names the day (ASSUMPTION: the look and the exact name are the UI expert's call).
+- Given that a day lies before today in my local time, when I see the calendar, then that day has no create control, and selecting its column does nothing (DECISION, user, 2026-11-04; consistent with "lobby in the past" in REQ-0003). Today has a create control. The start-time rule of REQ-0003 applies when I save.
+- Given that I save a lobby created from a day, when it is saved, then it appears on its start day in the calendar, under the existing rules of this requirement.
+
+Out of scope in this amendment:
+- Creating a lobby from the Dashboard "This week" (REQ-0012). The section spans groups and the form needs one group (DECISION, product owner, 2026-11-04).
+- Creating a lobby by selecting a time range in the calendar, and prefilling a start time from the clicked place (see open questions).
+- Creating lobbies in a month view (no month view in the MVP).
+
+## Open questions (amendment)
+- ASSUMPTION: A click in a day's column prefills the date only. Should it also prefill the start time from the clicked hour? User to decide.
+
+## Related features (amendment)
+F-003 (Create lobby): the calendar is a second entry point to the same form. F-017 (calendar view): the same view, with a create control added. F-028 (dashboard): its "This week" is not changed by this amendment.

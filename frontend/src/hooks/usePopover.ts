@@ -4,7 +4,8 @@ type Origin = { x: number; y: number };
 
 const ESCAPE = "Escape";
 const TAB = "Tab";
-const FOCUSABLE = "button, input, a[href], [tabindex]:not([tabindex='-1'])";
+const FOCUSABLE =
+  "button, input, select, a[href], [tabindex]:not([tabindex='-1'])";
 
 /** Keeps Tab inside the form: from the last control it goes to the first, and back with Shift. */
 function wrapTab(event: KeyboardEvent, frame: HTMLElement | null) {
@@ -19,11 +20,11 @@ function wrapTab(event: KeyboardEvent, frame: HTMLElement | null) {
 }
 
 /**
- * Open state of the Create group form and where it grows from: the centre of the pressed "+", measured against
+ * Open state of a popover form and where it grows from: the centre of the pressed button, measured against
  * the form's own box (not transformed, so the measure is stable). `opening` counts openings, so the form
- * can start empty each time. Closing, by any route, returns focus to the "+" that opened it.
+ * can start empty each time. Closing, by any route, returns focus to the button that opened it.
  */
-export function useCreateGroupPopover() {
+export function usePopover() {
   const [open, setOpen] = useState(false);
   const [opening, setOpening] = useState(0);
   const [origin, setOrigin] = useState<Origin>({ x: 0, y: 0 });

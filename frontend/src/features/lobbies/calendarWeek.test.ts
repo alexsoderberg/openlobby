@@ -1,6 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { Lobby } from "../../api";
-import { calendarWeek, clusterOverlapping } from "./calendarWeek";
+import {
+  calendarWeek,
+  clusterOverlapping,
+  isBeforeToday,
+} from "./calendarWeek";
 
 const lobby = (id: string, start: Date, end: Date): Lobby => ({
   id,
@@ -45,5 +49,16 @@ describe("calendarWeek", () => {
     const ended = lobby("ended", new Date(2026, 10, 1, 20), at(2, 0));
     const week = calendarWeek(new Date(2026, 10, 2), [ended, carried]);
     expect(week[0].clusters).toEqual([[carried]]);
+  });
+});
+
+describe("isBeforeToday", () => {
+  it("is true for yesterday and false for today and tomorrow", () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date(2026, 10, 4, 12, 0));
+    expect(isBeforeToday(new Date(2026, 10, 3))).toBe(true);
+    expect(isBeforeToday(new Date(2026, 10, 4))).toBe(false);
+    expect(isBeforeToday(new Date(2026, 10, 5))).toBe(false);
+    vi.useRealTimers();
   });
 });

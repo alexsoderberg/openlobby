@@ -411,6 +411,19 @@ a {
   margin-top: 0;
 }
 
+/* A panel heading with its action beside it. */
+.panel__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.panel__head h2 {
+  margin: 0;
+}
+
 /* Panels of one screen stack with a gap. The second one reveals a step later. */
 .panel-group {
   display: grid;
@@ -720,6 +733,37 @@ a {
   border-radius: var(--radius-control);
 }
 
+/* The day is one click target: a button fills the column and the content sits above it. Clicks pass through
+   the content to the button, except on the lobby cards and their links. Only colour changes on hover. */
+.calendar-day {
+  position: relative;
+}
+
+.calendar-day__create {
+  position: absolute;
+  inset: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  cursor: pointer;
+  transition: background-color var(--duration-fast) var(--ease-out);
+}
+
+.calendar-day__create:hover {
+  background: var(--color-accent-wash);
+}
+
+.calendar-day__name,
+.calendar-day__lobbies {
+  position: relative;
+  pointer-events: none;
+}
+
+.calendar-lobby {
+  pointer-events: auto;
+}
+
 @media (min-width: 40rem) {
   .calendar-day {
     grid-template-columns: 9rem 1fr;
@@ -971,11 +1015,16 @@ a {
   max-width: var(--width-app);
   margin: 0 auto;
   padding: var(--space-3) var(--space-3)
-    calc(
-      var(--size-tab-bar) + env(safe-area-inset-bottom) + var(--size-plus-tab) +
-        var(--space-3)
-    );
+    calc(var(--size-tab-bar) + env(safe-area-inset-bottom) + var(--space-3));
   view-transition-name: app-main;
+}
+
+/* Room for the floating "+" of phones, on the pages that have it. */
+.shell__main--fab {
+  padding-bottom: calc(
+    var(--size-tab-bar) + env(safe-area-inset-bottom) + var(--size-plus-tab) +
+      var(--space-3)
+  );
 }
 
 .shell__main:focus {
@@ -1186,6 +1235,21 @@ a {
   transition:
     transform var(--duration-open) var(--ease-overshoot),
     opacity var(--duration-pop-fade) linear;
+}
+
+/* A form opened from a button in the page: centred, so the card is measured from its own box. */
+.create-popover.create-popover--centered {
+  top: 50%;
+  right: auto;
+  bottom: auto;
+  left: 50%;
+  width: min(var(--width-popover), calc(100vw - var(--space-3) * 2));
+  translate: -50% -50%;
+}
+
+.create-popover--centered .create-popover__card {
+  max-height: calc(100dvh - var(--size-tab-bar) - var(--space-3) * 2);
+  overflow-y: auto;
 }
 
 .create-popover h2 {
