@@ -5,3 +5,4 @@ export { ErrorAlert } from "./ErrorAlert";
 export { GroupIcon } from "./GroupIcon";
 export { Meter } from "./Meter";
 export { Panel } from "./Panel";
+export { Popover } from "./Popover";

@@ -21,7 +21,7 @@ const groups: GroupsState = {
   ],
 };
 
-function renderShell(active: ActiveNav = { section: "home" }) {
+function renderShell(active: ActiveNav = { section: "groups" }) {
   const onGroupCreated = vi.fn();
   const client = fakeApiClient();
   render(
@@ -102,7 +102,7 @@ describe("tab bar", () => {
 });
 
 describe("group rail", () => {
-  it("has Home, one named link per group and the plus, with the active group marked", () => {
+  it("has Home, one named link per group, with the active group marked", () => {
     renderShell({ section: "groups", groupId: "g2" });
 
     expect(
@@ -116,7 +116,6 @@ describe("group rail", () => {
         .getByRole("link", { name: "Ranked grind" })
         .getAttribute("aria-current"),
     ).toBe("page");
-    expect(plusIn(rail())).toBeTruthy();
   });
 
   it("marks Home on the dashboard", () => {
@@ -126,6 +125,29 @@ describe("group rail", () => {
         .getByRole("link", { name: en.shell.home })
         .getAttribute("aria-current"),
     ).toBe("page");
+  });
+});
+
+describe("where the plus shows", () => {
+  it.each([
+    [{ section: "home" }],
+    [{ section: "groups", groupId: "g1" }],
+    [{ section: "profile" }],
+    [{}],
+  ] as [ActiveNav][])("is absent for %j", (active) => {
+    renderShell(active);
+
+    expect(fab()).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: en.shell.createGroupButton }),
+    ).toBeNull();
+  });
+
+  it("is in the rail and floating on the Group list", () => {
+    renderShell({ section: "groups" });
+
+    expect(plusIn(rail())).toBeTruthy();
+    expect(fab()).toBeTruthy();
   });
 });
 

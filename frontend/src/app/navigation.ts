@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import { pageLoadsSettled } from "../hooks";
+import { beginPageLoads, pageLoadsSettled } from "../hooks";
 
 const NAVIGATE_EVENT = "app:navigate";
 const API_PREFIX = "/api/";
@@ -15,6 +15,7 @@ function withTransition(update: () => void) {
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   if (reduced || !document.startViewTransition) return update();
   document.startViewTransition(async () => {
+    beginPageLoads();
     update();
     await pageLoadsSettled(PAGE_LOAD_WAIT_MS);
   });

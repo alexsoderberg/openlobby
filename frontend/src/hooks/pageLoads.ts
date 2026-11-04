@@ -1,5 +1,10 @@
 const pending = new Set<Promise<unknown>>();
 
+/** Forgets loads of the page being left, so only the next page's loads hold its transition. */
+export function beginPageLoads() {
+  pending.clear();
+}
+
 /** Registers a page's first load so a page transition can wait for it. */
 export function trackLoad(load: Promise<unknown>) {
   pending.add(load);
@@ -7,7 +12,7 @@ export function trackLoad(load: Promise<unknown>) {
   load.then(done, done);
 }
 
-/** Resolves when every registered load has settled (failures count) or after `timeoutMs`, whichever is first. */
+/** Resolves when every registered load has settled (failures count) and committed or after `timeoutMs`, whichever is first. */
 export function pageLoadsSettled(timeoutMs: number) {
   let timer: ReturnType<typeof setTimeout>;
   const timeout = new Promise<void>((resolve) => {

@@ -3,7 +3,7 @@ import type { GroupSummary } from "../../api";
 import { useNow } from "../../hooks";
 import { useMessages } from "../../i18n";
 import { ErrorAlert } from "../../ui";
-import type { GroupsState } from "../groups";
+import { GROUPS_PATH, type GroupsState } from "../groups";
 import { nextUpOf, type DashboardLobby } from "./dashboardLobby";
 import { GroupStrip } from "./GroupStrip";
 import { NextUpCard } from "./NextUpCard";
@@ -58,6 +58,7 @@ function DashboardBody({
       <div className="empty-state">
         <p className="empty-state__title">{m.dashboard.noGroups}</p>
         <p>{m.dashboard.noGroupsHint}</p>
+        <a href={GROUPS_PATH}>{m.dashboard.noGroupsLink}</a>
       </div>
     );
   return (

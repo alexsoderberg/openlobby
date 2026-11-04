@@ -1,4 +1,5 @@
 import { useCallback, useLayoutEffect, useState } from "react";
+import { flushSync } from "react-dom";
 import { isUnauthenticated } from "../api";
 import { trackLoad } from "./pageLoads";
 
@@ -22,18 +23,18 @@ export function useLoad<T>(
   // A layout effect, so the first load is already registered when a view transition has committed the page.
   useLayoutEffect(() => {
     let ignore = false;
-    const loading = load();
-    if (attempt === 0) trackLoad(loading);
-    loading.then(
+    // flushSync commits the outcome inside the handler, so the tracked promise settles only once the screen shows it.
+    const loading = load().then(
       (value) => {
-        if (!ignore) setState({ status: "loaded", value });
+        if (!ignore) flushSync(() => setState({ status: "loaded", value }));
       },
       (error: unknown) => {
         if (ignore) return;
         if (onUnauthenticated && isUnauthenticated(error)) onUnauthenticated();
-        else setState({ status: "failed", error });
+        else flushSync(() => setState({ status: "failed", error }));
       },
     );
+    if (attempt === 0) trackLoad(loading);
     return () => {
       ignore = true;
     };

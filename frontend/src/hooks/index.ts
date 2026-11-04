@@ -4,4 +4,5 @@ export { useReveal } from "./useReveal";
 export { useScrolledPast } from "./useScrolledPast";
 export { useNow } from "./useNow";
 export { loadViewOf, type LoadView } from "./loadView";
-export { pageLoadsSettled } from "./pageLoads";
+export { usePopover } from "./usePopover";
+export { beginPageLoads, pageLoadsSettled } from "./pageLoads";

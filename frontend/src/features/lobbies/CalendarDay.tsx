@@ -1,21 +1,36 @@
 import type { Lobby } from "../../api";
 import { formatTimeRange, formatWeekday, useMessages } from "../../i18n";
+import { isBeforeToday } from "./calendarWeek";
 import { endsNextDay } from "./lobbyTime";
 import { lobbyPath } from "./lobbyPath";
 
-/** One day with its lobbies. Lobbies that overlap sit side by side, the others follow one after another. */
+/**
+ * One day with its lobbies. Lobbies that overlap sit side by side, the others follow one after another.
+ * From today on, a button fills the column behind the lobbies, so a click on the day (or Enter on the
+ * button) opens the Create lobby form for that date.
+ */
 export function CalendarDay({
   groupId,
   day,
   clusters,
+  onCreate,
 }: {
   groupId: string;
   day: Date;
   clusters: Lobby[][];
+  onCreate: (day: Date, button: HTMLElement) => void;
 }) {
   const m = useMessages();
   return (
     <li className="calendar-day">
+      {!isBeforeToday(day) && (
+        <button
+          type="button"
+          className="calendar-day__create"
+          aria-label={m.calendarCreateOnDay(formatWeekday(day))}
+          onClick={(event) => onCreate(day, event.currentTarget)}
+        />
+      )}
       <h4 className="calendar-day__name">{formatWeekday(day)}</h4>
       <div className="calendar-day__lobbies">
         {clusters.length === 0 && (

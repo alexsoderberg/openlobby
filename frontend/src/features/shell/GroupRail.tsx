@@ -6,17 +6,21 @@ import { HOME_PATH, type ActiveNav } from "./activeNav";
 import { CreateGroupButton } from "./CreateGroupButton";
 import { HomeIcon } from "./icons";
 
-/** Wide screens: Home, one icon per group, and the "+" at the bottom. A failed group list leaves only Home and "+"; the page shows the error. */
+/**
+ * Wide screens: Home, one icon per group, and the "+" at the bottom. A failed group list leaves only Home
+ * and "+"; the page shows the error.
+ */
 export function GroupRail({
   groups,
   active,
-  createOpen,
   onCreate,
+  createOpen,
 }: {
   groups: GroupSummary[];
   active: ActiveNav;
+  /** Without it there is no "+". */
+  onCreate?: (button: HTMLElement) => void;
   createOpen: boolean;
-  onCreate: (button: HTMLElement) => void;
 }) {
   const m = useMessages();
   return (
@@ -42,7 +46,7 @@ export function GroupRail({
           </li>
         ))}
       </ul>
-      <CreateGroupButton open={createOpen} onPress={onCreate} />
+      {onCreate && <CreateGroupButton open={createOpen} onPress={onCreate} />}
     </nav>
   );
 }

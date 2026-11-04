@@ -32,6 +32,16 @@ REQ-0004 contains both the list view (F-004) and the calendar view (F-017). Thes
 
 REQ-0002 and REQ-0007 have been extended with max uses on invite links (mandatory, 1–10) and group admins' overview of all links. The dependencies in the table are unchanged.
 
+## Amendments decided 2026-11-04
+
+Changes to delivered requirements, decided by the user (DECISION, user, 2026-11-04). They are not new requirements and they add no feature. They change the UI built for REQ-0003, REQ-0004 and REQ-0012, and they are delivered before the MVP release. AM2 and AM3 change the same form, so they are one delivery.
+
+| Order | Requirement | Title | Priority | Depends on |
+|---|---|---|---|---|
+| AM1 | REQ-0012 (Third amendment) | "+" (Create group) only on `/groups` | Must | REQ-0012 |
+| AM2 | REQ-0003 (Amendment 2026-11-04) | Create lobby form opened by a button | Must | REQ-0003 |
+| AM3 | REQ-0004 (Amendment 2026-11-04) | Create lobby from a day in the week view | Must | REQ-0003, REQ-0004 |
+
 ## Should, after the MVP
 
 Not part of the MVP. The vision lists it as outside the MVP scope. It is prioritized after the MVP core flow (orders 1–10) is delivered and used. The user has decided it stays after the MVP (REQ-0011). If the user moves it into the MVP, it goes between REQ-0005 and REQ-0007.

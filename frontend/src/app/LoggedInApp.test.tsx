@@ -5,8 +5,8 @@ import { en } from "../i18n/messages/en";
 import { fakeApiClient, testUser } from "../test/fakeApiClient";
 import { App } from "./App";
 
-function renderLoggedIn() {
-  window.history.replaceState(null, "", "/");
+function renderLoggedIn(path = "/") {
+  window.history.replaceState(null, "", path);
   const client = fakeApiClient({
     getCurrentUser: () => Promise.resolve(testUser),
   });
@@ -32,7 +32,7 @@ describe("moving between pages", () => {
   });
 
   it("reloads the group list, then opens a created group without a page load", async () => {
-    const client = renderLoggedIn();
+    const client = renderLoggedIn("/groups");
     await screen.findByRole("main");
     const [plus] = screen.getAllByRole("button", {
       name: en.shell.createGroupButton,

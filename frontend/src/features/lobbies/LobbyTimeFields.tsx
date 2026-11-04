@@ -6,9 +6,12 @@ import { localDateText } from "./lobbyTime";
 export function LobbyTimeFields({
   id,
   errorId,
+  initialDate,
 }: {
   id: string;
   errorId?: string;
+  /** The date the field starts with; today when absent. */
+  initialDate?: Date;
 }) {
   const m = useMessages();
   return (
@@ -18,7 +21,7 @@ export function LobbyTimeFields({
           {...fieldProps(`${id}-date`, false, errorId)}
           name="date"
           type="date"
-          defaultValue={localDateText(new Date())}
+          defaultValue={localDateText(initialDate ?? new Date())}
         />
       </LobbyField>
       <LobbyField id={`${id}-start`} label={m.lobbyStartLabel}>

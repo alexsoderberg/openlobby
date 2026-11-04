@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { useLoad } from "../hooks";
+import { trackLoad } from "../hooks/pageLoads";
 import { navigate, usePathname } from "./navigation";
 
 function Probe() {
@@ -40,32 +41,52 @@ describe("page navigation", () => {
     expect(window.location.pathname).toBe("/profile");
   });
 
-  it("holds the transition until the new page has loaded", async () => {
-    let finish!: () => void;
-    const load = () => new Promise<void>((resolve) => (finish = resolve));
+  describe("holding the transition for the new page's data", () => {
+    let finish: (value: string) => void;
+    const load = () => new Promise<string>((resolve) => (finish = resolve));
     function Page() {
-      useLoad(load);
-      return null;
+      const { state } = useLoad(load);
+      return <p>{state.status === "loaded" ? state.value : "loading"}</p>;
     }
     function Router() {
       return usePathname() === "/slow" ? <Page /> : null;
     }
-    let transition!: Promise<void>;
-    Object.assign(document, {
-      startViewTransition: (update: () => Promise<void>) => {
-        transition = update();
-      },
+    function startTransitions() {
+      const transitions: Promise<void>[] = [];
+      Object.assign(document, {
+        startViewTransition: (update: () => Promise<void>) => {
+          transitions.push(update());
+        },
+      });
+      return transitions;
+    }
+
+    it("releases only after the loaded page is on screen", async () => {
+      const transitions = startTransitions();
+      render(<Router />);
+      let released = false;
+
+      act(() => navigate("/slow"));
+      void transitions[0].then(() => {
+        released = true;
+        expect(screen.getByText("done")).toBeTruthy();
+      });
+      await act(async () => {});
+      expect(released).toBe(false);
+      await act(async () => finish("done"));
+
+      expect(released).toBe(true);
     });
-    render(<Router />);
-    let released = false;
 
-    act(() => navigate("/slow"));
-    void transition.then(() => (released = true));
-    await act(async () => {});
-    expect(released).toBe(false);
-    await act(async () => finish());
+    it("does not wait for a load of the page being left", async () => {
+      const transitions = startTransitions();
+      trackLoad(new Promise(() => {}));
+      render(<Router />);
 
-    expect(released).toBe(true);
+      act(() => navigate("/other"));
+
+      await expect(transitions[0]).resolves.toBeUndefined();
+    });
   });
 
   it("changes the page directly when there are no view transitions", () => {
