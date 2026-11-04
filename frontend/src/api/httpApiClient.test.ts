@@ -26,6 +26,19 @@ const failingCalls: Array<[string, (api: ApiClient) => Promise<unknown>]> = [
     (api) => api.replaceGame("g1", { name: "Catan", defaultMaxPlayers: null }),
   ],
   ["deleteGame", (api) => api.deleteGame("g1")],
+  ["listGroupGames", (api) => api.listGroupGames("g1")],
+  ["listUpcomingLobbies", (api) => api.listUpcomingLobbies("g1")],
+  ["getLobby", (api) => api.getLobby("g1", "l1")],
+  [
+    "createLobby",
+    (api) =>
+      api.createLobby("g1", {
+        startsAt: "2026-11-05T18:00:00Z",
+        endsAt: "2026-11-05T20:00:00Z",
+        customGameName: "Chess",
+      }),
+  ],
+  ["deleteLobby", (api) => api.deleteLobby("g1", "l1")],
 ];
 
 describe("createHttpApiClient", () => {

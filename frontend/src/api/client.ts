@@ -7,6 +7,10 @@ export type Group = calendarComponents["schemas"]["Group"];
 export type Game = calendarComponents["schemas"]["Game"];
 export type InviteLink = calendarComponents["schemas"]["InviteLink"];
 export type InviteInfo = calendarComponents["schemas"]["InviteInfo"];
+export type Lobby = calendarComponents["schemas"]["Lobby"];
+export type LobbyDetail = calendarComponents["schemas"]["LobbyDetail"];
+export type CreateLobbyInput =
+  calendarComponents["schemas"]["CreateLobbyRequest"];
 /** What the system admin sets on a game: the game without its generated ID. */
 export type GameInput = Omit<Game, "id">;
 export type ApiErrorCode =
@@ -50,6 +54,12 @@ export interface ApiClient {
   createGame(input: GameInput): Promise<Game>;
   replaceGame(gameId: string, input: GameInput): Promise<Game>;
   deleteGame(gameId: string): Promise<void>;
+  /** The group's games, most used first. The free-text "Other" choice is not in the list. */
+  listGroupGames(groupId: string): Promise<Game[]>;
+  listUpcomingLobbies(groupId: string): Promise<Lobby[]>;
+  getLobby(groupId: string, lobbyId: string): Promise<LobbyDetail>;
+  createLobby(groupId: string, input: CreateLobbyInput): Promise<Lobby>;
+  deleteLobby(groupId: string, lobbyId: string): Promise<void>;
 }
 
 /** A failed call. `code` is the contract's error code, never a message from the server. */

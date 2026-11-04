@@ -2,12 +2,15 @@ export type {
   ApiClient,
   ApiErrorCode,
   AuthUser,
+  CreateLobbyInput,
   Game,
   GameInput,
   Group,
   GroupSummary,
   InviteInfo,
   InviteLink,
+  Lobby,
+  LobbyDetail,
 } from "./client";
 export {
   ApiError,
