@@ -10,12 +10,15 @@ Prioritized order for the MVP. The order follows the core flow and dependencies:
 | 4 | REQ-0010 | Manage game list as system admin | Must | REQ-0001, REQ-0009 |
 | 5 | REQ-0003 | Create lobby | Must | REQ-0002, REQ-0009 |
 | 6 | REQ-0004 | View upcoming lobbies (list and calendar) | Must | REQ-0003 |
-| 7 | REQ-0005 | Join and leave lobby | Must | REQ-0004 |
-| 8 | REQ-0007 | Revoke invite link | Must | REQ-0002 |
-| 9 | REQ-0006 | Leave group | Must | REQ-0002, REQ-0005, REQ-0007 |
-| 10 | REQ-0008 | Make member group admin | Must | REQ-0002 |
+| 7 | REQ-0012 | Dashboard and app shell | Must | REQ-0001, REQ-0002, REQ-0003, REQ-0004, REQ-0010 (Game list link on You) (card buttons: REQ-0005) |
+| 8 | REQ-0005 | Join and leave lobby | Must | REQ-0004 |
+| 9 | REQ-0007 | Revoke invite link | Must | REQ-0002 |
+| 10 | REQ-0006 | Leave group | Must | REQ-0002, REQ-0005, REQ-0007 |
+| 11 | REQ-0008 | Make member group admin | Must | REQ-0002 |
 
-All ten requirements are necessary for the MVP, so all are `Must`. No MVP requirement is `Could` or `Should`.
+All eleven requirements are necessary for the MVP, so all are `Must`. No MVP requirement is `Could` or `Should`.
+
+REQ-0012 arrives together with REQ-0004 (order 6 and 7 are one delivery). It comes after REQ-0003 and REQ-0010 (order 4 and 5). The "Next up" card has no "Join lobby" and "Leave lobby" buttons until REQ-0005 is delivered (DECISION, user, 2026-11-04). The buttons need `joinedByMe` on `Lobby` (ADR 0014, point 5), which is REQ-0005 work, not REQ-0012 work. REQ-0005 is delivered before the MVP release, as with REQ-0002 and REQ-0004.
 
 REQ-0009 comes before REQ-0003 because the game choice and the default max value in REQ-0003 read from the game list.
 

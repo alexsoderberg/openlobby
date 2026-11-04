@@ -46,7 +46,7 @@ Lobbies without game roles:
 Display:
 - Given that a lobby has game roles, when I see it in the list, then each game role is shown with its name and "X/Y", for example "Tank 0/1, Damage 2/2, Support 1/2", next to the total "X/Y players". The total includes flex players.
 - Given that a lobby has game roles and at least one flex player, when I see it in the list, then the flex players are shown as "Flex N", for example "Flex 1". When there is no flex player, "Flex" is not shown.
-- Given that a game role has no free slot, when I see the lobby, then the game role is marked "full" in text, not only by colour.
+- Given that a game role has no free slot, when I see the lobby, then the game role is marked "full" in text, not only by color.
 - Given that a lobby has game roles, when I open its detail view, then the players are listed under their game role, and flex players are listed in a separate "Flex" group after the game roles.
 - Given that a lobby has no game roles, when I see it in the list or the detail view, then no game role or flex information is shown, as today.
 

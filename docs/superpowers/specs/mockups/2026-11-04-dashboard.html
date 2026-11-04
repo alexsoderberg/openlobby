@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OpenLobby – dashboard sketch v3</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0a0a0d; --raised:#111116; --surface:rgba(255,255,255,.03); --surface-2:rgba(255,255,255,.055);
+    --edge:rgba(255,255,255,.08); --text:#e9e9ee; --muted:#8c8d96; --gold:#f0c75e; --on-gold:#14110a;
+    --tint:rgba(240,199,94,.12);
+    --ow:#f99e1a; --lol:#5ab4ff; --cs:#e7c26a; --wow:#7fd1a8;
+    --out:cubic-bezier(.16,1,.3,1); --spring:cubic-bezier(.34,1.56,.64,1);
+  }
+  * { box-sizing:border-box; margin:0; }
+  html, body { height:100%; }
+  body { background:#050507; color:var(--text); font:15px/1.5 Inter, system-ui, sans-serif; overflow:hidden; }
+  h1,h2,h3,.figure,.wordmark { font-family:'Space Grotesk', sans-serif; letter-spacing:-.02em; }
+
+  /* preview frame: the sketch is built with container queries, so the phone toggle shows the real mobile layout */
+  .stage { height:100%; display:grid; place-items:center; }
+  .shell { container-type:inline-size; position:relative; width:100%; height:100%; overflow:hidden;
+    background:radial-gradient(40rem 30rem at 85% 0%, rgba(240,199,94,.06), transparent 70%), linear-gradient(180deg,var(--raised),var(--bg) 30rem) var(--bg) no-repeat; }
+  .phone .shell { width:390px; height:min(820px, calc(100% - 40px)); border-radius:36px; border:1px solid #23232b; box-shadow:0 30px 80px rgba(0,0,0,.6); }
+  .switch { position:fixed; z-index:50; top:12px; right:12px; display:flex; padding:3px; border-radius:10px; background:rgba(0,0,0,.6); border:1px solid var(--edge); }
+  .switch button { border:0; background:none; color:var(--muted); font:500 12px Inter; padding:5px 10px; border-radius:7px; cursor:pointer; }
+  .switch button.on { background:var(--surface-2); color:var(--text); }
+
+  /* ---------- mobile first ---------- */
+  .app { height:100%; display:grid; grid-template-rows:auto 1fr; }
+  .bar { display:flex; align-items:center; justify-content:space-between; padding:14px 18px; }
+  .wordmark { font-weight:700; font-size:20px; }
+  .wordmark span { color:var(--gold); }
+  .user { display:flex; align-items:center; gap:10px; font-size:14px; }
+  .av { width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg,#5865f2,#3b3fb0); display:grid; place-items:center; font:600 13px 'Space Grotesk'; color:#fff; flex:none; }
+
+  .body { display:grid; grid-template-columns:1fr; min-height:0; }
+  main { overflow:auto; padding:4px 18px 120px; }
+
+  /* group strip on mobile, rail on desktop */
+  .rail { display:none; }
+  .strip { display:flex; gap:12px; overflow-x:auto; padding:2px 0 14px; scrollbar-width:none; }
+  .strip .gicon { flex:none; }
+  .gicon { position:relative; width:52px; height:52px; border-radius:50%; display:grid; place-items:center; font:600 15px 'Space Grotesk'; cursor:pointer; color:var(--text); background:var(--surface-2); border:1px solid var(--edge);
+    transition:border-radius .35s var(--out), background-color .25s, border-color .25s; }
+  .gicon:hover { border-radius:16px; border-color:rgba(240,199,94,.4); }
+  .gicon.active { border-radius:16px; border-color:var(--gold); background:var(--tint); }
+  .gicon svg { width:22px; height:22px; }
+
+  /* bottom nav (mobile) */
+  .tabs { position:absolute; z-index:5; left:0; right:0; bottom:0; display:grid; grid-template-columns:repeat(4,1fr); align-items:center; padding:8px 10px calc(10px + env(safe-area-inset-bottom));
+    background:rgba(12,12,16,.88); border-top:1px solid var(--edge); }
+  .tab { display:grid; justify-items:center; gap:2px; border:0; background:none; color:var(--muted); font:500 11px Inter; cursor:pointer; padding:4px 0; transition:color .2s; }
+  .tab svg { width:22px; height:22px; }
+  .tab.on { color:var(--gold); }
+  .tab-plus { justify-self:center; }
+
+  /* the + : two bars, mathematically centered, turning into × */
+  .plus { position:relative; z-index:7; width:52px; height:52px; border-radius:50%; border:1px solid rgba(240,199,94,.55); background:var(--tint); cursor:pointer; padding:0;
+    transition:transform .45s var(--spring), background-color .25s, border-color .25s; }
+  .tabs .plus { width:56px; height:56px; transform:translateY(-14px); background:var(--gold); border-color:var(--gold); }
+  .plus .ic { position:absolute; inset:0; transition:transform .5s var(--spring); }
+  .plus .ic::before, .plus .ic::after { content:""; position:absolute; left:50%; top:50%; width:20px; height:2px; border-radius:2px; background:var(--gold); transform:translate(-50%,-50%); }
+  .plus .ic::after { transform:translate(-50%,-50%) rotate(90deg); }
+  .tabs .plus .ic::before, .tabs .plus .ic::after { background:var(--on-gold); }
+  .plus:hover { background:rgba(240,199,94,.2); }
+  .tabs .plus:hover { background:#f5d27a; }
+  .open .plus .ic { transform:rotate(135deg); }
+  .open .rail .plus { background:var(--gold); }
+  .open .rail .plus .ic::before, .open .rail .plus .ic::after { background:var(--on-gold); }
+
+  /* the blob: grows out of the exact center of the + (origin set from its real position) */
+  .scrim { position:absolute; inset:0; z-index:4; background:rgba(0,0,0,.45); opacity:0; pointer-events:none; transition:opacity .35s var(--out); }
+  .open .scrim { opacity:1; pointer-events:auto; }
+  /* One continuous motion per property (no keyframe stops, which restart the easing and read as 3 steps).
+     Only transform + opacity animate, so the compositor does all the work. */
+  .blob { position:absolute; z-index:6; left:12px; right:12px; bottom:96px; padding:22px;
+    background:linear-gradient(180deg,#18181e,#111116); border:1px solid rgba(240,199,94,.28); border-radius:26px; box-shadow:0 30px 80px rgba(0,0,0,.55);
+    transform-origin:var(--ox) var(--oy); transform:scale(.08); opacity:0; visibility:hidden; will-change:transform, opacity;
+    transition:transform .38s cubic-bezier(.55,0,.75,0), opacity .2s linear .18s, visibility 0s linear .38s; }
+  .open .blob { visibility:visible; transform:scale(1); opacity:1;
+    transition:transform .62s cubic-bezier(.3,1.35,.5,1), opacity .14s linear, visibility 0s; }
+  .blob > * { opacity:0; transform:translateY(8px); transition:opacity .25s, transform .35s var(--out); }
+  .open .blob > * { opacity:1; transform:none; transition-delay:.24s; }
+  .open .blob > *:nth-child(2) { transition-delay:.29s; }
+  .open .blob > *:nth-child(3) { transition-delay:.34s; }
+  .open .blob > *:nth-child(4) { transition-delay:.39s; }
+  .blob h3 { font-size:19px; margin-bottom:4px; }
+  .blob p { color:var(--muted); font-size:13px; margin-bottom:16px; }
+  label { display:block; font-size:12px; color:var(--muted); margin-bottom:6px; }
+  input { width:100%; padding:13px 12px; border-radius:12px; border:1px solid var(--edge); background:rgba(0,0,0,.25); color:var(--text); font:16px Inter; outline:none; transition:border-color .2s; }
+  input:focus { border-color:var(--gold); }
+  .row { display:flex; gap:8px; margin-top:16px; }
+  .row .btn { flex:1; }
+
+  .btn { position:relative; overflow:hidden; border:1px solid var(--gold); border-radius:12px; padding:12px 16px; min-height:44px; font:600 14px Inter; cursor:pointer; background:var(--gold); color:var(--on-gold); box-shadow:inset 0 1px 0 rgba(255,255,255,.4), inset 0 -1px 0 rgba(0,0,0,.18); transition:transform .45s var(--spring); will-change:transform; }
+  .btn::after { content:""; position:absolute; inset:0 auto 0 0; width:35%; background:linear-gradient(100deg,transparent,rgba(255,255,255,.45),transparent); transform:translateX(-150%) skewX(-20deg); }
+  .btn:hover { transform:translateY(-2px); }
+  .btn:hover::after { transform:translateX(350%) skewX(-20deg); transition:transform .7s var(--out); }
+  .btn:active { transform:scale(.97); transition-duration:.1s; }
+  .ghost { background:var(--surface); color:var(--text); border-color:var(--edge); box-shadow:none; }
+  .ghost::after { content:none; }
+  .ghost:hover { border-color:var(--gold); }
+
+  /* content */
+  .view { animation:view-in .45s var(--out); }
+  @keyframes view-in { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
+  .hello { margin:6px 0 14px; }
+  .hello .crumb { color:var(--muted); font-size:13px; }
+  .hello h1 { font-size:26px; }
+  .next { position:relative; display:grid; gap:14px; padding:20px; border-radius:22px; border:1px solid var(--edge);
+    background:radial-gradient(26rem 14rem at 0% 0%, rgba(249,158,26,.16), transparent 70%), var(--surface); margin-bottom:24px; }
+  .eyebrow { display:inline-flex; gap:8px; align-items:center; font-size:12px; color:var(--muted); border:1px solid var(--edge); border-radius:99px; padding:4px 10px; width:max-content; }
+  .next h2 { font-size:28px; margin:8px 0 2px; }
+  .meta { color:var(--muted); font-size:14px; }
+  .count { font-family:'Space Grotesk'; color:var(--gold); }
+  .next-side { display:flex; align-items:center; justify-content:space-between; gap:16px; }
+  .figure { font-size:30px; font-weight:700; color:var(--gold); line-height:1; }
+  .meter { width:120px; height:4px; border-radius:99px; background:rgba(255,255,255,.08); overflow:hidden; margin-top:6px; }
+  .meter span { display:block; height:100%; background:var(--gold); width:60%; transition:width .6s var(--out); }
+  .game-tag { display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:600; padding:3px 9px; border-radius:6px; }
+  .game-tag::before { content:""; width:8px; height:8px; border-radius:2px; background:currentColor; }
+  .ow { color:var(--ow); --c:rgba(249,158,26,.12); } .lol { color:var(--lol); --c:rgba(90,180,255,.12); }
+  .cs { color:var(--cs); --c:rgba(231,194,106,.12); } .wow { color:var(--wow); --c:rgba(127,209,168,.12); }
+  .game-tag { background:var(--c); }
+
+  .section-head { display:flex; align-items:center; justify-content:space-between; margin:4px 0 12px; }
+  .section-head h3 { font-size:18px; }
+  /* mobile calendar: day strip + agenda */
+  .days { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; margin-bottom:14px; }
+  .dpill { display:grid; justify-items:center; gap:2px; padding:8px 0; border-radius:14px; border:1px solid var(--edge); background:var(--surface); cursor:pointer; font-size:11px; color:var(--muted); transition:border-color .2s, background-color .2s; }
+  .dpill b { font:600 16px 'Space Grotesk'; color:var(--text); }
+  .dpill i { width:5px; height:5px; border-radius:50%; background:var(--gold); opacity:0; }
+  .dpill.has i { opacity:1; }
+  .dpill.on { border-color:var(--gold); background:var(--tint); }
+  .agenda .ev { display:flex; align-items:center; gap:12px; padding:14px; border-radius:16px; border:1px solid var(--edge); background:var(--surface); margin-bottom:10px; }
+  .agenda .ev .time { font:600 15px 'Space Grotesk'; width:48px; }
+  .agenda .ev .slots { margin-left:auto; font:600 15px 'Space Grotesk'; color:var(--gold); }
+  .agenda .ev small { display:block; color:var(--muted); font-size:12px; }
+  .week { display:none; }
+
+  .cols { display:grid; gap:14px; }
+  .panel { border-radius:20px; border:1px solid var(--edge); background:var(--surface); padding:18px; }
+  .panel h3 { font-size:16px; margin-bottom:12px; }
+  .member { display:flex; align-items:center; gap:10px; padding:8px 6px; border-radius:10px; font-size:14px; }
+  .badge { margin-left:auto; font-size:11px; font-weight:600; color:var(--gold); background:var(--tint); padding:3px 8px; border-radius:6px; }
+  .lobby-row { display:flex; align-items:center; gap:12px; padding:12px 4px; border-bottom:1px solid var(--edge); font-size:14px; }
+  .lobby-row:last-child { border-bottom:0; }
+  .lobby-row .when { width:76px; color:var(--muted); font-size:13px; }
+  .lobby-row .slots { margin-left:auto; font:600 14px 'Space Grotesk'; color:var(--gold); }
+  .hidden { display:none !important; }
+
+  /* ---------- desktop ---------- */
+  @container (min-width: 760px) {
+    .bar { padding:14px 28px; border-bottom:1px solid var(--edge); }
+    .body { grid-template-columns:84px 1fr; }
+    .rail { position:relative; display:flex; flex-direction:column; align-items:center; gap:12px; padding:16px 0; border-right:1px solid var(--edge); background:rgba(0,0,0,.18); }
+    .rail .gicon::before { content:""; position:absolute; left:-16px; width:4px; height:8px; border-radius:0 4px 4px 0; background:var(--text); transform:scaleY(0); transition:transform .3s var(--out); }
+    .rail .gicon:hover::before { transform:scaleY(1.4); }
+    .rail .gicon.active::before { transform:scaleY(4); background:var(--gold); }
+    .sep { width:28px; height:1px; background:var(--edge); }
+    .spacer { flex:1; }
+    .strip, .tabs { display:none; }
+    main { padding:24px 36px 48px; }
+    .blob { left:96px; right:auto; bottom:16px; width:360px; }
+    .next { grid-template-columns:1fr auto; align-items:center; padding:24px 26px; }
+    .next-side { display:block; text-align:right; }
+    .next-side .meter { margin-left:auto; }
+    .days, .agenda { display:none; }
+    .week { display:grid; grid-template-columns:repeat(7,1fr); gap:10px; }
+    .day { min-height:200px; border-radius:16px; border:1px solid var(--edge); background:var(--surface); padding:10px; }
+    .day.today { border-color:rgba(240,199,94,.45); }
+    .day h4 { font:600 12px Inter; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; display:flex; justify-content:space-between; margin-bottom:8px; }
+    .day.today h4 b { color:var(--gold); }
+    .wev { display:block; border-radius:10px; padding:8px 9px; margin-bottom:6px; font-size:12px; border-left:3px solid currentColor; background:rgba(255,255,255,.035); cursor:pointer; transition:transform .3s var(--out), background-color .2s; }
+    .wev:hover { transform:translateY(-2px); background:rgba(255,255,255,.06); }
+    .wev b { display:block; color:var(--text); font-weight:600; }
+    .wev small { color:var(--muted); }
+    .wev .slots { float:right; font:600 12px 'Space Grotesk'; }
+    .nothing { color:var(--muted); font-size:12px; }
+    .cols { grid-template-columns:1.4fr 1fr; gap:16px; }
+  }
+  @media (prefers-reduced-motion: reduce) { *,*::before,*::after { animation:none !important; transition:none !important; } }
+</style>
+</head>
+<body>
+<div class="switch"><button id="sw-desk" class="on">Desktop</button><button id="sw-phone">Phone</button></div>
+<div class="stage" id="stage">
+ <div class="shell">
+  <div class="app" id="app">
+    <header class="bar">
+      <div class="wordmark">Open<span>Lobby</span></div>
+      <div class="user"><span class="uname">Alex</span><div class="av" aria-hidden="true">A</div></div>
+    </header>
+    <div class="body">
+      <nav class="rail" aria-label="Navigation">
+        <div class="gicon active" data-view="home" title="Dashboard" aria-label="Home">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/></svg>
+        </div>
+        <div class="sep"></div>
+        <div class="gicon" data-view="group" data-name="Friday Night Squad" title="Friday Night Squad" aria-label="Friday Night Squad">FN</div>
+        <div class="gicon" data-view="group" data-name="Ranked Grind" title="Ranked Grind" aria-label="Ranked Grind">RG</div>
+        <div class="gicon" data-view="group" data-name="Azeroth Dads" title="Azeroth Dads" aria-label="Azeroth Dads">AD</div>
+        <div class="spacer"></div>
+        <button class="plus" data-plus aria-expanded="false" aria-label="Create group"><span class="ic"></span></button>
+      </nav>
+
+      <main>
+        <section id="home" class="view">
+          <div class="strip" aria-label="Your groups">
+            <div class="gicon" data-view="group" data-name="Friday Night Squad" aria-label="Friday Night Squad">FN</div>
+            <div class="gicon" data-view="group" data-name="Ranked Grind" aria-label="Ranked Grind">RG</div>
+            <div class="gicon" data-view="group" data-name="Azeroth Dads" aria-label="Azeroth Dads">AD</div>
+          </div>
+          <div class="next">
+            <div>
+              <span class="eyebrow">Starts in <span class="count" id="count">1 h 42 min</span></span>
+              <h2>Tue 20:00</h2>
+              <div class="meta"><span class="game-tag ow">Overwatch 2</span> &nbsp;Friday Night Squad</div>
+            </div>
+            <div class="next-side">
+              <div><div class="figure">3/5 players</div><div class="meter"><span style="width:60%"></span></div></div>
+            </div>
+          </div>
+
+          <div class="section-head"><h3>This week</h3></div>
+          <div class="days" id="days">
+            <div class="dpill" data-d="mon">Mon<b>2</b><i></i></div><div class="dpill on has" data-d="tue">Tue<b>3</b><i></i></div><div class="dpill has" data-d="wed">Wed<b>4</b><i></i></div><div class="dpill" data-d="thu">Thu<b>5</b><i></i></div><div class="dpill has" data-d="fri">Fri<b>6</b><i></i></div><div class="dpill has" data-d="sat">Sat<b>7</b><i></i></div><div class="dpill" data-d="sun">Sun<b>8</b><i></i></div>
+          </div>
+          <div class="agenda" id="agenda"></div>
+          <div class="week">
+            <div class="day"><h4>Mon <b>2</b></h4><div class="nothing">Nothing booked</div></div>
+            <div class="day today"><h4>Tue <b>3</b></h4><span class="wev ow"><span class="slots">3/5 players</span><b>Overwatch 2</b><small>20:00 · Friday Night</small></span></div>
+            <div class="day"><h4>Wed <b>4</b></h4><span class="wev lol"><span class="slots">2/5 players</span><b>League</b><small>19:30 · Ranked Grind</small></span></div>
+            <div class="day"><h4>Thu <b>5</b></h4><div class="nothing">Nothing booked</div></div>
+            <div class="day"><h4>Fri <b>6</b></h4><span class="wev cs"><span class="slots">4/5 players</span><b>Counter-Strike 2</b><small>21:00 · Friday Night</small></span><span class="wev ow"><span class="slots">1/5 players</span><b>Overwatch 2</b><small>23:00 · Ranked Grind</small></span></div>
+            <div class="day"><h4>Sat <b>7</b></h4><span class="wev wow"><span class="slots">5/5 players</span><b>World of Warcraft</b><small>18:00 · Azeroth Dads</small></span></div>
+            <div class="day"><h4>Sun <b>8</b></h4><div class="nothing">Nothing booked</div></div>
+          </div>
+        </section>
+
+        <section id="groups" class="view hidden">
+          <div class="hello"><div class="crumb">Your groups</div><h1>Groups</h1></div>
+          <div class="panel">
+            <div class="lobby-row" role="button" tabindex="0" data-view="group" data-name="Friday Night Squad"><span>Friday Night Squad</span><span class="meta">Next: Tue 20:00</span></div>
+            <div class="lobby-row" role="button" tabindex="0" data-view="group" data-name="Ranked Grind"><span>Ranked Grind</span><span class="meta">Next: Wed 19:30</span></div>
+            <div class="lobby-row" role="button" tabindex="0" data-view="group" data-name="Azeroth Dads"><span>Azeroth Dads</span><span class="meta">Next: Sat 18:00</span></div>
+          </div>
+        </section>
+
+        <section id="group" class="view hidden">
+          <div class="hello"><div class="crumb">Group</div><h1 id="gtitle">Friday Night Squad</h1></div>
+          <div class="cols">
+            <div class="panel">
+              <div class="section-head" style="margin-top:0"><h3>Upcoming lobbies</h3></div>
+              <div class="lobby-row"><span class="when">Tue 20:00</span><span class="game-tag ow">Overwatch 2</span><span class="slots">3/5 players</span></div>
+              <div class="lobby-row"><span class="when">Fri 21:00</span><span class="game-tag cs">Counter-Strike 2</span><span class="slots">4/5 players</span></div>
+              <div class="lobby-row"><span class="when">Sat 18:00</span><span class="game-tag wow">WoW</span><span class="slots">5/5 players</span></div>
+            </div>
+            <div style="display:grid; gap:14px">
+              <div class="panel"><h3>Members</h3>
+                <div class="member"><div class="av">A</div>Alex<span class="badge">Admin</span></div>
+                <div class="member"><div class="av" style="background:linear-gradient(135deg,#e2558a,#8a2b55)">M</div>Maja</div>
+                <div class="member"><div class="av" style="background:linear-gradient(135deg,#3ba57a,#1f6b4d)">T</div>Theo</div>
+              </div>
+              <div class="panel"><h3>Invite links</h3><div class="figure">3/10</div><div class="meter"><span style="width:30%"></span></div><div style="margin-top:14px"><button class="btn">Copy link</button></div></div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <nav class="tabs" aria-label="Navigation">
+      <button class="tab on" data-view="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/></svg>Home</button>
+      <button class="tab" data-view="groups"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="9" cy="9" r="3.5"/><path d="M2.5 20c.8-3.5 3.4-5.5 6.5-5.5s5.7 2 6.5 5.5"/><circle cx="17" cy="8" r="2.7"/><path d="M16.5 13.5c2.6.2 4.4 2 5 4.8"/></svg>Groups</button>
+      <div class="tab-plus"><button class="plus" data-plus aria-expanded="false" aria-label="Create group"><span class="ic"></span></button></div>
+      <button class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="8.5" r="4"/><path d="M4 21c1-4.2 4.2-6.5 8-6.5s7 2.3 8 6.5"/></svg>You</button>
+    </nav>
+
+    <div class="scrim" id="scrim"></div>
+    <form class="blob" id="blob" onsubmit="event.preventDefault(); closeBlob();">
+      <h3>Create a group</h3>
+      <p>You become its admin. Invite friends with a link afterwards.</p>
+      <div><label for="gname">Group name</label><input id="gname" placeholder="e.g. Friday Night Squad" maxlength="50"></div>
+      <div class="row"><button type="button" class="btn ghost" onclick="closeBlob()">Cancel</button><button class="btn">Create group</button></div>
+    </form>
+  </div>
+ </div>
+</div>
+<script>
+  const app = document.getElementById('app'), blob = document.getElementById('blob');
+  let activePlus = null;
+  // The blob grows from the exact center of whichever + was pressed (rail on desktop, tab bar on mobile).
+  function setOrigin(btn) {
+    const b = btn.getBoundingClientRect(), f = blob.getBoundingClientRect();
+    blob.style.setProperty('--ox', (b.left + b.width / 2 - f.left) + 'px');
+    blob.style.setProperty('--oy', (b.top + b.height / 2 - f.top) + 'px');
+  }
+  function openBlob(btn) { activePlus = btn; setOrigin(btn); app.classList.remove('closing'); app.classList.add('open'); btn.setAttribute('aria-expanded','true'); setTimeout(() => document.getElementById('gname').focus({preventScroll:true}), 280); }
+  function closeBlob() { if (!app.classList.contains('open')) return; app.classList.add('closing'); app.classList.remove('open'); activePlus && activePlus.setAttribute('aria-expanded','false'); setTimeout(() => app.classList.remove('closing'), 380); activePlus && activePlus.focus(); }
+  document.querySelectorAll('[data-plus]').forEach(btn => btn.addEventListener('click', () => app.classList.contains('open') ? closeBlob() : openBlob(btn)));
+  document.getElementById('scrim').addEventListener('click', closeBlob);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeBlob(); });
+
+  function show(view, name) {
+    ['home','groups','group'].forEach(id => { const s = document.getElementById(id); s.classList.toggle('hidden', id !== view); if (id === view) { s.classList.remove('view'); void s.offsetWidth; s.classList.add('view'); } });
+    if (name) document.getElementById('gtitle').textContent = name;
+    document.querySelectorAll('.gicon').forEach(g => g.classList.toggle('active', g.dataset.view === view || (view === 'group' && g.dataset.name === name)));
+    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.dataset.view === (view === 'group' ? 'groups' : view)));
+  }
+  document.querySelectorAll('[data-view]').forEach(el => el.addEventListener('click', () => show(el.dataset.view, el.dataset.name)));
+
+  const events = {
+    tue:[['20:00','Overwatch 2','Friday Night Squad','3/5','ow']], wed:[['19:30','League of Legends','Ranked Grind','2/5','lol']], thu:[],
+    fri:[['21:00','Counter-Strike 2','Friday Night Squad','4/5','cs'],['23:00','Overwatch 2','Ranked Grind','1/5','ow']],
+    sat:[['18:00','World of Warcraft','Azeroth Dads','5/5','wow']], sun:[], mon:[] };
+  function agenda(d) {
+    const list = events[d];
+    document.getElementById('agenda').innerHTML = list.length ? list.map(([t,g,grp,s,c]) => `<div class="ev"><span class="time">${t}</span><div><span class="game-tag ${c}">${g}</span><small>${grp}</small></div><span class="slots">${s} players</span></div>`).join('') : '<p class="meta" style="padding:10px 2px">Nothing booked</p>';
+  }
+  document.querySelectorAll('.dpill').forEach(p => p.addEventListener('click', () => { document.querySelectorAll('.dpill').forEach(x => x.classList.toggle('on', x === p)); agenda(p.dataset.d); }));
+  agenda('tue');
+
+  const stage = document.getElementById('stage');
+  document.getElementById('sw-phone').onclick = () => { closeBlob(); stage.classList.add('phone'); document.getElementById('sw-phone').classList.add('on'); document.getElementById('sw-desk').classList.remove('on'); };
+  document.getElementById('sw-desk').onclick = () => { closeBlob(); stage.classList.remove('phone'); document.getElementById('sw-desk').classList.add('on'); document.getElementById('sw-phone').classList.remove('on'); };
+  let mins = 102; setInterval(() => { mins = Math.max(0, mins - 1); document.getElementById('count').textContent = Math.floor(mins/60) + ' h ' + (mins%60) + ' min'; }, 60000);
+</script>
+</body>
+</html>
