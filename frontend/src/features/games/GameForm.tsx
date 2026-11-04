@@ -1,8 +1,10 @@
-import { useId, useRef, useState } from "react";
+import { useId, useRef, useState, type ComponentProps } from "react";
 import type { Game, GameInput } from "../../api";
 import { toUserMessage, useMessages } from "../../i18n";
 import { INVALID_CAPACITY, INVALID_GAME } from "./gameErrors";
 import { parseGameInput } from "./gameInput";
+
+type SubmitGame = (input: GameInput) => Promise<string | undefined>;
 
 /**
  * Name and default max players, nothing else (the ID is made by the server). A failure, local or from
@@ -19,17 +21,97 @@ export function GameForm({
   game?: Game;
   submitLabel: string;
   busy: boolean;
-  onSubmit: (input: GameInput) => Promise<string | undefined>;
+  onSubmit: SubmitGame;
   onCancel?: () => void;
 }) {
   const m = useMessages();
   const id = useId();
-  const [errorCode, setErrorCode] = useState<string>();
-  const formRef = useRef<HTMLFormElement>(null);
-  const nameRef = useRef<HTMLInputElement>(null);
-  const maxRef = useRef<HTMLInputElement>(null);
+  const { errorCode, nameRef, maxRef, submit } = useGameFormSubmit(onSubmit);
   const errorId = `${id}-error`;
   const aboutMax = errorCode === INVALID_CAPACITY;
+
+  return (
+    <form
+      className="group-form"
+      noValidate
+      onSubmit={(event) => {
+        event.preventDefault();
+        void submit(event.currentTarget);
+      }}
+    >
+      <GameFormField
+        id={`${id}-name`}
+        ref={nameRef}
+        name="name"
+        label={m.gameNameLabel}
+        hint={m.gameNameHint}
+        defaultValue={game?.name}
+        errorId={errorCode !== undefined && !aboutMax ? errorId : undefined}
+      />
+      <GameFormField
+        id={`${id}-max`}
+        ref={maxRef}
+        name="defaultMaxPlayers"
+        inputMode="numeric"
+        label={m.gameMaxPlayersLabel}
+        hint={m.gameMaxPlayersHint}
+        defaultValue={game?.defaultMaxPlayers ?? ""}
+        errorId={aboutMax ? errorId : undefined}
+      />
+      {errorCode !== undefined && (
+        <GameFormError id={errorId} code={errorCode} />
+      )}
+      <GameFormActions
+        submitLabel={submitLabel}
+        busy={busy}
+        onCancel={onCancel}
+      />
+    </form>
+  );
+}
+
+function GameFormError({ id, code }: { id: string; code: string }) {
+  const m = useMessages();
+  return (
+    <p id={id} role="alert" className="field-error">
+      {code === INVALID_GAME ? m.gameNameInvalid : toUserMessage(code)}
+    </p>
+  );
+}
+
+function GameFormActions({
+  submitLabel,
+  busy,
+  onCancel,
+}: {
+  submitLabel: string;
+  busy: boolean;
+  onCancel?: () => void;
+}) {
+  const m = useMessages();
+  return (
+    <div className="form-actions">
+      <button type="submit" className="button" disabled={busy}>
+        {submitLabel}
+      </button>
+      {onCancel && (
+        <button
+          type="button"
+          className="button button--secondary"
+          onClick={onCancel}
+        >
+          {m.gameEditCancel}
+        </button>
+      )}
+    </div>
+  );
+}
+
+/** Checks the input locally, then submits it. The error code it ends with is kept, and focus goes to its field. */
+function useGameFormSubmit(onSubmit: SubmitGame) {
+  const [errorCode, setErrorCode] = useState<string>();
+  const nameRef = useRef<HTMLInputElement>(null);
+  const maxRef = useRef<HTMLInputElement>(null);
 
   async function submit(form: HTMLFormElement) {
     const data = new FormData(form);
@@ -39,76 +121,42 @@ export function GameForm({
     );
     const code = parsed.ok ? await onSubmit(parsed.input) : parsed.code;
     setErrorCode(code);
-    if (code === undefined) formRef.current?.reset();
-    else (code === INVALID_CAPACITY ? maxRef : nameRef).current?.focus();
+    if (code === undefined) form.reset();
+    else if (code === INVALID_CAPACITY) maxRef.current?.focus();
+    else nameRef.current?.focus();
   }
 
+  return { errorCode, nameRef, maxRef, submit };
+}
+
+/** A labelled text field with its hint. `errorId` is set when the form's error is about this field. */
+function GameFormField({
+  id,
+  label,
+  hint,
+  errorId,
+  ...input
+}: ComponentProps<"input"> & {
+  id: string;
+  label: string;
+  hint: string;
+  errorId?: string;
+}) {
+  const hintId = `${id}-hint`;
   return (
-    <form
-      ref={formRef}
-      className="group-form"
-      noValidate
-      onSubmit={(event) => {
-        event.preventDefault();
-        void submit(event.currentTarget);
-      }}
-    >
-      <label htmlFor={`${id}-name`}>{m.gameNameLabel}</label>
+    <>
+      <label htmlFor={id}>{label}</label>
       <input
-        id={`${id}-name`}
-        ref={nameRef}
-        name="name"
+        id={id}
         type="text"
         autoComplete="off"
-        defaultValue={game?.name}
-        aria-invalid={(errorCode !== undefined && !aboutMax) || undefined}
-        aria-describedby={
-          errorCode !== undefined && !aboutMax
-            ? `${id}-name-hint ${errorId}`
-            : `${id}-name-hint`
-        }
+        aria-invalid={errorId !== undefined || undefined}
+        aria-describedby={errorId ? `${hintId} ${errorId}` : hintId}
+        {...input}
       />
-      <p id={`${id}-name-hint`} className="form-hint">
-        {m.gameNameHint}
+      <p id={hintId} className="form-hint">
+        {hint}
       </p>
-      <label htmlFor={`${id}-max`}>{m.gameMaxPlayersLabel}</label>
-      <input
-        id={`${id}-max`}
-        ref={maxRef}
-        name="defaultMaxPlayers"
-        type="text"
-        inputMode="numeric"
-        autoComplete="off"
-        defaultValue={game?.defaultMaxPlayers ?? ""}
-        aria-invalid={aboutMax || undefined}
-        aria-describedby={
-          aboutMax ? `${id}-max-hint ${errorId}` : `${id}-max-hint`
-        }
-      />
-      <p id={`${id}-max-hint`} className="form-hint">
-        {m.gameMaxPlayersHint}
-      </p>
-      {errorCode !== undefined && (
-        <p id={errorId} role="alert" className="field-error">
-          {errorCode === INVALID_GAME
-            ? m.gameNameInvalid
-            : toUserMessage(errorCode)}
-        </p>
-      )}
-      <div className="form-actions">
-        <button type="submit" className="button" disabled={busy}>
-          {submitLabel}
-        </button>
-        {onCancel && (
-          <button
-            type="button"
-            className="button button--secondary"
-            onClick={onCancel}
-          >
-            {m.gameEditCancel}
-          </button>
-        )}
-      </div>
-    </form>
+    </>
   );
 }

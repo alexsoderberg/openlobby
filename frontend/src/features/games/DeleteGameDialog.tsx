@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import type { Game } from "../../api";
 import { toUserMessage, useMessages } from "../../i18n";
 import { Alert } from "../../ui";
@@ -20,6 +20,7 @@ export function DeleteGameDialog({
   onClose: () => void;
 }) {
   const m = useMessages();
+  const headingId = useId();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [errorCode, setErrorCode] = useState<string>();
 
@@ -31,32 +32,50 @@ export function DeleteGameDialog({
     <dialog
       ref={dialogRef}
       className="dialog"
-      aria-labelledby="remove-game-heading"
+      aria-labelledby={headingId}
       onClose={onClose}
     >
-      <h2 id="remove-game-heading">{m.gameRemoveHeading(game.name)}</h2>
+      <h2 id={headingId}>{m.gameRemoveHeading(game.name)}</h2>
       <p>{m.gameRemoveConfirm}</p>
       {errorCode !== undefined && <Alert>{toUserMessage(errorCode)}</Alert>}
-      <div className="form-actions">
-        <button
-          type="button"
-          className="button"
-          disabled={busy}
-          onClick={async () => {
-            setErrorCode(await onConfirm());
-          }}
-        >
-          {m.gameRemoveSubmit}
-        </button>
-        <button
-          type="button"
-          className="button button--secondary"
-          autoFocus
-          onClick={() => dialogRef.current?.close()}
-        >
-          {m.gameRemoveKeep}
-        </button>
-      </div>
+      <DeleteGameActions
+        busy={busy}
+        onConfirm={async () => setErrorCode(await onConfirm())}
+        onKeep={() => dialogRef.current?.close()}
+      />
     </dialog>
+  );
+}
+
+/** Keep gets the first focus, so Enter right after opening does not remove the game. */
+function DeleteGameActions({
+  busy,
+  onConfirm,
+  onKeep,
+}: {
+  busy: boolean;
+  onConfirm: () => void;
+  onKeep: () => void;
+}) {
+  const m = useMessages();
+  return (
+    <div className="form-actions">
+      <button
+        type="button"
+        className="button"
+        disabled={busy}
+        onClick={onConfirm}
+      >
+        {m.gameRemoveSubmit}
+      </button>
+      <button
+        type="button"
+        className="button button--secondary"
+        autoFocus
+        onClick={onKeep}
+      >
+        {m.gameRemoveKeep}
+      </button>
+    </div>
   );
 }

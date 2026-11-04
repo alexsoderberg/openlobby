@@ -61,20 +61,27 @@ function GameAdmin({ onUnauthenticated }: { onUnauthenticated: () => void }) {
           <h2>{m.gameAddHeading}</h2>
           <GameForm
             submitLabel={m.gameAddSubmit}
-            busy={admin.change.status === "saving"}
+            busy={admin.busy}
             onSubmit={admin.add}
           />
         </Panel>
-        {admin.removing && (
-          <DeleteGameDialog
-            game={admin.removing}
-            busy={admin.change.status === "saving"}
-            onConfirm={() => admin.confirmRemove(admin.removing!.id)}
-            onClose={() => admin.setRemoving(undefined)}
-          />
-        )}
+        <RemoveGame admin={admin} />
       </div>
     </>
+  );
+}
+
+/** The confirmation for the game being removed, if any. */
+function RemoveGame({ admin }: { admin: Admin }) {
+  const { removing } = admin;
+  if (!removing) return null;
+  return (
+    <DeleteGameDialog
+      game={removing}
+      busy={admin.busy}
+      onConfirm={() => admin.confirmRemove(removing.id)}
+      onClose={() => admin.setRemoving(undefined)}
+    />
   );
 }
 
@@ -94,7 +101,7 @@ function GameListPanel({
       <GameList
         state={admin.games}
         editingId={admin.editingId}
-        busy={change.status === "saving"}
+        busy={admin.busy}
         onRetry={admin.reload}
         onEdit={admin.setEditingId}
         onSave={admin.save}

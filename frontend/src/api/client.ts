@@ -17,8 +17,9 @@ export type ApiErrorCode =
 export const GROUP_NAME_MAX_LENGTH = 50;
 /** Contract rule: a game name is 1–50 characters after trim. */
 export const GAME_NAME_MAX_LENGTH = 50;
-/** Contract rule: a default max is an integer from 1 to this value (a 32-bit signed integer). */
+/** Contract rule: a default max is an integer from DEFAULT_MAX_PLAYERS_MIN to this value (a 32-bit signed integer). */
 export const DEFAULT_MAX_PLAYERS_LIMIT = 2147483647;
+export const DEFAULT_MAX_PLAYERS_MIN = 1;
 /** Contract rule: this name is the free-text choice and cannot be a game (ADR 0010). */
 export const RESERVED_GAME_NAME = "Other";
 /** Contract rule: an invite link allows 1–10 uses (ADR 0007). */

@@ -55,7 +55,7 @@ async function addForm() {
 }
 
 describe("game list", () => {
-  it("lists each game with its default max, empty meaning no limit", async () => {
+  it("shows a missing default max as no player limit", async () => {
     renderPage(adminClient());
 
     const rows = await screen.findAllByRole("listitem");

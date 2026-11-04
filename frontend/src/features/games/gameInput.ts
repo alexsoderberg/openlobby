@@ -1,5 +1,6 @@
 import {
   DEFAULT_MAX_PLAYERS_LIMIT,
+  DEFAULT_MAX_PLAYERS_MIN,
   GAME_NAME_MAX_LENGTH,
   RESERVED_GAME_NAME,
   type GameInput,
@@ -30,7 +31,11 @@ export function parseGameInput(
   const max = maxText.replace(SERVER_TRIM, "");
   if (max === "") return { ok: true, input: { name, defaultMaxPlayers: null } };
   const value = Number(max);
-  if (!WHOLE_NUMBER.test(max) || value < 1 || value > DEFAULT_MAX_PLAYERS_LIMIT)
+  if (
+    !WHOLE_NUMBER.test(max) ||
+    value < DEFAULT_MAX_PLAYERS_MIN ||
+    value > DEFAULT_MAX_PLAYERS_LIMIT
+  )
     return { ok: false, code: INVALID_CAPACITY };
   return { ok: true, input: { name, defaultMaxPlayers: value } };
 }

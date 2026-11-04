@@ -35,42 +35,85 @@ export function GameList({
     <ul className="row-list" role="list">
       {state.games.map((game) =>
         game.id === editingId ? (
-          <li key={game.id} className="list-row list-row--editing">
-            <GameForm
-              game={game}
-              submitLabel={m.gameEditSubmit}
-              busy={busy}
-              onSubmit={(input) => onSave(game.id, input)}
-              onCancel={onCancelEdit}
-            />
-          </li>
+          <GameEditRow
+            key={game.id}
+            game={game}
+            busy={busy}
+            onSave={(input) => onSave(game.id, input)}
+            onCancel={onCancelEdit}
+          />
         ) : (
-          <li key={game.id} className="list-row">
-            <span>{game.name}</span>
-            <span className="badge">
-              {game.defaultMaxPlayers === null
-                ? m.gameUnlimited
-                : m.gameMaxPlayers(game.defaultMaxPlayers)}
-            </span>
-            <button
-              type="button"
-              className="button button--secondary"
-              aria-label={`${m.gameEdit}, ${game.name}`}
-              onClick={() => onEdit(game.id)}
-            >
-              {m.gameEdit}
-            </button>
-            <button
-              type="button"
-              className="button button--secondary"
-              aria-label={`${m.gameRemove}, ${game.name}`}
-              onClick={() => onRemove(game)}
-            >
-              {m.gameRemove}
-            </button>
-          </li>
+          <GameRow
+            key={game.id}
+            game={game}
+            onEdit={() => onEdit(game.id)}
+            onRemove={() => onRemove(game)}
+          />
         ),
       )}
     </ul>
+  );
+}
+
+function GameRow({
+  game,
+  onEdit,
+  onRemove,
+}: {
+  game: Game;
+  onEdit: () => void;
+  onRemove: () => void;
+}) {
+  const m = useMessages();
+  return (
+    <li className="list-row">
+      <span>{game.name}</span>
+      <span className="badge">
+        {game.defaultMaxPlayers === null
+          ? m.gameUnlimited
+          : m.gameMaxPlayers(game.defaultMaxPlayers)}
+      </span>
+      <button
+        type="button"
+        className="button button--secondary"
+        aria-label={`${m.gameEdit}, ${game.name}`}
+        onClick={onEdit}
+      >
+        {m.gameEdit}
+      </button>
+      <button
+        type="button"
+        className="button button--secondary"
+        aria-label={`${m.gameRemove}, ${game.name}`}
+        onClick={onRemove}
+      >
+        {m.gameRemove}
+      </button>
+    </li>
+  );
+}
+
+function GameEditRow({
+  game,
+  busy,
+  onSave,
+  onCancel,
+}: {
+  game: Game;
+  busy: boolean;
+  onSave: (input: GameInput) => Promise<string | undefined>;
+  onCancel: () => void;
+}) {
+  const m = useMessages();
+  return (
+    <li className="list-row list-row--editing">
+      <GameForm
+        game={game}
+        submitLabel={m.gameEditSubmit}
+        busy={busy}
+        onSubmit={onSave}
+        onCancel={onCancel}
+      />
+    </li>
   );
 }

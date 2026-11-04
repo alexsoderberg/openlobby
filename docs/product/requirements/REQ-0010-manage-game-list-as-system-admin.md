@@ -12,7 +12,7 @@ As a system admin, I want to add, change and remove games in the game list in th
 ## Acceptance criteria
 
 Permissions:
-- Given that I am logged in as a system admin, when I open the game list, then I see all games in the list with name and default max players (empty if missing). Amendment 2026-11-04 (orchestrator): a missing default max is shown as the text "No player limit" instead of an empty cell, because an empty cell reads as missing data.
+- Given that I am logged in as a system admin, when I open the game list, then I see all games in the list with name and default max players. Amendment 2026-11-04 (orchestrator): a missing default max is shown as the text "No player limit" instead of an empty cell, because an empty cell reads as missing data.
 - Given that I am logged in but not a system admin, when I see the app's navigation, then there is no link to the game list.
 - Given that I am logged in but not a system admin, when I open the game list's address directly, then access is denied and no part of the game list is shown.
 - Given that I am a group admin or a regular member in a group, when I try to add, change or remove a game, then it is denied and the game list is not changed.
