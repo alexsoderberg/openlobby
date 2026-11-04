@@ -1,5 +1,5 @@
 # REQ-0004. View upcoming lobbies
-Status: Decided
+Status: Implemented
 Feature: F-004 (list), F-017 (calendar view)
 Priority: Must
 

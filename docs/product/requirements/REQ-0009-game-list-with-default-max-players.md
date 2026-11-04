@@ -1,5 +1,5 @@
 # REQ-0009. Game list with default max players
-Status: Decided
+Status: Implemented
 Feature: F-024
 Priority: Must
 

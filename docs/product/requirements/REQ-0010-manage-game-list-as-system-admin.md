@@ -1,5 +1,5 @@
 # REQ-0010. Manage game list as system admin
-Status: Decided
+Status: Implemented
 Feature: F-025
 Priority: Must
 
