@@ -34,11 +34,25 @@ REQ-0002 and REQ-0007 have been extended with max uses on invite links (mandator
 
 ## Should, after the MVP
 
-Not part of the MVP. The vision lists it as outside the MVP scope. It is prioritized after the MVP core flow (orders 1–10) is delivered and used. Timing is an open question for the user in REQ-0011. If the user moves it into the MVP, it goes between REQ-0005 and REQ-0007.
+Not part of the MVP. The vision lists it as outside the MVP scope. It is prioritized after the MVP core flow (orders 1–10) is delivered and used. The user has decided it stays after the MVP (REQ-0011). If the user moves it into the MVP, it goes between REQ-0005 and REQ-0007.
 
 | Order | Requirement | Title | Priority | Depends on |
 |---|---|---|---|---|
 | A1 | REQ-0011 | Game roles and role slots in lobbies | Should | REQ-0005, REQ-0009, REQ-0010 |
+
+Confirmed by the user on 2026-11-04: game roles (REQ-0011) stay after the MVP (DECISION, user).
+
+## Could, after the MVP
+
+Ordered after the Should items, because priority comes first. Not yet a requirement: the requirement is written after the MVP, as F-030 (Decided) with the same scope as before.
+
+| Order | Requirement | Title | Priority | Depends on |
+|---|---|---|---|---|
+| B1 | – (to be written, F-030) | Game presentation: logo and accent color | Could | REQ-0009, REQ-0010 (amends REQ-0009) |
+
+Ordering reason: B1 is after A1 because A1 is prioritized higher. Both A1 and B1 extend the game form (F-025) and amend REQ-0009, so the architect should review them together when B1 is written, to avoid two rounds of changes to the same form and data model. B1 has no dependency on A1 and can be moved earlier by the user at any time.
+
+The item goals idea (F-031) is `Proposed`, decision postponed until the MVP has been used. It is not ordered here.
 
 ## Technical tasks (operations)
 
