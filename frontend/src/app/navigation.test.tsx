@@ -83,6 +83,20 @@ describe("page navigation", () => {
     push.mockRestore();
   });
 
+  it("neither animates nor scrolls when only the query changes", () => {
+    window.history.replaceState(null, "", "/groups");
+    const start = vi.fn((update: () => void) => update());
+    Object.assign(document, { startViewTransition: start });
+    const scroll = vi.spyOn(window, "scrollTo");
+    render(<Probe />);
+
+    act(() => navigate("/groups?tab=x"));
+
+    expect(start).not.toHaveBeenCalled();
+    expect(scroll).not.toHaveBeenCalled();
+    scroll.mockRestore();
+  });
+
   describe("leaves to the browser", () => {
     function clickIsHandledByApp(
       name: string,

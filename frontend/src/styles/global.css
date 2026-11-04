@@ -1113,7 +1113,7 @@ a {
 .plus-button--fab {
   position: fixed;
   z-index: 55;
-  right: var(--space-3);
+  right: max(var(--space-3), env(safe-area-inset-right));
   bottom: calc(
     var(--size-tab-bar) + env(safe-area-inset-bottom) + var(--space-3)
   );
