@@ -163,7 +163,7 @@ func TestLobbyTxMembershipReadsUnderTheLock(t *testing.T) {
 func TestDatabaseRefusesWhatTheDomainRefuses(t *testing.T) {
 	store := migratedStore(t)
 	seedGroups(t, store)
-	const insert = `INSERT INTO lobbies (group_id, created_by_user_id, game_name, max_players, starts_at, ends_at) VALUES ($1, $2, $3, $4, $5, $6)`
+	const insert = `INSERT INTO lobbies (group_id, created_by_user_id, game_name, max_players, starts_at, ends_at, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7)`
 	start := joinedAt.Add(time.Hour)
 	refused := []struct {
 		name string
@@ -182,7 +182,7 @@ func TestDatabaseRefusesWhatTheDomainRefuses(t *testing.T) {
 	}
 	for _, tc := range refused {
 		t.Run(tc.name, func(t *testing.T) {
-			if _, err := store.db.Exec(insert, fridayID, alexID, tc.game, tc.max, start, tc.end); err == nil {
+			if _, err := store.db.Exec(insert, fridayID, alexID, tc.game, tc.max, start, tc.end, joinedAt); err == nil {
 				t.Fatal("database accepted the lobby")
 			}
 		})
@@ -196,7 +196,7 @@ func TestDatabaseRefusesWhatTheDomainRefuses(t *testing.T) {
 		{name: "largest max players", max: 2147483647, end: start.Add(time.Hour)},
 	}
 	for _, tc := range accepted {
-		if _, err := store.db.Exec(insert, fridayID, alexID, "Go", tc.max, start, tc.end); err != nil {
+		if _, err := store.db.Exec(insert, fridayID, alexID, "Go", tc.max, start, tc.end, joinedAt); err != nil {
 			t.Fatalf("%s: %v", tc.name, err)
 		}
 	}

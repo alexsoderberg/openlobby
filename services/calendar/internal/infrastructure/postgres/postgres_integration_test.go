@@ -15,7 +15,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/pressly/goose/v3"
+
 	"openlobby/services/calendar/internal/domain"
+	"openlobby/services/calendar/migrations"
 )
 
 const (
@@ -120,6 +123,19 @@ func randomSchemaName(t *testing.T) string {
 		t.Fatal(err)
 	}
 	return "test_" + hex.EncodeToString(buf)
+}
+
+// migrateDownTo rolls back every migration newer than version, so a down test does not depend on how many later
+// migrations exist.
+func migrateDownTo(t *testing.T, store *Store, version int64) {
+	t.Helper()
+	provider, err := goose.NewProvider(goose.DialectPostgres, store.db, migrations.FS)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := provider.DownTo(context.Background(), version); err != nil {
+		t.Fatalf("migrate down to %d: %v", version, err)
+	}
 }
 
 func migratedStore(t *testing.T) *Store {
@@ -420,12 +436,7 @@ func TestInviteLinksDownDropsTable(t *testing.T) {
 	store := migratedStore(t)
 	ctx := context.Background()
 
-	// Migration 0003 is newer and goes first, so two downs reach 0002.
-	for range 2 {
-		if err := store.Migrate(ctx, true); err != nil {
-			t.Fatalf("migrate down: %v", err)
-		}
-	}
+	migrateDownTo(t, store, 1)
 	var table sql.NullString
 	if err := store.db.QueryRowContext(ctx, `SELECT to_regclass('invite_links')::text`).Scan(&table); err != nil {
 		t.Fatal(err)
