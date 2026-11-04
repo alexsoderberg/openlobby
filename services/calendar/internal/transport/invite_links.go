@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 
-	"openlobby/pkg/httpapi"
 	"openlobby/services/calendar/internal/domain"
 	publicapi "openlobby/services/calendar/internal/transport/gen/publicapi"
 )
@@ -15,9 +14,6 @@ const noStoreHeader = "no-store"
 // CreateInviteLink makes a new link for a member. A malformed group ID is the same 404 as an unknown group (ADR 0001).
 // The body is optional: a missing or null maxUses gives the default (ADR 0007).
 func (h publicHandler) CreateInviteLink(ctx context.Context, request publicapi.CreateInviteLinkRequestObject) (publicapi.CreateInviteLinkResponseObject, error) {
-	if !httpapi.IsUUID(request.GroupId) {
-		return publicapi.CreateInviteLink404JSONResponse{Error: publicErrorBody(ctx, publicapi.ErrorBodyCodeGroupNotFound)}, nil
-	}
 	link, err := h.invites.Create(ctx, request.GroupId, userIDFrom(ctx), requestedMaxUses(request.Body))
 	switch {
 	case errors.Is(err, domain.ErrGroupNotFound):
@@ -36,9 +32,6 @@ func (h publicHandler) CreateInviteLink(ctx context.Context, request publicapi.C
 
 // ListInviteLinks returns the active links the caller may see. A member gets their own links, an admin all of them.
 func (h publicHandler) ListInviteLinks(ctx context.Context, request publicapi.ListInviteLinksRequestObject) (publicapi.ListInviteLinksResponseObject, error) {
-	if !httpapi.IsUUID(request.GroupId) {
-		return publicapi.ListInviteLinks404JSONResponse{Error: publicErrorBody(ctx, publicapi.ErrorBodyCodeGroupNotFound)}, nil
-	}
 	links, err := h.invites.List(ctx, request.GroupId, userIDFrom(ctx))
 	switch {
 	case errors.Is(err, domain.ErrGroupNotFound):
@@ -90,12 +83,6 @@ func (h publicHandler) JoinInvite(ctx context.Context, request publicapi.JoinInv
 // RevokeInviteLink deletes a link for its creator or a group admin. A malformed group ID is group_not_found and a
 // malformed link ID is invite_invalid, both before the membership check (ADR 0001, ADR 0007).
 func (h publicHandler) RevokeInviteLink(ctx context.Context, request publicapi.RevokeInviteLinkRequestObject) (publicapi.RevokeInviteLinkResponseObject, error) {
-	if !httpapi.IsUUID(request.GroupId) {
-		return publicapi.RevokeInviteLink404JSONResponse{Error: publicErrorBody(ctx, publicapi.ErrorBodyCodeGroupNotFound)}, nil
-	}
-	if !httpapi.IsUUID(request.LinkId) {
-		return publicapi.RevokeInviteLink404JSONResponse{Error: publicErrorBody(ctx, publicapi.ErrorBodyCodeInviteInvalid)}, nil
-	}
 	err := h.invites.Revoke(ctx, request.GroupId, request.LinkId, userIDFrom(ctx))
 	switch {
 	case errors.Is(err, domain.ErrGroupNotFound):

@@ -3,6 +3,7 @@ package domain
 
 import (
 	"errors"
+	"math"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -14,8 +15,14 @@ var ErrUnavailable = errors.New("dependency unavailable")
 // ErrGroupNotFound means the group does not exist or the caller is not a member. Both give the same answer (ADR 0004 rule 2).
 var ErrGroupNotFound = errors.New("group not found")
 
-// ErrInvalidGroupName means the name is empty after trim or longer than maxGroupNameLength (REQ-0002).
+// ErrInvalidGroupName means the name is empty after trim or longer than maxNameLength (REQ-0002).
 var ErrInvalidGroupName = errors.New("invalid group name")
+
+// ErrInvalidGame means the game name is empty after trim, longer than maxNameLength, or the reserved "Other" (ADR 0010).
+var ErrInvalidGame = errors.New("invalid game")
+
+// ErrInvalidCapacity means the default max players is neither omitted nor an integer from 1 to 2147483647 (ADR 0010).
+var ErrInvalidCapacity = errors.New("invalid capacity")
 
 // ErrInvalidMaxUses means the requested max uses is outside 1 to InviteLinkMaxUsesLimit (ADR 0007).
 var ErrInvalidMaxUses = errors.New("invalid max uses")
@@ -36,8 +43,15 @@ const InviteLinkMaxUsesLimit = 10
 // InviteLinkDefaultMaxUses applies when the creator does not choose a value (ADR 0007).
 const InviteLinkDefaultMaxUses = InviteLinkMaxUsesLimit
 
-// maxGroupNameLength is counted in Unicode code points, the same as the database check (ADR 0004 rule 1).
-const maxGroupNameLength = 50
+// maxNameLength is the limit of a group name and a game name, counted in Unicode code points, the same as the database
+// checks (ADR 0004 rule 1, ADR 0010).
+const maxNameLength = 50
+
+// maxPlayersLimit is the largest max players: the maximum of the PostgreSQL integer column (ADR 0010 Amendment 2026-11-04).
+const maxPlayersLimit = math.MaxInt32
+
+// reservedGameName is the client's free-text choice, which is not a game of the list (ADR 0010).
+const reservedGameName = "Other"
 
 // Role is a member's role in a group (ADR 0004 rule 4).
 type Role string
@@ -62,6 +76,12 @@ type Game struct {
 	DefaultMaxPlayers *int
 }
 
+// Actor is the verified caller of a request (ADR 0011). Only the transport layer builds it, from the gateway's headers.
+type Actor struct {
+	UserID        string
+	IsSystemAdmin bool
+}
+
 // Member is a user's membership in a group. DisplayName is not stored; the application fills it from auth.
 type Member struct {
 	UserID      string
@@ -71,11 +91,36 @@ type Member struct {
 
 // NewGroupName trims the name and checks its length. It returns the trimmed name.
 func NewGroupName(raw string) (string, error) {
-	name := strings.TrimSpace(raw)
-	if name == "" || utf8.RuneCountInString(name) > maxGroupNameLength {
+	name, ok := trimName(raw)
+	if !ok {
 		return "", ErrInvalidGroupName
 	}
 	return name, nil
+}
+
+// trimName trims a name and reports whether it is 1 to maxNameLength code points.
+func trimName(raw string) (string, bool) {
+	name := strings.TrimSpace(raw)
+	length := utf8.RuneCountInString(name)
+	return name, length >= 1 && length <= maxNameLength
+}
+
+// validCapacity reports whether max players is omitted or from 1 to maxPlayersLimit.
+func validCapacity(maxPlayers *int) bool {
+	return maxPlayers == nil || (*maxPlayers >= 1 && *maxPlayers <= maxPlayersLimit)
+}
+
+// NewGame trims and checks a game's name and default max players (ADR 0010). The ID is kept as given; it is empty
+// for a new game until the database generates it.
+func NewGame(id, rawName string, defaultMaxPlayers *int) (Game, error) {
+	name, ok := trimName(rawName)
+	if !ok || strings.EqualFold(name, reservedGameName) {
+		return Game{}, ErrInvalidGame
+	}
+	if !validCapacity(defaultMaxPlayers) {
+		return Game{}, ErrInvalidCapacity
+	}
+	return Game{ID: id, Name: name, DefaultMaxPlayers: defaultMaxPlayers}, nil
 }
 
 // InviteLinkMaxUses is how many joins an invite link allows, always from 1 to InviteLinkMaxUsesLimit.

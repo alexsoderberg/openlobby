@@ -19,14 +19,14 @@ The user has now decided that management happens in the app, by a system admin (
   create unique index games_name_lower_key on games (lower(name));
   ```
   `id` is a uuid generated at creation (review 3). It never changes. No sort column and no `active` column, because REQ-0009 requires neither. The lists are sorted as the consolidated amendment says.
-- **The database has the schema's invariants and the same safety-net checks as the other tables (ADR 0006):** primary key, unique index on the name ignoring case, a name without leading or trailing whitespace and 1–50 characters, and max ≥ 1 (amendment 2026-11-03 for the form of the whitespace check). The reserved name `Other` is checked only in `application`, which is the only write path.
+- **The database has the schema's invariants and the same safety-net checks as the other tables (ADR 0006):** primary key, unique index on the name ignoring case, a name without leading or trailing whitespace and 1–50 characters, and max ≥ 1 (amendment 2026-11-03 for the form of the whitespace check). The reserved name `Other` is checked in Go code, in `domain.NewGame`, not in the database (amendment 2026-11-03, REQ-0010 review).
 - **Seed content** is inserted by a seed migration in `services/calendar/migrations/` (next sequence number, `*_games`). `up` creates the table and inserts the four rows with fixed ids (review 3). `down` drops the table. No other table is affected, because `lobbies.game_id` has no foreign key to `games`.
 - **Ports** in `application`, split by use (ISP):
-  - `GameCatalog`: `List(ctx) ([]Game, error)`, `ListForGroup(ctx, groupID) ([]Game, error)` and `Find(ctx, id) (Game, error)`. Used by `ListGames`, `ListGroupGames` and `CreateLobby`.
+  - `GameCatalog`: `List(ctx) ([]domain.Game, error)` and `ListForGroup(ctx, groupID) ([]GameUsage, error)`, where `GameUsage{Game domain.Game, LobbyCount int}` (amendment 2026-11-04). Used by `ListGames` (`List`) and `ListGroupGames` (`ListForGroup`). `Find(ctx, id) (domain.Game, error)` is added with REQ-0003 for `CreateLobby`; it is not built before that.
   - `GameCatalogEditor`: `Create(ctx, Game) (Game, error)` (takes a `Game` with an empty `ID` and returns the stored game with its generated ID), `Replace(ctx, Game) error` and `Delete(ctx, id) error`. Used by the three system admin use cases.
   - `Game{ID, Name, DefaultMaxPlayers *int}` is a domain type. Sentinel errors in `application`: `ErrGameNotFound` and `ErrGameTaken`. All implementations give the same error behavior (LSP).
 - **Adapter** `infrastructure/postgres` implements both ports. Unique violation (SQLSTATE `23505`) is translated to `ErrGameTaken`. An update or delete that affects 0 rows gives `ErrGameNotFound`.
-- **Use cases:** `ListGames` (system admin), `ListGroupGames` (members, review 3), `CreateGame`, `ReplaceGame` and `DeleteGame`. `CreateLobby` uses `GameCatalog.Find`.
+- **Use cases:** `ListGames` (system admin), `ListGroupGames` (members, review 3), `CreateGame`, `ReplaceGame` and `DeleteGame`. `CreateLobby` will use `GameCatalog.Find` (REQ-0003).
 - **API:**
 
   | Method | Path | Permission | Response |
@@ -42,7 +42,7 @@ The user has now decided that management happens in the app, by a system admin (
   1. Shape, in transport: a path `gameId` that is not in uuid form → `404 game_not_found`; then invalid JSON or a wrong JSON type → `400 invalid_request`.
   2. Permission: `Actor.IsSystemAdmin` false → `403 not_allowed`. Shape comes first, so a non-admin gets no domain information.
   3. Name: trimmed (ADR 0004 rule 1), measured in code points, 1–50 characters, and not `Other` ignoring case → otherwise `400 invalid_game`.
-  4. `defaultMaxPlayers` is `null` or an integer ≥ 1 → otherwise `400 invalid_capacity`. No upper limit.
+  4. `defaultMaxPlayers` is `null` or an integer from 1 to 2147483647 → otherwise `400 invalid_capacity`. No product upper limit; 2147483647 is the technical limit (amendment 2026-11-04).
   5. Unknown `gameId` on PUT or DELETE → `404 game_not_found`.
   6. Name (ignoring case) used by another game → `409 game_taken`. A game that keeps its own name is not a conflict.
 - **Logging:** every successful write is logged at info level with `actorUserId`, `gameId` and action (`create`, `replace`, `delete`). This is the operations log under CLAUDE.md, not a user feature. REQ-0010 excludes user-facing history, and that boundary is kept. No history table is introduced.
@@ -53,7 +53,7 @@ The user has now decided that management happens in the app, by a system admin (
   - Application against fakes: permission before validation, every error code in rules 2–6, trimming, and that deleting a game does not touch lobbies. Transport: rule 1.
   - Adapter against real PostgreSQL: sorting by name, `ErrGameNotFound`, case-insensitive duplicate name gives `ErrGameTaken`, check on max ≥ 1, and the migration `up` and `down`.
   - Transport: `X-User-System-Admin` with any value other than `true` gives non-admin. A missing or invalid `X-User-Id` gives 401 (ADR 0011).
-  - Contract test against `api/calendar/openapi.yaml` once the contract exists.
+  - Contract conformance against `api/calendar/openapi.yaml` as set in amendment 2026-11-03 (no separate contract test suite).
 
 ## Consequences
 - Changing the list requires no commit, no release and no new container. Management happens in the app by the system admin.
@@ -140,3 +140,41 @@ Amendment 2026-11-03 (REQ-0009 review: whitespace check). The database check on 
 - **What stays in `application`:** the rule is ADR 0004 rule 1, `strings.TrimSpace`, which covers all Unicode whitespace. Names are trimmed there before validation and before any write.
 - **Accepted gap:** the database does not reproduce Go's Unicode whitespace exactly. A name with an exotic Unicode space that the database locale does not classify as `\s` can pass the database check. The shortcut is recorded in `services/calendar/migrations/0003_games.sql` and is upgraded if such a name gets in.
 - **Wording of the safety-net bullet above:** "the same safety-net checks as the other tables" holds for `games` only. The `groups` name has no whitespace check in the database. See the follow-up in ADR 0006, amendment 2026-11-03.
+
+Amendment 2026-11-03 (REQ-0010 review: placement of the game rules, contract conformance, deferred test). This overrides the sentences "The rule lives only in `application`" (review 3) and "What stays in `application`" (REQ-0009 review) where they differ.
+- **Placement of the game rules (question 1). DECISION:** the rules for a game's name and default max players live in the domain constructor `domain.NewGame`, following the precedent `domain.NewGroupName`. `NewGame` trims the name (ADR 0004 rule 1), checks 1–50 code points, rejects the reserved name `Other` (`strings.EqualFold`) and checks the default max ≥ 1. It returns `ErrInvalidGame` or `ErrInvalidCapacity`. Every create and replace in `application` calls `NewGame` before any port is called, so all writes pass through it. The check order is the one of rule 3 and rule 4 (name first, then capacity).
+  - Reason: these are pure rules without I/O, and the domain is the one place that holds them (DRY). The database keeps only the safety-net checks of the Decision, because the reserved name is a Go rule and not a schema invariant.
+  - Where the older text says "application" for the trim or the reserved name, read "`domain.NewGame`, called by `application`". The trim is not done in the transport layer.
+- **Contract conformance (question 2). DECISION:** a separate contract test suite is not required for the four game operations or for `GET /api/groups/{groupId}/games`. The accepted equivalent is:
+  - (a) transport uses oapi-codegen strict handlers generated from `api/calendar/openapi.yaml`, so request and response types are checked at compile time;
+  - (b) CI fails if the generated code is out of sync with the contract;
+  - (c) for each operation, every status code the contract declares and every error code in the rules has a transport test against the handler. The reviewer checks this list against the contract.
+  - CLAUDE.md's contract test rule covers calls between services. These endpoints are called by the gateway and the frontend, which both use the same generated types, so no further test is needed.
+- **Deferred test (REQ-0003). DECISION:** "deleting a game does not touch lobbies" cannot be tested yet, because there is no lobbies table. It is moved to REQ-0003 and must be in place with the first lobby write.
+- **No foreign key from lobbies to games. DECISION:** the lobbies migration in REQ-0003 must not add a foreign key from `lobbies.game_id` to `games`. This is the rule of review 3 and the Alternatives above. The reviewer checks it in that migration.
+
+Amendment 2026-11-04 (REQ-0010 review 2). This overrides the earlier text where they differ. The Decision lines for the port `GameCatalog`, for `CreateLobby`'s use of `Find`, and for rule 4 (`defaultMaxPlayers`) were rewritten in place to match.
+
+- **Capacity bound (BLOCKER). DECISION:** the largest allowed max players is `2147483647`, the maximum of PostgreSQL `integer` (int4). The rule for `defaultMaxPlayers` and for a lobby's `maxPlayers` is: `null` or omitted, or an integer from 1 to 2147483647. A value below 1 or above 2147483647 gives `400 invalid_capacity`. A value that is not an integer (2.5, text) keeps `400 invalid_request`.
+  - **Option chosen: (a), the int4 maximum.** The column stays `integer`, so there is no migration and no rollback. Option (b), `bigint`, was rejected: it still needs a maximum, because the JSON number is decoded into Go `int`, so the bound would only move. The bound is technical. "No upper limit" in REQ-0009 stays true as a product rule, because no product cap is introduced.
+  - **No realistic cap (for example 100).** That would be a product decision that reverses REQ-0009 and is not made here. If the product owner wants one, it is a new decision for the product owner, not a change to this rule.
+  - **Constant and place:** `maxPlayersLimit = math.MaxInt32` in `services/calendar/internal/domain/domain.go`. The helper `validCapacity(maxPlayers *int) bool` returns true for `nil` and for values from 1 to `maxPlayersLimit`. `NewGame` returns `ErrInvalidCapacity` when it returns false. REQ-0003's lobby creation calls the same helper, so the rule is in one place.
+  - **Contract:** `DefaultMaxPlayers` and `MaxPlayers` in `api/calendar/openapi.yaml` get `maximum: 2147483647`, and their descriptions say "an integer from 1 to 2147483647". Valid values are unchanged, so this is not a breaking change.
+  - **Database:** no change. `games.default_max_players` (ADR 0010, `0003_games.sql`) and `lobbies.max_players` (ADR 0006) stay `integer`, so every stored value is in range.
+  - **Platform:** the service is built for 64-bit targets (`linux/amd64`, `linux/arm64`). On a 32-bit build the JSON decoder would reject a larger value earlier as `invalid_request`; this is not expected in production.
+  - **Tests** (written first, because they reproduce the 500 from review 2):
+    - Transport: `POST` and `PUT` with `defaultMaxPlayers` 2147483648 and 3000000000 give `400 invalid_capacity`; 2147483647 is accepted (201 and 200).
+    - Domain: 2147483647 is valid and 2147483648 is invalid.
+    - REQ-0003 repeats the same cases for `maxPlayers` on lobby creation.
+- **Name length (SHOULD). DECISION:** one constant and one helper for the name rule in `services/calendar/internal/domain/domain.go`:
+  - `maxNameLength = 50` replaces `maxGroupNameLength` and `maxGameNameLength`.
+  - `trimName(raw string) (name string, ok bool)` trims with `strings.TrimSpace` and returns `ok` when the result is 1 to `maxNameLength` code points.
+  - `NewGroupName` and `NewGame` call it and map `ok == false` to their own error (`ErrInvalidGroupName`, `ErrInvalidGame`). The reserved name `Other` stays in `NewGame`.
+  - Reason: this is one rule, not two similar pieces of code. ADR 0004 rule 1 defines it, and ADR 0010 defines the game name as "counted like the group name", so the two values must change together. The rule of three is about similar code; here it is the same knowledge. The contract `maxLength: 50` and the database check on `games.name` remain mirrors of the same value (ADR 0006 precedent).
+- **Malformed path ID (SHOULD). DECISION: adopt one middleware.** The shape of a path ID is checked once, by `rejectMalformedPathID` in `services/calendar/internal/transport/router.go`. It is added to `StdHTTPServerOptions.Middlewares` for all operations and uses the existing `pathIDCodes` table and `r.PathValue`.
+  - **Order:** `requireUserID` stays outermost, so a caller without identity still gets 401 first. Then `rejectMalformedPathID` gives 404 with the not-found code of the resource, before the body is read and before the strict handler. Then the body (400 `invalid_request`), then permission (403), then the rest. This is ADR 0001's order.
+  - **Removed:** the loop in `requestErrorHandler` (the strict handler's `RequestErrorHandlerFunc` becomes `httpapi.InvalidRequestHandler`), and every `httpapi.IsUUID` check on a path ID in a handler (`games.go`, `invite_links.go`, `public.go`).
+  - **Kept:** the `IsUUID` check on the identity header (`identity.go`) and on body fields (`gameId` in the lobby body, amendment review 3).
+  - **Tests:** the transport tests for rule 1 stay, and one table test covers each path parameter in `pathIDCodes` for a non-admin with an invalid body.
+- **Not changed:** migrations, ports and endpoints, apart from the text corrections above.
+- **Dependencies:** backend expert implements the above, including the contract change, and runs the contract generator so that the generated code is in sync (ADR 0012). The architect writes the lobby bound into ADR 0004 rule 6 with REQ-0003. The UI expert shows `invalid_capacity` for values above the bound in the existing error text.

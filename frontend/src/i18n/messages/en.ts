@@ -127,7 +127,7 @@ export const en = {
     invalid_game:
       "Choose a game from the list, or enter a name of 1 to 50 characters.",
     invalid_capacity:
-      "The number of players must be at least 1, or empty for no limit.",
+      "The number of players must be from 1 to 2147483647, or empty for no limit.",
     game_taken: "A game with this name already exists.",
     game_not_found: "This game does not exist anymore.",
   } satisfies Record<ApiErrorCode, string>,

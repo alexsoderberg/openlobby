@@ -212,7 +212,7 @@ export interface paths {
          *     - `endsAt` is after `startsAt`. Otherwise `lobby_end_not_after_start`.
          *     - The lobby is shorter than 24 hours. Exactly 24 hours is rejected. Otherwise `lobby_too_long`.
          *     - Exactly one of `gameId` and `customGameName` is given. `gameId` must be the ID of a game in the game list. An unknown value, including a value that is not in uuid form, gives `invalid_game`. `customGameName` is 1–50 characters after trim. Otherwise `invalid_game`.
-         *     - `maxPlayers` is omitted, `null` (both mean unlimited) or an integer ≥ 1. Otherwise `invalid_capacity`.
+         *     - `maxPlayers` is omitted, `null` (both mean unlimited) or an integer from 1 to 2147483647. Otherwise `invalid_capacity`.
          *     A clock time for the end that is before the start time (past midnight) is interpreted in the frontend, not here. The server only sees the instants.
          */
         post: operations["createLobby"];
@@ -425,9 +425,9 @@ export interface components {
             /** @description True if the caller is already a member. Opening the link then changes nothing and is not counted as a use. */
             isMember: boolean;
         };
-        /** @description Max players, at least 1. `null` or omitted means unlimited. Set at creation and not changed. */
+        /** @description Max players, an integer from 1 to 2147483647. `null` or omitted means unlimited. Set at creation and not changed. */
         MaxPlayers: number | null;
-        /** @description Default max players of a game in the game list, at least 1. `null` or omitted means unlimited. Changed by the system admin. Lobbies keep the value they were created with. */
+        /** @description Default max players of a game in the game list, an integer from 1 to 2147483647. `null` or omitted means unlimited. Changed by the system admin. Lobbies keep the value they were created with. */
         DefaultMaxPlayers: number | null;
         /** @description Game name, 1–50 characters after trim. */
         GameName: string;
@@ -1334,7 +1334,7 @@ export interface operations {
             };
             /**
              * @description `invalid_game` (the name is omitted, `null`, empty after trim, longer than 50 characters, or `Other`),
-             *     `invalid_capacity` (default max is not `null` or an integer of at least 1), or `invalid_request` (invalid JSON or a wrong JSON type).
+             *     `invalid_capacity` (default max is not `null` or an integer from 1 to 2147483647), or `invalid_request` (invalid JSON or a wrong JSON type).
              */
             400: {
                 headers: {

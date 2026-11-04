@@ -137,7 +137,7 @@ func newRouter(store *memoryGroups, directory *fakeDirectory) http.Handler {
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	ready := func(context.Context) error { return store.err }
 	groups := application.NewGroups(store, store, store, directory, fixedClock{})
-	games := application.NewGames(store, store)
+	games := application.NewGames(store, store, memoryEditor{store}, logger)
 	invites := application.NewInviteLinks(store, store, store, fixedTokens{}, fixedClock{})
 	return transport.NewRouter(groups, invites, games, ready, logger)
 }
@@ -451,7 +451,7 @@ func TestHealthzAndReadyz(t *testing.T) {
 
 // Operations of later requirements are in the contract but not built. They answer 500 internal_error, not a panic.
 func TestUnbuiltOperationAnswers500InternalError(t *testing.T) {
-	response := call(newRouter(fridayStore(), fridayDirectory()), http.MethodGet, "/api/games", asUser(alexID), "")
+	response := call(newRouter(fridayStore(), fridayDirectory()), http.MethodPut, "/api/groups/"+fridayID+"/admins/"+otherID, asUser(alexID), "")
 
 	assertErrorEnvelope(t, response, http.StatusInternalServerError, "internal_error")
 }

@@ -15,22 +15,6 @@ var errOperationPending = errors.New("operation not implemented yet")
 // method for every operation, so each of them returns errOperationPending.
 type pendingOperations struct{}
 
-func (pendingOperations) ListGames(context.Context, publicapi.ListGamesRequestObject) (publicapi.ListGamesResponseObject, error) {
-	return nil, errOperationPending
-}
-
-func (pendingOperations) CreateGame(context.Context, publicapi.CreateGameRequestObject) (publicapi.CreateGameResponseObject, error) {
-	return nil, errOperationPending
-}
-
-func (pendingOperations) DeleteGame(context.Context, publicapi.DeleteGameRequestObject) (publicapi.DeleteGameResponseObject, error) {
-	return nil, errOperationPending
-}
-
-func (pendingOperations) ReplaceGame(context.Context, publicapi.ReplaceGameRequestObject) (publicapi.ReplaceGameResponseObject, error) {
-	return nil, errOperationPending
-}
-
 func (pendingOperations) MakeGroupAdmin(context.Context, publicapi.MakeGroupAdminRequestObject) (publicapi.MakeGroupAdminResponseObject, error) {
 	return nil, errOperationPending
 }

@@ -7,7 +7,6 @@ import (
 
 	openapi_types "github.com/oapi-codegen/runtime/types"
 
-	"openlobby/pkg/httpapi"
 	"openlobby/pkg/requestid"
 	"openlobby/services/calendar/internal/application"
 	"openlobby/services/calendar/internal/domain"
@@ -57,9 +56,6 @@ func (h publicHandler) CreateGroup(ctx context.Context, request publicapi.Create
 // GetGroup returns the group and its members to a member. A non-member gets the same 404 as an unknown group, so the
 // group's existence is not revealed (ADR 0004 rule 2). A malformed ID is the same 404 (ADR 0001).
 func (h publicHandler) GetGroup(ctx context.Context, request publicapi.GetGroupRequestObject) (publicapi.GetGroupResponseObject, error) {
-	if !httpapi.IsUUID(request.GroupId) {
-		return groupNotFound(ctx), nil
-	}
 	group, members, err := h.groups.Get(ctx, userIDFrom(ctx), request.GroupId)
 	switch {
 	case errors.Is(err, domain.ErrGroupNotFound):
