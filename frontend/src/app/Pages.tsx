@@ -13,7 +13,7 @@ import { LobbyDetailPage } from "../features/lobbies";
 import { ProfilePage } from "../features/profile";
 import { useMessages } from "../i18n";
 import { Panel } from "../ui";
-import { openGroup } from "./openGroup";
+import { navigate } from "./navigation";
 import type { Route } from "./route";
 
 export type MyGroupsLoad = { state: GroupsState; reload: () => void };
@@ -23,6 +23,7 @@ export function ProtectedPage({
   user,
   groups,
   logoutError,
+  onOpenGroup,
   onLogout,
   onUnauthenticated,
 }: {
@@ -30,6 +31,7 @@ export function ProtectedPage({
   user: AuthUser;
   groups: MyGroupsLoad;
   logoutError?: string;
+  onOpenGroup: (groupId: string) => void;
   onLogout: () => void;
   onUnauthenticated: () => void;
 }) {
@@ -66,7 +68,7 @@ export function ProtectedPage({
           lobbyId={route.lobbyId}
           userId={user.userId}
           backHref={groupPath(route.groupId)}
-          onDeleted={() => openGroup(route.groupId)}
+          onDeleted={() => navigate(groupPath(route.groupId))}
           onUnauthenticated={onUnauthenticated}
         />
       );
@@ -81,7 +83,7 @@ export function ProtectedPage({
       return (
         <InvitePage
           token={route.token}
-          onGroupOpened={openGroup}
+          onGroupOpened={onOpenGroup}
           onUnauthenticated={onUnauthenticated}
         />
       );

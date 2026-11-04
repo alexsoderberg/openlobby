@@ -5,6 +5,7 @@ import { Brand } from "../ui";
 import { LoggedInApp } from "./LoggedInApp";
 import { NotFoundPage } from "./Pages";
 import { RequireLogin } from "./RequireLogin";
+import { usePathname } from "./navigation";
 import { routeFor, type Route } from "./route";
 import { useEntryLocation } from "./useEntryLocation";
 
@@ -13,11 +14,12 @@ const START: Route = { name: "start" };
 
 export function App() {
   const entry = useEntryLocation();
+  const pathname = usePathname();
   const { session, reload, logout, logoutError, markExpired } = useSession();
   // After a logout the user starts over at the landing page, whichever page the button was on.
   const loggedOutByUser =
     session.status === "loggedOut" && session.reason === "loggedOut";
-  const route = loggedOutByUser ? START : routeFor(entry.pathname);
+  const route = loggedOutByUser ? START : routeFor(pathname);
   const returnTo = loggedOutByUser ? START_PATH : entry.returnTo;
 
   useEffect(() => {
@@ -29,6 +31,7 @@ export function App() {
       <LoggedInApp
         user={session.user}
         route={route}
+        pathname={pathname}
         logoutError={logoutError}
         onLogout={logout}
         onUnauthenticated={markExpired}

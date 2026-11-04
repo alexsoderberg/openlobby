@@ -119,7 +119,6 @@
   --tracking-snug: -0.02em;
   --tracking-wide: 0.14em;
   --lift-button: -2px;
-  --lift-panel: -3px;
   --press-scale: 0.97;
   --reveal-offset: 40px;
   --blur-glass: 8px;
@@ -158,7 +157,6 @@
   --size-plus-tab: 3.5rem;
   --size-avatar: 2.25rem;
   --size-avatar-large: 3.5rem;
-  --lift-plus: -0.875rem;
   --width-popover: 22rem;
   --radius-popover: 26px;
   --color-chrome: #0c0c10;
@@ -177,6 +175,9 @@
   --delay-pop-fade-out: 0.18s;
   --duration-scrim: 0.35s;
   --duration-icon: 0.5s;
+  --duration-page: 0.24s;
+  --duration-page-out: 0.12s;
+  --page-shift: 12px;
 }
 
 *,
@@ -402,19 +403,10 @@ a {
   backdrop-filter: blur(var(--blur-glass));
 }
 
-/* Only the reveal (opacity, transform) takes --reveal-delay; hover lifts respond at once. */
 .panel {
   transition:
     opacity var(--duration-slow) var(--ease-out) var(--reveal-delay),
-    transform var(--duration-slow) var(--ease-out) var(--reveal-delay),
-    translate var(--duration-base) var(--ease-out),
-    border-color var(--duration-base) var(--ease-out);
-}
-
-/* The lift uses `translate`, not `transform`, so the slow scroll reveal keeps its own timing. */
-.panel:hover {
-  translate: 0 var(--lift-panel);
-  border-color: var(--color-accent);
+    transform var(--duration-slow) var(--ease-out) var(--reveal-delay);
 }
 
 .panel > :first-child {
@@ -1013,7 +1005,15 @@ a {
   max-width: var(--width-app);
   margin: 0 auto;
   padding: var(--space-3) var(--space-3)
-    calc(var(--size-tab-bar) + env(safe-area-inset-bottom));
+    calc(
+      var(--size-tab-bar) + env(safe-area-inset-bottom) + var(--size-plus-tab) +
+        var(--space-3)
+    );
+  view-transition-name: app-main;
+}
+
+.shell__main:focus {
+  outline: none;
 }
 
 .initials-icon {
@@ -1079,7 +1079,7 @@ a {
   bottom: 0;
   left: 0;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   align-items: center;
   padding: var(--space-2) var(--space-2)
     calc(var(--space-2) + env(safe-area-inset-bottom));
@@ -1143,14 +1143,19 @@ a {
   transform: rotate(135deg);
 }
 
-.tab-bar .plus-button {
-  justify-self: center;
+/* Phones: the "+" floats above the Tab bar at the bottom right. */
+.plus-button--fab {
+  position: fixed;
+  z-index: 55;
+  right: var(--space-3);
+  bottom: calc(
+    var(--size-tab-bar) + env(safe-area-inset-bottom) + var(--space-3)
+  );
   width: var(--size-plus-tab);
   height: var(--size-plus-tab);
   border-color: var(--color-accent);
   background: var(--color-accent);
   color: var(--color-on-accent);
-  transform: translateY(var(--lift-plus));
 }
 
 /* --origin-x and --origin-y are set inline to the centre of the pressed "+" (like --meter-value, so they have a fallback). The Create group form grows out of the pressed "+". The frame stays put; only the card scales, so the
@@ -1175,7 +1180,8 @@ a {
   z-index: 50;
   right: var(--space-3);
   bottom: calc(
-    var(--size-tab-bar) + env(safe-area-inset-bottom) + var(--space-3)
+    var(--size-tab-bar) + env(safe-area-inset-bottom) + var(--size-plus-tab) +
+      var(--space-3) * 2
   );
   left: var(--space-3);
   visibility: hidden;
@@ -1427,6 +1433,7 @@ a {
   }
 
   .tab-bar,
+  .plus-button--fab,
   .group-strip {
     display: none;
   }
@@ -1487,6 +1494,36 @@ a {
   }
 }
 
+/* Page change: only the main area animates, with opacity and transform. The shell, which does not change, stays
+   still, and the group boxes are not animated because that would animate size. */
+::view-transition-group(root),
+::view-transition-old(root),
+::view-transition-new(root),
+::view-transition-group(app-main) {
+  animation: none;
+}
+
+::view-transition-old(app-main) {
+  animation: page-out var(--duration-page-out) var(--ease-in) both;
+}
+
+::view-transition-new(app-main) {
+  animation: page-in var(--duration-page) var(--ease-out) both;
+}
+
+@keyframes page-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(var(--page-shift));
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -1506,10 +1543,6 @@ a {
 
   .step-card::before {
     display: none;
-  }
-
-  .panel:hover {
-    translate: none;
   }
 
   :is(.button, .button-ghost, .button--secondary):not(:disabled):hover {
