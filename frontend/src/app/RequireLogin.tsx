@@ -1,24 +1,21 @@
-import type { ReactNode } from "react";
 import type { SessionState } from "../features/session";
 import { LoginPanel } from "../features/login";
 import { useMessages, type LoginErrorCode } from "../i18n";
 import { ErrorAlert } from "../ui";
 
 type RequireLoginProps = {
-  session: SessionState;
+  session: Exclude<SessionState, { status: "loggedIn" }>;
   returnTo: string;
   loginError?: LoginErrorCode;
   onRetry: () => void;
-  children: ReactNode;
 };
 
-/** Shows the page only to a logged-in user. Every other state has its own view. */
+/** What a visitor sees instead of a protected page: the check, its failure with a retry, or the login. */
 export function RequireLogin({
   session,
   returnTo,
   loginError,
   onRetry,
-  children,
 }: RequireLoginProps) {
   const m = useMessages();
 
@@ -35,7 +32,5 @@ export function RequireLogin({
           reason={session.reason}
         />
       );
-    case "loggedIn":
-      return children;
   }
 }

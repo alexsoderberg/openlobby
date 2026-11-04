@@ -1,4 +1,5 @@
 import { InviteLinks } from "../invites";
+import { GROUPS_PATH } from "./groupPath";
 import { Lobbies } from "../lobbies";
 import { useMessages } from "../../i18n";
 import { ErrorAlert, Panel } from "../../ui";
@@ -23,7 +24,7 @@ export function GroupDetails({
   return (
     <>
       <p className="crumb">
-        <a href="/">{m.backToStart}</a>
+        <a href={GROUPS_PATH}>{m.backToGroups}</a>
       </p>
       <h1>{state.group.name}</h1>
       <div className="panel-group">

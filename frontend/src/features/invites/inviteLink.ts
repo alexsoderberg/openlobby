@@ -1,3 +1,5 @@
+import { formatMediumDateTime } from "../../i18n";
+
 const INVITE_PATH_PREFIX = "/invite/";
 
 /** The full address that is copied and shared (ADR 0007). */
@@ -6,9 +8,4 @@ export function inviteUrl(token: string): string {
 }
 
 /** The expiry time in the user's own time zone and locale. */
-export function formatExpiry(expiresAt: string): string {
-  return new Intl.DateTimeFormat(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(expiresAt));
-}
+export const formatExpiry = formatMediumDateTime;

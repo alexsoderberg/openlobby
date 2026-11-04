@@ -3,10 +3,13 @@ import { en, type Messages } from "./messages/en";
 export {
   formatDateTime,
   formatDateTimeRange,
+  formatDayOfMonth,
   formatDayRange,
+  formatMediumDateTime,
   formatTime,
   formatTimeRange,
   formatWeekday,
+  formatWeekdayShort,
 } from "./format";
 export type { Messages };
 export type LoginErrorCode = keyof Messages["loginErrors"];

@@ -144,6 +144,39 @@
   --lift-card: -6px;
   --spotlight-size: 16rem;
   --scroll-offset: 5rem;
+
+  /* App shell. The wide layout starts at 760px (47.5rem); media queries cannot read tokens, so it is written out there. */
+  --width-app: 72rem;
+  --size-tap: 2.75rem;
+  --size-top-bar: 4rem;
+  /* The top bar grows by the notch / status bar inset when viewport-fit=cover applies. */
+  --size-top-bar-total: calc(var(--size-top-bar) + env(safe-area-inset-top));
+  --size-rail: 5.25rem;
+  --size-tab-bar: 5.5rem;
+  --size-group-icon: 3.25rem;
+  --size-plus: 3.25rem;
+  --size-plus-tab: 3.5rem;
+  --size-avatar: 2.25rem;
+  --size-avatar-large: 3.5rem;
+  --lift-plus: -0.875rem;
+  --width-popover: 22rem;
+  --radius-popover: 26px;
+  --color-chrome: #0c0c10;
+  --color-scrim: rgba(0, 0, 0, 0.45);
+  --color-accent-line: rgba(240, 199, 94, 0.45);
+  --color-popover-top: #18181e;
+  --shadow-popover: 0 30px 80px rgba(0, 0, 0, 0.55);
+  --ease-overshoot: cubic-bezier(0.3, 1.35, 0.5, 1);
+  --ease-in: cubic-bezier(0.55, 0, 0.75, 0);
+  --scale-closed: 0.08;
+  --duration-none: 0s;
+  --duration-open: 0.62s;
+  --duration-close: 0.38s;
+  --duration-pop-fade: 0.14s;
+  --duration-pop-fade-out: 0.2s;
+  --delay-pop-fade-out: 0.18s;
+  --duration-scrim: 0.35s;
+  --duration-icon: 0.5s;
 }
 
 *,
@@ -210,6 +243,7 @@ a {
   justify-content: space-between;
   gap: var(--space-2) var(--space-3);
   padding: var(--space-3) var(--space-4);
+  padding-top: calc(var(--space-3) + env(safe-area-inset-top));
   border-bottom: 1px solid var(--color-border);
 }
 
@@ -220,12 +254,6 @@ a {
   letter-spacing: var(--tracking-snug);
   color: var(--color-text);
   text-decoration: none;
-}
-
-.account {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
 }
 
 /* Frosted bar that stays at the top; the scroll state is set by the page that uses it. */
@@ -256,7 +284,10 @@ a {
 .button-ghost,
 .button--secondary {
   position: relative;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--size-tap);
   overflow: hidden;
   padding: var(--space-2) var(--space-4);
   border: 1px solid var(--color-accent);
@@ -419,6 +450,7 @@ a {
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-3);
+  min-height: var(--size-tap);
   padding: var(--space-2);
   border-radius: var(--radius-control);
   transition: background-color var(--duration-base) var(--ease-out);
@@ -486,6 +518,7 @@ a {
 
 .group-form input {
   width: 100%;
+  min-height: var(--size-tap);
 }
 
 .group-form select,
@@ -927,6 +960,530 @@ a {
   from {
     opacity: 0;
     transform: translateY(var(--reveal-offset));
+  }
+}
+
+/* App shell. Phones first; the Group rail replaces the Tab bar from 760px (47.5rem). */
+.shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    "top"
+    "main";
+  grid-template-rows: auto 1fr;
+  min-height: 100dvh;
+}
+
+.top-bar {
+  grid-area: top;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-height: var(--size-top-bar-total);
+  padding: env(safe-area-inset-top) var(--space-3) 0;
+  background: var(--color-bg);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.top-bar__user {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--size-tap);
+  color: var(--color-text);
+  font-size: var(--font-size-small);
+  text-decoration: none;
+}
+
+.top-bar__name {
+  max-width: 9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shell__main {
+  grid-area: main;
+  width: 100%;
+  min-width: 0;
+  max-width: var(--width-app);
+  margin: 0 auto;
+  padding: var(--space-3) var(--space-3)
+    calc(var(--size-tab-bar) + env(safe-area-inset-bottom));
+}
+
+.initials-icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: var(--size-avatar);
+  height: var(--size-avatar);
+  border: 1px solid var(--color-accent-line);
+  border-radius: 50%;
+  background: var(--color-accent-tint);
+  color: var(--color-text);
+  font-family: var(--font-heading);
+  font-size: var(--font-size-small);
+  font-weight: 600;
+}
+
+/* A group icon is round; the open group, and the one under the pointer, becomes a rounded square, so the mark is not colour alone. */
+.group-icon {
+  display: grid;
+  place-items: center;
+  width: var(--size-group-icon);
+  height: var(--size-group-icon);
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  background: var(--color-surface);
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.group-icon:hover,
+.group-icon[aria-current="page"] {
+  border-radius: var(--radius-panel);
+  border-color: var(--color-accent);
+}
+
+.group-icon[aria-current="page"] {
+  background: var(--color-accent-tint);
+}
+
+.group-icon > .initials-icon {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: inherit;
+  background: none;
+  font-size: 1rem;
+}
+
+.nav-icon {
+  width: 1.4rem;
+  height: 1.4rem;
+}
+
+.group-rail {
+  display: none;
+}
+
+.tab-bar {
+  position: fixed;
+  z-index: 60;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: center;
+  padding: var(--space-2) var(--space-2)
+    calc(var(--space-2) + env(safe-area-inset-bottom));
+  background: var(--color-chrome);
+  border-top: 1px solid var(--color-border);
+}
+
+.tab {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 2px;
+  min-height: var(--size-tap);
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.tab[aria-current="page"] {
+  color: var(--color-accent);
+}
+
+/* The "+": two bars from one centre, turned into a cross while the form is open. Only the icon rotates. */
+.plus-button {
+  position: relative;
+  width: var(--size-plus);
+  height: var(--size-plus);
+  padding: 0;
+  border: 1px solid var(--color-accent-line);
+  border-radius: 50%;
+  background: var(--color-accent-tint);
+  color: var(--color-accent);
+  cursor: pointer;
+}
+
+.plus-button__icon {
+  position: absolute;
+  inset: 0;
+  transition: transform var(--duration-icon) var(--ease-spring);
+}
+
+.plus-button__icon::before,
+.plus-button__icon::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 1.25rem;
+  height: 2px;
+  border-radius: 2px;
+  background: currentColor;
+  transform: translate(-50%, -50%);
+}
+
+.plus-button__icon::after {
+  transform: translate(-50%, -50%) rotate(90deg);
+}
+
+.plus-button[aria-expanded="true"] .plus-button__icon {
+  transform: rotate(135deg);
+}
+
+.tab-bar .plus-button {
+  justify-self: center;
+  width: var(--size-plus-tab);
+  height: var(--size-plus-tab);
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  transform: translateY(var(--lift-plus));
+}
+
+/* --origin-x and --origin-y are set inline to the centre of the pressed "+" (like --meter-value, so they have a fallback). The Create group form grows out of the pressed "+". The frame stays put; only the card scales, so the
+   motion is transform and opacity alone and nothing with a backdrop filter moves. */
+.scrim {
+  position: fixed;
+  z-index: 40;
+  inset: 0;
+  background: var(--color-scrim);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-scrim) var(--ease-out);
+}
+
+.scrim[data-open="true"] {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.create-popover {
+  position: fixed;
+  z-index: 50;
+  right: var(--space-3);
+  bottom: calc(
+    var(--size-tab-bar) + env(safe-area-inset-bottom) + var(--space-3)
+  );
+  left: var(--space-3);
+  visibility: hidden;
+  pointer-events: none;
+  transition: visibility var(--duration-none) linear var(--duration-close);
+}
+
+.create-popover[data-open="true"] {
+  visibility: visible;
+  pointer-events: auto;
+  transition-delay: var(--duration-none);
+}
+
+.create-popover__card {
+  padding: var(--space-4);
+  background: linear-gradient(
+    180deg,
+    var(--color-popover-top),
+    var(--color-bg-raised)
+  );
+  border: 1px solid var(--color-accent-line);
+  border-radius: var(--radius-popover);
+  box-shadow: var(--shadow-popover);
+  opacity: 0;
+  transform: scale(var(--scale-closed));
+  transform-origin: var(--origin-x, 0) var(--origin-y, 0);
+  transition:
+    transform var(--duration-close) var(--ease-in),
+    opacity var(--duration-pop-fade-out) linear var(--delay-pop-fade-out);
+  will-change: transform, opacity;
+}
+
+.create-popover[data-open="true"] .create-popover__card {
+  opacity: 1;
+  transform: none;
+  transition:
+    transform var(--duration-open) var(--ease-overshoot),
+    opacity var(--duration-pop-fade) linear;
+}
+
+.create-popover h2 {
+  margin-top: 0;
+}
+
+.profile {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.profile .initials-icon {
+  width: var(--size-avatar-large);
+  height: var(--size-avatar-large);
+  font-size: 1.25rem;
+}
+
+.profile p {
+  margin: 0;
+}
+
+.profile__name {
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+/* Dashboard */
+.empty-state__title {
+  margin: 0 0 var(--space-1);
+  font-family: var(--font-heading);
+  font-weight: 600;
+}
+
+.group-strip .row-list {
+  display: flex;
+  gap: var(--space-3);
+  overflow-x: auto;
+  padding: var(--space-2) var(--space-1);
+  scrollbar-width: none;
+}
+
+.group-strip li {
+  flex: none;
+}
+
+.next-up {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background:
+    radial-gradient(
+      26rem 14rem at 0 0,
+      var(--color-accent-wash),
+      transparent 70%
+    ),
+    var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-panel);
+}
+
+.next-up p {
+  margin: 0;
+}
+
+.next-up__timing {
+  color: var(--color-accent);
+  font-family: var(--font-heading);
+  font-weight: 600;
+}
+
+.next-up__game {
+  margin: var(--space-1) 0;
+  font-family: var(--font-heading);
+  font-size: var(--font-size-title);
+  letter-spacing: var(--tracking-tight);
+}
+
+.next-up__game a {
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.next-up__meta {
+  color: var(--color-muted);
+}
+
+.next-up__figure {
+  color: var(--color-accent);
+  font-family: var(--font-heading);
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.week-narrow {
+  display: block;
+}
+
+.week-wide {
+  display: none;
+}
+
+.day-pills {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: var(--space-1);
+  margin-bottom: var(--space-3);
+}
+
+.day-pill {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 2px;
+  min-height: var(--size-tap);
+  padding: var(--space-2) 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+  color: var(--color-muted);
+  font: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.day-pill b {
+  color: var(--color-text);
+  font-family: var(--font-heading);
+  font-size: 1rem;
+}
+
+.day-pill[aria-current="date"] b {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.day-pill[aria-pressed="true"] {
+  border-color: var(--color-accent);
+  background: var(--color-accent-tint);
+}
+
+.day-pill__dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--color-accent);
+}
+
+.agenda ul,
+.week-column__lobbies {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.week-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.week-column {
+  min-height: 12rem;
+  padding: var(--space-2);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  overflow-wrap: anywhere;
+}
+
+.week-column__title {
+  margin: 0 0 var(--space-2);
+  color: var(--color-muted);
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+}
+
+.week-column__title[aria-current="date"] {
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-underline-offset: 0.3em;
+}
+
+.week-column__empty {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: var(--font-size-small);
+}
+
+@media (min-width: 47.5rem) {
+  .shell {
+    grid-template-columns: var(--size-rail) minmax(0, 1fr);
+    grid-template-areas:
+      "top top"
+      "rail main";
+  }
+
+  .top-bar {
+    padding: env(safe-area-inset-top) var(--space-4) 0;
+  }
+
+  .shell__main {
+    padding: var(--space-4) var(--space-6) var(--space-6);
+  }
+
+  .tab-bar,
+  .group-strip {
+    display: none;
+  }
+
+  .group-rail {
+    grid-area: rail;
+    position: sticky;
+    top: var(--size-top-bar-total);
+    z-index: 60;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-3);
+    height: calc(100dvh - var(--size-top-bar-total));
+    padding: var(--space-3) 0;
+    border-right: 1px solid var(--color-border);
+  }
+
+  .group-rail__separator {
+    width: 1.75rem;
+    height: 1px;
+    background: var(--color-border);
+  }
+
+  .group-rail__groups {
+    display: grid;
+    flex: 1;
+    align-content: start;
+    gap: var(--space-3);
+    min-height: 0;
+    padding: var(--space-1);
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+
+  .create-popover {
+    right: auto;
+    bottom: var(--space-3);
+    left: calc(var(--size-rail) + var(--space-3));
+    width: var(--width-popover);
+  }
+
+  .next-up {
+    grid-template-columns: 1fr auto;
+    align-items: center;
+  }
+
+  .next-up__spots {
+    text-align: right;
+  }
+
+  .week-narrow {
+    display: none;
+  }
+
+  .week-wide {
+    display: block;
   }
 }
 

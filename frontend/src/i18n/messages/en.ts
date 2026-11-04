@@ -12,7 +12,9 @@ export const en = {
   logInWithDiscord: "Log in with Discord",
   logOut: "Log out",
   tryAgain: "Try again",
-  backToStart: "Back to your groups",
+  cancel: "Cancel",
+  backToGroups: "Back to your groups",
+  backToHome: "Back to the start page",
 
   loginHeading: "Log in to OpenLobby",
   loginIntro: "Use your Discord account. You do not need a new account.",
@@ -170,6 +172,41 @@ export const en = {
   lobbyDeleteConfirm: "The lobby disappears for everyone in the group.",
   lobbyDeleteSubmit: "Yes, delete lobby",
   lobbyDeleteKeep: "Keep lobby",
+
+  shell: {
+    mainNav: "Main",
+    groupsNav: "Groups",
+    home: "Home",
+    groups: "Groups",
+    you: "You",
+    createGroupButton: "Create a group",
+    openProfile: (name: string) => `${name}, your profile`,
+  },
+
+  profileHeading: "You",
+  profileNameLabel: "Signed in as",
+
+  dashboard: {
+    heading: "Dashboard",
+    loading: "Loading your dashboard.",
+    groupStripLabel: "Your groups",
+    noGroups: "You are not in a group yet",
+    noGroupsHint:
+      "Press + to create one, or open an invite link from a friend.",
+    nextUpHeading: "Next up",
+    thisWeekHeading: "This week",
+    nothingBooked: "Nothing booked",
+    running: "Running",
+    ended: "Ended",
+    dayPillsLabel: "Choose a day",
+    dayHasLobbies: "has lobbies",
+    playersMeter: "Players",
+    countdownDays: (days: number, hours: number) => `in ${days} d ${hours} h`,
+    countdownHours: (hours: number, minutes: number) =>
+      `in ${hours} h ${minutes} min`,
+    countdownMinutes: (minutes: number) => `in ${minutes} min`,
+    countdownSoon: "in under a minute",
+  },
 
   notFoundHeading: "Page not found",
   notFoundText: "The address does not point to a page in OpenLobby.",

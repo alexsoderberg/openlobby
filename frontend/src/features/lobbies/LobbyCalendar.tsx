@@ -2,7 +2,8 @@ import { useState } from "react";
 import type { Lobby } from "../../api";
 import { formatDayRange, useMessages } from "../../i18n";
 import { CalendarDay } from "./CalendarDay";
-import { calendarWeek, nextWeekStart, weekStartOf } from "./calendarWeek";
+import { nextWeekStart, weekStartOf } from "../../calendar";
+import { calendarWeek } from "./calendarWeek";
 
 /**
  * The lobbies of one Monday-to-Sunday week, starting with the current one. The only way on is the next

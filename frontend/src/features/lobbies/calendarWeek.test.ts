@@ -1,12 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Lobby } from "../../api";
-import {
-  calendarWeek,
-  clusterOverlapping,
-  nextWeekStart,
-  weekDays,
-  weekStartOf,
-} from "./calendarWeek";
+import { calendarWeek, clusterOverlapping } from "./calendarWeek";
 
 const lobby = (id: string, start: Date, end: Date): Lobby => ({
   id,
@@ -18,26 +12,6 @@ const lobby = (id: string, start: Date, end: Date): Lobby => ({
   playerCount: 1,
 });
 const at = (day: number, hour: number) => new Date(2026, 10, day, hour);
-
-describe("weekStartOf", () => {
-  it.each([
-    [new Date(2026, 10, 4, 15), 2], // Wednesday
-    [new Date(2026, 10, 2, 0), 2], // Monday
-    [new Date(2026, 10, 8, 23, 59), 2], // Sunday belongs to the week that began on Monday
-    [new Date(2026, 10, 9), 9],
-  ])("starts the week of %s on Monday the %s", (date, day) => {
-    expect(weekStartOf(date)).toEqual(new Date(2026, 10, day));
-  });
-});
-
-describe("weekDays and nextWeekStart", () => {
-  it("lists seven days Monday to Sunday and steps a whole week", () => {
-    const days = weekDays(new Date(2026, 10, 2));
-    expect(days).toHaveLength(7);
-    expect(days[6]).toEqual(new Date(2026, 10, 8));
-    expect(nextWeekStart(days[0])).toEqual(new Date(2026, 10, 9));
-  });
-});
 
 describe("clusterOverlapping", () => {
   it("puts overlapping lobbies together and separates the rest", () => {

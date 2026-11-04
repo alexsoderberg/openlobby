@@ -1,5 +1,10 @@
 import { useCallback, useState } from "react";
-import { errorCodeOf, isUnauthenticated, useApi } from "../../api";
+import {
+  errorCodeOf,
+  isUnauthenticated,
+  useApi,
+  type GroupSummary,
+} from "../../api";
 import { INVALID_GROUP_NAME } from "./groupErrors";
 import { isValidGroupName } from "./groupName";
 
@@ -11,7 +16,7 @@ export type CreateGroupState =
 
 /** Creates a group. A name that fails the local check never reaches the server. */
 export function useCreateGroup(
-  onCreated: () => void,
+  onCreated: (group: GroupSummary) => void,
   onUnauthenticated: () => void,
 ) {
   const api = useApi();
@@ -25,9 +30,9 @@ export function useCreateGroup(
       }
       setState({ status: "saving" });
       try {
-        await api.createGroup(name);
+        const group = await api.createGroup(name);
         setState({ status: "created" });
-        onCreated();
+        onCreated(group);
       } catch (error) {
         if (isUnauthenticated(error)) onUnauthenticated();
         else setState({ status: "failed", code: errorCodeOf(error) });

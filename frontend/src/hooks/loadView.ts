@@ -1,5 +1,5 @@
-import { errorCodeOf } from "../../api";
-import type { LoadState } from "../../hooks";
+import { errorCodeOf } from "../api";
+import type { LoadState } from "./useLoad";
 
 /** A load as a view needs it: the value, or the error code to show. */
 export type LoadView<T> =

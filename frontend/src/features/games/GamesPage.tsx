@@ -1,6 +1,7 @@
 import { useRef, type RefObject } from "react";
 import { toUserMessage, useMessages } from "../../i18n";
 import { Alert, Panel } from "../../ui";
+import { GROUPS_PATH } from "../groups";
 import { DeleteGameDialog } from "./DeleteGameDialog";
 import { GameForm } from "./GameForm";
 import { GameList } from "./GameList";
@@ -31,7 +32,7 @@ function GamesDenied() {
   return (
     <Panel>
       <p>{m.gameListDenied}</p>
-      <a href="/">{m.backToStart}</a>
+      <a href={GROUPS_PATH}>{m.backToGroups}</a>
     </Panel>
   );
 }

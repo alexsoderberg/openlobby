@@ -94,7 +94,7 @@ describe("logged out", () => {
 });
 
 describe("logged in", () => {
-  it("shows the display name and the list of groups", async () => {
+  it("shows the dashboard at the start address, with the display name in the top bar", async () => {
     renderAt(
       loggedInClient({
         listGroups: () => Promise.resolve([{ id: "g1", name: "Friday crew" }]),
@@ -102,24 +102,51 @@ describe("logged in", () => {
       "/",
     );
 
-    expect((await screen.findByRole("listitem")).textContent).toBe(
-      "Friday crew",
-    );
-    expect(screen.getByText(testUser.displayName)).toBeTruthy();
+    expect(
+      await screen.findByRole("heading", {
+        level: 1,
+        name: en.dashboard.heading,
+      }),
+    ).toBeTruthy();
+    const profile = screen.getByRole("link", {
+      name: en.shell.openProfile(testUser.displayName),
+    });
+    expect(profile.getAttribute("href")).toBe("/profile");
     expect(
       screen.queryByRole("link", { name: en.logInWithDiscord }),
     ).toBeNull();
   });
 
-  it("shows the empty state when the user is in no group", async () => {
-    renderAt(loggedInClient(), "/");
+  it("shows the group list at /groups", async () => {
+    renderAt(
+      loggedInClient({
+        listGroups: () => Promise.resolve([{ id: "g1", name: "Friday crew" }]),
+      }),
+      "/groups",
+    );
 
-    expect(await screen.findByText(en.groupsEmpty)).toBeTruthy();
+    expect(
+      await screen.findByRole("heading", { level: 1, name: en.groupsHeading }),
+    ).toBeTruthy();
+    const link = await within(screen.getByRole("main")).findByRole("link", {
+      name: "Friday crew",
+    });
+    expect(link.getAttribute("href")).toBe("/groups/g1");
+  });
+
+  it("shows the profile at /profile with the name and Log out, and no Game list link to a non-admin", async () => {
+    renderAt(loggedInClient(), "/profile");
+
+    expect(await screen.findByRole("button", { name: en.logOut })).toBeTruthy();
+    expect(
+      within(screen.getByRole("main")).getByText(testUser.displayName),
+    ).toBeTruthy();
+    expect(screen.queryByRole("link", { name: en.gameListLink })).toBeNull();
   });
 
   it("logs out and shows the login button again", async () => {
     const client = loggedInClient();
-    renderAt(client, "/");
+    renderAt(client, "/profile");
 
     fireEvent.click(await screen.findByRole("button", { name: en.logOut }));
 
@@ -127,10 +154,11 @@ describe("logged in", () => {
       await screen.findByRole("link", { name: en.logInWithDiscord }),
     ).toBeTruthy();
     expect(client.logout).toHaveBeenCalledOnce();
+    expect(window.location.pathname).toBe("/");
   });
 
   it("moves focus to the landing headline after logout", async () => {
-    renderAt(loggedInClient(), "/");
+    renderAt(loggedInClient(), "/profile");
 
     fireEvent.click(await screen.findByRole("button", { name: en.logOut }));
 
@@ -145,14 +173,16 @@ describe("logged in", () => {
       .fn<ApiClient["logout"]>()
       .mockRejectedValueOnce(new ApiError(503, "service_unavailable"))
       .mockResolvedValueOnce(undefined);
-    renderAt(loggedInClient({ logout }), "/");
+    renderAt(loggedInClient({ logout }), "/profile");
 
     fireEvent.click(await screen.findByRole("button", { name: en.logOut }));
 
     expect((await screen.findByRole("alert")).textContent).toBe(
       en.errors.service_unavailable,
     );
-    expect(screen.getByText(testUser.displayName)).toBeTruthy();
+    expect(
+      within(screen.getByRole("main")).getByText(testUser.displayName),
+    ).toBeTruthy();
     expect(screen.getByRole("button", { name: en.logOut })).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: en.tryAgain }));
@@ -181,7 +211,7 @@ describe("logged in", () => {
     ).toBeTruthy();
   });
 
-  it("shows an error with a retry button when groups cannot be loaded", async () => {
+  it("shows one page-level error with a retry when the groups cannot be loaded", async () => {
     const listGroups = vi
       .fn<ApiClient["listGroups"]>()
       .mockRejectedValueOnce(new ApiError(503, "service_unavailable"))
@@ -193,7 +223,7 @@ describe("logged in", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: en.tryAgain }));
 
-    expect(await screen.findByText(en.groupsEmpty)).toBeTruthy();
+    expect(await screen.findByText(en.dashboard.noGroups)).toBeTruthy();
     expect(listGroups).toHaveBeenCalledTimes(2);
   });
 
@@ -294,7 +324,7 @@ describe("group page", () => {
     expect(
       await screen.findByRole("heading", { name: en.notFoundHeading }),
     ).toBeTruthy();
-    expect(screen.queryByRole("list")).toBeNull();
+    expect(within(screen.getByRole("main")).queryByRole("list")).toBeNull();
   });
 
   it("sends the user to login with a notice when the session expired", async () => {
@@ -372,8 +402,8 @@ describe("game list page", () => {
     expect(client.listGames).not.toHaveBeenCalled();
   });
 
-  it("gives a system admin the header link and the list", async () => {
-    renderAt(adminClient(), "/");
+  it("gives a system admin the link on the profile page and the list", async () => {
+    renderAt(adminClient(), "/profile");
 
     const link = await screen.findByRole("link", { name: en.gameListLink });
     expect(link.getAttribute("href")).toBe("/games");
@@ -385,8 +415,8 @@ describe("game list page", () => {
 
   it("gives a non-admin no link and denies the address without loading the list", async () => {
     const client = loggedInClient();
-    renderAt(client, "/");
-    await screen.findByText(en.groupsEmpty);
+    renderAt(client, "/profile");
+    await screen.findByRole("button", { name: en.logOut });
     expect(screen.queryByRole("link", { name: en.gameListLink })).toBeNull();
 
     cleanup();

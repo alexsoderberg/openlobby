@@ -1,30 +1,57 @@
+import type { AuthUser } from "../api";
+import { Dashboard } from "../features/dashboard";
+import { GamesPage } from "../features/games";
 import {
   GroupDetails,
   MyGroups,
   groupPath,
   useGroup,
+  type GroupsState,
 } from "../features/groups";
-import { GamesPage } from "../features/games";
 import { InvitePage } from "../features/invites";
 import { LobbyDetailPage } from "../features/lobbies";
+import { ProfilePage } from "../features/profile";
 import { useMessages } from "../i18n";
 import { Panel } from "../ui";
+import { openGroup } from "./openGroup";
 import type { Route } from "./route";
+
+export type MyGroupsLoad = { state: GroupsState; reload: () => void };
 
 export function ProtectedPage({
   route,
-  isSystemAdmin,
-  userId,
+  user,
+  groups,
+  logoutError,
+  onLogout,
   onUnauthenticated,
 }: {
   route: Exclude<Route, { name: "notFound" }>;
-  isSystemAdmin: boolean;
-  userId: string;
+  user: AuthUser;
+  groups: MyGroupsLoad;
+  logoutError?: string;
+  onLogout: () => void;
   onUnauthenticated: () => void;
 }) {
   switch (route.name) {
     case "start":
-      return <StartPage onUnauthenticated={onUnauthenticated} />;
+      return (
+        <Dashboard
+          groups={groups.state}
+          onRetryGroups={groups.reload}
+          onUnauthenticated={onUnauthenticated}
+        />
+      );
+    case "groups":
+      return <GroupsPage groups={groups} />;
+    case "profile":
+      return (
+        <ProfilePage
+          user={user}
+          logoutError={logoutError}
+          onLogout={onLogout}
+        />
+      );
     case "group":
       return (
         <GroupPage
@@ -37,7 +64,7 @@ export function ProtectedPage({
         <LobbyDetailPage
           groupId={route.groupId}
           lobbyId={route.lobbyId}
-          userId={userId}
+          userId={user.userId}
           backHref={groupPath(route.groupId)}
           onDeleted={() => openGroup(route.groupId)}
           onUnauthenticated={onUnauthenticated}
@@ -46,7 +73,7 @@ export function ProtectedPage({
     case "games":
       return (
         <GamesPage
-          isSystemAdmin={isSystemAdmin}
+          isSystemAdmin={user.isSystemAdmin}
           onUnauthenticated={onUnauthenticated}
         />
       );
@@ -61,12 +88,12 @@ export function ProtectedPage({
   }
 }
 
-function StartPage({ onUnauthenticated }: { onUnauthenticated: () => void }) {
+function GroupsPage({ groups }: { groups: MyGroupsLoad }) {
   const m = useMessages();
   return (
     <>
       <h1>{m.groupsHeading}</h1>
-      <MyGroups onUnauthenticated={onUnauthenticated} />
+      <MyGroups state={groups.state} onRetry={groups.reload} />
     </>
   );
 }
@@ -90,11 +117,6 @@ function GroupPage({
   );
 }
 
-/** Full-page navigation, so the group page loads its own data from the start. */
-function openGroup(groupId: string) {
-  window.location.assign(groupPath(groupId));
-}
-
 export function NotFoundPage() {
   const m = useMessages();
   return (
@@ -102,7 +124,7 @@ export function NotFoundPage() {
       <h1>{m.notFoundHeading}</h1>
       <Panel>
         <p>{m.notFoundText}</p>
-        <a href="/">{m.backToStart}</a>
+        <a href="/">{m.backToHome}</a>
       </Panel>
     </>
   );

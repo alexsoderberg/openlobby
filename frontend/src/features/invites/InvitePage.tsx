@@ -1,6 +1,7 @@
 import type { InviteInfo } from "../../api";
 import { toUserMessage, useMessages } from "../../i18n";
 import { Alert, ErrorAlert, Panel } from "../../ui";
+import { GROUPS_PATH } from "../groups";
 import { INVITE_INVALID } from "./inviteErrors";
 import { useInvite } from "./useInvite";
 import type { JoinState } from "./useJoinInvite";
@@ -47,7 +48,7 @@ function InvalidInvite() {
       <h1>{m.inviteInvalidHeading}</h1>
       <Panel>
         <p>{toUserMessage(INVITE_INVALID)}</p>
-        <a href="/">{m.backToStart}</a>
+        <a href={GROUPS_PATH}>{m.backToGroups}</a>
       </Panel>
     </>
   );
