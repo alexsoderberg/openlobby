@@ -20,8 +20,8 @@ Dashboard (F-028):
 - Given that REQ-0005 is not yet delivered, when the Next up card is shown, then it has no "Join lobby" or "Leave lobby" button (DECISION, user, 2026-11-04).
 - Given that REQ-0005 is delivered, when I click "Join lobby" or "Leave lobby" on the card, then REQ-0005 applies, including full and "Ended". The card's button state needs `joinedByMe` on `Lobby` (ADR 0014, point 5); that field is delivered with REQ-0005, not with this requirement.
 - Given that my groups have lobbies, when the dashboard opens, then "This week" lists every lobby that has not ended yet and whose time overlaps Monday–Sunday of the current week (local time), in start-time order, each with clock time, game, group name and Spot / max players, including lobbies that started before Monday and are still running (shown in Monday's column on desktop). The Next up lobby is also listed (DECISION, user; DECISION, product owner).
-- Given that I am on a screen 760 px or wider, when I see "This week", then seven columns Monday to Sunday show each lobby on its start day (a lobby that started before Monday is shown on Monday), with the end-next-day marker from REQ-0004 (DECISION, user, 2026-11-04; F-017 applies to the group view only).
-- Given that I am on a screen narrower than 760 px, when I see "This week", then seven Day pills Monday to Sunday are shown, a Day pill has a dot when its day has lobbies, and the selected day's lobbies are listed below as the Agenda. Today is selected when the dashboard opens (DECISION, user; ASSUMPTION for the default day).
+- Given that I am on a screen 760 px or wider, when I see "This week", then seven columns Monday to Sunday show a time grid with each lobby as a block in its start day's column, with the end-next-day marker from REQ-0004 (DECISION, user, 2026-11-04; F-017 applies to the group view only). Amended 2026-11-04 (Fourth amendment): the grid, its block height and the midnight rules are as in REQ-0004 (Amendment 2026-11-04 (time grid)). Old wording: "seven columns Monday to Sunday show each lobby on its start day (a lobby that started before Monday is shown on Monday), with the end-next-day marker from REQ-0004".
+- Given that I am on a screen narrower than 760 px, when I see "This week", then seven Day pills Monday to Sunday are shown on top, a Day pill has a dot when its day has lobbies, and the time grid of the selected day is shown below them. Today is selected when the dashboard opens (DECISION, user; ASSUMPTION for the default day). Amended 2026-11-04 (Fourth amendment): the time grid replaces the Agenda list. Old wording: "the selected day's lobbies are listed below as the Agenda".
 - Given that I select a Day pill, when the day has no lobbies, then the text "Nothing booked" is shown for that day (ASSUMPTION: wording).
 - Given that I am in no group, when the dashboard opens, then there is no card and no week, and the text "You are not in a group yet" and a link to the Group list `/groups`, where the "+" creates a group, are shown (ASSUMPTION: wording; Third amendment 2026-11-04, item 1).
 - Given that I am in at least one group but none of my groups has an upcoming lobby, when the dashboard opens, then Next up shows the text "Nothing booked" instead of a card, and This week shows its days with no lobbies and "Nothing booked" on each day (ASSUMPTION: wording).
@@ -66,6 +66,7 @@ Mobile first (cross-cutting, applies to all UI requirements):
 - Month view and week navigation on the dashboard.
 - Discord avatars (F-029) and game accent colors (F-030). Both are Proposed and not decided. The MVP shows initials instead (ASSUMPTION, user to overrule).
 - Creating a lobby from the "+", and a Calendar tab on the phone (DECISION, user).
+- Creating a lobby from a click on an empty time in "This week". The grid spans groups and the form needs one group, as with the Dashboard list (DECISION, product owner, 2026-11-04; Fourth amendment). Say out of scope; no criterion.
 - Real-time updates, notifications, search, customizing the dashboard.
 - A native mobile app (vision.md).
 - A greeting such as "Good evening, <name>" and the date line above the dashboard heading. The name is already in the Top bar, and a time-of-day greeting needs its own rules and translations (DECISION, product owner).
@@ -75,7 +76,7 @@ Mobile first (cross-cutting, applies to all UI requirements):
 ## Related features
 F-028 (this requirement) is new: no feature shows lobbies across groups. It changes the out-of-scope line of REQ-0004 for this view only. It is not a duplicate of F-004 (list per group) or F-017 (calendar per group): the data is the same, but the scope is different, and REQ-0004 excludes cross-group views on purpose.
 
-F-017 is unchanged for the group view: list is the default, week is the switch, no month view (DECISION, product owner). The This week section is a cross-group overview, not the calendar view. It has no view switch, so it does not create a second calendar. On phones the Day pills and Agenda show that week as a list, which keeps the list-first rule. On desktop it is a 7-day grid (DECISION, user, 2026-11-04).
+F-017 is unchanged for the group view: list is the default, week is the switch, no month view (DECISION, product owner). The This week section is a cross-group overview, not the calendar view. It has no view switch, so it does not create a second calendar. On desktop and on phones it is the same time grid as the group week view (DECISION, user, 2026-11-04; Fourth amendment). The list-first rule of F-017 applies to the group view only; the dashboard has no list view for This week. Old wording: "On phones the Day pills and Agenda show that week as a list, which keeps the list-first rule. On desktop it is a 7-day grid".
 
 F-001: after login the dashboard is shown at `/` instead of the group list. Groups are reached through the Group list at `/groups`, the Group strip and the Group rail. This changes the login criterion of REQ-0001, recorded as Amendment 2026-11-04 in REQ-0001. It is not a new feature.
 
@@ -119,6 +120,16 @@ One user decision, recorded as DECISION, user, 2026-11-04. Status stays Decided.
      - Dashboard without a group: "... and a prompt to create a group with the "+" are shown (ASSUMPTION: wording)." (the "+" is not shown on the Dashboard).
    - Criteria amended in place: the phone "+", the Group rail "+", the Create group criterion (now on `/groups`), and the Dashboard without a group (now a link to `/groups`). One criterion added: no "+" on any other page.
    - Consequence (ASSUMPTION): a member with no group reaches the "+" through the link on the Dashboard. The UI expert sets the link text within the Dashboard's wording rule.
+
+## Fourth amendment 2026-11-04
+One user decision, recorded as DECISION, user, 2026-11-04. Status stays Decided. Binding for the UI expert. The user's words (translated): "I also want the lobby's duration shown graphically. A calendar where the days are vertical and you can see which time slots the lobby spans."
+
+1. "This week" uses the time grid of REQ-0004 (Amendment 2026-11-04 (time grid)) on desktop and on phones (DECISION, user). The criteria amended in place above (desktop columns, phone pills with the grid) are the link to it.
+   - Given that I am on a dashboard with lobbies in This week, when the grid is shown, then each block shows the lobby's game, time range, Spot / max players and group name (DECISION, user; the group name is the only addition to the group view).
+   - Given that the dashboard opens, when the grid loads, then the scroll rule of REQ-0004 applies to the displayed week (desktop) or to the selected day (phone). Today's day is selected on the phone (criterion above).
+   - Given that a lobby is shown in the grid, when I select its block, then its lobby page opens (criterion of the Third amendment, item 3, and REQ-0004 for the block's height and layout).
+   - Given that I select an empty time in the grid, when I select it, then nothing opens, because the grid on the dashboard has no group context (DECISION, product owner, 2026-11-04; out of scope above).
+2. The "This week" criterion that lists lobbies in start-time order and the rules for which lobbies appear are unchanged. The grid shows the same set of lobbies, so a lobby that started before Monday and has not ended is shown from 00:00 in Monday's column (criterion above).
 
 ## Open questions
 - ASSUMPTION: Group icons are generated from the group name's initials. Presentation only.

@@ -1,13 +1,11 @@
-import { useState } from "react";
+import { WeekTimeGrid } from "../../calendar";
 import { useMessages } from "../../i18n";
+import { lobbyPath } from "../lobbies";
 import { thisWeekOf, type DashboardLobby } from "./dashboardLobby";
-import { DayAgenda } from "./DayAgenda";
-import { DayPills } from "./DayPills";
-import { WeekGrid } from "./WeekGrid";
 
 /**
- * The current week across all groups: a grid on wide screens, Day pills with an Agenda on phones.
- * Which one shows is decided by CSS, so the width is known in one place. `now` is the time of loading.
+ * The current week across all groups as a time grid; each block names its group. `now` is the time of
+ * loading. The dashboard only shows the week, so there is no way to create a lobby from it.
  */
 export function ThisWeek({
   lobbies,
@@ -17,27 +15,13 @@ export function ThisWeek({
   now: number;
 }) {
   const m = useMessages();
-  const days = thisWeekOf(lobbies, now);
-  const todayIndex = days.findIndex(
-    ({ day }) => day.toDateString() === new Date(now).toDateString(),
-  );
-  const [selected, setSelected] = useState(todayIndex);
-
   return (
     <section aria-labelledby="this-week-heading">
       <h2 id="this-week-heading">{m.dashboard.thisWeekHeading}</h2>
-      <div className="week-wide">
-        <WeekGrid days={days} todayIndex={todayIndex} />
-      </div>
-      <div className="week-narrow">
-        <DayPills
-          days={days}
-          selected={selected}
-          todayIndex={todayIndex}
-          onSelect={setSelected}
-        />
-        <DayAgenda lobbies={days[selected].items} />
-      </div>
+      <WeekTimeGrid
+        days={thisWeekOf(lobbies, now)}
+        hrefOf={(lobby) => lobbyPath(lobby.groupId, lobby.id)}
+      />
     </section>
   );
 }

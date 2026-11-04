@@ -1,6 +1,5 @@
-import type { WeekDay } from "../../calendar";
-import { formatDayOfMonth, formatWeekdayShort, useMessages } from "../../i18n";
-import type { DashboardLobby } from "./dashboardLobby";
+import { formatDayOfMonth, formatWeekdayShort, useMessages } from "../i18n";
+import type { Span, WeekDay } from "./week";
 
 /** Phones: seven day buttons. A dot, and text for screen readers, marks a day with lobbies. */
 export function DayPills({
@@ -9,7 +8,7 @@ export function DayPills({
   todayIndex,
   onSelect,
 }: {
-  days: WeekDay<DashboardLobby>[];
+  days: WeekDay<Span>[];
   selected: number;
   todayIndex: number;
   onSelect: (index: number) => void;
@@ -19,7 +18,7 @@ export function DayPills({
     <div
       className="day-pills"
       role="group"
-      aria-label={m.dashboard.dayPillsLabel}
+      aria-label={m.calendarDayPillsLabel}
     >
       {days.map(({ day, items }, index) => (
         <button
@@ -35,9 +34,7 @@ export function DayPills({
           {items.length > 0 && (
             <>
               <i className="day-pill__dot" aria-hidden="true" />
-              <span className="visually-hidden">
-                {m.dashboard.dayHasLobbies}
-              </span>
+              <span className="visually-hidden">{m.calendarDayHasLobbies}</span>
             </>
           )}
         </button>

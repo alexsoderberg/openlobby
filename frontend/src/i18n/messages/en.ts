@@ -140,7 +140,12 @@ export const en = {
   lobbyEndsNextDay: "next day",
   calendarWeekHeading: (range: string) => `Week ${range}`,
   calendarNextWeek: "Next week",
-  calendarNoLobbiesOnDay: "No lobbies",
+  calendarNoLobbiesInWeek: "No lobbies this week",
+  calendarGridLabel: "Week schedule, scrolls vertically",
+  calendarDayPillsLabel: "Choose a day",
+  calendarDayHasLobbies: "has lobbies",
+  calendarContinuesBefore: "continues from the previous day",
+  calendarContinuesAfter: "continues on the next day",
   calendarCreateOnDay: (day: string) => `Create lobby on ${day}`,
 
   lobbyCreateHeading: "Create a lobby",
@@ -201,8 +206,6 @@ export const en = {
     nothingBooked: "Nothing booked",
     running: "Running",
     ended: "Ended",
-    dayPillsLabel: "Choose a day",
-    dayHasLobbies: "has lobbies",
     playersMeter: "Players",
     countdownDays: (days: number, hours: number) => `in ${days} d ${hours} h`,
     countdownHours: (hours: number, minutes: number) =>

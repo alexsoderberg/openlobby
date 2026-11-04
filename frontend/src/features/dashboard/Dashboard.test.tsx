@@ -14,7 +14,11 @@ import {
   type GroupSummary,
   type Lobby,
 } from "../../api";
-import { formatDayOfMonth, formatWeekdayShort } from "../../i18n";
+import {
+  formatDayOfMonth,
+  formatTimeRange,
+  formatWeekdayShort,
+} from "../../i18n";
 import { en } from "../../i18n/messages/en";
 import { fakeApiClient } from "../../test/fakeApiClient";
 import type { GroupsState } from "../groups";
@@ -83,12 +87,14 @@ async function nextUpCard() {
   return within(section);
 }
 
-/** The wide-screen column of a day. Both layouts are in the document; CSS shows one. */
+const dayColumns = () =>
+  Array.from(document.querySelectorAll<HTMLElement>("li.time-grid__day"));
+const selectedColumns = () =>
+  dayColumns().filter((column) => column.hasAttribute("data-selected"));
+
+/** The column of a day, found by its place in the week (Monday first). */
 function column(day: Date) {
-  const title = screen.getByRole("heading", {
-    name: `${formatWeekdayShort(day)} ${formatDayOfMonth(day)}`,
-  });
-  return within(title.closest("li")!);
+  return within(dayColumns()[(day.getDay() + 6) % 7]);
 }
 
 beforeEach(() => {
@@ -164,26 +170,46 @@ describe("Next up", () => {
 });
 
 describe("This week", () => {
-  it("lists each lobby in the column of its start day, with the next up lobby too", async () => {
+  it("places each lobby in the column of its day with game, time, group and spots, as a link to its lobby", async () => {
     renderDashboard({
-      g1: [lobby("l1", "Counter-Strike 2", at(6, 21), at(7, 1))],
+      g1: [lobby("l1", "Counter-Strike 2", at(6, 21), at(6, 23))],
       g2: [lobby("l2", "Overwatch 2", at(4, 20), at(4, 22))],
     });
     await nextUpCard();
 
     const wednesday = column(at(4, 0));
-    expect(wednesday.getByRole("link", { name: "Overwatch 2" })).toBeTruthy();
-    expect(wednesday.getByText("Ranked grind")).toBeTruthy();
-    expect(wednesday.getByText("3/5 players")).toBeTruthy();
-    const friday = column(at(6, 0));
-    expect(friday.getByRole("link", { name: "Counter-Strike 2" })).toBeTruthy();
+    const link = wednesday.getByRole("link", { name: "Overwatch 2" });
+    expect(link.getAttribute("href")).toBe("/groups/g2/lobbies/l2");
+    const block = link.closest("li")!;
+    expect(block.textContent).toContain("Ranked grind");
+    expect(block.textContent).toContain("3/5 players");
+    expect(block.textContent).toContain(formatTimeRange(at(4, 20), at(4, 22)));
     expect(
-      friday.getByText(new RegExp(`\\(${en.lobbyEndsNextDay}\\)`)),
+      block.style.getPropertyValue("--start") +
+        "/" +
+        block.style.getPropertyValue("--span"),
+    ).toBe("1200/120");
+    expect(
+      column(at(6, 0)).getByRole("link", { name: "Counter-Strike 2" }),
     ).toBeTruthy();
-    expect(column(at(5, 0)).getByText(t.nothingBooked)).toBeTruthy();
+    expect(column(at(5, 0)).queryByRole("link")).toBeNull();
   });
 
-  it("shows a lobby that started before Monday and still runs on Monday", async () => {
+  it("shows both parts of a lobby that crosses midnight", async () => {
+    renderDashboard({
+      g1: [lobby("l1", "Counter-Strike 2", at(6, 21), at(7, 1))],
+    });
+    await nextUpCard();
+
+    expect(
+      column(at(6, 0)).getByRole("link", { name: "Counter-Strike 2" }),
+    ).toBeTruthy();
+    expect(
+      column(at(7, 0)).getByRole("link", { name: "Counter-Strike 2" }),
+    ).toBeTruthy();
+  });
+
+  it("shows the rest of a lobby that started before Monday on Monday", async () => {
     renderDashboard({
       g1: [lobby("l1", "Catan", new Date(2026, 10, 1, 22), at(4, 20))],
     });
@@ -192,30 +218,40 @@ describe("This week", () => {
     expect(column(at(2, 0)).getByRole("link", { name: "Catan" })).toBeTruthy();
   });
 
-  it("leaves out lobbies of other weeks", async () => {
+  it("leaves out lobbies of other weeks and says the week is empty", async () => {
     renderDashboard({
       g1: [lobby("l1", "Catan", at(10, 20), at(10, 22))],
     });
     await nextUpCard();
 
     expect(column(at(4, 0)).queryByRole("link")).toBeNull();
-    expect(screen.getAllByText(t.nothingBooked).length).toBeGreaterThan(7);
+    expect(screen.getByText(en.calendarNoLobbiesInWeek)).toBeTruthy();
   });
 
-  it("marks days with lobbies on the Day pills, selects today and lists the chosen day in the Agenda", async () => {
+  it("cannot create a lobby from the grid", async () => {
+    renderDashboard({ g1: [lobby("l1", "Catan", at(5, 20), at(5, 22))] });
+    await nextUpCard();
+
+    expect(screen.queryByRole("button", { name: /create lobby/i })).toBeNull();
+  });
+
+  it("marks days with lobbies on the Day pills, selects today and shows the chosen day on phones", async () => {
     renderDashboard({
       g1: [lobby("l1", "Counter-Strike 2", at(6, 21), at(6, 23))],
       g2: [lobby("l2", "Overwatch 2", at(4, 20), at(4, 22))],
     });
     await nextUpCard();
 
-    const pills = within(screen.getByRole("group", { name: t.dayPillsLabel }));
+    const pills = within(
+      screen.getByRole("group", { name: en.calendarDayPillsLabel }),
+    );
     const pressed = pills
       .getAllByRole("button")
       .filter((pill) => pill.getAttribute("aria-pressed") === "true");
     expect(pressed).toHaveLength(1);
     expect(pressed[0].textContent).toContain(formatDayOfMonth(at(4, 0)));
-    expect(pills.getAllByText(t.dayHasLobbies)).toHaveLength(2);
+    expect(pills.getAllByText(en.calendarDayHasLobbies)).toHaveLength(2);
+    expect(selectedColumns()).toEqual([dayColumns()[2]]);
 
     fireEvent.click(
       pills.getByRole("button", {
@@ -223,16 +259,7 @@ describe("This week", () => {
       }),
     );
 
-    const agenda = within(
-      document.querySelector<HTMLElement>(".agenda") as HTMLElement,
-    );
-    expect(agenda.getByRole("link", { name: "Counter-Strike 2" })).toBeTruthy();
-    fireEvent.click(
-      pills.getByRole("button", {
-        name: new RegExp(formatWeekdayShort(at(7, 0))),
-      }),
-    );
-    expect(agenda.getByText(t.nothingBooked)).toBeTruthy();
+    expect(selectedColumns()).toEqual([dayColumns()[4]]);
   });
 });
 

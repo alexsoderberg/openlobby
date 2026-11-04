@@ -11,13 +11,13 @@ import { useGroupGames } from "./useGroupGames";
  */
 export function CreateLobby({
   groupId,
-  initialDate,
+  initialStart,
   onCreated,
   onCancel,
   onUnauthenticated,
 }: {
   groupId: string;
-  initialDate?: Date;
+  initialStart?: Date;
   onCreated: () => void;
   onCancel: () => void;
   onUnauthenticated: () => void;
@@ -36,7 +36,7 @@ export function CreateLobby({
       <GamesAndForm
         games={games}
         busy={busy}
-        initialDate={initialDate}
+        initialStart={initialStart}
         onCancel={onCancel}
         onSubmit={create}
       />

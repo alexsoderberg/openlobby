@@ -5,3 +5,4 @@ export {
   weekStartOf,
   type WeekDay,
 } from "./week";
+export { WeekTimeGrid } from "./WeekTimeGrid";

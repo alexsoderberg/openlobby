@@ -74,7 +74,7 @@ Applies to the whole product. Details and acceptance criteria are in the require
 - Player status: leaving a lobby always works, even after its end time. Past lobbies are not shown in the MVP, so in practice the interface offers leaving only while the lobby is visible. Joining works until the lobby's end time, even while it is running, and only if there is a free spot (REQ-0005).
 - Past lobbies from members who have left remain in the system but are not shown (REQ-0006).
 - Upcoming lobbies must be deleted before a member can leave the group (REQ-0006).
-- List view is the default. The calendar view is a week view, Monday–Sunday. A lobby that crosses midnight is shown on its start day with a marker (REQ-0004).
+- List view is the default. The calendar view is a week view, Monday–Sunday. A lobby that crosses midnight is shown on its start day and on the next day, each with a marker (REQ-0004, Amendment 2026-11-04 (time grid)). The week view is a time grid in which the lobby's block height shows its duration (DECISION, user, 2026-11-04). Old wording: "A lobby that crosses midnight is shown on its start day with a marker (REQ-0004)."
 - Concurrent editing of lobbies happens without locking (REQ-0003).
 
 ## Open questions

@@ -57,8 +57,17 @@ Status stays Implemented. Decided by the user on 2026-11-04 and not yet built. B
 
 2. Out of scope in this amendment: creating a lobby from the Dashboard "This week" (REQ-0012). That section spans groups and the form needs one group (DECISION, product owner, 2026-11-04).
 
+3. The form is prefilled from the time grid (DECISION, user, 2026-11-04; REQ-0004, Amendment 2026-11-04 (time grid)). All fields stay editable, and all rules above apply to the saved values.
+   - Given that I select an empty time in a day's column of the week view, when the form opens, then the date is prefilled with that day, and the start time is prefilled with the selected time rounded down to the half hour (e.g. 14:40 gives 14:30).
+   - Given that the start time is prefilled from the grid, when the form opens, then the end time is prefilled with the start time plus 2 hours. A result after midnight is shown as the next day's clock time and follows the rule of the next-day end time above (DECISION, user).
+   - Given that I open the form from a day's create control on the week view, when the form opens, then the date is prefilled and the start and end times are empty (DECISION, product owner, 2026-11-04; the user allowed "date only, or a sensible default time").
+   - Given that I change a prefilled start time, when I save, then the end time is not changed automatically (ASSUMPTION).
+   - Given that a prefilled start time has passed by the time I save, when I save, then the rule "start time has already passed" applies and the save is denied (existing rule).
+
 ## Open questions (amendment)
 - ASSUMPTION: The Esc, Cancel and tap-outside behavior above follows the Create group form. The user may overrule the tap-outside part.
+- ASSUMPTION: Create from a grid time gives end = start + 2 hours (user's words). Whether the user wants a different default end is open.
 
 ## Related features (amendment)
 F-002: the Create group form is the pattern for the open and close behavior, and is not changed by this amendment.
+F-017 (calendar view): the time grid is the entry point for the prefill in item 3. The form, its rules and its data are unchanged.

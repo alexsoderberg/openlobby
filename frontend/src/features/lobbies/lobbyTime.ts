@@ -5,6 +5,8 @@ import {
 } from "./lobbyErrors";
 
 const DATE_TEXT = /^(\d{4})-(\d{2})-(\d{2})$/;
+const SUGGESTED_HOURS = 2;
+const pad = (value: number) => String(value).padStart(2, "0");
 const CLOCK_TEXT = /^(\d{2}):(\d{2})$/;
 
 export type LobbyTimesResult =
@@ -57,8 +59,17 @@ export function endsNextDay(lobby: {
   );
 }
 
+/** The end suggested for a start picked on the calendar: two hours later, which may be on the next day. */
+export function suggestedEnd(start: Date): Date {
+  return new Date(start.getTime() + SUGGESTED_HOURS * 60 * 60 * 1000);
+}
+
+/** The HH:MM text of a moment in the viewer's time zone, the value a time field takes. */
+export function localClockText(moment: Date): string {
+  return `${pad(moment.getHours())}:${pad(moment.getMinutes())}`;
+}
+
 /** The YYYY-MM-DD text of a date in the viewer's time zone, the value a date field takes. */
 export function localDateText(date: Date): string {
-  const pad = (value: number) => String(value).padStart(2, "0");
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
