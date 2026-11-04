@@ -82,11 +82,12 @@ Agents use the weakest model that can handle the task. Each task starts at step 
 
 | Step | Model | Effort | Used |
 |---|---|---|---|
-| 1 | Haiku (`haiku`) | medium | Always first |
+| 1 | Haiku (`haiku`) | medium | Always first (except UI tasks) |
 | 2 | Sonnet (`sonnet`) | medium | After escalation from step 1 |
 | 3 | Opus 5.5 (`opus`) | medium | After escalation from step 2. **Highest allowed level.** |
 
-- Agent files have `model: haiku` and `effort: medium` by default.
+- Agent files have `model: haiku` and `effort: medium` by default. Exception: `ui-ux-expert.md` has `model: sonnet`.
+- **UI tasks start at step 2.** Tasks for the UI/UX expert start at `sonnet`, because `haiku` UI work has needed two or more review rounds almost every time. Escalation continues from step 2 to step 3.
 - Effort is never higher than `medium`. Models above Opus 5.5 (e.g. Fable or Mythos) and effort `high` or higher are never used.
 - **Escalation** happens when:
   - the agent itself returns `Status: ESCALATE` with a reason (it cannot handle the task or cannot judge it safely), or
@@ -94,7 +95,7 @@ Agents use the weakest model that can handle the task. Each task starts at step 
   - the orchestrator judges that the result clearly does not meet the bar.
 - The orchestrator then reruns the same task with the next model (the `model` parameter when starting the agent) and gives it the previous agent's result and problems as context.
 - Never skip a step. If step 3 fails, the orchestrator stops and asks the user.
-- The next task starts at step 1 again, including for the same agent.
+- The next task starts at step 1 again (step 2 for UI tasks), including for the same agent.
 - The main session (orchestrator) also runs on at most Opus 5.5 with effort medium. It is selected in the session with `/model` and `/effort`.
 - Use the model names (`haiku`, `sonnet`, `opus`) in agent files. Check in Claude Code that they point to the versions you want.
 
@@ -225,7 +226,7 @@ Interfaces are **not** used for pure domain logic with a single implementation a
 2. **The orchestrator** breaks the requirement down into sub-tasks and states which skills are relevant.
 3. **The architect** reviews the plan if it touches service boundaries, new services, new dependencies, the data model or API contracts. Decisions are documented as ADRs.
 4. **The specialists** implement within their areas, with relevant skills and tests.
-5. **The reviewer** reviews all changed code strictly against the architecture and code principles. Findings are classified: `BLOCKER` / `SHOULD` / `COULD`. On `NOT APPROVED` the task goes back to the owning agent and is reviewed again after the fix. If a rule is unclear, the architect decides.
+5. **The reviewer** reviews all changed code strictly against the architecture and code principles. Findings are classified: `BLOCKER` / `SHOULD` / `COULD`. On `NOT APPROVED` the task goes back to the owning agent and is reviewed again after the fix. If a rule is unclear, the architect decides. **Docs-only changes** (no code, contract or config) are `APPROVED` when there is no `BLOCKER`; `SHOULD` and `COULD` findings are recorded as follow-ups instead of blocking the change.
 6. **The orchestrator** checks the Definition of Done, and **the product owner** updates the status in the feature register.
 
 Pure bug fixes and technical improvements without new functionality may go directly to step 2. No code skips step 5.
@@ -242,7 +243,7 @@ Pure bug fixes and technical improvements without new functionality may go direc
 - [ ] Relevant skills have been used
 - [ ] Tests written and green locally and in CI
 - [ ] Lint and type checks without errors
-- [ ] The reviewer has given `APPROVED` (no `BLOCKER`, every `SHOULD` fixed or justified)
+- [ ] The reviewer has given `APPROVED` (no `BLOCKER`, every `SHOULD` fixed or justified; for docs-only changes, no `BLOCKER`)
 - [ ] No secrets in the code
 - [ ] Migrations are reversible or have a documented rollback plan
 - [ ] API contracts, `docs/services.md` and ADRs updated where something changed
