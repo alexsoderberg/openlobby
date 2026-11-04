@@ -1,10 +1,12 @@
 import { GAMES_PATH } from "../features/games";
 import { groupIdFromPath } from "../features/groups";
+import { lobbyIdsFromPath } from "../features/lobbies";
 
 export type Route =
   | { name: "start" }
   | { name: "invite"; token: string }
   | { name: "group"; groupId: string }
+  | { name: "lobby"; groupId: string; lobbyId: string }
   | { name: "games" }
   | { name: "notFound" };
 
@@ -15,6 +17,8 @@ export function routeFor(pathname: string): Route {
   if (pathname === GAMES_PATH) return { name: "games" };
   const token = INVITE_PATH.exec(pathname)?.[1];
   if (token !== undefined) return { name: "invite", token };
+  const lobby = lobbyIdsFromPath(pathname);
+  if (lobby) return { name: "lobby", ...lobby };
   const groupId = groupIdFromPath(pathname);
   return groupId === undefined
     ? { name: "notFound" }

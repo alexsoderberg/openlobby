@@ -1,8 +1,7 @@
-import type { Game, GameInput } from "../../api";
+import type { ChangeResult, Game, GameInput } from "../../api";
 import { useMessages } from "../../i18n";
 import { ErrorAlert } from "../../ui";
 import { GameForm } from "./GameForm";
-import type { ChangeResult } from "./gameErrors";
 import type { GamesState } from "./useGames";
 
 /** Shows the games as the server orders them. A game being changed shows its form in place of its row. */

@@ -6,6 +6,7 @@ import {
 } from "../features/groups";
 import { GamesPage } from "../features/games";
 import { InvitePage } from "../features/invites";
+import { LobbyDetailPage } from "../features/lobbies";
 import { useMessages } from "../i18n";
 import { Panel } from "../ui";
 import type { Route } from "./route";
@@ -13,10 +14,12 @@ import type { Route } from "./route";
 export function ProtectedPage({
   route,
   isSystemAdmin,
+  userId,
   onUnauthenticated,
 }: {
   route: Exclude<Route, { name: "notFound" }>;
   isSystemAdmin: boolean;
+  userId: string;
   onUnauthenticated: () => void;
 }) {
   switch (route.name) {
@@ -26,6 +29,17 @@ export function ProtectedPage({
       return (
         <GroupPage
           groupId={route.groupId}
+          onUnauthenticated={onUnauthenticated}
+        />
+      );
+    case "lobby":
+      return (
+        <LobbyDetailPage
+          groupId={route.groupId}
+          lobbyId={route.lobbyId}
+          userId={userId}
+          backHref={groupPath(route.groupId)}
+          onDeleted={() => openGroup(route.groupId)}
           onUnauthenticated={onUnauthenticated}
         />
       );

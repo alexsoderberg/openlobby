@@ -3,9 +3,10 @@ import {
   errorCodeOf,
   isUnauthenticated,
   useApi,
+  type ChangeResult,
   type GameInput,
 } from "../../api";
-import { GAME_NOT_FOUND, type ChangeResult } from "./gameErrors";
+import { GAME_NOT_FOUND } from "./gameErrors";
 
 export type GameChange = "added" | "changed" | "removed";
 

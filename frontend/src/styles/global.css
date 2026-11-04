@@ -614,6 +614,95 @@ a {
   color: var(--color-danger);
 }
 
+/* Lobbies: the list rows, the view switch and the week calendar. */
+.view-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.view-switch [aria-pressed="true"] {
+  background: var(--color-accent-tint);
+  border-color: var(--color-accent);
+  color: var(--color-text);
+}
+
+.lobby-row__game {
+  font-weight: 600;
+}
+
+.lobby-row__meta {
+  font-size: var(--font-size-small);
+  color: var(--color-muted);
+}
+
+.calendar__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.calendar__bar h3 {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: 1rem;
+}
+
+.calendar-day {
+  display: grid;
+  gap: var(--space-1) var(--space-3);
+  padding: var(--space-2) 0;
+  border-top: 1px solid var(--color-border);
+}
+
+.calendar-day__name {
+  margin: 0;
+  font-size: var(--font-size-small);
+  font-weight: 600;
+}
+
+.calendar-day__empty {
+  margin: 0;
+  font-size: var(--font-size-small);
+  color: var(--color-muted);
+}
+
+.calendar-day__lobbies {
+  display: grid;
+  gap: var(--space-2);
+}
+
+/* A run of overlapping lobbies shares one row, so none is hidden behind another. */
+.calendar-cluster {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.calendar-lobby {
+  display: grid;
+  flex: 1 1 10rem;
+  gap: var(--space-1);
+  justify-items: start;
+  padding: var(--space-2);
+  background: var(--color-accent-wash);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-accent);
+  border-radius: var(--radius-control);
+}
+
+@media (min-width: 40rem) {
+  .calendar-day {
+    grid-template-columns: 9rem 1fr;
+  }
+}
+
 /* Landing page. Start states live in the keyframes, so with animations off the final layout shows at once. */
 .brand__accent {
   color: var(--color-accent);

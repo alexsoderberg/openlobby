@@ -406,3 +406,25 @@ describe("game list page", () => {
     expect(screen.queryByText("Catan")).toBeNull();
   });
 });
+
+describe("lobby page", () => {
+  it("shows the lobby with its players, and offers delete to its creator", async () => {
+    const lobby = {
+      id: "l1",
+      gameName: "Catan",
+      maxPlayers: 4,
+      startsAt: "2026-11-05T18:00:00Z",
+      endsAt: "2026-11-05T20:00:00Z",
+      createdByUserId: testUser.userId,
+      playerCount: 1,
+      players: [{ userId: testUser.userId, displayName: testUser.displayName }],
+    };
+    renderAt(
+      loggedInClient({ getLobby: () => Promise.resolve(lobby) }),
+      "/groups/g1/lobbies/l1",
+    );
+
+    expect(await screen.findByRole("heading", { name: "Catan" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: en.lobbyDelete })).toBeTruthy();
+  });
+});

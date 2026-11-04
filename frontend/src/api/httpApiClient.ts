@@ -84,6 +84,46 @@ export function createHttpApiClient(
         http.DELETE("/api/games/{gameId}", { params: { path: { gameId } } }),
       );
     },
+    listGroupGames: async (groupId) =>
+      bodyOf(
+        await receive(
+          http.GET("/api/groups/{groupId}/games", {
+            params: { path: { groupId } },
+          }),
+        ),
+      ),
+    listUpcomingLobbies: async (groupId) =>
+      bodyOf(
+        await receive(
+          http.GET("/api/groups/{groupId}/lobbies", {
+            params: { path: { groupId } },
+          }),
+        ),
+      ),
+    getLobby: async (groupId, lobbyId) =>
+      bodyOf(
+        await receive(
+          http.GET("/api/groups/{groupId}/lobbies/{lobbyId}", {
+            params: { path: { groupId, lobbyId } },
+          }),
+        ),
+      ),
+    createLobby: async (groupId, input) =>
+      bodyOf(
+        await receive(
+          http.POST("/api/groups/{groupId}/lobbies", {
+            params: { path: { groupId } },
+            body: input,
+          }),
+        ),
+      ),
+    deleteLobby: async (groupId, lobbyId) => {
+      await receive(
+        http.DELETE("/api/groups/{groupId}/lobbies/{lobbyId}", {
+          params: { path: { groupId, lobbyId } },
+        }),
+      );
+    },
   };
 }
 

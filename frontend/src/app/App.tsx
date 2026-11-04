@@ -44,6 +44,7 @@ export function App() {
             <ProtectedPage
               route={route}
               isSystemAdmin={user?.isSystemAdmin ?? false}
+              userId={user?.userId ?? ""}
               onUnauthenticated={markExpired}
             />
           </RequireLogin>

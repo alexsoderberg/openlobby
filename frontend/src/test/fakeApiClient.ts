@@ -44,6 +44,13 @@ export function fakeApiClient(overrides: Partial<ApiClient> = {}): ApiClient {
       Promise.resolve({ id: gameId, ...input }),
     ),
     deleteGame: vi.fn(() => Promise.resolve()),
+    listGroupGames: vi.fn(() => Promise.resolve([])),
+    listUpcomingLobbies: vi.fn(() => Promise.resolve([])),
+    getLobby: vi.fn(() => Promise.reject(new ApiError(404, "lobby_not_found"))),
+    createLobby: vi.fn(() =>
+      Promise.reject(new ApiError(500, "internal_error")),
+    ),
+    deleteLobby: vi.fn(() => Promise.resolve()),
     ...overrides,
   };
 }

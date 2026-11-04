@@ -2,12 +2,15 @@ export type {
   ApiClient,
   ApiErrorCode,
   AuthUser,
+  CreateLobbyInput,
   Game,
   GameInput,
   Group,
   GroupSummary,
   InviteInfo,
   InviteLink,
+  Lobby,
+  LobbyDetail,
 } from "./client";
 export {
   ApiError,
@@ -24,3 +27,11 @@ export {
 } from "./client";
 export { ApiProvider, useApi } from "./ApiProvider";
 export { createHttpApiClient } from "./httpApiClient";
+export {
+  INVALID_CAPACITY,
+  INVALID_GAME,
+  isGameNameLength,
+  parseMaxPlayers,
+  trimLikeServer,
+  type ChangeResult,
+} from "./inputRules";

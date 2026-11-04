@@ -1,4 +1,5 @@
 import { InviteLinks } from "../invites";
+import { Lobbies } from "../lobbies";
 import { useMessages } from "../../i18n";
 import { ErrorAlert, Panel } from "../../ui";
 import type { GroupState } from "./useGroup";
@@ -26,6 +27,11 @@ export function GroupDetails({
       </p>
       <h1>{state.group.name}</h1>
       <div className="panel-group">
+        <Lobbies
+          groupId={state.group.id}
+          members={state.group.members}
+          onUnauthenticated={onUnauthenticated}
+        />
         <Panel>
           <h2>{m.membersHeading}</h2>
           <ul className="row-list" role="list">
