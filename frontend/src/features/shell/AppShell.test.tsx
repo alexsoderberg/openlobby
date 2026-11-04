@@ -214,4 +214,18 @@ describe("Create group form behind the plus", () => {
     expect(await screen.findByText(en.errors.invalid_group_name)).toBeTruthy();
     expect(dialog()).toBeTruthy();
   });
+
+  it("keeps Tab and Shift+Tab inside the form", () => {
+    renderShell();
+    fireEvent.click(plusIn(rail()));
+    const cancel = screen.getByRole("button", { name: en.cancel });
+    const field = nameField();
+
+    cancel.focus();
+    fireEvent.keyDown(document, { key: "Tab" });
+    expect(document.activeElement).toBe(field);
+
+    fireEvent.keyDown(document, { key: "Tab", shiftKey: true });
+    expect(document.activeElement).toBe(cancel);
+  });
 });

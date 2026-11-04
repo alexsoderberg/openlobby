@@ -15,6 +15,7 @@ const FORMATS = {
   day: { day: "numeric", month: "short" },
   weekdayShort: { weekday: "short" },
   dayOfMonth: { day: "numeric" },
+  mediumDateTime: { dateStyle: "medium", timeStyle: "short" },
 } satisfies Record<string, Intl.DateTimeFormatOptions>;
 
 const formatter = (options: Intl.DateTimeFormatOptions) =>
@@ -25,6 +26,7 @@ const weekday = formatter(FORMATS.weekday);
 const day = formatter(FORMATS.day);
 const weekdayShort = formatter(FORMATS.weekdayShort);
 const dayOfMonth = formatter(FORMATS.dayOfMonth);
+const mediumDateTime = formatter(FORMATS.mediumDateTime);
 
 const asDate = (moment: Moment) => new Date(moment);
 
@@ -46,3 +48,6 @@ export const formatWeekdayShort = (moment: Moment) =>
   weekdayShort.format(asDate(moment));
 export const formatDayOfMonth = (moment: Moment) =>
   dayOfMonth.format(asDate(moment));
+/** Date and time with the month spelled out, e.g. when a link expires. */
+export const formatMediumDateTime = (moment: Moment) =>
+  mediumDateTime.format(asDate(moment));

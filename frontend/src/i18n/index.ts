@@ -5,6 +5,7 @@ export {
   formatDateTimeRange,
   formatDayOfMonth,
   formatDayRange,
+  formatMediumDateTime,
   formatTime,
   formatTimeRange,
   formatWeekday,

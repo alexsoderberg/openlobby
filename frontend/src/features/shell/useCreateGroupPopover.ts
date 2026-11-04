@@ -3,6 +3,20 @@ import { useCallback, useEffect, useRef, useState } from "react";
 type Origin = { x: number; y: number };
 
 const ESCAPE = "Escape";
+const TAB = "Tab";
+const FOCUSABLE = "button, input, a[href], [tabindex]:not([tabindex='-1'])";
+
+/** Keeps Tab inside the form: from the last control it goes to the first, and back with Shift. */
+function wrapTab(event: KeyboardEvent, frame: HTMLElement | null) {
+  const controls = Array.from(
+    frame?.querySelectorAll<HTMLElement>(FOCUSABLE) ?? [],
+  ).filter((control) => !control.hasAttribute("disabled"));
+  if (controls.length === 0) return;
+  const edge = event.shiftKey ? controls[0] : controls[controls.length - 1];
+  if (document.activeElement !== edge) return;
+  event.preventDefault();
+  controls[event.shiftKey ? controls.length - 1 : 0].focus();
+}
 
 /**
  * Open state of the Create group form and where it grows from: the centre of the pressed "+", measured against
@@ -41,6 +55,7 @@ export function useCreateGroupPopover() {
     if (!open) return undefined;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === ESCAPE) close();
+      if (event.key === TAB) wrapTab(event, popoverRef.current);
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);

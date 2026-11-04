@@ -36,8 +36,8 @@ App shell (presentation of F-001, F-002, F-004, F-005 and F-017; no new feature)
 - Given that I am on a phone, when I see the app, then the Tab bar shows, in this order, Home, Groups, a large "+" (Create group button) and You (DECISION, user, 2026-11-04). The Tab bar respects the bottom safe area of the device, and the active tab is marked (DECISION, user). There is no Calendar tab (DECISION, user).
 - Given that I select the Groups tab, when the group list opens at `/groups`, then it shows all groups I am a member of, and selecting one opens its group view (DECISION, user; ADR 0014, point 6).
 - Given that I select the You tab, when the profile opens at `/profile`, then it shows my display name and avatar, a "Log out" button, and, if I am a system admin, a "Game list" link (DECISION, user; REQ-0010).
-- Given that I am not a system admin, when I open the You tab or the profile menu, then no "Game list" link is shown (REQ-0010, F-025).
-- Given that I am on a screen 760 px or wider, when I select my avatar in the Top bar, then the same profile menu opens with the same content as the You tab (ASSUMPTION).
+- Given that I am not a system admin, when I open the You tab or the You page, then no "Game list" link is shown (REQ-0010, F-025; wording amended 2026-11-04).
+- Given that I am on a screen 760 px or wider, when I select my avatar in the Top bar, then the You page (`/profile`) opens with the same content as the You tab (DECISION, orchestrator, 2026-11-04; replaces the profile menu, see Amendment 2026-11-04).
 - Given that I am on a phone and open the dashboard, when I see the top of it, then the Group strip is shown: a horizontally swipeable row of my Group icons. Tapping a group opens its group view (DECISION, user).
 - Given that I am on a screen 760 px or wider, when I see the app, then the Group rail is on the left: the Home control (house icon) at the top, a separator, one Group icon per group with the group name as accessible name, the active group marked, and the "+" (Create group button) at the bottom (DECISION, user).
 - Given that I select Home (the house icon in the Group rail or the Home tab), when I am on any page, then the dashboard opens at `/` and that control is marked active (DECISION, user; ADR 0014, point 6).
@@ -75,7 +75,18 @@ F-002: the create group action moves behind "+". Presentation only; no new featu
 
 F-005: "Join lobby" and "Leave lobby" on the card use REQ-0005 rules; no new feature. The card's button state needs `joinedByMe` (ADR 0014, point 5), which is delivered with REQ-0005.
 
-REQ-0010 / F-025: a system admin sees a "Game list" link in the You tab and the profile menu (DECISION, user). Non-admins see no such link (REQ-0010).
+REQ-0010 / F-025: a system admin sees a "Game list" link in the You tab and on the You page (DECISION, user; "profile menu" amended 2026-11-04). Non-admins see no such link (REQ-0010).
+
+## Amendment 2026-11-04
+Three decisions made by the orchestrator while building the UI (PR #42). Status stays Decided. Each item below is binding for the UI expert.
+
+1. Avatar opens the You page on screens 760 px or wider (DECISION, orchestrator, 2026-11-04). The You page has the same content as the You tab: display name, avatar, "Log out" and, for system admins, "Game list". There is no separate profile dropdown menu. Reason: same content, less code; keyboard and screen-reader users get one consistent page.
+   - Replaced criterion (old wording, kept for reference): "Given that I am on a screen 760 px or wider, when I select my avatar in the Top bar, then the same profile menu opens with the same content as the You tab (ASSUMPTION)."
+   - Criteria amended in place: the avatar criterion in the App shell section, the "You tab or the You page" criterion, and the REQ-0010 line under Related features.
+2. Log out lands on the landing page (DECISION, orchestrator, 2026-11-04).
+   - Given that I am logged in, when I press "Log out" on the You page or the You tab, then I am logged out and the landing page at `/` is shown.
+3. Lobbies link to their lobby page (DECISION, orchestrator, 2026-11-04). Reason: the natural next step from the dashboard; the lobby page already exists (REQ-0004).
+   - Given that a lobby is shown on Next up, or in This week in the grid or the agenda, when I select it, then its lobby page at `/groups/{groupId}/lobbies/{lobbyId}` opens.
 
 ## Open questions
 - ASSUMPTION: Group icons are generated from the group name's initials. Presentation only.

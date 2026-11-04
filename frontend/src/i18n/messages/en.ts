@@ -13,7 +13,7 @@ export const en = {
   logOut: "Log out",
   tryAgain: "Try again",
   cancel: "Cancel",
-  backToStart: "Back to your groups",
+  backToGroups: "Back to your groups",
   backToHome: "Back to the start page",
 
   loginHeading: "Log in to OpenLobby",
@@ -200,7 +200,6 @@ export const en = {
     ended: "Ended",
     dayPillsLabel: "Choose a day",
     dayHasLobbies: "has lobbies",
-    today: "today",
     playersMeter: "Players",
     countdownDays: (days: number, hours: number) => `in ${days} d ${hours} h`,
     countdownHours: (hours: number, minutes: number) =>
