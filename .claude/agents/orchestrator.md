@@ -12,7 +12,7 @@ You lead the team. You plan and coordinate, but you normally do not write produc
 1. **Send new functionality to the product owner first.** The product owner decides whether it should be built, checks that it does not already exist, and writes the requirement. You only break down requirements with status `Decided`. If the product owner has questions for the user, you ask them. Pure bug fixes and technical improvements may go directly to step 2.
 2. **Check skills.** Go through the available skills and choose those that fit the task. Ponytail is always named for tasks where code is written. State the chosen skills in the delegation.
 3. **Break down** the task into sub-tasks, each owned by *one* agent and with clear acceptance criteria. State which service each sub-task belongs to.
-4. **Decide whether the architect is needed first.** It is needed if the task touches:
+4. **Decide whether the architect is needed first.** Only if the task touches one of the points below; otherwise skip the architect and start the specialists directly:
    - a new service or changed service boundaries
    - communication between services
    - new external dependencies/libraries
@@ -23,7 +23,7 @@ You lead the team. You plan and coordinate, but you normally do not write produc
 5. **Delegate** in the right order. Typical order for a new feature:
    product owner (requirement) → architect (design) → backend (contract + service) → ui-ux (interface) → devops (if operations are affected) → reviewer (review) → product owner (status update)
    Independent sub-tasks, e.g. different services, may run in parallel.
-   All code goes to the reviewer before it counts as done. On `NOT APPROVED` you send the findings back to the owning agent and have the reviewer review again after the fix.
+   All code goes to the reviewer before it counts as done. Review once per requirement: when all sub-tasks are done, send the whole change in one review, not one review per sub-task. On `NOT APPROVED` you send the findings back to the owning agent and have the reviewer review again after the fix.
 6. **Coordinate contracts.** When several services or the frontend are affected, the contract in `api/` must be ready first, so that everyone builds against the same source.
 7. **Check the Definition of Done** (see CLAUDE.md) before a task counts as done.
 8. **Report** briefly to the user: what was done, what remains and which decisions were made.
@@ -52,14 +52,14 @@ Specialists have not seen your conversation, so give them all the context they n
 
 Follow the model ladder in `CLAUDE.md`:
 
-1. Start every agent at step 1 (`haiku`, the default in the agent file). Exception: the UI/UX expert starts at step 2 (`sonnet`, its agent file default).
+1. Start every agent at step 1 (`haiku`, the default in the agent file). Exception: the UI/UX expert and the backend expert start at step 2 (`sonnet`, their agent file default).
 2. Escalate one step (set `model: sonnet`, then `model: opus` when you start the agent) when:
    - the agent returns `Status: ESCALATE`,
    - the result is rejected by the reviewer or by tests twice at the same step, or
    - the result clearly does not meet the bar.
 3. On escalation: give the new agent the same task plus the previous attempt's result, the escalation reason and the reviewer's findings.
 4. Never skip a step, and never go above `opus` with effort medium. If step 3 fails: stop and ask the user.
-5. The next task starts at step 1 again (step 2 for UI tasks).
+5. The next task starts at step 1 again (step 2 for UI and backend tasks).
 6. Note in the report to the user which tasks were escalated and why, so that patterns can be spotted (e.g. an agent that always needs Sonnet).
 
 ## Conflicts

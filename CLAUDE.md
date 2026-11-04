@@ -82,12 +82,12 @@ Agents use the weakest model that can handle the task. Each task starts at step 
 
 | Step | Model | Effort | Used |
 |---|---|---|---|
-| 1 | Haiku (`haiku`) | medium | Always first (except UI tasks) |
+| 1 | Haiku (`haiku`) | medium | Always first (except UI and backend tasks) |
 | 2 | Sonnet (`sonnet`) | medium | After escalation from step 1 |
 | 3 | Opus 5.5 (`opus`) | medium | After escalation from step 2. **Highest allowed level.** |
 
-- Agent files have `model: haiku` and `effort: medium` by default. Exception: `ui-ux-expert.md` has `model: sonnet`.
-- **UI tasks start at step 2.** Tasks for the UI/UX expert start at `sonnet`, because `haiku` UI work has needed two or more review rounds almost every time. Escalation continues from step 2 to step 3.
+- Agent files have `model: haiku` and `effort: medium` by default. Exception: `ui-ux-expert.md` and `backend-expert.md` have `model: sonnet`.
+- **UI and backend tasks start at step 2.** Tasks for the UI/UX expert and the backend expert start at `sonnet`, because `haiku` work there has needed two or more review rounds almost every time. Escalation continues from step 2 to step 3.
 - Effort is never higher than `medium`. Models above Opus 5.5 (e.g. Fable or Mythos) and effort `high` or higher are never used.
 - **Escalation** happens when:
   - the agent itself returns `Status: ESCALATE` with a reason (it cannot handle the task or cannot judge it safely), or
@@ -95,7 +95,7 @@ Agents use the weakest model that can handle the task. Each task starts at step 
   - the orchestrator judges that the result clearly does not meet the bar.
 - The orchestrator then reruns the same task with the next model (the `model` parameter when starting the agent) and gives it the previous agent's result and problems as context.
 - Never skip a step. If step 3 fails, the orchestrator stops and asks the user.
-- The next task starts at step 1 again (step 2 for UI tasks), including for the same agent.
+- The next task starts at step 1 again (step 2 for UI and backend tasks), including for the same agent.
 - The main session (orchestrator) also runs on at most Opus 5.5 with effort medium. It is selected in the session with `/model` and `/effort`.
 - Use the model names (`haiku`, `sonnet`, `opus`) in agent files. Check in Claude Code that they point to the versions you want.
 
@@ -224,9 +224,9 @@ Interfaces are **not** used for pure domain logic with a single implementation a
 
 1. **The product owner** decides whether and why something should be built, checks that the functionality does not already exist, and writes the requirement with acceptance criteria.
 2. **The orchestrator** breaks the requirement down into sub-tasks and states which skills are relevant.
-3. **The architect** reviews the plan if it touches service boundaries, new services, new dependencies, the data model or API contracts. Decisions are documented as ADRs.
+3. **The architect** reviews the plan if it touches service boundaries, new services, new dependencies, the data model or API contracts. Decisions are documented as ADRs. If the plan touches none of these, the architect is skipped and the specialists start directly.
 4. **The specialists** implement within their areas, with relevant skills and tests.
-5. **The reviewer** reviews all changed code strictly against the architecture and code principles. Findings are classified: `BLOCKER` / `SHOULD` / `COULD`. On `NOT APPROVED` the task goes back to the owning agent and is reviewed again after the fix. If a rule is unclear, the architect decides. **Docs-only changes** (no code, contract or config) are `APPROVED` when there is no `BLOCKER`; `SHOULD` and `COULD` findings are recorded as follow-ups instead of blocking the change.
+5. **The reviewer** reviews all changed code strictly against the architecture and code principles. Findings are classified: `BLOCKER` / `SHOULD` / `COULD`. The review happens **once per requirement**, on the whole change after all sub-tasks are done, not after each sub-task. On `NOT APPROVED` the task goes back to the owning agent and is reviewed again after the fix. If a rule is unclear, the architect decides. **Docs-only changes** (no code, contract or config) are `APPROVED` when there is no `BLOCKER`; `SHOULD` and `COULD` findings are recorded as follow-ups instead of blocking the change. An approved requirement may still be shipped as several small PRs.
 6. **The orchestrator** checks the Definition of Done, and **the product owner** updates the status in the feature register.
 
 Pure bug fixes and technical improvements without new functionality may go directly to step 2. No code skips step 5.
