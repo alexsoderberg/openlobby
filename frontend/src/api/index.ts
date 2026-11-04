@@ -27,3 +27,11 @@ export {
 } from "./client";
 export { ApiProvider, useApi } from "./ApiProvider";
 export { createHttpApiClient } from "./httpApiClient";
+export {
+  INVALID_CAPACITY,
+  INVALID_GAME,
+  isGameNameLength,
+  parseMaxPlayers,
+  trimLikeServer,
+  type ChangeResult,
+} from "./inputRules";

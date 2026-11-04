@@ -1,11 +1,9 @@
-import { useRef, useState } from "react";
-import { useApi, type CreateLobbyInput } from "../../api";
+import { useRef } from "react";
 import { useMessages } from "../../i18n";
 import { ErrorAlert, Panel } from "../../ui";
 import { CreateLobbyForm } from "./CreateLobbyForm";
-import type { SaveResult } from "./lobbyErrors";
+import { useCreateLobby } from "./useCreateLobby";
 import { useGroupGames } from "./useGroupGames";
-import { useLobbyAction } from "./useLobbyAction";
 
 /**
  * The create-lobby section. A saved lobby refreshes the list and moves focus to the confirmation, which
@@ -21,41 +19,48 @@ export function CreateLobby({
   onUnauthenticated: () => void;
 }) {
   const m = useMessages();
-  const api = useApi();
   const games = useGroupGames(groupId, onUnauthenticated);
-  const { busy, run } = useLobbyAction(onUnauthenticated);
-  const [created, setCreated] = useState(false);
+  const { busy, created, create } = useCreateLobby(
+    groupId,
+    onCreated,
+    onUnauthenticated,
+  );
   const statusRef = useRef<HTMLParagraphElement>(null);
-
-  async function create(input: CreateLobbyInput): SaveResult {
-    setCreated(false);
-    const code = await run(() => api.createLobby(groupId, input));
-    if (code !== undefined) return code;
-    setCreated(true);
-    onCreated();
-    statusRef.current?.focus();
-    return undefined;
-  }
 
   return (
     <Panel>
       <h2>{m.lobbyCreateHeading}</h2>
-      {games.state.status === "loading" && (
-        <p role="status">{m.gamesLoading}</p>
-      )}
-      {games.state.status === "error" && (
-        <ErrorAlert code={games.state.code} onRetry={games.reload} />
-      )}
-      {games.state.status === "loaded" && (
-        <CreateLobbyForm
-          games={games.state.value}
-          busy={busy}
-          onSubmit={create}
-        />
-      )}
+      <GamesAndForm
+        games={games}
+        busy={busy}
+        onSubmit={async (input) => {
+          const code = await create(input);
+          if (code === undefined) statusRef.current?.focus();
+          return code;
+        }}
+      />
       <p ref={statusRef} tabIndex={-1} role="status" className="status">
         {created && m.lobbyCreated}
       </p>
     </Panel>
+  );
+}
+
+type FormProps = Parameters<typeof CreateLobbyForm>[0];
+
+/** The form once the games of the group have loaded; until then the loading text or the error. */
+function GamesAndForm({
+  games: { state, reload },
+  busy,
+  onSubmit,
+}: Pick<FormProps, "busy" | "onSubmit"> & {
+  games: ReturnType<typeof useGroupGames>;
+}) {
+  const m = useMessages();
+  if (state.status === "loading") return <p role="status">{m.gamesLoading}</p>;
+  if (state.status === "error")
+    return <ErrorAlert code={state.code} onRetry={reload} />;
+  return (
+    <CreateLobbyForm games={state.value} busy={busy} onSubmit={onSubmit} />
   );
 }

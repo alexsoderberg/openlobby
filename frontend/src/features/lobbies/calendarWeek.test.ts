@@ -65,4 +65,11 @@ describe("calendarWeek", () => {
     ]);
     expect(week[2].clusters[0]).toEqual([overnight]);
   });
+
+  it("puts a lobby that started before Monday and still runs on Monday", () => {
+    const carried = lobby("carried", new Date(2026, 10, 1, 22), at(2, 3));
+    const ended = lobby("ended", new Date(2026, 10, 1, 20), at(2, 0));
+    const week = calendarWeek(new Date(2026, 10, 2), [ended, carried]);
+    expect(week[0].clusters).toEqual([[carried]]);
+  });
 });

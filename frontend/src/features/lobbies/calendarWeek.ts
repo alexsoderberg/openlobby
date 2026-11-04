@@ -30,15 +30,27 @@ export function weekDays(weekStart: Date): Date[] {
 
 export type CalendarDay = { day: Date; clusters: Lobby[][] };
 
-/** A lobby belongs to its start day. Lobbies that do not start in the week are left out. */
+/**
+ * The position of a lobby in the week, or undefined when it does not overlap the week. A lobby is shown on
+ * its start day, not split over two days. One that started before Monday and still runs is shown on Monday.
+ */
+function dayIndexOf(weekStart: Date, lobby: Lobby): number | undefined {
+  const start = Date.parse(lobby.startsAt);
+  const weekEnd = nextWeekStart(weekStart).getTime();
+  if (start >= weekEnd || Date.parse(lobby.endsAt) <= weekStart.getTime())
+    return undefined;
+  if (start < weekStart.getTime()) return 0;
+  const startDay = new Date(start).toDateString();
+  return weekDays(weekStart).findIndex(
+    (day) => day.toDateString() === startDay,
+  );
+}
+
 export function calendarWeek(weekStart: Date, lobbies: Lobby[]): CalendarDay[] {
-  return weekDays(weekStart).map((day) => ({
+  return weekDays(weekStart).map((day, index) => ({
     day,
     clusters: clusterOverlapping(
-      lobbies.filter(
-        (lobby) =>
-          new Date(lobby.startsAt).toDateString() === day.toDateString(),
-      ),
+      lobbies.filter((lobby) => dayIndexOf(weekStart, lobby) === index),
     ),
   }));
 }

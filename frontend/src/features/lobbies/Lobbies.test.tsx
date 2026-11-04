@@ -77,6 +77,9 @@ const withLobbies = (...lobbies: Lobby[]) => ({
   listUpcomingLobbies: vi.fn(() => Promise.resolve(lobbies)),
 });
 
+const occurrences = (text: string | null, part: string) =>
+  (text ?? "").split(part).length - 1;
+
 const dayText = (iso: string) =>
   new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short" }).format(
     new Date(iso),
@@ -107,7 +110,8 @@ describe("lobby list", () => {
     renderLobbies(withLobbies(catan, chess));
 
     const [same, overnight] = await screen.findAllByRole("listitem");
-    expect(same.textContent).not.toContain(dayText(catan.endsAt) + ",");
+    // The date of a lobby that ends the same day appears once, whatever the locale.
+    expect(occurrences(same.textContent, dayText(catan.startsAt))).toBe(1);
     expect(overnight.textContent).toContain(dayText(chess.startsAt));
     expect(overnight.textContent).toContain(dayText(chess.endsAt));
   });
@@ -198,6 +202,29 @@ describe("calendar view", () => {
       screen.getByRole("link", { name }).closest("li.calendar-day")!;
     expect(dayOf("Catan")).toBe(days[3].closest("li"));
     expect(dayOf("Chess")).toBe(days[4].closest("li"));
+  });
+
+  it("shows a lobby that started last week and still runs on Monday", async () => {
+    const carried = lobby({
+      id: "l5",
+      gameName: "Poker",
+      startsAt: local(1, 22),
+      endsAt: local(2, 3),
+    });
+    renderLobbies(withLobbies(carried));
+    await screen.findByRole("link", { name: "Poker" });
+    fireEvent.click(calendarButton());
+
+    const monday = screen
+      .getAllByRole("heading", { level: 4 })[0]
+      .closest("li");
+    const item = screen
+      .getByRole("link", { name: "Poker" })
+      .closest("li.calendar-lobby")!;
+    expect(monday?.contains(item)).toBe(true);
+    expect(item.textContent).toContain(en.lobbyEndsNextDay);
+    fireEvent.click(screen.getByRole("button", { name: en.calendarNextWeek }));
+    expect(screen.queryByRole("link", { name: "Poker" })).toBeNull();
   });
 
   it("shows spots like the list and marks a lobby that ends the next day", async () => {

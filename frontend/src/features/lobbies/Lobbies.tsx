@@ -23,38 +23,50 @@ export function Lobbies({
 }) {
   const m = useMessages();
   const [view, setView] = useState<LobbyView>("list");
-  const { state, reload, refresh } = useUpcomingLobbies(
-    groupId,
-    onUnauthenticated,
-  );
+  const upcoming = useUpcomingLobbies(groupId, onUnauthenticated);
 
   return (
     <>
       <Panel>
         <h2>{m.lobbiesHeading}</h2>
         <LobbyViewSwitch view={view} onChange={setView} />
-        {state.status === "loading" && <p role="status">{m.lobbiesLoading}</p>}
-        {state.status === "error" && (
-          <ErrorAlert code={state.code} onRetry={reload} />
-        )}
-        {state.status === "loaded" &&
-          (state.value.length === 0 ? (
-            <p>{m.lobbiesEmpty}</p>
-          ) : view === "list" ? (
-            <LobbyList
-              groupId={groupId}
-              lobbies={state.value}
-              members={members}
-            />
-          ) : (
-            <LobbyCalendar groupId={groupId} lobbies={state.value} />
-          ))}
+        <LobbyViews
+          groupId={groupId}
+          members={members}
+          view={view}
+          upcoming={upcoming}
+        />
       </Panel>
       <CreateLobby
         groupId={groupId}
-        onCreated={refresh}
+        onCreated={upcoming.refresh}
         onUnauthenticated={onUnauthenticated}
       />
     </>
+  );
+}
+
+/** Loading, error, empty (the same text in both views) or the chosen view. */
+function LobbyViews({
+  groupId,
+  members,
+  view,
+  upcoming: { state, reload },
+}: {
+  groupId: string;
+  members: Group["members"];
+  view: LobbyView;
+  upcoming: ReturnType<typeof useUpcomingLobbies>;
+}) {
+  const m = useMessages();
+  if (state.status === "loading")
+    return <p role="status">{m.lobbiesLoading}</p>;
+  if (state.status === "error")
+    return <ErrorAlert code={state.code} onRetry={reload} />;
+  if (state.value.length === 0) return <p>{m.lobbiesEmpty}</p>;
+  return view === "list" ? (
+    <LobbyList groupId={groupId} lobbies={state.value} members={members} />
+  ) : (
+    <LobbyCalendar groupId={groupId} lobbies={state.value} />
   );
 }

@@ -1,7 +1,6 @@
 import type { Lobby } from "../../api";
-import { useMessages } from "../../i18n";
+import { formatTimeRange, formatWeekday, useMessages } from "../../i18n";
 import { endsNextDay } from "./lobbyTime";
-import { formatClockRange, formatDay } from "./lobbyFormat";
 import { lobbyPath } from "./lobbyPath";
 
 /** One day with its lobbies. Lobbies that overlap sit side by side, the others follow one after another. */
@@ -17,7 +16,7 @@ export function CalendarDay({
   const m = useMessages();
   return (
     <li className="calendar-day">
-      <h4 className="calendar-day__name">{formatDay(day)}</h4>
+      <h4 className="calendar-day__name">{formatWeekday(day)}</h4>
       <div className="calendar-day__lobbies">
         {clusters.length === 0 && (
           <p className="calendar-day__empty">{m.calendarNoLobbiesOnDay}</p>
@@ -40,7 +39,7 @@ function CalendarLobby({ groupId, lobby }: { groupId: string; lobby: Lobby }) {
     <li className="calendar-lobby">
       <a href={lobbyPath(groupId, lobby.id)}>{lobby.gameName}</a>
       <span className="lobby-row__meta">
-        {formatClockRange(lobby)}
+        {formatTimeRange(lobby.startsAt, lobby.endsAt)}
         {endsNextDay(lobby) && ` (${m.lobbyEndsNextDay})`}
       </span>
       <span className="badge">

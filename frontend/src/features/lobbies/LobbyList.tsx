@@ -1,6 +1,6 @@
 import type { Group, Lobby } from "../../api";
-import { useMessages } from "../../i18n";
-import { creatorName, formatLobbyWhen } from "./lobbyFormat";
+import { formatDateTimeRange, useMessages } from "../../i18n";
+import { creatorName } from "./creatorName";
 import { lobbyPath } from "./lobbyPath";
 
 /** The lobbies as rows, in the order the server gives them (by start). */
@@ -43,7 +43,7 @@ function LobbyRow({
       <a className="lobby-row__game" href={lobbyPath(groupId, lobby.id)}>
         {lobby.gameName}
       </a>
-      <span>{formatLobbyWhen(lobby)}</span>
+      <span>{formatDateTimeRange(lobby.startsAt, lobby.endsAt)}</span>
       <span className="lobby-row__meta">{m.lobbyCreatedBy(creator)}</span>
       <span className="badge">
         {m.lobbyPlayers(lobby.playerCount, lobby.maxPlayers)}

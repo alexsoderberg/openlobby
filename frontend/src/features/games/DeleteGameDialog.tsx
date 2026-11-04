@@ -1,8 +1,7 @@
 import { useEffect, useId, useRef, useState } from "react";
-import type { Game } from "../../api";
+import type { ChangeResult, Game } from "../../api";
 import { toUserMessage, useMessages } from "../../i18n";
 import { Alert } from "../../ui";
-import type { ChangeResult } from "./gameErrors";
 
 /**
  * A modal dialog, so the page behind is inert and Escape closes it. The browser returns focus to the

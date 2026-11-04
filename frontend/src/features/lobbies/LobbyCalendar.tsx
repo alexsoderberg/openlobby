@@ -1,9 +1,8 @@
 import { useState } from "react";
 import type { Lobby } from "../../api";
-import { useMessages } from "../../i18n";
+import { formatDayRange, useMessages } from "../../i18n";
 import { CalendarDay } from "./CalendarDay";
 import { calendarWeek, nextWeekStart, weekStartOf } from "./calendarWeek";
-import { formatWeek } from "./lobbyFormat";
 
 /**
  * The lobbies of one Monday-to-Sunday week, starting with the current one. The only way on is the next
@@ -24,7 +23,7 @@ export function LobbyCalendar({
     <div className="calendar">
       <div className="calendar__bar">
         <h3 aria-live="polite">
-          {m.calendarWeekHeading(formatWeek(week.map(({ day }) => day)))}
+          {m.calendarWeekHeading(formatDayRange(week[0].day, week[6].day))}
         </h3>
         <button
           type="button"

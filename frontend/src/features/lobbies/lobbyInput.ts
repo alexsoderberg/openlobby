@@ -1,18 +1,15 @@
 import {
-  DEFAULT_MAX_PLAYERS_LIMIT,
-  DEFAULT_MAX_PLAYERS_MIN,
-  GAME_NAME_MAX_LENGTH,
+  INVALID_CAPACITY,
+  INVALID_GAME,
+  isGameNameLength,
+  parseMaxPlayers,
+  trimLikeServer,
   type CreateLobbyInput,
 } from "../../api";
-import { INVALID_CAPACITY, INVALID_GAME } from "./lobbyErrors";
 import { lobbyTimesFrom } from "./lobbyTime";
 
 /** The select value for the free-text choice. A game's value is its ID, which is a uuid and never this. */
 export const OTHER_GAME = "other";
-
-/** Trims the characters Go's strings.TrimSpace removes, so the local check agrees with the server. */
-const SERVER_TRIM = /^\p{White_Space}+|\p{White_Space}+$/gu;
-const WHOLE_NUMBER = /^\d+$/;
 
 export type LobbyFields = {
   game: string;
@@ -29,23 +26,8 @@ export type LobbyInputResult =
 function gameOf(fields: LobbyFields) {
   if (fields.game === "") return undefined;
   if (fields.game !== OTHER_GAME) return { gameId: fields.game };
-  const name = fields.customGameName.replace(SERVER_TRIM, "");
-  const length = [...name].length;
-  return length >= 1 && length <= GAME_NAME_MAX_LENGTH
-    ? { customGameName: name }
-    : undefined;
-}
-
-/** `null` is unlimited; `undefined` is not a valid number. */
-function maxPlayersOf(text: string): number | null | undefined {
-  const trimmed = text.replace(SERVER_TRIM, "");
-  if (trimmed === "") return null;
-  const value = Number(trimmed);
-  return WHOLE_NUMBER.test(trimmed) &&
-    value >= DEFAULT_MAX_PLAYERS_MIN &&
-    value <= DEFAULT_MAX_PLAYERS_LIMIT
-    ? value
-    : undefined;
+  const name = trimLikeServer(fields.customGameName);
+  return isGameNameLength(name) ? { customGameName: name } : undefined;
 }
 
 /** Quick feedback only. The server applies the same rules and is the source of truth. */
@@ -55,10 +37,24 @@ export function parseLobbyInput(
 ): LobbyInputResult {
   const game = gameOf(fields);
   if (!game) return { ok: false, code: INVALID_GAME };
-  const maxPlayers = maxPlayersOf(fields.maxPlayers);
+  const maxPlayers = parseMaxPlayers(fields.maxPlayers);
   if (maxPlayers === undefined) return { ok: false, code: INVALID_CAPACITY };
   const times = lobbyTimesFrom(fields.date, fields.start, fields.end, now);
   if (!times.ok) return times;
   const { startsAt, endsAt } = times;
   return { ok: true, input: { ...game, maxPlayers, startsAt, endsAt } };
+}
+
+/** Reads the form's fields by name. */
+export function readFields(form: HTMLFormElement): LobbyFields {
+  const data = new FormData(form);
+  const text = (name: keyof LobbyFields) => String(data.get(name) ?? "");
+  return {
+    game: text("game"),
+    customGameName: text("customGameName"),
+    maxPlayers: text("maxPlayers"),
+    date: text("date"),
+    start: text("start"),
+    end: text("end"),
+  };
 }

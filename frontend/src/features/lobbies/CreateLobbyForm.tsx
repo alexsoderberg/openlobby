@@ -1,59 +1,13 @@
 import { useId, useState } from "react";
-import type { CreateLobbyInput, Game } from "../../api";
+import type { ChangeResult, CreateLobbyInput, Game } from "../../api";
 import { toUserMessage, useMessages } from "../../i18n";
 import { LobbyGameFields } from "./LobbyGameFields";
 import { LobbyTimeFields } from "./LobbyTimeFields";
-import {
-  INVALID_CAPACITY,
-  INVALID_GAME,
-  LOBBY_TIME_MISSING,
-  type SaveResult,
-} from "./lobbyErrors";
-import { OTHER_GAME, parseLobbyInput, type LobbyFields } from "./lobbyInput";
+import { fieldOf } from "./lobbyFieldOf";
+import { LOBBY_TIME_MISSING } from "./lobbyErrors";
+import { useLobbyFormSubmit } from "./useLobbyFormSubmit";
 
-/** The form field that an error code is about. Time errors are all about the date, the first time field. */
-function fieldOf(code: string, gameValue: string): string {
-  if (code === INVALID_GAME)
-    return gameValue === OTHER_GAME ? "customGameName" : "game";
-  return code === INVALID_CAPACITY ? "maxPlayers" : "date";
-}
-
-function readFields(form: HTMLFormElement): LobbyFields {
-  const data = new FormData(form);
-  const text = (name: string) => String(data.get(name) ?? "");
-  return {
-    game: text("game"),
-    customGameName: text("customGameName"),
-    maxPlayers: text("maxPlayers"),
-    date: text("date"),
-    start: text("start"),
-    end: text("end"),
-  };
-}
-
-/** Checks the fields locally, then saves. Keeps the error code the attempt ended with and focuses its field. */
-function useLobbyFormSubmit(
-  gameValue: string,
-  onGameChange: (value: string) => void,
-  onSubmit: (input: CreateLobbyInput) => SaveResult,
-) {
-  const [errorCode, setErrorCode] = useState<string>();
-
-  async function submit(form: HTMLFormElement) {
-    const parsed = parseLobbyInput(readFields(form), new Date());
-    const code = parsed.ok ? await onSubmit(parsed.input) : parsed.code;
-    setErrorCode(code);
-    if (code === undefined) {
-      form.reset();
-      onGameChange("");
-      return;
-    }
-    const field = form.elements.namedItem(fieldOf(code, gameValue));
-    if (field instanceof HTMLElement) field.focus();
-  }
-
-  return { errorCode, submit };
-}
+type SubmitLobby = (input: CreateLobbyInput) => ChangeResult;
 
 /** Game, max players, date, start and end. `onSubmit` resolves to the error code of a failed save. */
 export function CreateLobbyForm({
@@ -63,19 +17,20 @@ export function CreateLobbyForm({
 }: {
   games: Game[];
   busy: boolean;
-  onSubmit: (input: CreateLobbyInput) => SaveResult;
+  onSubmit: SubmitLobby;
 }) {
   const m = useMessages();
   const id = useId();
-  const errorId = `${id}-error`;
   const [gameValue, setGameValue] = useState("");
   const { errorCode, submit } = useLobbyFormSubmit(
     gameValue,
     setGameValue,
     onSubmit,
   );
-  const errorField =
-    errorCode === undefined ? undefined : fieldOf(errorCode, gameValue);
+  const errorField = errorCode && fieldOf(errorCode, gameValue);
+  const errorId = `${id}-error`;
+  const errorFor = (name: string) =>
+    errorField === name ? errorId : undefined;
 
   return (
     <form
@@ -91,23 +46,22 @@ export function CreateLobbyForm({
         games={games}
         gameValue={gameValue}
         onGameChange={setGameValue}
-        errorField={errorField}
-        errorId={errorId}
+        errorFor={errorFor}
       />
-      <LobbyTimeFields
-        id={id}
-        errorId={errorField === "date" ? errorId : undefined}
-      />
-      {errorCode !== undefined && (
-        <p id={errorId} role="alert" className="field-error">
-          {errorCode === LOBBY_TIME_MISSING
-            ? m.lobbyTimeMissing
-            : toUserMessage(errorCode)}
-        </p>
-      )}
+      <LobbyTimeFields id={id} errorId={errorFor("date")} />
+      {errorCode && <LobbyFormError id={errorId} code={errorCode} />}
       <button type="submit" className="button" disabled={busy}>
         {m.lobbyCreateSubmit}
       </button>
     </form>
+  );
+}
+
+function LobbyFormError({ id, code }: { id: string; code: string }) {
+  const m = useMessages();
+  return (
+    <p id={id} role="alert" className="field-error">
+      {code === LOBBY_TIME_MISSING ? m.lobbyTimeMissing : toUserMessage(code)}
+    </p>
   );
 }

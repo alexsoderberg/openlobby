@@ -1,11 +1,12 @@
 import { useId, useRef, useState, type ComponentProps, type Ref } from "react";
-import type { Game, GameInput } from "../../api";
-import { toUserMessage, useMessages } from "../../i18n";
 import {
   INVALID_CAPACITY,
   INVALID_GAME,
   type ChangeResult,
-} from "./gameErrors";
+  type Game,
+  type GameInput,
+} from "../../api";
+import { toUserMessage, useMessages } from "../../i18n";
 import { parseGameInput } from "./gameInput";
 
 type SubmitGame = (input: GameInput) => ChangeResult;

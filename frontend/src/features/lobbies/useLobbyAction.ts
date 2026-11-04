@@ -1,6 +1,5 @@
 import { useCallback, useState } from "react";
-import { errorCodeOf, isUnauthenticated } from "../../api";
-import type { SaveResult } from "./lobbyErrors";
+import { errorCodeOf, isUnauthenticated, type ChangeResult } from "../../api";
 
 /**
  * Runs one change (create or delete) and resolves to the error code of a failure, or undefined on
@@ -10,7 +9,7 @@ export function useLobbyAction(onUnauthenticated: () => void) {
   const [busy, setBusy] = useState(false);
 
   const run = useCallback(
-    async (action: () => Promise<unknown>): SaveResult => {
+    async (action: () => Promise<unknown>): ChangeResult => {
       setBusy(true);
       try {
         await action();
