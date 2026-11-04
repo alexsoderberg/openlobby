@@ -46,6 +46,8 @@ const tabBar = () =>
   within(screen.getByRole("navigation", { name: en.shell.mainNav }));
 const plusIn = (nav: ReturnType<typeof rail>) =>
   nav.getByRole("button", { name: en.shell.createGroupButton });
+// The floating plus of phones; the rail has its own. Both exist in jsdom, which has no media queries.
+const fab = () => document.querySelector<HTMLElement>(".plus-button--fab");
 const dialog = () =>
   screen.queryByRole("dialog", { name: en.createGroupHeading });
 const nameField = () =>
@@ -69,22 +71,17 @@ describe("landmarks and top bar", () => {
 });
 
 describe("tab bar", () => {
-  it("lists Home, Groups, the plus and You in that order", () => {
+  it("lists Home, Groups and You in that order, with the plus outside the bar", () => {
     renderShell();
 
-    const items = tabBar()
-      .getAllByRole("link")
-      .map((link) => link.textContent);
-    expect(items).toEqual([en.shell.home, en.shell.groups, en.shell.you]);
-    const order = Array.from(
-      screen.getByRole("navigation", { name: en.shell.mainNav }).children,
-    ).map((item) => item.getAttribute("aria-label") ?? item.textContent);
-    expect(order).toEqual([
+    const nav = screen.getByRole("navigation", { name: en.shell.mainNav });
+    expect(Array.from(nav.children).map((item) => item.textContent)).toEqual([
       en.shell.home,
       en.shell.groups,
-      en.shell.createGroupButton,
       en.shell.you,
     ]);
+    expect(within(nav).queryByRole("button")).toBeNull();
+    expect(fab()).toBeTruthy();
   });
 
   it.each([
@@ -148,7 +145,7 @@ describe("Create group form behind the plus", () => {
 
   it("closes on Esc and returns focus to the plus that opened it", () => {
     renderShell();
-    const plus = plusIn(tabBar());
+    const plus = fab() as HTMLElement;
     fireEvent.click(plus);
 
     fireEvent.keyDown(document, { key: "Escape" });

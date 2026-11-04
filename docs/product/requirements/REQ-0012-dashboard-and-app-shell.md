@@ -33,7 +33,8 @@ Dashboard (F-028):
 
 App shell (presentation of F-001, F-002, F-004, F-005 and F-017; no new feature):
 - Given that I am logged in, when I see any page, then the Top bar shows the full Wordmark "OpenLobby", never as a Group icon, and my own avatar with my display name next to it. My avatar shows my initials in the same round form as a Group icon, because the MVP has no avatar images (F-029; the auth profile has no avatar field) (DECISION, user; ASSUMPTION for the display name, REQ-0001).
-- Given that I am on a phone, when I see the app, then the Tab bar shows, in this order, Home, Groups, a large "+" (Create group button) and You (DECISION, user, 2026-11-04). The Tab bar respects the bottom safe area of the device, and the active tab is marked (DECISION, user). There is no Calendar tab (DECISION, user).
+- Given that I am on a phone (narrower than 760 px), when I see the app, then the Tab bar shows three items in this order: Home, Groups and You. The Tab bar respects the bottom safe area of the device, and the active tab is marked (DECISION, user, 2026-11-04; replaces the four-item Tab bar, see Second amendment 2026-11-04). There is no Calendar tab (DECISION, user).
+- Given that I am on a phone, when I see the app, then a floating "+" (Create group button) is shown above the Tab bar at the bottom right, outside the Tab bar, clear of the device's safe area and not overlapping the Tab bar (DECISION, user, 2026-11-04). The desktop "+" in the Group rail is unchanged.
 - Given that I select the Groups tab, when the group list opens at `/groups`, then it shows all groups I am a member of, and selecting one opens its group view (DECISION, user; ADR 0014, point 6).
 - Given that I select the You tab, when the profile opens at `/profile`, then it shows my display name and avatar, a "Log out" button, and, if I am a system admin, a "Game list" link (DECISION, user; REQ-0010).
 - Given that I am not a system admin, when I open the You tab or the You page, then no "Game list" link is shown (REQ-0010, F-025; wording amended 2026-11-04).
@@ -43,8 +44,14 @@ App shell (presentation of F-001, F-002, F-004, F-005 and F-017; no new feature)
 - Given that I select Home (the house icon in the Group rail or the Home tab), when I am on any page, then the dashboard opens at `/` and that control is marked active (DECISION, user; ADR 0014, point 6).
 - Given that I select a group, when its group view opens, then the view shows the group's upcoming lobbies, members and invite links in the main area, at the address /groups/{groupId}, with the navigation still visible (DECISION, user). The rules of REQ-0002 and REQ-0004 for members and non-members are unchanged.
 
+Motion and hover (DECISION, user, 2026-11-04; see Second amendment 2026-11-04):
+- Given that I point at or hover a content section or panel (e.g. Upcoming lobbies, Create lobby, Next up, This week), when the pointer is over it, then the section has no hover effect.
+- Given that I point at or focus an interactive control (button, link, or a row that navigates), when the pointer is over it or it has keyboard focus, then it shows its hover or focus state.
+- Given that I change page inside the logged-in app (Dashboard, Groups, a group view, a lobby page, You, Game list), when the new page opens, then the page content animates smoothly, while the Top bar, Group rail and Tab bar stay still.
+- Given that reduced motion is on, when I change page, then the change is instant without animation. Given that the browser does not support the page transition, when I change page, then the change is instant.
+
 Create group button behind "+" (presentation of F-002; behavior of REQ-0002 unchanged):
-- Given that I am logged in, when I press the Create group button (bottom of the Group rail or in the Tab bar), then the Create group form opens from the pressed "+", its name field is focused, and the "+" turns into "×" (DECISION, user). The Create group button creates a group only, in the MVP (DECISION, user). Lobbies are created with their own button in the group view (DECISION, user).
+- Given that I am logged in, when I press the Create group button (bottom of the Group rail, or the floating "+" on phones), then the Create group form opens from the pressed "+", its name field is focused, and the "+" turns into "×" (DECISION, user). The Create group button creates a group only, in the MVP (DECISION, user). Lobbies are created with their own button in the group view (DECISION, user).
 - Given that the Create group form is open, when I press Esc, "Cancel" or "×", or tap outside the form, then the form closes and focus returns to the "+" (DECISION, user).
 - Given that I enter a name of 1–50 characters and save, when the group is created, then it follows REQ-0002 and its group view opens (ASSUMPTION).
 - Given that I enter an empty name or a name longer than 50 characters, when I save, then the error from REQ-0002 is shown and no group is saved.
@@ -87,6 +94,18 @@ Three product owner decisions made while building the UI (PR #42), proposed by t
    - Given that I am logged in, when I press "Log out" on the You page or the You tab, then I am logged out and the landing page at `/` is shown.
 3. Lobbies link to their lobby page (DECISION, product owner, 2026-11-04). Reason: the natural next step from the dashboard; the lobby page already exists (REQ-0004).
    - Given that a lobby is shown on Next up, or in This week in the grid or the agenda, when I select it, then its lobby page at `/groups/{groupId}/lobbies/{lobbyId}` opens.
+
+## Second amendment 2026-11-04
+Three user decisions, recorded as DECISION, user, 2026-11-04. Status stays Decided. Each item below is binding for the UI expert. Item 3 replaces the four-item tab bar from the criteria above.
+
+1. No hover effect on content sections (DECISION, user, 2026-11-04). Sections and panels such as Upcoming lobbies and Create lobby have no hover animation or hover highlight. Interactive controls (buttons, links, rows that navigate) keep their focus and hover state.
+   - Criteria added in the section "Motion and hover" above.
+2. Smooth page transitions inside the app (DECISION, user, 2026-11-04). Changing page inside the logged-in app (Dashboard, Groups, a group view, a lobby page, You, Game list) animates the content smoothly, so that the app feels like an application. The Top bar, Group rail and Tab bar stay still. With reduced motion the change is instant. Browsers without support change instantly. Timing and easing belong to the design spec.
+   - Criteria added in the section "Motion and hover" above.
+3. Phone tab bar with three items and a floating "+" (DECISION, user, 2026-11-04).
+   - Replaced criterion (old wording, kept for reference): "Given that I am on a phone, when I see the app, then the Tab bar shows, in this order, Home, Groups, a large "+" (Create group button) and You (DECISION, user, 2026-11-04)."
+   - Amended in place: the phone Tab bar criterion now shows Home, Groups and You. A new criterion puts the "+" as a floating button above the Tab bar at the bottom right, outside the Tab bar and clear of the safe area. The Create group criterion now names the floating "+" on phones.
+   - Desktop Group rail "+" is unchanged.
 
 ## Open questions
 - ASSUMPTION: Group icons are generated from the group name's initials. Presentation only.

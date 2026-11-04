@@ -3,7 +3,6 @@ import { readLoginError, withoutLoginError } from "../features/login";
 import type { LoginErrorCode } from "../i18n";
 
 export type EntryLocation = {
-  pathname: string;
   returnTo: string;
   loginError?: LoginErrorCode;
 };
@@ -13,7 +12,6 @@ export function useEntryLocation(): EntryLocation {
   const [entry] = useState<EntryLocation>(() => {
     const { pathname, search } = window.location;
     return {
-      pathname,
       returnTo: pathname + withoutLoginError(search),
       loginError: readLoginError(search),
     };

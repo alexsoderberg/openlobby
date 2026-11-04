@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import type { AuthUser, GroupSummary } from "../../api";
 import { CreateGroup, type GroupsState } from "../groups";
 import type { ActiveNav } from "./activeNav";
+import { CreateGroupButton } from "./CreateGroupButton";
 import { CreateGroupPopover } from "./CreateGroupPopover";
 import { GroupRail } from "./GroupRail";
 import { TabBar } from "./TabBar";
@@ -37,11 +38,14 @@ export function AppShell({
         createOpen={popover.open}
         onCreate={popover.press}
       />
-      <main className="shell__main">{children}</main>
-      <TabBar
-        active={active}
-        createOpen={popover.open}
-        onCreate={popover.press}
+      <main className="shell__main" tabIndex={-1}>
+        {children}
+      </main>
+      <TabBar active={active} />
+      <CreateGroupButton
+        className="plus-button plus-button--fab"
+        open={popover.open}
+        onPress={popover.press}
       />
       <CreateGroupPopover
         open={popover.open}

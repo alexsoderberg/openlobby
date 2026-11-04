@@ -3,7 +3,6 @@ import { useMessages } from "../../i18n";
 import { GROUPS_PATH } from "../groups";
 import { PROFILE_PATH } from "../profile";
 import { HOME_PATH, type ActiveNav } from "./activeNav";
-import { CreateGroupButton } from "./CreateGroupButton";
 import { GroupsIcon, HomeIcon, YouIcon } from "./icons";
 
 function Tab({
@@ -25,16 +24,8 @@ function Tab({
   );
 }
 
-/** Phones: four equal columns, Home, Groups, "+", You. */
-export function TabBar({
-  active,
-  createOpen,
-  onCreate,
-}: {
-  active: ActiveNav;
-  createOpen: boolean;
-  onCreate: (button: HTMLElement) => void;
-}) {
+/** Phones: three equal columns, Home, Groups, You. The "+" floats above it (see AppShell). */
+export function TabBar({ active }: { active: ActiveNav }) {
   const m = useMessages();
   return (
     <nav className="tab-bar" aria-label={m.shell.mainNav}>
@@ -52,7 +43,6 @@ export function TabBar({
       >
         <GroupsIcon />
       </Tab>
-      <CreateGroupButton open={createOpen} onPress={onCreate} />
       <Tab
         href={PROFILE_PATH}
         label={m.shell.you}
