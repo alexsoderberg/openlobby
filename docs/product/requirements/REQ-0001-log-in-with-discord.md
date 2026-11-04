@@ -33,3 +33,9 @@ None. This is the foundation for all other features; no other feature handles lo
 ## Open questions
 - DECISION (user): No connection to a specific Discord server. Any Discord account can log in.
 - DECISION (user): The display name is updated at the next login, not in real time.
+
+## Amendment 2026-11-04
+Replaces the criterion "Given that I click 'Log in with Discord' and approve in Discord, ... then I am logged in and see my list of groups (empty if I am not in any)" and the manual step "check the name in the header and the empty groups list":
+- Given that I click "Log in with Discord" and approve in Discord, when I return to the app, then I am logged in and land on the Dashboard at `/`. My groups are reached through the Group list at `/groups` and the group navigation. The Dashboard is empty if I am not in any group (REQ-0012; ADR 0014, point 6).
+
+The amendment is implemented with REQ-0012. Until then the login criterion above describes the behavior that is Implemented.

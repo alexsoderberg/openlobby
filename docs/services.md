@@ -40,7 +40,7 @@ All services use synchronous HTTP/JSON. No service reads another service's datab
 - **Responsibility:** routing (route table with path and method per route), session validation, sets `X-User-Id` and `X-User-System-Admin` from the session and removes the client's own `X-User-*`, forwards the `Cookie` header to `auth` only, correlation ID, answers `404 not_found` and `405 method_not_allowed`, blocks `/internal/*`, answers `503 service_unavailable` or `500 internal_error` when an upstream fails (a redirect on the two `GET` login routes, ADR 0002 review 5; a wrong method on them still gives JSON 405, review 6), access log.
 - **Owns data:** nothing.
 - **Dependencies:** `auth` (session validation), `frontend` and `calendar` (routing).
-- **Realizes:** F-001 (the session part of login), and the prerequisite for F-002–F-005, F-010, F-013, F-017, F-018 and F-024.
+- **Realizes:** F-001 (the session part of login), and the prerequisite for F-002–F-005, F-010, F-013, F-017, F-018, F-024 and F-028.
 - **Decisions:** ADR 0002, 0011.
 
 ### auth
@@ -48,22 +48,22 @@ All services use synchronous HTTP/JSON. No service reads another service's datab
 - **Owns data (database `auth`):** `users`, `sessions` (deleted at logout or after expiry), `login_attempts` (hash of `state`, PKCE verifier, `returnTo`; deleted when used or after expiry). ADR 0005 review 5, ADR 0006.
 - **Cookies:** `ol_session` (the session) and `ol_login` (binds a login attempt to the browser, path `/api/auth/callback`, 10 minutes).
 - **Dependencies:** Discord OAuth2 (external, behind the port `IdentityProvider`, `golang.org/x/oauth2` in the adapter), PostgreSQL.
-- **Realizes:** F-001 (REQ-0001), and the role for F-024 (system admin, REQ-0010).
+- **Realizes:** F-001 (REQ-0001), and the role for F-024 (system admin, REQ-0010). The display name and system admin flag for the dashboard (F-028, REQ-0012).
 - **Decisions:** ADR 0003, 0005, 0011.
 
 ### calendar
 - **Responsibility:** groups, membership and roles (one or more admins, at least one as long as the group has members), invite links expiring after 2 hours, max uses per link (1–10, default 10), lobbies with game and max players, players joining and leaving lobbies, and the game list (F-024). The game list is managed by the system admin. Members see it ordered by use in their group. Authorization is checked here.
 - **Owns data (database `calendar`):** `groups`, `group_members` (with `role` and `joined_at`), `invite_links` (with `expires_at`, `max_uses`, `use_count`), `lobbies` (with `game_name`, `game_id` and `max_players`), `lobby_players`, `games` (the game list with uuid IDs, ADR 0010).
 - **Dependencies:** `auth` (display names via internal `POST /internal/users/lookup`, from REQ-0002; no call and no Compose dependency before, ADR 0008 amendment REQ-0001 calendar), PostgreSQL.
-- **Realizes:** F-002 (REQ-0002), F-003 (REQ-0003, REQ-0009), F-004 and F-017 (REQ-0004), F-005 (REQ-0005), F-018 (REQ-0005, REQ-0009), F-024 (REQ-0009, management by system admin), F-010 (REQ-0006), F-013 (REQ-0007).
+- **Realizes:** F-002 (REQ-0002), F-003 (REQ-0003, REQ-0009), F-004 and F-017 (REQ-0004), F-005 (REQ-0005), F-018 (REQ-0005, REQ-0009), F-024 (REQ-0009, management by system admin), F-010 (REQ-0006), F-013 (REQ-0007), F-028 (REQ-0012, data only: the group list, each group's upcoming lobbies and `joinedByMe` on each lobby, ADR 0014).
 - **Decisions:** ADR 0004, 0006, 0007, 0010, 0011.
 
 ### frontend
-- **Responsibility:** React + TypeScript (Vite). The user interface, local time, filtering of the week view, interpretation of an end time as the next day, game selection from `GET /api/groups/{groupId}/games` with the max prefilled from `defaultMaxPlayers`, player count display ("X/Y players" or "X players"), expiry time and uses of links, error messages based on error codes, 404 page for `invite_invalid`, and the page `/systemadmin/games` for the system admin (shown when `isSystemAdmin` is true).
+- **Responsibility:** React + TypeScript (Vite). The user interface, the app shell and dashboard ("Next up", "This week" computed from `calendar` and `auth` data, ADR 0014), local time, filtering of the week view, interpretation of an end time as the next day, game selection from `GET /api/groups/{groupId}/games` with the max prefilled from `defaultMaxPlayers`, player count display ("X/Y players" or "X players"), expiry time and uses of links, error messages based on error codes, 404 page for `invite_invalid`, and the page `/systemadmin/games` for the system admin (shown when `isSystemAdmin` is true).
 - **Owns data:** nothing. Runs in its own container with static files (Nginx). No access log, error log level `emerg` (ADR 0008 and ADR 0009 review 5).
 - **Dependencies:** `gateway` (all API calls).
-- **Realizes:** the user interface for F-001–F-005, F-010, F-013, F-017, F-018 and F-024.
-- **Decisions:** ADR 0008 (static web server), 0001, 0011, 0013 (texts and formatting).
+- **Realizes:** the user interface for F-001–F-005, F-010, F-013, F-017, F-018, F-024 and F-028.
+- **Decisions:** ADR 0008 (static web server), 0001, 0011, 0013 (texts and formatting), 0014 (dashboard).
 
 ### Shared
 - **Databases:** one PostgreSQL 17 instance (ADR 0008), one database per service (`auth`, `calendar`), with two roles each: `<service>` (DML) and `<service>_migrate` (DDL, only the migration job). ADR 0006, 0008, 0012.

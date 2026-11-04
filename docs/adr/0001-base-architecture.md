@@ -2,7 +2,7 @@
 Status: Accepted (2026-11-01)
 
 ## Context
-The MVP of OpenLobby consists of the requirements REQ-0001–0010. They build on one core flow: login, group, lobby, overview, joining a lobby, leaving a group and revoking an invite link, plus the group admin role, the game list and the system admin role. The stack is already decided in CLAUDE.md: microservices behind an API gateway, Go for the backend, React + Vite for the frontend, Discord OAuth2, PostgreSQL, Docker Compose on Raspberry Pi 5.
+The MVP of OpenLobby consists of the requirements REQ-0001–0010 and, from Amendment 2026-11-04, REQ-0012. They build on one core flow: login, group, lobby, overview, joining a lobby, leaving a group and revoking an invite link, plus the group admin role, the game list and the system admin role. The stack is already decided in CLAUDE.md: microservices behind an API gateway, Go for the backend, React + Vite for the frontend, Discord OAuth2, PostgreSQL, Docker Compose on Raspberry Pi 5.
 
 The project has few users (3–15 per group) and a small codebase. The architecture should therefore be as small as possible but still follow the rules of the stack.
 
@@ -173,3 +173,5 @@ Amendment 2026-11-02 (REQ-0001 calendar). Decided by the architect on the open q
 Amendment 2026-11-03 (REQ-0002 PR A). Two ordering rules, stated here because item 6 is the authority for list order:
 - **Group members** (`GET /api/groups/{groupId}`, `members`): ordered by `joined_at`, then `user_id`. The tie-break keeps the order stable when two members join in the same instant. The order is the same as the transfer rule of ADR 0004 (rule 5e).
 - **Groups of a user** (`GET /api/groups`): no order. The query has no `ORDER BY`, and the contract promises none.
+
+Amendment 2026-11-04 (REQ-0012): the dashboard and the app shell are part of the MVP. The dashboard uses only existing endpoints and adds one additive field (`joinedByMe` on `Lobby`, `calendar`). No new service, dependency or communication style. Decided in ADR 0014.

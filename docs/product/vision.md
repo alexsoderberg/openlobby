@@ -25,7 +25,7 @@ The core flow, in order:
 1. Log in with Discord.
 2. Create a group or join a group via invite link. Members create links on request. Each link is valid for 2 hours and always has a max number of uses (1–10). Members see only their own links; group admins see, copy and revoke all of them. Links can be revoked: a group admin can revoke all of the group's links, and each person can revoke the links they created themselves. A group admin can make a member a group admin.
 3. Create a lobby (game, start, end, max players).
-4. View the group's upcoming lobbies, as a list or as a calendar.
+4. View the group's upcoming lobbies, as a list or as a calendar, and the upcoming lobbies of all your groups on a dashboard (REQ-0012).
 5. Join a lobby (if there are free spots), or leave it.
 6. Leave a group.
 
