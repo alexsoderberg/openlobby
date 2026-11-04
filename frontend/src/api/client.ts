@@ -4,14 +4,26 @@ import type { components as calendarComponents } from "./gen/calendar";
 export type AuthUser = authComponents["schemas"]["AuthUser"];
 export type GroupSummary = calendarComponents["schemas"]["GroupSummary"];
 export type Group = calendarComponents["schemas"]["Group"];
+export type Game = calendarComponents["schemas"]["Game"];
 export type InviteLink = calendarComponents["schemas"]["InviteLink"];
 export type InviteInfo = calendarComponents["schemas"]["InviteInfo"];
+/** What the system admin sets on a game. `null` means no player limit. */
+export type GameInput = {
+  name: string;
+  defaultMaxPlayers: number | null;
+};
 export type ApiErrorCode =
   | authComponents["schemas"]["ErrorBody"]["code"]
   | calendarComponents["schemas"]["ErrorBody"]["code"];
 
 /** Contract rule: a group name is 1–50 characters after trim. Used by the local check and the messages. */
 export const GROUP_NAME_MAX_LENGTH = 50;
+/** Contract rule: a game name is 1–50 characters after trim. */
+export const GAME_NAME_MAX_LENGTH = 50;
+/** Contract rule: a default max is an integer from 1 to this value (a 32-bit signed integer). */
+export const DEFAULT_MAX_PLAYERS_LIMIT = 2147483647;
+/** Contract rule: this name is the free-text choice and cannot be a game (ADR 0010). */
+export const RESERVED_GAME_NAME = "Other";
 /** Contract rule: an invite link allows 1–10 uses (ADR 0007). */
 export const INVITE_MAX_USES_LIMIT = 10;
 /** The form preselects this value. The API applies the same default when none is sent (ADR 0007). */
@@ -36,6 +48,10 @@ export interface ApiClient {
   revokeInviteLink(groupId: string, linkId: string): Promise<void>;
   getInvite(token: string): Promise<InviteInfo>;
   joinInvite(token: string): Promise<GroupSummary>;
+  listGames(): Promise<Game[]>;
+  createGame(input: GameInput): Promise<Game>;
+  replaceGame(gameId: string, input: GameInput): Promise<Game>;
+  deleteGame(gameId: string): Promise<void>;
 }
 
 /** A failed call. `code` is the contract's error code, never a message from the server. */

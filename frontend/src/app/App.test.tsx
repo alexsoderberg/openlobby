@@ -1,4 +1,5 @@
 import {
+  cleanup,
   fireEvent,
   render,
   screen,
@@ -344,5 +345,64 @@ describe("unknown page", () => {
     expect(
       screen.queryByRole("link", { name: en.logInWithDiscord }),
     ).toBeNull();
+  });
+});
+
+describe("game list page", () => {
+  const admin = { ...testUser, isSystemAdmin: true };
+  const adminClient = (overrides: Partial<ApiClient> = {}) =>
+    loggedInClient({
+      getCurrentUser: () => Promise.resolve(admin),
+      listGames: vi.fn(() =>
+        Promise.resolve([{ id: "g1", name: "Catan", defaultMaxPlayers: 4 }]),
+      ),
+      ...overrides,
+    });
+
+  it("sends a logged-out visitor to login and back to the page", async () => {
+    const client = fakeApiClient();
+    renderAt(client, "/games");
+
+    const login = await screen.findByRole("link", {
+      name: en.logInWithDiscord,
+    });
+    expect(login.getAttribute("href")).toBe(
+      "/api/auth/login?returnTo=%2Fgames",
+    );
+    expect(client.listGames).not.toHaveBeenCalled();
+  });
+
+  it("gives a system admin the header link and the list", async () => {
+    renderAt(adminClient(), "/");
+
+    const link = await screen.findByRole("link", { name: en.gameListLink });
+    expect(link.getAttribute("href")).toBe("/games");
+
+    cleanup();
+    renderAt(adminClient(), "/games");
+    expect(await screen.findByText("Catan")).toBeTruthy();
+  });
+
+  it("gives a non-admin no link and denies the address without loading the list", async () => {
+    const client = loggedInClient();
+    renderAt(client, "/");
+    await screen.findByText(en.groupsEmpty);
+    expect(screen.queryByRole("link", { name: en.gameListLink })).toBeNull();
+
+    cleanup();
+    renderAt(client, "/games");
+    expect(await screen.findByText(en.gameListDenied)).toBeTruthy();
+    expect(client.listGames).not.toHaveBeenCalled();
+  });
+
+  it("denies a user whose admin role the server refuses", async () => {
+    renderAt(
+      adminClient({
+        listGames: () => Promise.reject(new ApiError(403, "not_allowed")),
+      }),
+      "/games",
+    );
+    expect(await screen.findByText(en.gameListDenied)).toBeTruthy();
+    expect(screen.queryByText("Catan")).toBeNull();
   });
 });

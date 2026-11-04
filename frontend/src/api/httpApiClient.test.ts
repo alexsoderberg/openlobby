@@ -16,6 +16,16 @@ const failingCalls: Array<[string, (api: ApiClient) => Promise<unknown>]> = [
   ["revokeInviteLink", (api) => api.revokeInviteLink("g1", "l1")],
   ["getInvite", (api) => api.getInvite("t1")],
   ["joinInvite", (api) => api.joinInvite("t1")],
+  ["listGames", (api) => api.listGames()],
+  [
+    "createGame",
+    (api) => api.createGame({ name: "Catan", defaultMaxPlayers: 4 }),
+  ],
+  [
+    "replaceGame",
+    (api) => api.replaceGame("g1", { name: "Catan", defaultMaxPlayers: null }),
+  ],
+  ["deleteGame", (api) => api.deleteGame("g1")],
 ];
 
 describe("createHttpApiClient", () => {
@@ -121,6 +131,27 @@ describe("createHttpApiClient", () => {
     expect(sent[0]).toMatchObject({ method: "POST" });
     expect(new URL(sent[0].url).pathname).toBe("/api/groups/g1/invite-links");
     await expect(sent[0].json()).resolves.toEqual({ maxUses: 3 });
+  });
+
+  it("puts the whole game to its own address and deletes it", async () => {
+    const sent: Request[] = [];
+    const fetchImpl = vi.fn<typeof fetch>(async (input) => {
+      sent.push(new Request(input));
+      return sent.length === 1
+        ? Response.json({ id: "g1", name: "Catan", defaultMaxPlayers: null })
+        : new Response(null, { status: 204 });
+    });
+    const api = createHttpApiClient(fetchImpl, BASE_URL);
+
+    await api.replaceGame("g1", { name: "Catan", defaultMaxPlayers: null });
+    await api.deleteGame("g1");
+
+    expect(sent.map((request) => request.method)).toEqual(["PUT", "DELETE"]);
+    expect(new URL(sent[0].url).pathname).toBe("/api/games/g1");
+    await expect(sent[0].json()).resolves.toEqual({
+      name: "Catan",
+      defaultMaxPlayers: null,
+    });
   });
 
   it("deletes the link and resolves on 204", async () => {

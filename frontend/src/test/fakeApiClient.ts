@@ -1,5 +1,10 @@
 import { vi } from "vitest";
-import { ApiError, type ApiClient, type AuthUser } from "../api";
+import {
+  ApiError,
+  type ApiClient,
+  type AuthUser,
+  type GameInput,
+} from "../api";
 
 export const testUser: AuthUser = {
   userId: "5f0c2e1a-9b7d-4c1e-8a3f-1d2e3f4a5b6c",
@@ -31,6 +36,14 @@ export function fakeApiClient(overrides: Partial<ApiClient> = {}): ApiClient {
     revokeInviteLink: vi.fn(() => Promise.resolve()),
     getInvite: vi.fn(() => Promise.reject(new ApiError(404, "invite_invalid"))),
     joinInvite: vi.fn(() => Promise.resolve({ id: "g1", name: "Friday crew" })),
+    listGames: vi.fn(() => Promise.resolve([])),
+    createGame: vi.fn((input: GameInput) =>
+      Promise.resolve({ id: "new-game", ...input }),
+    ),
+    replaceGame: vi.fn((gameId: string, input: GameInput) =>
+      Promise.resolve({ id: gameId, ...input }),
+    ),
+    deleteGame: vi.fn(() => Promise.resolve()),
     ...overrides,
   };
 }

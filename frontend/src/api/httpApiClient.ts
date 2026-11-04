@@ -67,6 +67,23 @@ export function createHttpApiClient(
           }),
         ),
       ),
+    listGames: async () => bodyOf(await receive(http.GET("/api/games"))),
+    createGame: async (input) =>
+      bodyOf(await receive(http.POST("/api/games", { body: input }))),
+    replaceGame: async (gameId, input) =>
+      bodyOf(
+        await receive(
+          http.PUT("/api/games/{gameId}", {
+            params: { path: { gameId } },
+            body: input,
+          }),
+        ),
+      ),
+    deleteGame: async (gameId) => {
+      await receive(
+        http.DELETE("/api/games/{gameId}", { params: { path: { gameId } } }),
+      );
+    },
   };
 }
 

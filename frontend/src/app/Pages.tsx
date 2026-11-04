@@ -4,6 +4,7 @@ import {
   groupPath,
   useGroup,
 } from "../features/groups";
+import { GamesPage } from "../features/games";
 import { InvitePage } from "../features/invites";
 import { useMessages } from "../i18n";
 import { Panel } from "../ui";
@@ -11,9 +12,11 @@ import type { Route } from "./route";
 
 export function ProtectedPage({
   route,
+  isSystemAdmin,
   onUnauthenticated,
 }: {
   route: Exclude<Route, { name: "notFound" }>;
+  isSystemAdmin: boolean;
   onUnauthenticated: () => void;
 }) {
   switch (route.name) {
@@ -23,6 +26,13 @@ export function ProtectedPage({
       return (
         <GroupPage
           groupId={route.groupId}
+          onUnauthenticated={onUnauthenticated}
+        />
+      );
+    case "games":
+      return (
+        <GamesPage
+          isSystemAdmin={isSystemAdmin}
           onUnauthenticated={onUnauthenticated}
         />
       );
