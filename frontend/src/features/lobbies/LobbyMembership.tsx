@@ -26,8 +26,10 @@ export function LobbyMembership({
   lobby: Membership;
   onChanged: () => void;
   onUnauthenticated: () => void;
-  /** Says "Ended" in place of the join button once the clock passes the end. Off where the view already shows
-   * the state; a lobby_has_ended answer shows "Ended" everywhere. */
+  /**
+   * Says "Ended" in place of the join button once the clock passes the end. Off where the view already
+   * shows the state; a lobby_has_ended answer shows "Ended" everywhere.
+   */
   showEnded?: boolean;
 }) {
   const m = useMessages();
@@ -56,7 +58,7 @@ export function LobbyMembership({
   const ended = errorCode === LOBBY_HAS_ENDED || hasEnded(lobby);
   if (!leaving && ended)
     return showEnded || errorCode === LOBBY_HAS_ENDED ? (
-      <p>{m.lobbyEnded}</p>
+      <p role="status">{m.lobbyEnded}</p>
     ) : null;
   const failure =
     errorCode === LOBBY_NOT_FOUND

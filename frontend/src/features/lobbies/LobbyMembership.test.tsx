@@ -71,6 +71,13 @@ describe("join and leave a lobby", () => {
     expect(screen.queryByRole("button")).toBeNull();
   });
 
+  it("shows nothing for an ended lobby where the view already shows Ended", () => {
+    renderMembership({ endsAt: ended });
+
+    expect(screen.queryByText(en.lobbyEnded)).toBeNull();
+    expect(screen.queryByRole("button")).toBeNull();
+  });
+
   it("still offers join on a full lobby and answers with the full message", async () => {
     const { onChanged } = renderMembership(
       {},
@@ -108,7 +115,7 @@ describe("join and leave a lobby", () => {
 
     fireEvent.click(await join());
 
-    expect(await screen.findByText(en.lobbyEnded)).toBeTruthy();
+    expect((await screen.findByRole("status")).textContent).toBe(en.lobbyEnded);
     expect(screen.queryByRole("button")).toBeNull();
     expect(screen.queryByRole("alert")).toBeNull();
     expect(onChanged).not.toHaveBeenCalled();
