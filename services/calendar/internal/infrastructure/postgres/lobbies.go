@@ -14,7 +14,7 @@ const (
 	insertLobbySQL = `INSERT INTO lobbies (group_id, created_by_user_id, game_id, game_name, max_players, starts_at, ends_at, created_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`
 	insertLobbyPlayerSQL = `INSERT INTO lobby_players (lobby_id, user_id, joined_at) VALUES ($1, $2, $3)`
-	selectJoinStateSQL = `SELECT l.ends_at, l.max_players,
+	selectJoinStateSQL   = `SELECT l.ends_at, l.max_players,
 		(SELECT count(*) FROM lobby_players p WHERE p.lobby_id = l.id),
 		EXISTS (SELECT 1 FROM lobby_players p WHERE p.lobby_id = l.id AND p.user_id = $3)
 		FROM lobbies l WHERE l.id = $1 AND l.group_id = $2`
