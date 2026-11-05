@@ -99,6 +99,8 @@ func TestInviteLinkIsActive(t *testing.T) {
 		{name: "one nanosecond before expiry", link: domain.InviteLink{ExpiresAt: now.Add(time.Nanosecond), MaxUses: 1}, want: true},
 		{name: "exactly at expiry is not active", link: domain.InviteLink{ExpiresAt: now, MaxUses: 1}, want: false},
 		{name: "after expiry is not active", link: domain.InviteLink{ExpiresAt: now.Add(-time.Second), MaxUses: 1}, want: false},
+		{name: "created 9 minutes ago is active", link: domain.InviteLink{ExpiresAt: now.Add(-9 * time.Minute).Add(domain.InviteLinkLifetime), MaxUses: 1}, want: true},
+		{name: "created exactly 10 minutes ago is not active", link: domain.InviteLink{ExpiresAt: now.Add(-10 * time.Minute).Add(domain.InviteLinkLifetime), MaxUses: 1}, want: false},
 		{name: "one use left of ten", link: domain.InviteLink{ExpiresAt: now.Add(time.Hour), UseCount: 9, MaxUses: 10}, want: true},
 		{name: "use count equals max uses is not active", link: domain.InviteLink{ExpiresAt: now.Add(time.Hour), UseCount: 10, MaxUses: 10}, want: false},
 		{name: "use count of one with max one is not active", link: domain.InviteLink{ExpiresAt: now.Add(time.Hour), UseCount: 1, MaxUses: 1}, want: false},

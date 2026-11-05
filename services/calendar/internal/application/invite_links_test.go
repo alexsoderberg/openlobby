@@ -111,7 +111,7 @@ func newInviteLinks(store *linkStore) *application.InviteLinks {
 	return application.NewInviteLinks(store, store, store, fixedTokens{}, fixedClock{at: now})
 }
 
-func TestCreateStoresLinkWithDefaultMaxUsesAndTwoHourLifetime(t *testing.T) {
+func TestCreateStoresLinkWithDefaultMaxUsesAndTenMinuteLifetime(t *testing.T) {
 	store := newLinkStore()
 
 	link, err := newInviteLinks(store).Create(context.Background(), fridayID, bobID, nil)

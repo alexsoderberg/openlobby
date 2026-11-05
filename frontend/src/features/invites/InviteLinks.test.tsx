@@ -6,12 +6,7 @@ import {
   within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import {
-  ApiError,
-  ApiProvider,
-  INVITE_MAX_USES_DEFAULT,
-  type ApiClient,
-} from "../../api";
+import { ApiError, ApiProvider, type ApiClient } from "../../api";
 import { en } from "../../i18n/messages/en";
 import { fakeApiClient } from "../../test/fakeApiClient";
 import { InviteLinks } from "./InviteLinks";
@@ -165,13 +160,6 @@ describe("invite popover body", () => {
     fireEvent.click(screen.getByRole("button", { name: en.inviteClose }));
     expect(onClose).toHaveBeenCalledOnce();
   });
-
-  it("starts with one use selected", async () => {
-    renderLinks(fakeApiClient());
-    await screen.findByText(en.inviteLinksEmpty);
-
-    expect(INVITE_MAX_USES_DEFAULT).toBe(1);
-  });
 });
 
 describe("create invite link", () => {
@@ -186,16 +174,13 @@ describe("create invite link", () => {
           name: en.inviteMaxUsesLabel,
         }) as HTMLSelectElement
       ).value,
-    ).toBe(String(INVITE_MAX_USES_DEFAULT));
+    ).toBe("1");
     fireEvent.click(
       screen.getByRole("button", { name: en.createInviteLinkSubmit }),
     );
 
     await waitFor(() =>
-      expect(client.createInviteLink).toHaveBeenCalledWith(
-        "g1",
-        INVITE_MAX_USES_DEFAULT,
-      ),
+      expect(client.createInviteLink).toHaveBeenCalledWith("g1", 1),
     );
   });
 

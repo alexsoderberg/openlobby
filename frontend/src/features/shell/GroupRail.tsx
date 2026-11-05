@@ -1,4 +1,9 @@
-import { useState, type KeyboardEvent, type MouseEvent } from "react";
+import {
+  useCallback,
+  useState,
+  type KeyboardEvent,
+  type MouseEvent,
+} from "react";
 import type { GroupSummary } from "../../api";
 import { useMessages } from "../../i18n";
 import { GroupIcon } from "../../ui";
@@ -53,10 +58,11 @@ export function GroupRail({
     const icon = item.querySelector<HTMLElement>("a") ?? item;
     setMenu({ group, icon, position });
   };
-  const closeMenu = () => {
+  // Stable while the menu is open, so the menu's focus and outside-click effect runs once.
+  const closeMenu = useCallback(() => {
     menu?.icon.focus();
     setMenu(undefined);
-  };
+  }, [menu]);
   const onContextMenu = (
     group: GroupSummary,
     event: MouseEvent<HTMLElement>,
