@@ -32,16 +32,18 @@ export function LobbyDetails({
           <p>{m.lobbyPlayers(lobby.playerCount, lobby.maxPlayers)}</p>
           <h2>{m.lobbyPlayersHeading}</h2>
           <PlayerList players={lobby.players} />
-          <LobbyMembership
-            groupId={groupId}
-            lobby={lobby}
-            onChanged={onMembershipChanged}
-            showEnded
-            onUnauthenticated={callbacks.onUnauthenticated}
-          />
-          {isCreator && (
-            <DeleteLobby lobby={lobby} groupId={groupId} {...callbacks} />
-          )}
+          <div className="form-actions">
+            <LobbyMembership
+              groupId={groupId}
+              lobby={lobby}
+              onChanged={onMembershipChanged}
+              showEnded
+              onUnauthenticated={callbacks.onUnauthenticated}
+            />
+            {isCreator && (
+              <DeleteLobby lobby={lobby} groupId={groupId} {...callbacks} />
+            )}
+          </div>
         </Panel>
       </div>
     </>

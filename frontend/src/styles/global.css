@@ -1633,6 +1633,11 @@ a {
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.page-heading h1 {
+  margin: 0;
 }
 
 /* The right-click menu of a group icon: placed at the pointer, no motion. */
@@ -1663,4 +1668,31 @@ a {
 .context-menu__item:hover,
 .context-menu__item:focus-visible {
   background: var(--color-accent-tint);
+}
+
+/* Spacing rule: a button or action row that follows other content in a panel, dialog or popover
+   sits one space-3 below it, and the invite popover's blocks after a status line do the same.
+   Headings, .status, .row-list and .step-card__text keep their own spacing, so this is not a
+   blanket rule. Specificity (0,2,0) beats .button and .alert resets whatever the source order.
+   .login-panel has its own .button margin and is left alone. */
+:is(.panel, .dialog, .create-popover__card)
+  > *
+  + :is(.button, .button-ghost, .button--secondary, .form-actions),
+.create-popover__card > .status + * {
+  margin-top: var(--space-3);
+}
+
+/* Children of an action row are spaced by the row gap alone, not by their own margins. A modal dialog
+   rendered in the row is excluded: it is centred by its own auto margin. */
+.form-actions > :not(dialog) {
+  margin: 0;
+}
+
+.form-actions > .alert {
+  flex: 1 1 100%;
+}
+
+/* Only the first button of a row pushes right; the rest follow at the row gap. */
+.list-row .button + .button {
+  margin-left: 0;
 }
