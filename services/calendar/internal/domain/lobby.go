@@ -32,6 +32,7 @@ type Lobby struct {
 	EndsAt          time.Time
 	CreatedAt       time.Time
 	PlayerCount     int
+	JoinedByMe      bool // whether the caller is a player; set by the reader, true for a new lobby
 }
 
 // Player is a person in a lobby, with the name shown to the group.
@@ -79,6 +80,7 @@ func NewLobby(request NewLobbyRequest, now time.Time) (Lobby, error) {
 		EndsAt:          request.EndsAt,
 		CreatedAt:       now,
 		PlayerCount:     1,
+		JoinedByMe:      true,
 	}, nil
 }
 

@@ -111,7 +111,7 @@ func (h publicHandler) GetLobby(ctx context.Context, request publicapi.GetLobbyR
 	}
 	return publicapi.GetLobby200JSONResponse{
 		Id: body.Id, GameName: body.GameName, MaxPlayers: body.MaxPlayers, StartsAt: body.StartsAt, EndsAt: body.EndsAt,
-		CreatedByUserId: body.CreatedByUserId, PlayerCount: body.PlayerCount, Players: refs,
+		CreatedByUserId: body.CreatedByUserId, PlayerCount: body.PlayerCount, JoinedByMe: body.JoinedByMe, Players: refs,
 	}, nil
 }
 
@@ -133,5 +133,6 @@ func lobbyBody(lobby domain.Lobby) (publicapi.CreateLobby201JSONResponse, error)
 		EndsAt:          lobby.EndsAt.UTC(),
 		CreatedByUserId: creatorID,
 		PlayerCount:     lobby.PlayerCount,
+		JoinedByMe:      lobby.JoinedByMe,
 	}, nil
 }

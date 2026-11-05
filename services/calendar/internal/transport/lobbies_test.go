@@ -63,7 +63,7 @@ func (t memoryLobbyTx) DeleteLobby(_ context.Context, _, lobbyID string) error {
 
 // Upcoming and the methods after it make memoryGroups the lobby reader. The clock of the router is the zero time, so
 // every lobby with a later end is upcoming.
-func (m *memoryGroups) Upcoming(_ context.Context, groupID string, at time.Time) ([]domain.Lobby, error) {
+func (m *memoryGroups) Upcoming(_ context.Context, groupID, callerID string, at time.Time) ([]domain.Lobby, error) {
 	var upcoming []domain.Lobby
 	for _, lobby := range m.lobbies {
 		if lobby.GroupID == groupID && lobby.EndsAt.After(at) {
@@ -76,7 +76,7 @@ func (m *memoryGroups) Upcoming(_ context.Context, groupID string, at time.Time)
 	return upcoming, m.err
 }
 
-func (m *memoryGroups) Lobby(_ context.Context, groupID, lobbyID string, at time.Time) (domain.Lobby, error) {
+func (m *memoryGroups) Lobby(_ context.Context, groupID, lobbyID, callerID string, at time.Time) (domain.Lobby, error) {
 	lobby, ok := m.lobbies[lobbyID]
 	if !ok || lobby.GroupID != groupID || !lobby.EndsAt.After(at) {
 		return domain.Lobby{}, domain.ErrLobbyNotFound
@@ -149,7 +149,7 @@ func TestCreateLobbyReturns201WithTheContractShape(t *testing.T) {
 			}
 			want := map[string]any{
 				"id": createdID, "gameName": tc.wantGame, "maxPlayers": tc.wantMax, "startsAt": tc.wantStart,
-				"endsAt": validEnd, "createdByUserId": otherID, "playerCount": float64(1),
+				"endsAt": validEnd, "createdByUserId": otherID, "playerCount": float64(1), "joinedByMe": true,
 			}
 			for key, value := range want {
 				if got[key] != value {
@@ -298,7 +298,7 @@ func upcomingStore() *memoryGroups {
 	store := lobbyStore()
 	start := time.Date(2026, 11, 2, 19, 0, 0, 0, time.UTC)
 	store.lobbies[otherLobby] = domain.Lobby{ID: otherLobby, GroupID: fridayID, CreatedByUserID: otherID, GameName: "Chess",
-		StartsAt: start.Add(time.Hour), EndsAt: start.Add(2 * time.Hour), PlayerCount: 1}
+		StartsAt: start.Add(time.Hour), EndsAt: start.Add(2 * time.Hour), PlayerCount: 1, JoinedByMe: true}
 	store.lobbies[aliceLobby] = domain.Lobby{ID: aliceLobby, GroupID: fridayID, CreatedByUserID: alexID, GameName: "Go",
 		StartsAt: start, EndsAt: start.Add(time.Hour), PlayerCount: 2}
 	store.lobbies[endedLobby] = domain.Lobby{ID: endedLobby, GroupID: fridayID, CreatedByUserID: alexID, GameName: "Old"}
@@ -322,7 +322,7 @@ func TestListUpcomingLobbiesReturns200WithTheContractShape(t *testing.T) {
 	}
 	want := map[string]any{
 		"id": aliceLobby, "gameName": "Go", "maxPlayers": nil, "startsAt": "2026-11-02T19:00:00Z",
-		"endsAt": "2026-11-02T20:00:00Z", "createdByUserId": alexID, "playerCount": float64(2),
+		"endsAt": "2026-11-02T20:00:00Z", "createdByUserId": alexID, "playerCount": float64(2), "joinedByMe": false,
 	}
 	for key, value := range want {
 		if got[0][key] != value {
@@ -352,8 +352,9 @@ func TestGetLobbyReturns200WithPlayers(t *testing.T) {
 		t.Fatalf("status %d, want 200; body %q", response.Code, response.Body.String())
 	}
 	var got struct {
-		ID      string `json:"id"`
-		Players []struct {
+		ID         string `json:"id"`
+		JoinedByMe bool   `json:"joinedByMe"`
+		Players    []struct {
 			UserID      string `json:"userId"`
 			DisplayName string `json:"displayName"`
 		} `json:"players"`
@@ -361,7 +362,7 @@ func TestGetLobbyReturns200WithPlayers(t *testing.T) {
 	if err := json.Unmarshal(response.Body.Bytes(), &got); err != nil {
 		t.Fatal(err)
 	}
-	if got.ID != otherLobby || len(got.Players) != 2 || got.Players[0].UserID != otherID || got.Players[0].DisplayName == "" || got.Players[1].UserID != alexID {
+	if got.ID != otherLobby || !got.JoinedByMe || len(got.Players) != 2 || got.Players[0].UserID != otherID || got.Players[0].DisplayName == "" || got.Players[1].UserID != alexID {
 		t.Fatalf("body %q, want the lobby with Other and Alex as named players", response.Body.String())
 	}
 }

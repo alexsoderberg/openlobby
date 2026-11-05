@@ -27,7 +27,7 @@ func (l *Lobbies) Upcoming(ctx context.Context, groupID, callerID string) ([]dom
 	if _, err := requireMember(ctx, l.reader, groupID, callerID); err != nil {
 		return nil, fmt.Errorf("list lobbies: %w", err)
 	}
-	lobbies, err := l.reader.Upcoming(ctx, groupID, l.clock.Now())
+	lobbies, err := l.reader.Upcoming(ctx, groupID, callerID, l.clock.Now())
 	if err != nil {
 		return nil, fmt.Errorf("list lobbies: %w", err)
 	}
@@ -40,7 +40,7 @@ func (l *Lobbies) Get(ctx context.Context, groupID, lobbyID, callerID string) (d
 	if _, err := requireMember(ctx, l.reader, groupID, callerID); err != nil {
 		return domain.Lobby{}, nil, fmt.Errorf("get lobby: %w", err)
 	}
-	lobby, err := l.reader.Lobby(ctx, groupID, lobbyID, l.clock.Now())
+	lobby, err := l.reader.Lobby(ctx, groupID, lobbyID, callerID, l.clock.Now())
 	if err != nil {
 		return domain.Lobby{}, nil, fmt.Errorf("get lobby: %w", err)
 	}

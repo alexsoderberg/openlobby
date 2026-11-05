@@ -260,6 +260,9 @@ type Lobby struct {
 	GameName GameName           `json:"gameName"`
 	Id       openapi_types.UUID `json:"id"`
 
+	// JoinedByMe `true` when the caller is a player of the lobby (ADR 0014). Always `true` in the response of create.
+	JoinedByMe bool `json:"joinedByMe"`
+
 	// MaxPlayers Max players, an integer from 1 to 2147483647. `null` or omitted means unlimited. Set at creation and not changed.
 	MaxPlayers *MaxPlayers `json:"maxPlayers"`
 
@@ -280,6 +283,9 @@ type LobbyDetail struct {
 	// GameName Game name, 1–50 characters after trim.
 	GameName GameName           `json:"gameName"`
 	Id       openapi_types.UUID `json:"id"`
+
+	// JoinedByMe `true` when the caller is a player of the lobby (ADR 0014). Always `true` in the response of create.
+	JoinedByMe bool `json:"joinedByMe"`
 
 	// MaxPlayers Max players, an integer from 1 to 2147483647. `null` or omitted means unlimited. Set at creation and not changed.
 	MaxPlayers *MaxPlayers `json:"maxPlayers"`

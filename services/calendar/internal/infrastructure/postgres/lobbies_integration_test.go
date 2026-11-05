@@ -5,6 +5,7 @@ package postgres
 import (
 	"context"
 	"errors"
+	"maps"
 	"slices"
 	"strings"
 	"testing"
@@ -308,7 +309,7 @@ func TestUpcomingFiltersOnEndSortsAndCountsPlayers(t *testing.T) {
 	addPlayer(t, store, sooner.ID, nobodyID, joinedAt)
 	addPlayer(t, store, sooner.ID, otherID, joinedAt)
 
-	lobbies, err := store.Lobbies().Upcoming(context.Background(), fridayID, at)
+	lobbies, err := store.Lobbies().Upcoming(context.Background(), fridayID, alexID, at)
 
 	if err != nil {
 		t.Fatal(err)
@@ -334,7 +335,7 @@ func TestUpcomingOfAnEmptyGroupIsEmpty(t *testing.T) {
 	store := migratedStore(t)
 	seedGroups(t, store)
 
-	lobbies, err := store.Lobbies().Upcoming(context.Background(), fridayID, joinedAt)
+	lobbies, err := store.Lobbies().Upcoming(context.Background(), fridayID, alexID, joinedAt)
 
 	if err != nil || len(lobbies) != 0 {
 		t.Fatalf("lobbies %v, error %v; want none", lobbies, err)
@@ -347,7 +348,7 @@ func TestLobbyIsScopedToTheGroupAndNotEnded(t *testing.T) {
 	lobby := insertLobby(t, store, newLobby(fridayID, alexID, nil, "Go"))
 	ctx := context.Background()
 
-	got, err := store.Lobbies().Lobby(ctx, fridayID, lobby.ID, lobby.StartsAt)
+	got, err := store.Lobbies().Lobby(ctx, fridayID, lobby.ID, alexID, lobby.StartsAt)
 	if err != nil || got.ID != lobby.ID || got.PlayerCount != 1 || got.GroupID != fridayID {
 		t.Fatalf("lobby %+v, error %v; want the lobby with one player", got, err)
 	}
@@ -360,7 +361,7 @@ func TestLobbyIsScopedToTheGroupAndNotEnded(t *testing.T) {
 		"unknown":     {fridayID, nobodyID, lobby.StartsAt},
 		"not a uuid":  {fridayID, "not-a-uuid", lobby.StartsAt},
 	} {
-		_, err := store.Lobbies().Lobby(ctx, tc.groupID, tc.lobbyID, tc.at)
+		_, err := store.Lobbies().Lobby(ctx, tc.groupID, tc.lobbyID, alexID, tc.at)
 		if name == "not a uuid" {
 			// The router answers a malformed ID before the use case runs; the adapter must not report it as found.
 			if err == nil {
@@ -402,5 +403,31 @@ func TestLobbyReaderMembershipAndUnavailable(t *testing.T) {
 	}
 	if _, ok, err := store.Lobbies().Membership(ctx, fridayID, otherID); err != nil || ok {
 		t.Fatalf("Other: %v %v, want no membership", ok, err)
+	}
+}
+
+func TestLobbiesTellWhetherTheCallerIsAPlayer(t *testing.T) {
+	store := migratedStore(t)
+	seedGroups(t, store)
+	ctx := context.Background()
+	mine := insertLobby(t, store, newLobby(fridayID, alexID, nil, "Go"))
+	joined := insertLobby(t, store, newLobby(fridayID, nobodyID, nil, "Go"))
+	notMine := insertLobby(t, store, newLobby(fridayID, nobodyID, nil, "Go"))
+	addPlayer(t, store, joined.ID, alexID, joinedAt)
+
+	lobbies, err := store.Lobbies().Upcoming(ctx, fridayID, alexID, joinedAt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := map[string]bool{}
+	for _, lobby := range lobbies {
+		got[lobby.ID] = lobby.JoinedByMe
+	}
+	if want := map[string]bool{mine.ID: true, joined.ID: true, notMine.ID: false}; !maps.Equal(got, want) {
+		t.Fatalf("list joinedByMe %v, want %v", got, want)
+	}
+	one, err := store.Lobbies().Lobby(ctx, fridayID, notMine.ID, alexID, joinedAt)
+	if err != nil || one.JoinedByMe {
+		t.Fatalf("lobby %+v, error %v; want joinedByMe false", one, err)
 	}
 }

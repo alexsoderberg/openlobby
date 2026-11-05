@@ -30,7 +30,7 @@ type lobbyStore struct {
 	players map[string][]string
 }
 
-func (s *lobbyStore) Upcoming(_ context.Context, groupID string, at time.Time) ([]domain.Lobby, error) {
+func (s *lobbyStore) Upcoming(_ context.Context, groupID, callerID string, at time.Time) ([]domain.Lobby, error) {
 	var upcoming []domain.Lobby
 	for _, lobby := range s.lobbies {
 		if lobby.GroupID == groupID && lobby.EndsAt.After(at) {
@@ -43,7 +43,7 @@ func (s *lobbyStore) Upcoming(_ context.Context, groupID string, at time.Time) (
 	return upcoming, s.err
 }
 
-func (s *lobbyStore) Lobby(_ context.Context, groupID, id string, at time.Time) (domain.Lobby, error) {
+func (s *lobbyStore) Lobby(_ context.Context, groupID, id, callerID string, at time.Time) (domain.Lobby, error) {
 	lobby, ok := s.lobbies[id]
 	if !ok || lobby.GroupID != groupID || !lobby.EndsAt.After(at) {
 		return domain.Lobby{}, domain.ErrLobbyNotFound

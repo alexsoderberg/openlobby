@@ -450,6 +450,8 @@ export interface components {
             createdByUserId: string;
             /** @description Number of players. Shown as "X/Y players" when `maxPlayers` is set, otherwise "X players". */
             playerCount: number;
+            /** @description `true` when the caller is a player of the lobby (ADR 0014). Always `true` in the response of create. */
+            joinedByMe: boolean;
         };
         LobbyDetail: components["schemas"]["Lobby"] & {
             players: components["schemas"]["UserRef"][];

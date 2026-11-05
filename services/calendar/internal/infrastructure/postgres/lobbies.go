@@ -17,12 +17,13 @@ const (
 	selectCreatorSQL     = `SELECT created_by_user_id FROM lobbies WHERE id = $1 AND group_id = $2`
 	deleteLobbySQL       = `DELETE FROM lobbies WHERE id = $1 AND group_id = $2`
 
-	// The player count is a subquery on the primary key (lobby_id, user_id); lobbies_group_id_game_id_idx serves group_id.
+	// The player count and the caller check are subqueries on the primary key (lobby_id, user_id); lobbies_group_id_game_id_idx serves group_id.
 	selectLobbiesSQL = `SELECT l.id, l.created_by_user_id, l.game_id, l.game_name, l.max_players, l.starts_at, l.ends_at, l.created_at,
-		(SELECT count(*) FROM lobby_players p WHERE p.lobby_id = l.id)
+		(SELECT count(*) FROM lobby_players p WHERE p.lobby_id = l.id),
+		EXISTS (SELECT 1 FROM lobby_players p WHERE p.lobby_id = l.id AND p.user_id = $3)
 		FROM lobbies l WHERE l.group_id = $1 AND l.ends_at > $2`
 	listUpcomingSQL  = selectLobbiesSQL + ` ORDER BY l.starts_at, l.id`
-	selectLobbySQL   = selectLobbiesSQL + ` AND l.id = $3`
+	selectLobbySQL   = selectLobbiesSQL + ` AND l.id = $4`
 	selectPlayersSQL = `SELECT user_id FROM lobby_players WHERE lobby_id = $1 ORDER BY joined_at, user_id`
 )
 
@@ -89,8 +90,8 @@ func (r lobbyRepo) Membership(ctx context.Context, groupID, userID string) (doma
 }
 
 // Upcoming returns the lobbies of the group that end after now, in one query.
-func (r lobbyRepo) Upcoming(ctx context.Context, groupID string, now time.Time) (lobbies []domain.Lobby, err error) {
-	rows, err := r.s.db.QueryContext(ctx, listUpcomingSQL, groupID, now)
+func (r lobbyRepo) Upcoming(ctx context.Context, groupID, callerID string, now time.Time) (lobbies []domain.Lobby, err error) {
+	rows, err := r.s.db.QueryContext(ctx, listUpcomingSQL, groupID, now, callerID)
 	if err != nil {
 		return nil, translate(err)
 	}
@@ -106,8 +107,8 @@ func (r lobbyRepo) Upcoming(ctx context.Context, groupID string, now time.Time) 
 }
 
 // Lobby returns the upcoming lobby of this group, or domain.ErrLobbyNotFound.
-func (r lobbyRepo) Lobby(ctx context.Context, groupID, lobbyID string, now time.Time) (domain.Lobby, error) {
-	lobby, err := scanLobby(r.s.db.QueryRowContext(ctx, selectLobbySQL, groupID, now, lobbyID), groupID)
+func (r lobbyRepo) Lobby(ctx context.Context, groupID, lobbyID, callerID string, now time.Time) (domain.Lobby, error) {
+	lobby, err := scanLobby(r.s.db.QueryRowContext(ctx, selectLobbySQL, groupID, now, callerID, lobbyID), groupID)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return domain.Lobby{}, domain.ErrLobbyNotFound
@@ -140,6 +141,6 @@ type scanner interface{ Scan(dest ...any) error }
 func scanLobby(row scanner, groupID string) (domain.Lobby, error) {
 	lobby := domain.Lobby{GroupID: groupID}
 	err := row.Scan(&lobby.ID, &lobby.CreatedByUserID, &lobby.GameID, &lobby.GameName, &lobby.MaxPlayers,
-		&lobby.StartsAt, &lobby.EndsAt, &lobby.CreatedAt, &lobby.PlayerCount)
+		&lobby.StartsAt, &lobby.EndsAt, &lobby.CreatedAt, &lobby.PlayerCount, &lobby.JoinedByMe)
 	return lobby, err
 }
