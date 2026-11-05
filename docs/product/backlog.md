@@ -18,7 +18,9 @@ Prioritized order for the MVP. The order follows the core flow and dependencies:
 
 All eleven requirements are necessary for the MVP, so all are `Must`. No MVP requirement is `Could` or `Should`.
 
-REQ-0012 arrives together with REQ-0004 (order 6 and 7 are one delivery). It comes after REQ-0003 and REQ-0010 (order 4 and 5). The "Next up" card has no "Join lobby" and "Leave lobby" buttons until REQ-0005 is delivered (DECISION, user, 2026-11-04). The buttons need `joinedByMe` on `Lobby` (ADR 0014, point 5), which is REQ-0005 work, not REQ-0012 work. REQ-0005 is delivered before the MVP release, as with REQ-0002 and REQ-0004.
+REQ-0012 arrives together with REQ-0004 (order 6 and 7 are one delivery). It comes after REQ-0003 and REQ-0010 (order 4 and 5). The "Next up" card's "Join lobby" and "Leave lobby" buttons need `joinedByMe` on `Lobby` (ADR 0014, point 5), which is REQ-0005 work, so they came with REQ-0005.
+
+Delivered (2026-11-05): REQ-0005 in PR #50. REQ-0012 in PRs #42, #43, #45–#48 and #50 (the Next up buttons came with REQ-0005).
 
 REQ-0009 comes before REQ-0003 because the game choice and the default max value in REQ-0003 read from the game list.
 
@@ -44,7 +46,7 @@ Changes to delivered requirements, decided by the user (DECISION, user, 2026-11-
 | AM4 | REQ-0002 and REQ-0007 (Amendment 2026-11-04), REQ-0012 (Fourth amendment) | Invite from a popover (Group rail right-click, Invite button), no invite links section in the group view, links valid 10 minutes, default max uses 1 | Must | REQ-0002, REQ-0007, REQ-0012 |
 | AM5 | REQ-0004 (Amendment 2026-11-04, time grid), REQ-0012 (Fifth amendment), REQ-0003 (item 3) | Week view and This week as a time grid showing lobby duration; create from an empty time, prefilled with date and start time | Must | REQ-0003, REQ-0004, REQ-0012, AM3 |
 
-Delivered (2026-11-05): AM1 in PR #45, AM2 and AM3 in PR #45, AM4 in PR #48, AM5 in PR #47. REQ-0012 stays Decided until REQ-0005 delivers the Next up buttons.
+Delivered (2026-11-05): AM1 in PR #45, AM2 and AM3 in PR #45, AM4 in PR #48, AM5 in PR #47.
 
 ## Should, after the MVP
 

@@ -56,7 +56,7 @@ F-003 (Create lobby), F-005 (Join and leave lobby) and F-018 (Max players per lo
 - The out-of-scope line "Showing lobbies from several groups together" now has one exception: the dashboard (REQ-0012, F-028). Group views are unchanged.
 
 ## Amendment 2026-11-04 (create from the calendar)
-Status stays Implemented. Decided by the user on 2026-11-04. Built in PR #45. The week calendar gets a second way to open Create lobby (REQ-0003, F-003). The form, its rules and its data are those of REQ-0003. This is not a new feature and not a duplicate of F-003.
+Status stays Implemented. Decided by the user on 2026-11-04. Built in PR #45 (date); start-time prefill in PR #47. The week calendar gets a second way to open Create lobby (REQ-0003, F-003). The form, its rules and its data are those of REQ-0003. This is not a new feature and not a duplicate of F-003.
 
 Criteria added (binding for the UI expert):
 - Given that I am a member and in the calendar view, when I select an empty part of a day's column, then the Create lobby form (REQ-0003) opens with that day's date in the date field (DECISION, user, 2026-11-04; amended 2026-11-04 (time grid): a click on an empty time also prefills the start time). User's words (translated): "The user should also be able to click directly in a calendar to create a new lobby."

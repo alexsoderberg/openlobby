@@ -1,5 +1,5 @@
 # REQ-0005. Join and leave lobby
-Status: Decided
+Status: Implemented
 Feature: F-005, F-018
 Priority: Must
 
