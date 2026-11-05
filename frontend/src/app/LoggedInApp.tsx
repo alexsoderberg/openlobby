@@ -60,7 +60,7 @@ export function LoggedInApp({
       onUnauthenticated={onUnauthenticated}
     >
       {/* Always rendered, so a screen reader announces the text when it is set. */}
-      <p role="status">
+      <p role="status" className="status">
         {leftGroupName !== undefined && m.groupLeft(leftGroupName)}
       </p>
       {route.name === "notFound" ? (
