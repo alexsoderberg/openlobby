@@ -41,10 +41,12 @@ export function TimeBlock({
         {lobby.groupName && <span>{lobby.groupName}</span>}
         <span>{m.lobbyPlayers(lobby.playerCount, lobby.maxPlayers)}</span>
         {block.continuesBefore && (
-          <span className="visually-hidden">{m.calendarContinuesBefore}</span>
+          <span className="time-block__marker">
+            {m.calendarContinuesBefore}
+          </span>
         )}
         {block.continuesAfter && (
-          <span className="visually-hidden">{m.calendarContinuesAfter}</span>
+          <span className="time-block__marker">{m.calendarContinuesAfter}</span>
         )}
       </div>
     </li>

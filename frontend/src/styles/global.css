@@ -177,9 +177,8 @@
   --duration-page-out: 0.12s;
   --page-shift: 12px;
   --size-hour: 4rem;
-  --size-block-min: 1.75rem;
   --size-grid-height: 32rem;
-  --size-grid-title: 2.5rem;
+  --size-grid-title: 3rem;
   --size-grid-gutter: 3.25rem;
 }
 
@@ -745,6 +744,9 @@ a {
   color: var(--color-muted);
   font-size: 0.75rem;
   text-align: center;
+  font-family: inherit;
+  font-weight: 400;
+  margin: 0;
 }
 
 .time-grid__title b {
@@ -795,10 +797,7 @@ a {
 .time-block {
   position: absolute;
   top: calc(var(--size-hour) * var(--start, 0) / 60);
-  height: max(
-    calc(var(--size-hour) * var(--span, 60) / 60),
-    var(--size-block-min)
-  );
+  height: max(calc(var(--size-hour) * var(--span, 60) / 60), var(--size-tap));
   left: calc(100% * var(--column, 0) / var(--columns, 1));
   width: calc(100% / var(--columns, 1));
   padding: 1px;
@@ -857,10 +856,9 @@ a {
   outline: none;
 }
 
-.time-grid__empty {
-  margin: 0 0 var(--space-2);
+.time-block__marker {
   color: var(--color-muted);
-  font-size: var(--font-size-small);
+  font-style: italic;
 }
 
 /* Landing page. Start states live in the keyframes, so with animations off the final layout shows at once. */

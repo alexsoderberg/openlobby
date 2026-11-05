@@ -83,13 +83,13 @@ User's words (translated): "I also want the lobby's duration shown graphically. 
 
 Layout (screen 760 px or wider):
 - Given that I am in the week view, when it is shown, then the days are columns Monday to Sunday, the hours run vertically from 00:00 to 24:00, and the grid scrolls vertically (DECISION, user).
-- Given that the week view opens, when the page loads, then 16:00 is at the top of the visible grid, or, if a lobby in the displayed week starts earlier, the earliest such lobby is at the top. A lobby that continues from the previous day counts as starting at 00:00 (DECISION, user: "around 16:00" and "the week's first lobby if earlier"; ASSUMPTION for the exact offset).
-- Given that a lobby is shown, when I look at its block, then its height is proportional to its duration, so that the block covers exactly the time its lobby spans (DECISION, user).
+- Given that the week view opens, when the page loads, then 16:00 is at the top of the visible grid, or, if a lobby in the displayed week starts earlier, the full hour containing the earliest such lobby's start is at the top (DECISION, product owner, 2026-11-05: the hour line gives orientation and the lobby is in view at once). A lobby that continues from the previous day counts as starting at 00:00 (DECISION, user: "around 16:00" and "the week's first lobby if earlier"; ASSUMPTION for the exact offset).
+- Given that a lobby is shown, when I look at its block, then its height is proportional to its duration, so that the block covers the clock times its lobby spans (DECISION, user; amended 2026-11-05: DECISION, product owner, the height uses wall-clock minutes, so on a daylight-saving change day a lobby across the switch shows its clock span, which can differ from its real duration by one hour; the grid shows clock times and such lobbies are rare).
 - Given that a lobby is shown, when I look at its block, then it shows the game, the time range and Spot / max players ("X/Y players" or "X players"). When a block is too short to show them, they stay available to assistive technology (ASSUMPTION).
 - Given that a lobby starts on one day and ends after midnight, when it is shown, then its block runs to 24:00 in the start day's column with the marker "ends next day", and in the next day's column from 00:00 to its end time with the marker "started the day before" (DECISION, user; marker wording ASSUMPTION). Both blocks open the same detail view.
 - Given that a lobby started before Monday and has not ended, when the current week is shown, then its remaining part is shown in Monday's column from 00:00 to its end time with the marker "started the day before" (DECISION, user).
 - Given that two lobbies overlap in a day, when the grid is shown, then they sit side by side in that day's column, sharing its width, and neither is hidden (DECISION, user).
-- Given that a lobby block is shown, when I select it with the mouse or with Enter or Space while it has keyboard focus, then its detail view opens (ASSUMPTION: a block is a control, like a list row).
+- Given that a lobby block is shown, when I select it with the mouse or with Enter while it has keyboard focus, then its detail view opens (ASSUMPTION: a block is a link, like a list row; amended 2026-11-05: DECISION, product owner, Enter opens it as with other lobby links, and Space keeps its native page scroll).
 
 Create from the grid (the form is REQ-0003, Amendment 2026-11-04, item 3):
 - Given that I am a member and I select an empty part of a day's column, when the start time rounded down to the half hour is not before now, then Create lobby opens with that day's date and that start time, and the end time is start + 2 hours (DECISION, user, 2026-11-04). This replaces the criterion "the Create lobby form opens with that day's date in the date field" (old wording, kept for reference) and the open question on prefilling the start time.
@@ -100,7 +100,7 @@ Phone (screen narrower than 760 px):
 - Given that I am in the week view on a phone, when it is shown, then seven day pills Monday to Sunday are shown on top, and the time grid of the selected day is shown below them (DECISION, user). Today is selected when the view opens (ASSUMPTION, same as REQ-0012).
 - Given that a day pill has lobbies, when I see the pill, then it shows a dot (same as REQ-0012).
 - Given that I select a day pill, when the day changes, then that day's time grid is shown and the scroll position is kept (ASSUMPTION).
-- Given that the week view opens on a phone, when the page loads, then the scroll rule above applies to the selected day: 16:00 at the top, or the earliest lobby of that day if it starts earlier (ASSUMPTION for the phone scope).
+- Given that the week view opens on a phone, when the page loads, then the scroll rule above applies to the selected day: 16:00 at the top, or the full hour containing the start of the day's earliest lobby, if that lobby starts earlier (ASSUMPTION for the phone scope; amended 2026-11-05 as above).
 - Given that I am on a phone, when I use the day pills, the blocks and the create control, then each is operable with the keyboard, and each tap target is at least 44 px (REQ-0012, cross-cutting rule).
 - Given that I am on a phone, when I use "Next week", then the day pills and the time grid show the next week (criterion in the calendar view above applies).
 
@@ -108,6 +108,9 @@ Old wording of criteria amended in this section (kept for reference):
 - Midnight criterion (line "a lobby starts on one day and ends the next day"): "then it is shown on its start day with start and end time and a marker that it ends the next day. The lobby is not split across two days (DECISION)."
 - Overlap criterion: "then both are visible side by side, and neither is hidden."
 - Create from a day: "the Create lobby form (REQ-0003) opens with that day's date in the date field (DECISION, user, 2026-11-04)."
+- Scroll rule (2026-11-05): "16:00 is at the top, or, if a lobby starts earlier, the earliest such lobby is at the top."
+- Block activation (2026-11-05): "when I select it with the mouse or with Enter or Space while it has keyboard focus".
+- Block height (2026-11-05): "so that the block covers exactly the time its lobby spans".
 
 Related features (time grid)
 F-017 (calendar view): the view is the same; only its layout changes. F-028 (dashboard, REQ-0012): the same grid, with the group name on each block and no create from the grid (no group context).

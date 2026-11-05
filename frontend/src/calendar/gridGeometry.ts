@@ -3,7 +3,6 @@ import { dayAfter, type Span } from "./week";
 export const DAY_MINUTES = 24 * 60;
 const HALF_HOUR = 30;
 const FIRST_SCROLL_MINUTE = 16 * 60;
-const KEYBOARD_START_MINUTE = 18 * 60;
 
 /** The part of an item that falls on one day, in minutes from that day's midnight. */
 export type Segment<T extends Span> = {
@@ -78,24 +77,17 @@ export function initialScrollMinute(blocks: { startMinute: number }[]): number {
   return Math.min(FIRST_SCROLL_MINUTE, Math.floor(earliest / 60) * 60);
 }
 
-/** The minute from which a new lobby can be started on `day`: 0 for a later day, now for today, none for the past. */
+/** The minute from which a new lobby can be started on `day`: 0 for a later day, the next half hour for today, none for the past. */
 export function clickableFromMinute(day: Date, now: Date): number | undefined {
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   if (day < today) return undefined;
-  return day.getTime() === today.getTime() ? minuteOfDay(now) : 0;
+  if (day.getTime() !== today.getTime()) return 0;
+  const next = Math.ceil(minuteOfDay(now) / HALF_HOUR) * HALF_HOUR;
+  return next < DAY_MINUTES ? next : undefined;
 }
 
 export const roundDownToHalfHour = (minute: number) =>
   Math.floor(minute / HALF_HOUR) * HALF_HOUR;
-
-/** The start for someone who opens the form from the keyboard, so no pointer position is known: the evening, or the next half hour when that has passed. */
-export function keyboardStartMinute(fromMinute: number): number {
-  const nextHalfHour = Math.ceil(fromMinute / HALF_HOUR) * HALF_HOUR;
-  return Math.min(
-    Math.max(nextHalfHour, KEYBOARD_START_MINUTE),
-    DAY_MINUTES - HALF_HOUR,
-  );
-}
 
 /** The moment `minute` after midnight of `day`, in local time. */
 export function momentAt(day: Date, minute: number): Date {

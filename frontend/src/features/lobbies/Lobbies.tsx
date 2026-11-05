@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { Group } from "../../api";
 import { usePopover } from "../../hooks";
+import type { PickedStart } from "../../calendar";
 import { useMessages } from "../../i18n";
 import { ErrorAlert, Panel, Popover } from "../../ui";
 import { CreateLobby } from "./CreateLobby";
@@ -25,12 +26,12 @@ export function Lobbies({
 }) {
   const m = useMessages();
   const [view, setView] = useState<LobbyView>("list");
-  const [initialStart, setInitialStart] = useState<Date>();
+  const [initialStart, setInitialStart] = useState<PickedStart>();
   const [created, setCreated] = useState(false);
   const upcoming = useUpcomingLobbies(groupId, onUnauthenticated);
   const popover = usePopover();
 
-  const openForm = (start: Date | undefined, button: HTMLElement) => {
+  const openForm = (start: PickedStart | undefined, button: HTMLElement) => {
     setInitialStart(start);
     setCreated(false);
     popover.press(button);
@@ -104,7 +105,7 @@ function LobbyViews({
   members: Group["members"];
   view: LobbyView;
   upcoming: ReturnType<typeof useUpcomingLobbies>;
-  onCreate: (start: Date, button: HTMLElement) => void;
+  onCreate: (start: PickedStart, button: HTMLElement) => void;
 }) {
   const m = useMessages();
   if (state.status === "loading")

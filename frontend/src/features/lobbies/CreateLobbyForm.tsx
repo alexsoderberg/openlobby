@@ -1,3 +1,4 @@
+import type { PickedStart } from "../../calendar";
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import type { ChangeResult, CreateLobbyInput, Game } from "../../api";
 import { toUserMessage, useMessages } from "../../i18n";
@@ -10,7 +11,7 @@ type CreateLobbyFormProps = {
   games: Game[];
   busy: boolean;
   onSubmit: (input: CreateLobbyInput) => ChangeResult;
-  initialStart?: Date;
+  initialStart?: PickedStart;
   onCancel: () => void;
 };
 

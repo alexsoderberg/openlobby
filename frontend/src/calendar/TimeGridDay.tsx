@@ -9,27 +9,32 @@ import { TimeBlock, type GridLobby } from "./TimeBlock";
 import {
   DAY_MINUTES,
   clickableFromMinute,
-  keyboardStartMinute,
   momentAt,
   roundDownToHalfHour,
   type Block,
 } from "./gridGeometry";
 
-export type CreateAt = (start: Date, element: HTMLElement) => void;
+/** A start picked on the grid: a moment with a time from a click, only that day (`timed` false) from the keyboard. */
+export type PickedStart = { moment: Date; timed: boolean };
+export type CreateAt = (start: PickedStart, element: HTMLElement) => void;
+export type TitleLevel = 3 | 4;
 
 /**
  * The start a click means: where on the clickable part of the day the pointer is, rounded down to the half
- * hour. A click from the keyboard has no position (`detail` 0) and gets a fixed default.
+ * hour. A click from the keyboard has no position (`detail` 0), so it picks the day and no time.
  */
 function startOfClick(
   day: Date,
   fromMinute: number,
   event: MouseEvent<HTMLElement>,
-): Date {
-  if (event.detail === 0) return momentAt(day, keyboardStartMinute(fromMinute));
+): PickedStart {
+  if (event.detail === 0) return { moment: day, timed: false };
   const { top, height } = event.currentTarget.getBoundingClientRect();
   const offset = ((event.clientY - top) * (DAY_MINUTES - fromMinute)) / height;
-  return momentAt(day, roundDownToHalfHour(fromMinute + offset));
+  return {
+    moment: momentAt(day, roundDownToHalfHour(fromMinute + offset)),
+    timed: true,
+  };
 }
 
 /**
@@ -42,6 +47,7 @@ export function TimeGridDay<T extends GridLobby>({
   blocks,
   selected,
   isToday,
+  titleLevel,
   hrefOf,
   onCreate,
 }: {
@@ -49,19 +55,24 @@ export function TimeGridDay<T extends GridLobby>({
   blocks: Block<T>[];
   selected: boolean;
   isToday: boolean;
+  titleLevel: TitleLevel;
   hrefOf: (lobby: T) => string;
   onCreate?: CreateAt;
 }) {
   const m = useMessages();
+  const Title = `h${titleLevel}` as const;
   const fromMinute = onCreate && clickableFromMinute(day, new Date());
   return (
     <li className="time-grid__day" data-selected={selected || undefined}>
-      <div
+      <Title
         className="time-grid__title"
         aria-current={isToday ? "date" : undefined}
       >
-        <span>{formatWeekdayShort(day)}</span> <b>{formatDayOfMonth(day)}</b>
-      </div>
+        <span>
+          {formatWeekdayShort(day)} <b>{formatDayOfMonth(day)}</b>
+        </span>
+        {blocks.length === 0 && <small>{m.calendarNothingBooked}</small>}
+      </Title>
       <div className="time-grid__track">
         {onCreate && fromMinute !== undefined && (
           <button

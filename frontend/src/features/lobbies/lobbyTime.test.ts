@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-  endsNextDay,
   localClockText,
   localDateText,
   lobbyTimesFrom,
@@ -54,17 +53,6 @@ describe("lobbyTimesFrom", () => {
       ok: false,
       code: "lobby_time_missing",
     });
-  });
-});
-
-describe("endsNextDay", () => {
-  it("is true only when the end is on a later calendar day", () => {
-    expect(endsNextDay({ startsAt: local(5, 22), endsAt: local(6, 2) })).toBe(
-      true,
-    );
-    expect(
-      endsNextDay({ startsAt: local(5, 18), endsAt: local(5, 23, 59) }),
-    ).toBe(false);
   });
 });
 

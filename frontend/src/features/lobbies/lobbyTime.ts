@@ -48,17 +48,6 @@ export function lobbyTimesFrom(
   return { ok: true, startsAt: start.toISOString(), endsAt: end.toISOString() };
 }
 
-/** Whether the lobby ends on a later calendar day than it starts, in the viewer's time zone. */
-export function endsNextDay(lobby: {
-  startsAt: string;
-  endsAt: string;
-}): boolean {
-  return (
-    new Date(lobby.startsAt).toDateString() !==
-    new Date(lobby.endsAt).toDateString()
-  );
-}
-
 /** The end suggested for a start picked on the calendar: two hours later, which may be on the next day. */
 export function suggestedEnd(start: Date): Date {
   return new Date(start.getTime() + SUGGESTED_HOURS * 60 * 60 * 1000);

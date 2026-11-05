@@ -3,7 +3,6 @@ import {
   clickableFromMinute,
   dayBlocks,
   initialScrollMinute,
-  keyboardStartMinute,
   momentAt,
   roundDownToHalfHour,
 } from "./gridGeometry";
@@ -146,17 +145,13 @@ describe("half hours and clickable times", () => {
     expect(roundDownToHalfHour(minute)).toBe(expected);
   });
 
-  it("can start a lobby on any minute of a later day, from now on today, and never in the past", () => {
+  it("can start a lobby on any minute of a later day, from the next half hour on today, and never in the past", () => {
     const now = at(4, 12, 10);
     expect(clickableFromMinute(at(3, 0), now)).toBeUndefined();
-    expect(clickableFromMinute(at(4, 0), now)).toBe(12 * 60 + 10);
+    expect(clickableFromMinute(at(4, 0), now)).toBe(12 * 60 + 30);
+    expect(clickableFromMinute(at(4, 0), at(4, 12, 30))).toBe(12 * 60 + 30);
+    expect(clickableFromMinute(at(4, 0), at(4, 23, 50))).toBeUndefined();
     expect(clickableFromMinute(at(5, 0), now)).toBe(0);
-  });
-
-  it("suggests the evening from the keyboard, or the next half hour once that has passed", () => {
-    expect(keyboardStartMinute(0)).toBe(18 * 60);
-    expect(keyboardStartMinute(19 * 60 + 10)).toBe(19 * 60 + 30);
-    expect(keyboardStartMinute(23 * 60 + 50)).toBe(23 * 60 + 30);
   });
 
   it("builds the local moment of a minute", () => {

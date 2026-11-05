@@ -5,6 +5,7 @@ import {
   nextWeekStart,
   weekItems,
   weekStartOf,
+  type PickedStart,
   WeekTimeGrid,
 } from "../../calendar";
 import { lobbyPath } from "./lobbyPath";
@@ -21,7 +22,7 @@ export function LobbyCalendar({
 }: {
   groupId: string;
   lobbies: Lobby[];
-  onCreate: (start: Date, button: HTMLElement) => void;
+  onCreate: (start: PickedStart, button: HTMLElement) => void;
 }) {
   const m = useMessages();
   const [weekStart, setWeekStart] = useState(() => weekStartOf(new Date()));
@@ -44,6 +45,8 @@ export function LobbyCalendar({
       <WeekTimeGrid
         key={weekStart.getTime()}
         days={week}
+        now={new Date()}
+        titleLevel={4}
         hrefOf={(lobby) => lobbyPath(groupId, lobby.id)}
         onCreate={onCreate}
       />

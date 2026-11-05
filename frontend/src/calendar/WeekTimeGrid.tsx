@@ -1,9 +1,8 @@
 import { useState } from "react";
-import { useMessages } from "../i18n";
 import { DayPills } from "./DayPills";
 import { TimeGrid } from "./TimeGrid";
 import type { GridLobby } from "./TimeBlock";
-import type { CreateAt } from "./TimeGridDay";
+import type { CreateAt, TitleLevel } from "./TimeGridDay";
 import type { WeekDay } from "./week";
 
 /**
@@ -13,15 +12,20 @@ import type { WeekDay } from "./week";
  */
 export function WeekTimeGrid<T extends GridLobby>({
   days,
+  now,
+  titleLevel,
   hrefOf,
   onCreate,
 }: {
   days: WeekDay<T>[];
+  /** The time that decides which day is today. */
+  now: Date;
+  /** Heading level of the day titles, one below the heading of the section the grid sits in. */
+  titleLevel: TitleLevel;
   hrefOf: (lobby: T) => string;
   onCreate?: CreateAt;
 }) {
-  const m = useMessages();
-  const today = new Date().toDateString();
+  const today = now.toDateString();
   const todayIndex = days.findIndex(({ day }) => day.toDateString() === today);
   const [selected, setSelected] = useState(Math.max(todayIndex, 0));
 
@@ -33,13 +37,11 @@ export function WeekTimeGrid<T extends GridLobby>({
         todayIndex={todayIndex}
         onSelect={setSelected}
       />
-      {days.every(({ items }) => items.length === 0) && (
-        <p className="time-grid__empty">{m.calendarNoLobbiesInWeek}</p>
-      )}
       <TimeGrid
         days={days}
         selected={selected}
         todayIndex={todayIndex}
+        titleLevel={titleLevel}
         hrefOf={hrefOf}
         onCreate={onCreate}
       />

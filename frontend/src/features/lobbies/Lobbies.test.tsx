@@ -10,6 +10,7 @@ import {
 import { formatTimeRange, formatWeekdayShort } from "../../i18n";
 import { en } from "../../i18n/messages/en";
 import { fakeApiClient, testUser } from "../../test/fakeApiClient";
+import { dayColumns, selectedColumns } from "../../test/weekGrid";
 import { Lobbies } from "./Lobbies";
 
 // Wednesday 4 November 2026, 12:00 local time. The week runs Monday 2 to Sunday 8 November.
@@ -162,8 +163,6 @@ describe("lobby list", () => {
 
 const calendarButton = () =>
   screen.getByRole("button", { name: en.lobbyViewCalendar });
-const dayColumns = () =>
-  Array.from(document.querySelectorAll<HTMLElement>("li.time-grid__day"));
 /** The placement a block was given: start and span in minutes, column and number of columns. */
 const blockStyle = (element: HTMLElement) => {
   const style = element.closest<HTMLElement>("li.time-block")!.style;
@@ -211,6 +210,7 @@ describe("calendar view", () => {
     fireEvent.click(calendarButton());
 
     expect(dayColumns()).toHaveLength(7);
+    expect(screen.getAllByRole("heading", { level: 4 })).toHaveLength(7);
     expect(
       within(dayColumns()[3]).getByRole("link", { name: "Catan" }),
     ).toBeTruthy();
@@ -234,6 +234,12 @@ describe("calendar view", () => {
     expect(saturday.closest("li")!.textContent).toContain(
       en.calendarContinuesBefore,
     );
+    expect(
+      within(friday.closest("li")!).getByText("ends next day"),
+    ).toBeTruthy();
+    expect(
+      within(saturday.closest("li")!).getByText("started the day before"),
+    ).toBeTruthy();
     expect(blockStyle(friday)).toMatchObject({ start: "1320", span: "120" });
     expect(blockStyle(saturday)).toMatchObject({ start: "0", span: "120" });
   });
@@ -300,8 +306,6 @@ describe("calendar view", () => {
     await screen.findByRole("link", { name: "Catan" });
     fireEvent.click(calendarButton());
 
-    const selectedColumns = () =>
-      dayColumns().filter((column) => column.hasAttribute("data-selected"));
     expect(selectedColumns()).toEqual([dayColumns()[2]]);
     const pills = within(
       screen.getByRole("group", { name: en.calendarDayPillsLabel }),
@@ -496,7 +500,7 @@ describe("create lobby from the calendar", () => {
     expect(document.activeElement).toBe(day);
   });
 
-  it("opens the form with that day's date and a default evening time, from the day's control", async () => {
+  it("opens the form with that day's date and empty times, from the day's control", async () => {
     await showCalendar();
 
     fireEvent.click(dayButton(dayName(6)));
@@ -504,8 +508,8 @@ describe("create lobby from the calendar", () => {
     const value = async (label: string) =>
       (await screen.findByLabelText<HTMLInputElement>(label)).value;
     expect(await value(en.lobbyDateLabel)).toBe("2026-11-06");
-    expect(await value(en.lobbyStartLabel)).toBe("18:00");
-    expect(await value(en.lobbyEndLabel)).toBe("20:00");
+    expect(await value(en.lobbyStartLabel)).toBe("");
+    expect(await value(en.lobbyEndLabel)).toBe("");
   });
 
   it("opens the form with date and start rounded down to the half hour, and an end two hours later, from a click on the grid", async () => {

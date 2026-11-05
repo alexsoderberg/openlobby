@@ -20,6 +20,8 @@ export function ThisWeek({
       <h2 id="this-week-heading">{m.dashboard.thisWeekHeading}</h2>
       <WeekTimeGrid
         days={thisWeekOf(lobbies, now)}
+        now={new Date(now)}
+        titleLevel={3}
         hrefOf={(lobby) => lobbyPath(lobby.groupId, lobby.id)}
       />
     </section>

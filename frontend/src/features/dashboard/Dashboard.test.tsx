@@ -21,6 +21,7 @@ import {
 } from "../../i18n";
 import { en } from "../../i18n/messages/en";
 import { fakeApiClient } from "../../test/fakeApiClient";
+import { dayColumns, selectedColumns } from "../../test/weekGrid";
 import type { GroupsState } from "../groups";
 import { Dashboard } from "./Dashboard";
 
@@ -86,11 +87,6 @@ async function nextUpCard() {
   });
   return within(section);
 }
-
-const dayColumns = () =>
-  Array.from(document.querySelectorAll<HTMLElement>("li.time-grid__day"));
-const selectedColumns = () =>
-  dayColumns().filter((column) => column.hasAttribute("data-selected"));
 
 /** The column of a day, found by its place in the week (Monday first). */
 function column(day: Date) {
@@ -218,14 +214,62 @@ describe("This week", () => {
     expect(column(at(2, 0)).getByRole("link", { name: "Catan" })).toBeTruthy();
   });
 
-  it("leaves out lobbies of other weeks and says the week is empty", async () => {
+  it("leaves out lobbies of other weeks and says Nothing booked on every day", async () => {
     renderDashboard({
       g1: [lobby("l1", "Catan", at(10, 20), at(10, 22))],
     });
     await nextUpCard();
 
     expect(column(at(4, 0)).queryByRole("link")).toBeNull();
-    expect(screen.getByText(en.calendarNoLobbiesInWeek)).toBeTruthy();
+    expect(screen.getAllByText(en.calendarNothingBooked)).toHaveLength(7);
+  });
+
+  it("says Nothing booked only on the days without lobbies", async () => {
+    renderDashboard({ g1: [lobby("l1", "Catan", at(5, 20), at(5, 22))] });
+    await nextUpCard();
+
+    const grid = within(
+      screen.getByRole("region", { name: en.calendarGridLabel }),
+    );
+    expect(grid.getAllByRole("heading", { level: 3 })).toHaveLength(7);
+    expect(column(at(5, 0)).queryByText(en.calendarNothingBooked)).toBeNull();
+    expect(column(at(6, 0)).getByText(en.calendarNothingBooked)).toBeTruthy();
+  });
+
+  describe("opening scroll", () => {
+    const scrollTop = () =>
+      screen.getByRole("region", { name: en.calendarGridLabel }).scrollTop;
+    const earlyThursday = {
+      g1: [
+        lobby("l1", "Catan", at(5, 9), at(5, 10)),
+        lobby("l2", "Chess", at(4, 20), at(4, 22)),
+      ],
+    };
+
+    beforeEach(() => {
+      // jsdom does no layout: give the grid a height of 2400 px, so a minute is 5/3 px.
+      vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockReturnValue(
+        2400,
+      );
+    });
+    afterEach(() => vi.restoreAllMocks());
+
+    it("goes to the earliest lobby of the week on wide screens", async () => {
+      renderDashboard(earlyThursday);
+      await nextUpCard();
+
+      expect(scrollTop()).toBe(9 * 100);
+    });
+
+    it("goes to the selected day on phones, not to an earlier lobby on another day", async () => {
+      vi.spyOn(window, "matchMedia").mockReturnValue({
+        matches: true,
+      } as MediaQueryList);
+      renderDashboard(earlyThursday);
+      await nextUpCard();
+
+      expect(scrollTop()).toBe(16 * 100);
+    });
   });
 
   it("cannot create a lobby from the grid", async () => {
