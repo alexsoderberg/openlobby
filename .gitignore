@@ -42,3 +42,4 @@ Thumbs.db
 
 # Claude Code: personal settings (CLAUDE.md and .claude/agents/ are versioned)
 .claude/settings.local.json
+*.tsbuildinfo
