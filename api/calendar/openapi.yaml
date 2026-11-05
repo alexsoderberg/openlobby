@@ -1066,7 +1066,7 @@ components:
 
     Lobby:
       type: object
-      required: [id, gameName, maxPlayers, startsAt, endsAt, createdByUserId, playerCount]
+      required: [id, gameName, maxPlayers, startsAt, endsAt, createdByUserId, playerCount, joinedByMe]
       properties:
         id:
           type: string
@@ -1090,6 +1090,9 @@ components:
           type: integer
           minimum: 0
           description: Number of players. Shown as "X/Y players" when `maxPlayers` is set, otherwise "X players".
+        joinedByMe:
+          type: boolean
+          description: "`true` when the caller is a player of the lobby (ADR 0014). Always `true` in the response of create."
 
     LobbyDetail:
       allOf:

@@ -80,16 +80,33 @@ function DashboardLobbies({
   onUnauthenticated: () => void;
 }) {
   const m = useMessages();
-  const { state, reload } = useDashboardLobbies(groups, onUnauthenticated);
+  const { state, reload, refresh } = useDashboardLobbies(
+    groups,
+    onUnauthenticated,
+  );
   if (state.status === "loading")
     return <p role="status">{m.dashboard.loading}</p>;
   if (state.status === "error")
     return <ErrorAlert code={state.code} onRetry={reload} />;
-  return <DashboardContent lobbies={state.value} />;
+  return (
+    <DashboardContent
+      lobbies={state.value}
+      onChanged={refresh}
+      onUnauthenticated={onUnauthenticated}
+    />
+  );
 }
 
 /** The choice of Next up and the week is made once, at loading. Only the card's countdown keeps moving. */
-function DashboardContent({ lobbies }: { lobbies: DashboardLobby[] }) {
+function DashboardContent({
+  lobbies,
+  onChanged,
+  onUnauthenticated,
+}: {
+  lobbies: DashboardLobby[];
+  onChanged: () => void;
+  onUnauthenticated: () => void;
+}) {
   const m = useMessages();
   const now = useNow(COUNTDOWN_REFRESH_MS);
   const [loadedAt] = useState(now);
@@ -100,7 +117,12 @@ function DashboardContent({ lobbies }: { lobbies: DashboardLobby[] }) {
       <section aria-labelledby="next-up-heading">
         <h2 id="next-up-heading">{m.dashboard.nextUpHeading}</h2>
         {nextUp ? (
-          <NextUpCard lobby={nextUp} now={now} />
+          <NextUpCard
+            lobby={nextUp}
+            now={now}
+            onChanged={onChanged}
+            onUnauthenticated={onUnauthenticated}
+          />
         ) : (
           <p className="empty-state__title">{m.dashboard.nothingBooked}</p>
         )}

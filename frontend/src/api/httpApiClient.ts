@@ -124,6 +124,20 @@ export function createHttpApiClient(
         }),
       );
     },
+    joinLobby: async (groupId, lobbyId) => {
+      await receive(
+        http.PUT("/api/groups/{groupId}/lobbies/{lobbyId}/players/me", {
+          params: { path: { groupId, lobbyId } },
+        }),
+      );
+    },
+    leaveLobby: async (groupId, lobbyId) => {
+      await receive(
+        http.DELETE("/api/groups/{groupId}/lobbies/{lobbyId}/players/me", {
+          params: { path: { groupId, lobbyId } },
+        }),
+      );
+    },
   };
 }
 

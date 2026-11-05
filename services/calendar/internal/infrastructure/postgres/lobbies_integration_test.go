@@ -5,6 +5,7 @@ package postgres
 import (
 	"context"
 	"errors"
+	"maps"
 	"slices"
 	"strings"
 	"testing"
@@ -283,7 +284,7 @@ func TestListForGroupCountsLobbiesOfTheGroupPerGame(t *testing.T) {
 	}
 }
 
-// addPlayer joins a user to a lobby at the given time. Joining is built in REQ-0005, so the test writes the row itself.
+// addPlayer writes a player row directly, to set up a lobby without going through the join rules.
 func addPlayer(t *testing.T, store *Store, lobbyID, userID string, at time.Time) {
 	t.Helper()
 	if _, err := store.db.Exec(`INSERT INTO lobby_players (lobby_id, user_id, joined_at) VALUES ($1, $2, $3)`, lobbyID, userID, at); err != nil {
@@ -308,7 +309,7 @@ func TestUpcomingFiltersOnEndSortsAndCountsPlayers(t *testing.T) {
 	addPlayer(t, store, sooner.ID, nobodyID, joinedAt)
 	addPlayer(t, store, sooner.ID, otherID, joinedAt)
 
-	lobbies, err := store.Lobbies().Upcoming(context.Background(), fridayID, at)
+	lobbies, err := store.Lobbies().Upcoming(context.Background(), fridayID, alexID, at)
 
 	if err != nil {
 		t.Fatal(err)
@@ -334,7 +335,7 @@ func TestUpcomingOfAnEmptyGroupIsEmpty(t *testing.T) {
 	store := migratedStore(t)
 	seedGroups(t, store)
 
-	lobbies, err := store.Lobbies().Upcoming(context.Background(), fridayID, joinedAt)
+	lobbies, err := store.Lobbies().Upcoming(context.Background(), fridayID, alexID, joinedAt)
 
 	if err != nil || len(lobbies) != 0 {
 		t.Fatalf("lobbies %v, error %v; want none", lobbies, err)
@@ -347,7 +348,7 @@ func TestLobbyIsScopedToTheGroupAndNotEnded(t *testing.T) {
 	lobby := insertLobby(t, store, newLobby(fridayID, alexID, nil, "Go"))
 	ctx := context.Background()
 
-	got, err := store.Lobbies().Lobby(ctx, fridayID, lobby.ID, lobby.StartsAt)
+	got, err := store.Lobbies().Lobby(ctx, fridayID, lobby.ID, alexID, lobby.StartsAt)
 	if err != nil || got.ID != lobby.ID || got.PlayerCount != 1 || got.GroupID != fridayID {
 		t.Fatalf("lobby %+v, error %v; want the lobby with one player", got, err)
 	}
@@ -360,7 +361,7 @@ func TestLobbyIsScopedToTheGroupAndNotEnded(t *testing.T) {
 		"unknown":     {fridayID, nobodyID, lobby.StartsAt},
 		"not a uuid":  {fridayID, "not-a-uuid", lobby.StartsAt},
 	} {
-		_, err := store.Lobbies().Lobby(ctx, tc.groupID, tc.lobbyID, tc.at)
+		_, err := store.Lobbies().Lobby(ctx, tc.groupID, tc.lobbyID, alexID, tc.at)
 		if name == "not a uuid" {
 			// The router answers a malformed ID before the use case runs; the adapter must not report it as found.
 			if err == nil {
@@ -402,5 +403,153 @@ func TestLobbyReaderMembershipAndUnavailable(t *testing.T) {
 	}
 	if _, ok, err := store.Lobbies().Membership(ctx, fridayID, otherID); err != nil || ok {
 		t.Fatalf("Other: %v %v, want no membership", ok, err)
+	}
+}
+
+func TestLobbiesTellWhetherTheCallerIsAPlayer(t *testing.T) {
+	store := migratedStore(t)
+	seedGroups(t, store)
+	ctx := context.Background()
+	mine := insertLobby(t, store, newLobby(fridayID, alexID, nil, "Go"))
+	joined := insertLobby(t, store, newLobby(fridayID, nobodyID, nil, "Go"))
+	notMine := insertLobby(t, store, newLobby(fridayID, nobodyID, nil, "Go"))
+	addPlayer(t, store, joined.ID, alexID, joinedAt)
+
+	lobbies, err := store.Lobbies().Upcoming(ctx, fridayID, alexID, joinedAt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := map[string]bool{}
+	for _, lobby := range lobbies {
+		got[lobby.ID] = lobby.JoinedByMe
+	}
+	if want := map[string]bool{mine.ID: true, joined.ID: true, notMine.ID: false}; !maps.Equal(got, want) {
+		t.Fatalf("list joinedByMe %v, want %v", got, want)
+	}
+	one, err := store.Lobbies().Lobby(ctx, fridayID, notMine.ID, alexID, joinedAt)
+	if err != nil || one.JoinedByMe {
+		t.Fatalf("lobby %+v, error %v; want joinedByMe false", one, err)
+	}
+}
+
+func addMember(t *testing.T, store *Store, groupID, userID string) {
+	t.Helper()
+	if _, err := store.db.Exec(`INSERT INTO group_members (group_id, user_id, role, joined_at) VALUES ($1, $2, 'member', now())`, groupID, userID); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// joinAt joins through the application use case with the clock fixed at now.
+func joinAt(store *Store, groupID, lobbyID, userID string, now time.Time) error {
+	ctx := context.Background()
+	return application.NewLobbies(store.Lobbies(), store.Lobbies(), nil, nil, fixedNow{now}).Join(ctx, groupID, lobbyID, userID)
+}
+
+type fixedNow struct{ at time.Time }
+
+func (c fixedNow) Now() time.Time { return c.at }
+
+func TestJoinAndLeaveUpdateThePlayers(t *testing.T) {
+	store := migratedStore(t)
+	seedGroups(t, store)
+	lobby := insertLobby(t, store, newLobby(fridayID, alexID, nil, "Go"))
+	addMember(t, store, fridayID, otherID)
+	lobbies := application.NewLobbies(store.Lobbies(), store.Lobbies(), nil, nil, fixedNow{joinedAt})
+	ctx := context.Background()
+
+	for range 2 {
+		if err := lobbies.Join(ctx, fridayID, lobby.ID, otherID); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if n := count(t, store, `SELECT count(*) FROM lobby_players WHERE lobby_id = $1`, lobby.ID); n != 2 {
+		t.Fatalf("%d players after joining twice, want 2", n)
+	}
+	for range 2 {
+		if err := lobbies.Leave(ctx, fridayID, lobby.ID, otherID); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if n := count(t, store, `SELECT count(*) FROM lobby_players WHERE lobby_id = $1`, lobby.ID); n != 1 {
+		t.Fatalf("%d players after leaving twice, want the creator only", n)
+	}
+}
+
+func TestJoinRefusesAnEndedLobbyAndANonMemberWithoutWriting(t *testing.T) {
+	store := migratedStore(t)
+	seedGroups(t, store)
+	lobby := insertLobby(t, store, newLobby(fridayID, alexID, nil, "Go"))
+	other := insertLobby(t, store, newLobby(sundayID, nobodyID, nil, "Go"))
+	addMember(t, store, fridayID, otherID)
+
+	ended := joinAt(store, fridayID, lobby.ID, otherID, lobby.EndsAt)
+	stranger := joinAt(store, fridayID, lobby.ID, nobodyID, joinedAt)
+	elsewhere := joinAt(store, fridayID, other.ID, otherID, joinedAt)
+
+	if !errors.Is(ended, domain.ErrLobbyHasEnded) || !errors.Is(stranger, domain.ErrGroupNotFound) || !errors.Is(elsewhere, domain.ErrLobbyNotFound) {
+		t.Fatalf("errors %v, %v, %v; want has ended, group not found, lobby not found", ended, stranger, elsewhere)
+	}
+	if n := count(t, store, `SELECT count(*) FROM lobby_players`); n != 2 {
+		t.Fatalf("%d player rows, want only the two creators", n)
+	}
+}
+
+// Two joins race for the last spot: the group lock lets exactly one win, and the count never passes max_players.
+func TestConcurrentJoinsNeverPassMaxPlayers(t *testing.T) {
+	store := migratedStore(t)
+	seedGroups(t, store)
+	request := newLobby(fridayID, alexID, nil, "Go")
+	request.MaxPlayers = intPtr(2)
+	lobby := insertLobby(t, store, request)
+	users := []string{otherID, "33333333-3333-4333-8333-333333333333", "44444444-4444-4444-8444-444444444444"}
+	for _, user := range users {
+		addMember(t, store, fridayID, user)
+	}
+	results := make(chan error, len(users))
+
+	for _, user := range users {
+		go func() { results <- joinAt(store, fridayID, lobby.ID, user, joinedAt) }()
+	}
+	succeeded, full := 0, 0
+	for range users {
+		switch err := <-results; {
+		case err == nil:
+			succeeded++
+		case errors.Is(err, domain.ErrLobbyFull):
+			full++
+		default:
+			t.Fatalf("unexpected error %v", err)
+		}
+	}
+
+	if n := count(t, store, `SELECT count(*) FROM lobby_players WHERE lobby_id = $1`, lobby.ID); n != 2 || succeeded != 1 || full != 2 {
+		t.Fatalf("players %d, succeeded %d, full %d; want 2, 1 and 2", n, succeeded, full)
+	}
+}
+
+// Two joins race while there are spots for both: both succeed and the count is 3 with the creator.
+func TestConcurrentJoinsWithSpareSpotsBothSucceed(t *testing.T) {
+	store := migratedStore(t)
+	seedGroups(t, store)
+	request := newLobby(fridayID, alexID, nil, "Go")
+	request.MaxPlayers = intPtr(3)
+	lobby := insertLobby(t, store, request)
+	users := []string{otherID, "33333333-3333-4333-8333-333333333333"}
+	for _, user := range users {
+		addMember(t, store, fridayID, user)
+	}
+	results := make(chan error, len(users))
+
+	for _, user := range users {
+		go func() { results <- joinAt(store, fridayID, lobby.ID, user, joinedAt) }()
+	}
+	for range users {
+		if err := <-results; err != nil {
+			t.Fatalf("join failed: %v", err)
+		}
+	}
+
+	if n := count(t, store, `SELECT count(*) FROM lobby_players WHERE lobby_id = $1`, lobby.ID); n != 3 {
+		t.Fatalf("%d players, want 3", n)
 	}
 }

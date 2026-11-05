@@ -32,6 +32,7 @@ function lobby(
     endsAt: local(5, 20),
     createdByUserId: testUser.userId,
     playerCount: 1,
+    joinedByMe: false,
     ...overrides,
   };
 }

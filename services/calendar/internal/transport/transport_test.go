@@ -38,6 +38,7 @@ type memoryGroups struct {
 	links   map[string][]domain.InviteLink
 	games   []domain.Game
 	lobbies map[string]domain.Lobby
+	joined  map[string]bool // "lobbyID/userID" of the players added through the lobby port
 	err     error
 	calls   int
 	created int

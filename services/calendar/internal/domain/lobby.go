@@ -32,6 +32,7 @@ type Lobby struct {
 	EndsAt          time.Time
 	CreatedAt       time.Time
 	PlayerCount     int
+	JoinedByMe      bool // whether the caller is a player; set by the reader, true for a new lobby
 }
 
 // Player is a person in a lobby, with the name shown to the group.
@@ -79,6 +80,7 @@ func NewLobby(request NewLobbyRequest, now time.Time) (Lobby, error) {
 		EndsAt:          request.EndsAt,
 		CreatedAt:       now,
 		PlayerCount:     1,
+		JoinedByMe:      true,
 	}, nil
 }
 
@@ -111,4 +113,32 @@ func chooseGame(request NewLobbyRequest) (*string, string, error) {
 		return nil, "", ErrInvalidGame
 	}
 	return nil, name, nil
+}
+
+// ErrLobbyHasEnded means the lobby's end time has passed, so nobody can join it (REQ-0005).
+var ErrLobbyHasEnded = errors.New("lobby has ended")
+
+// ErrLobbyFull means all spots of the lobby are taken (REQ-0005).
+var ErrLobbyFull = errors.New("lobby full")
+
+// JoinState is what the join rules need to know about a lobby and the caller.
+type JoinState struct {
+	EndsAt      time.Time
+	MaxPlayers  *int // nil means unlimited
+	PlayerCount int
+	IsPlayer    bool
+}
+
+// CheckJoin applies the rules in the order of the contract: an ended lobby refuses even a player, a player who is
+// already in changes nothing even when the lobby is full, then a full lobby refuses. It reports whether to add the caller.
+func (s JoinState) CheckJoin(now time.Time) (add bool, err error) {
+	switch {
+	case !s.EndsAt.After(now):
+		return false, ErrLobbyHasEnded
+	case s.IsPlayer:
+		return false, nil
+	case s.MaxPlayers != nil && s.PlayerCount >= *s.MaxPlayers:
+		return false, ErrLobbyFull
+	}
+	return true, nil
 }

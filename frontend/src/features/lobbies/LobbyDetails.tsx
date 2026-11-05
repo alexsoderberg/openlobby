@@ -3,17 +3,25 @@ import { useApi, type LobbyDetail } from "../../api";
 import { formatDateTimeRange, useMessages } from "../../i18n";
 import { Panel } from "../../ui";
 import { DeleteLobbyDialog } from "./DeleteLobbyDialog";
+import { LobbyMembership } from "./LobbyMembership";
 import { useLobbyAction } from "./useLobbyAction";
 
 type Callbacks = { onDeleted: () => void; onUnauthenticated: () => void };
+type Props = Callbacks & {
+  lobby: LobbyDetail;
+  groupId: string;
+  isCreator: boolean;
+  onMembershipChanged: () => void;
+};
 
-/** The game, time, spots and players of a lobby, with a delete button for its creator. */
+/** The game, time, spots and players of a lobby, with join or leave, and a delete button for its creator. */
 export function LobbyDetails({
   lobby,
   groupId,
   isCreator,
+  onMembershipChanged,
   ...callbacks
-}: Callbacks & { lobby: LobbyDetail; groupId: string; isCreator: boolean }) {
+}: Props) {
   const m = useMessages();
   return (
     <>
@@ -24,6 +32,13 @@ export function LobbyDetails({
           <p>{m.lobbyPlayers(lobby.playerCount, lobby.maxPlayers)}</p>
           <h2>{m.lobbyPlayersHeading}</h2>
           <PlayerList players={lobby.players} />
+          <LobbyMembership
+            groupId={groupId}
+            lobby={lobby}
+            onChanged={onMembershipChanged}
+            showEnded
+            onUnauthenticated={callbacks.onUnauthenticated}
+          />
           {isCreator && (
             <DeleteLobby lobby={lobby} groupId={groupId} {...callbacks} />
           )}

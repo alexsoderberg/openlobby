@@ -30,6 +30,7 @@ function renderForm(overrides: Partial<ApiClient> = {}) {
         endsAt: "",
         createdByUserId: "u1",
         playerCount: 1,
+        joinedByMe: true,
       }),
     ),
     ...overrides,

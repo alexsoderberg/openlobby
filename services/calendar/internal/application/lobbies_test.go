@@ -30,7 +30,7 @@ type lobbyStore struct {
 	players map[string][]string
 }
 
-func (s *lobbyStore) Upcoming(_ context.Context, groupID string, at time.Time) ([]domain.Lobby, error) {
+func (s *lobbyStore) Upcoming(_ context.Context, groupID, callerID string, at time.Time) ([]domain.Lobby, error) {
 	var upcoming []domain.Lobby
 	for _, lobby := range s.lobbies {
 		if lobby.GroupID == groupID && lobby.EndsAt.After(at) {
@@ -43,7 +43,7 @@ func (s *lobbyStore) Upcoming(_ context.Context, groupID string, at time.Time) (
 	return upcoming, s.err
 }
 
-func (s *lobbyStore) Lobby(_ context.Context, groupID, id string, at time.Time) (domain.Lobby, error) {
+func (s *lobbyStore) Lobby(_ context.Context, groupID, id, callerID string, at time.Time) (domain.Lobby, error) {
 	lobby, ok := s.lobbies[id]
 	if !ok || lobby.GroupID != groupID || !lobby.EndsAt.After(at) {
 		return domain.Lobby{}, domain.ErrLobbyNotFound
@@ -101,6 +101,25 @@ func (t *lobbyTx) CreatorOf(_ context.Context, groupID, id string) (string, bool
 		return "", false, nil
 	}
 	return lobby.CreatedByUserID, true, nil
+}
+
+func (t *lobbyTx) JoinState(_ context.Context, groupID, id, userID string) (domain.JoinState, bool, error) {
+	lobby, ok := t.lobbies[id]
+	if !ok || lobby.GroupID != groupID {
+		return domain.JoinState{}, false, nil
+	}
+	return domain.JoinState{EndsAt: lobby.EndsAt, MaxPlayers: lobby.MaxPlayers, PlayerCount: len(t.players[id]),
+		IsPlayer: slices.Contains(t.players[id], userID)}, true, nil
+}
+
+func (t *lobbyTx) AddPlayer(_ context.Context, id, userID string, _ time.Time) error {
+	t.players[id] = append(t.players[id], userID)
+	return nil
+}
+
+func (t *lobbyTx) RemovePlayer(_ context.Context, id, userID string) error {
+	t.players[id] = slices.DeleteFunc(t.players[id], func(p string) bool { return p == userID })
+	return nil
 }
 
 func (t *lobbyTx) DeleteLobby(_ context.Context, _, id string) error {
@@ -399,5 +418,115 @@ func TestGetFailsWhenAuthFails(t *testing.T) {
 
 	if !errors.Is(err, domain.ErrUnavailable) {
 		t.Fatalf("error %v, want ErrUnavailable", err)
+	}
+}
+
+// openLobbyStore has a lobby that ends after now, with Bob as its only player, so that Alice can join.
+func openLobbyStore(maxPlayers *int) *lobbyStore {
+	return lobbyStoreEndingAt(maxPlayers, now.Add(time.Hour))
+}
+
+func lobbyStoreEndingAt(maxPlayers *int, endsAt time.Time) *lobbyStore {
+	store := newLobbyStore()
+	store.lobbies[lobbyID] = domain.Lobby{ID: lobbyID, GroupID: fridayID, CreatedByUserID: bobID, MaxPlayers: maxPlayers, EndsAt: endsAt}
+	store.players = map[string][]string{lobbyID: {bobID}}
+	return store
+}
+
+func TestJoinAddsTheMemberOnce(t *testing.T) {
+	store := openLobbyStore(nil)
+	lobbies := newLobbies(store, chessCatalog())
+
+	for range 2 {
+		if err := lobbies.Join(context.Background(), fridayID, lobbyID, aliceID); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if want := []string{bobID, aliceID}; !slices.Equal(store.players[lobbyID], want) {
+		t.Fatalf("players %v, want %v", store.players[lobbyID], want)
+	}
+}
+
+func TestJoinRefusesWithoutWriting(t *testing.T) {
+	tests := []struct {
+		name    string
+		store   *lobbyStore
+		groupID string
+		lobbyID string
+		caller  string
+		want    error
+	}{
+		{name: "non-member", store: openLobbyStore(nil), groupID: fridayID, lobbyID: lobbyID, caller: strangerID, want: domain.ErrGroupNotFound},
+		{name: "non-member on a missing lobby", store: openLobbyStore(nil), groupID: fridayID, lobbyID: missingID, caller: strangerID, want: domain.ErrGroupNotFound},
+		{name: "missing lobby", store: openLobbyStore(nil), groupID: fridayID, lobbyID: missingID, caller: aliceID, want: domain.ErrLobbyNotFound},
+		{name: "missing group", store: openLobbyStore(nil), groupID: missingID, lobbyID: lobbyID, caller: aliceID, want: domain.ErrGroupNotFound},
+		{name: "ended", store: lobbyStoreEndingAt(nil, now), groupID: fridayID, lobbyID: lobbyID, caller: aliceID, want: domain.ErrLobbyHasEnded},
+		{name: "full", store: openLobbyStore(intPtr(1)), groupID: fridayID, lobbyID: lobbyID, caller: aliceID, want: domain.ErrLobbyFull},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			err := newLobbies(tc.store, chessCatalog()).Join(context.Background(), tc.groupID, tc.lobbyID, tc.caller)
+
+			if !errors.Is(err, tc.want) {
+				t.Fatalf("error %v, want %v", err, tc.want)
+			}
+			if !slices.Equal(tc.store.players[lobbyID], []string{bobID}) {
+				t.Fatalf("players %v, want only Bob", tc.store.players[lobbyID])
+			}
+		})
+	}
+}
+
+func TestJoinByAPlayerOfAFullLobbyChangesNothing(t *testing.T) {
+	store := openLobbyStore(intPtr(1))
+
+	if err := newLobbies(store, chessCatalog()).Join(context.Background(), fridayID, lobbyID, bobID); err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Equal(store.players[lobbyID], []string{bobID}) {
+		t.Fatalf("players %v, want only Bob", store.players[lobbyID])
+	}
+}
+
+func TestLeaveRemovesThePlayerAlsoAfterTheEndAndIsIdempotent(t *testing.T) {
+	store := lobbyStoreEndingAt(nil, now)
+	lobbies := newLobbies(store, chessCatalog())
+
+	for range 2 {
+		if err := lobbies.Leave(context.Background(), fridayID, lobbyID, bobID); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := lobbies.Leave(context.Background(), fridayID, lobbyID, aliceID); err != nil {
+		t.Fatalf("a non-player leaving: %v", err)
+	}
+	if len(store.players[lobbyID]) != 0 {
+		t.Fatalf("players %v, want none", store.players[lobbyID])
+	}
+}
+
+func TestLeaveRefuses(t *testing.T) {
+	tests := []struct {
+		name    string
+		lobbyID string
+		caller  string
+		want    error
+	}{
+		{name: "non-member", lobbyID: lobbyID, caller: strangerID, want: domain.ErrGroupNotFound},
+		{name: "missing lobby", lobbyID: missingID, caller: bobID, want: domain.ErrLobbyNotFound},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			store := openLobbyStore(nil)
+
+			err := newLobbies(store, chessCatalog()).Leave(context.Background(), fridayID, tc.lobbyID, tc.caller)
+
+			if !errors.Is(err, tc.want) {
+				t.Fatalf("error %v, want %v", err, tc.want)
+			}
+			if !slices.Equal(store.players[lobbyID], []string{bobID}) {
+				t.Fatalf("players %v, want Bob kept", store.players[lobbyID])
+			}
+		})
 	}
 }

@@ -21,7 +21,11 @@ export function LobbyDetailPage({
   onUnauthenticated: () => void;
 }) {
   const m = useMessages();
-  const { state, reload } = useLobby(groupId, lobbyId, onUnauthenticated);
+  const { state, reload, refresh } = useLobby(
+    groupId,
+    lobbyId,
+    onUnauthenticated,
+  );
 
   return (
     <>
@@ -39,6 +43,7 @@ export function LobbyDetailPage({
           groupId={groupId}
           isCreator={state.lobby.createdByUserId === userId}
           onDeleted={onDeleted}
+          onMembershipChanged={refresh}
           onUnauthenticated={onUnauthenticated}
         />
       )}

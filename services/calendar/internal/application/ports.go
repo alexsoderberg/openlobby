@@ -127,10 +127,11 @@ type LobbyRepository interface {
 // LobbyReader reads lobbies without the group lock. "Upcoming" means ends_at > now (ADR 0004 rule 8).
 type LobbyReader interface {
 	MembershipReader
-	// Upcoming returns the group's upcoming lobbies with their player counts, sorted by start time, then ID.
-	Upcoming(ctx context.Context, groupID string, now time.Time) ([]domain.Lobby, error)
+	// Upcoming returns the group's upcoming lobbies with their player counts and whether the caller is a player,
+	// sorted by start time, then ID.
+	Upcoming(ctx context.Context, groupID, callerID string, now time.Time) ([]domain.Lobby, error)
 	// Lobby returns the upcoming lobby of this group, or domain.ErrLobbyNotFound.
-	Lobby(ctx context.Context, groupID, lobbyID string, now time.Time) (domain.Lobby, error)
+	Lobby(ctx context.Context, groupID, lobbyID, callerID string, now time.Time) (domain.Lobby, error)
 	// PlayerIDs returns the user IDs of the lobby's players, sorted by join time, then user ID.
 	PlayerIDs(ctx context.Context, lobbyID string) ([]string, error)
 }
@@ -142,6 +143,13 @@ type LobbyTx interface {
 	InsertLobby(ctx context.Context, lobby domain.Lobby) (domain.Lobby, error)
 	// CreatorOf returns the lobby creator's user ID, and false when the lobby is not in this group.
 	CreatorOf(ctx context.Context, groupID, lobbyID string) (string, bool, error)
+	// JoinState returns the lobby's end, capacity, player count and whether the user is a player, and false when the
+	// lobby is not in this group.
+	JoinState(ctx context.Context, groupID, lobbyID, userID string) (domain.JoinState, bool, error)
+	// AddPlayer adds the user to the lobby.
+	AddPlayer(ctx context.Context, lobbyID, userID string, joinedAt time.Time) error
+	// RemovePlayer removes the user from the lobby. A user who is not a player is no error.
+	RemovePlayer(ctx context.Context, lobbyID, userID string) error
 	// DeleteLobby removes the lobby of this group with its players.
 	DeleteLobby(ctx context.Context, groupID, lobbyID string) error
 }

@@ -56,6 +56,36 @@ func (t memoryLobbyTx) CreatorOf(_ context.Context, groupID, lobbyID string) (st
 	return lobby.CreatedByUserID, true, nil
 }
 
+func (t memoryLobbyTx) JoinState(_ context.Context, groupID, lobbyID, userID string) (domain.JoinState, bool, error) {
+	lobby, ok := t.store.lobbies[lobbyID]
+	if !ok || lobby.GroupID != groupID {
+		return domain.JoinState{}, false, nil
+	}
+	return domain.JoinState{EndsAt: lobby.EndsAt, MaxPlayers: lobby.MaxPlayers, PlayerCount: lobby.PlayerCount, IsPlayer: t.store.joined[lobbyID+"/"+userID]}, true, nil
+}
+
+func (t memoryLobbyTx) AddPlayer(_ context.Context, lobbyID, userID string, _ time.Time) error {
+	if t.store.joined == nil {
+		t.store.joined = map[string]bool{}
+	}
+	t.store.joined[lobbyID+"/"+userID] = true
+	lobby := t.store.lobbies[lobbyID]
+	lobby.PlayerCount++
+	t.store.lobbies[lobbyID] = lobby
+	return nil
+}
+
+func (t memoryLobbyTx) RemovePlayer(_ context.Context, lobbyID, userID string) error {
+	key := lobbyID + "/" + userID
+	if t.store.joined[key] {
+		delete(t.store.joined, key)
+		lobby := t.store.lobbies[lobbyID]
+		lobby.PlayerCount--
+		t.store.lobbies[lobbyID] = lobby
+	}
+	return nil
+}
+
 func (t memoryLobbyTx) DeleteLobby(_ context.Context, _, lobbyID string) error {
 	delete(t.store.lobbies, lobbyID)
 	return nil
@@ -63,7 +93,7 @@ func (t memoryLobbyTx) DeleteLobby(_ context.Context, _, lobbyID string) error {
 
 // Upcoming and the methods after it make memoryGroups the lobby reader. The clock of the router is the zero time, so
 // every lobby with a later end is upcoming.
-func (m *memoryGroups) Upcoming(_ context.Context, groupID string, at time.Time) ([]domain.Lobby, error) {
+func (m *memoryGroups) Upcoming(_ context.Context, groupID, callerID string, at time.Time) ([]domain.Lobby, error) {
 	var upcoming []domain.Lobby
 	for _, lobby := range m.lobbies {
 		if lobby.GroupID == groupID && lobby.EndsAt.After(at) {
@@ -76,7 +106,7 @@ func (m *memoryGroups) Upcoming(_ context.Context, groupID string, at time.Time)
 	return upcoming, m.err
 }
 
-func (m *memoryGroups) Lobby(_ context.Context, groupID, lobbyID string, at time.Time) (domain.Lobby, error) {
+func (m *memoryGroups) Lobby(_ context.Context, groupID, lobbyID, callerID string, at time.Time) (domain.Lobby, error) {
 	lobby, ok := m.lobbies[lobbyID]
 	if !ok || lobby.GroupID != groupID || !lobby.EndsAt.After(at) {
 		return domain.Lobby{}, domain.ErrLobbyNotFound
@@ -149,7 +179,7 @@ func TestCreateLobbyReturns201WithTheContractShape(t *testing.T) {
 			}
 			want := map[string]any{
 				"id": createdID, "gameName": tc.wantGame, "maxPlayers": tc.wantMax, "startsAt": tc.wantStart,
-				"endsAt": validEnd, "createdByUserId": otherID, "playerCount": float64(1),
+				"endsAt": validEnd, "createdByUserId": otherID, "playerCount": float64(1), "joinedByMe": true,
 			}
 			for key, value := range want {
 				if got[key] != value {
@@ -298,7 +328,7 @@ func upcomingStore() *memoryGroups {
 	store := lobbyStore()
 	start := time.Date(2026, 11, 2, 19, 0, 0, 0, time.UTC)
 	store.lobbies[otherLobby] = domain.Lobby{ID: otherLobby, GroupID: fridayID, CreatedByUserID: otherID, GameName: "Chess",
-		StartsAt: start.Add(time.Hour), EndsAt: start.Add(2 * time.Hour), PlayerCount: 1}
+		StartsAt: start.Add(time.Hour), EndsAt: start.Add(2 * time.Hour), PlayerCount: 1, JoinedByMe: true}
 	store.lobbies[aliceLobby] = domain.Lobby{ID: aliceLobby, GroupID: fridayID, CreatedByUserID: alexID, GameName: "Go",
 		StartsAt: start, EndsAt: start.Add(time.Hour), PlayerCount: 2}
 	store.lobbies[endedLobby] = domain.Lobby{ID: endedLobby, GroupID: fridayID, CreatedByUserID: alexID, GameName: "Old"}
@@ -322,7 +352,7 @@ func TestListUpcomingLobbiesReturns200WithTheContractShape(t *testing.T) {
 	}
 	want := map[string]any{
 		"id": aliceLobby, "gameName": "Go", "maxPlayers": nil, "startsAt": "2026-11-02T19:00:00Z",
-		"endsAt": "2026-11-02T20:00:00Z", "createdByUserId": alexID, "playerCount": float64(2),
+		"endsAt": "2026-11-02T20:00:00Z", "createdByUserId": alexID, "playerCount": float64(2), "joinedByMe": false,
 	}
 	for key, value := range want {
 		if got[0][key] != value {
@@ -352,8 +382,9 @@ func TestGetLobbyReturns200WithPlayers(t *testing.T) {
 		t.Fatalf("status %d, want 200; body %q", response.Code, response.Body.String())
 	}
 	var got struct {
-		ID      string `json:"id"`
-		Players []struct {
+		ID         string `json:"id"`
+		JoinedByMe bool   `json:"joinedByMe"`
+		Players    []struct {
 			UserID      string `json:"userId"`
 			DisplayName string `json:"displayName"`
 		} `json:"players"`
@@ -361,7 +392,7 @@ func TestGetLobbyReturns200WithPlayers(t *testing.T) {
 	if err := json.Unmarshal(response.Body.Bytes(), &got); err != nil {
 		t.Fatal(err)
 	}
-	if got.ID != otherLobby || len(got.Players) != 2 || got.Players[0].UserID != otherID || got.Players[0].DisplayName == "" || got.Players[1].UserID != alexID {
+	if got.ID != otherLobby || !got.JoinedByMe || len(got.Players) != 2 || got.Players[0].UserID != otherID || got.Players[0].DisplayName == "" || got.Players[1].UserID != alexID {
 		t.Fatalf("body %q, want the lobby with Other and Alex as named players", response.Body.String())
 	}
 }
@@ -401,5 +432,76 @@ func TestUpcomingAndGetLobbyNeedALoggedInUserAndADatabase(t *testing.T) {
 		store.err = domain.ErrUnavailable
 		assertErrorEnvelope(t, call(newRouter(store, fridayDirectory()), http.MethodGet, target, asUser(otherID), ""),
 			http.StatusServiceUnavailable, "service_unavailable")
+	}
+}
+
+const playerPath = lobbiesPath + "/" + aliceLobby + "/players/me"
+
+func TestJoinLobbyAddsTheCallerAndLeaveRemovesThem(t *testing.T) {
+	store := upcomingStore()
+	router := newRouter(store, fridayDirectory())
+
+	join := call(router, http.MethodPut, playerPath, asUser(otherID), "")
+	joinedAgain := call(router, http.MethodPut, playerPath, asUser(otherID), "")
+
+	if join.Code != http.StatusNoContent || joinedAgain.Code != http.StatusNoContent || store.lobbies[aliceLobby].PlayerCount != 3 {
+		t.Fatalf("join %d, again %d, players %d; want 204, 204 and 3", join.Code, joinedAgain.Code, store.lobbies[aliceLobby].PlayerCount)
+	}
+	left := call(router, http.MethodDelete, playerPath, asUser(otherID), "")
+	leftAgain := call(router, http.MethodDelete, playerPath, asUser(otherID), "")
+	if left.Code != http.StatusNoContent || leftAgain.Code != http.StatusNoContent || store.lobbies[aliceLobby].PlayerCount != 2 {
+		t.Fatalf("leave %d, again %d, players %d; want 204, 204 and 2", left.Code, leftAgain.Code, store.lobbies[aliceLobby].PlayerCount)
+	}
+}
+
+func TestJoinAndLeaveLobbyGiveTheContractErrors(t *testing.T) {
+	full := 2
+	tests := []struct {
+		name     string
+		method   string
+		caller   string
+		target   string
+		prepare  func(*memoryGroups)
+		wantCode string
+		want     int
+	}{
+		{name: "join: non-member", method: http.MethodPut, caller: missingID, target: playerPath, wantCode: "group_not_found", want: 404},
+		{name: "join: missing lobby", method: http.MethodPut, caller: otherID, target: lobbiesPath + "/" + missingID + "/players/me", wantCode: "lobby_not_found", want: 404},
+		{name: "join: malformed lobby ID", method: http.MethodPut, caller: otherID, target: lobbiesPath + "/" + malformedUUIDs + "/players/me", wantCode: "lobby_not_found", want: 404},
+		{name: "join: ended", method: http.MethodPut, caller: otherID, target: lobbiesPath + "/" + endedLobby + "/players/me", wantCode: "lobby_has_ended", want: 409},
+		{name: "join: full", method: http.MethodPut, caller: otherID, target: playerPath, wantCode: "lobby_full", want: 409,
+			prepare: func(s *memoryGroups) {
+				lobby := s.lobbies[aliceLobby]
+				lobby.MaxPlayers = &full
+				s.lobbies[aliceLobby] = lobby
+			}},
+		{name: "leave: non-member", method: http.MethodDelete, caller: missingID, target: playerPath, wantCode: "group_not_found", want: 404},
+		{name: "leave: missing lobby", method: http.MethodDelete, caller: otherID, target: lobbiesPath + "/" + missingID + "/players/me", wantCode: "lobby_not_found", want: 404},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			store := upcomingStore()
+			if tc.prepare != nil {
+				tc.prepare(store)
+			}
+			before := store.lobbies[aliceLobby].PlayerCount
+
+			response := call(newRouter(store, fridayDirectory()), tc.method, tc.target, asUser(tc.caller), "")
+
+			assertErrorEnvelope(t, response, tc.want, tc.wantCode)
+			if store.lobbies[aliceLobby].PlayerCount != before {
+				t.Fatal("a refused call changed the players")
+			}
+		})
+	}
+}
+
+func TestJoinAndLeaveLobbyNeedALogin(t *testing.T) {
+	for _, method := range []string{http.MethodPut, http.MethodDelete} {
+		response := call(newRouter(upcomingStore(), fridayDirectory()), method, playerPath, nil, "")
+
+		if response.Code != http.StatusUnauthorized {
+			t.Errorf("%s status %d, want 401", method, response.Code)
+		}
 	}
 }

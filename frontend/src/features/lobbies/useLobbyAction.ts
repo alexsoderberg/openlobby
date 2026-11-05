@@ -2,7 +2,7 @@ import { useCallback, useState } from "react";
 import { errorCodeOf, isUnauthenticated, type ChangeResult } from "../../api";
 
 /**
- * Runs one change (create or delete) and resolves to the error code of a failure, or undefined on
+ * Runs one change (create, delete, join or leave) and resolves to the error code of a failure, or undefined on
  * success, so the form or dialog that asked can show it. `busy` is true while it runs.
  */
 export function useLobbyAction(onUnauthenticated: () => void) {
