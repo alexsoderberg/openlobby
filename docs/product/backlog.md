@@ -20,7 +20,7 @@ All eleven requirements are necessary for the MVP, so all are `Must`. No MVP req
 
 REQ-0012 arrives together with REQ-0004 (order 6 and 7 are one delivery). It comes after REQ-0003 and REQ-0010 (order 4 and 5). The "Next up" card's "Join lobby" and "Leave lobby" buttons need `joinedByMe` on `Lobby` (ADR 0014, point 5), which is REQ-0005 work, so they came with REQ-0005.
 
-Delivered (2026-11-05): REQ-0005 in PR #50. REQ-0012 in PRs #42, #43, #45–#48 and #50 (the Next up buttons came with REQ-0005).
+Delivered (2026-11-05): REQ-0005 in PR #50. REQ-0012 in PRs #42, #43, #45–#48 and #50 (the Next up buttons came with REQ-0005). REQ-0006 in PR #53. REQ-0008 in PR #54. All eleven MVP requirements (orders 1–11) and amendments AM1–AM5 are delivered.
 
 REQ-0009 comes before REQ-0003 because the game choice and the default max value in REQ-0003 read from the game list.
 

@@ -1,5 +1,5 @@
 # REQ-0008. Make member group admin
-Status: Decided
+Status: Implemented
 Feature: F-023
 Priority: Must
 
