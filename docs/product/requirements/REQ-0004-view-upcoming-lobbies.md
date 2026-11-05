@@ -56,7 +56,7 @@ F-003 (Create lobby), F-005 (Join and leave lobby) and F-018 (Max players per lo
 - The out-of-scope line "Showing lobbies from several groups together" now has one exception: the dashboard (REQ-0012, F-028). Group views are unchanged.
 
 ## Amendment 2026-11-04 (create from the calendar)
-Status stays Implemented. Decided by the user on 2026-11-04 and not yet built. The week calendar gets a second way to open Create lobby (REQ-0003, F-003). The form, its rules and its data are those of REQ-0003. This is not a new feature and not a duplicate of F-003.
+Status stays Implemented. Decided by the user on 2026-11-04. Built in PR #45. The week calendar gets a second way to open Create lobby (REQ-0003, F-003). The form, its rules and its data are those of REQ-0003. This is not a new feature and not a duplicate of F-003.
 
 Criteria added (binding for the UI expert):
 - Given that I am a member and in the calendar view, when I select an empty part of a day's column, then the Create lobby form (REQ-0003) opens with that day's date in the date field (DECISION, user, 2026-11-04; amended 2026-11-04 (time grid): a click on an empty time also prefills the start time). User's words (translated): "The user should also be able to click directly in a calendar to create a new lobby."
@@ -77,7 +77,7 @@ Out of scope in this amendment:
 F-003 (Create lobby): the calendar is a second entry point to the same form. F-017 (calendar view): the same view, with a create control added. F-028 (dashboard): its "This week" is not changed by this amendment in the create rules, but uses the same time grid on desktop and phone (Amendment 2026-11-04 (time grid) and REQ-0012).
 
 ## Amendment 2026-11-04 (time grid)
-Status stays Implemented. Decided by the user on 2026-11-04 and not yet built. The week view is shown as a time grid: days are vertical columns and the hours run down the page. The same grid is used for "This week" on the dashboard (REQ-0012, Fifth amendment). The rules above stay, except where a criterion is marked as amended. Binding for the UI expert.
+Status stays Implemented. Decided by the user on 2026-11-04. Built in PR #47 (2026-11-05). The week view is shown as a time grid: days are vertical columns and the hours run down the page. The same grid is used for "This week" on the dashboard (REQ-0012, Fifth amendment). The rules above stay, except where a criterion is marked as amended. Binding for the UI expert.
 
 User's words (translated): "I also want the lobby's duration shown graphically. A calendar where the days are vertical and you can see which time slots the lobby spans."
 

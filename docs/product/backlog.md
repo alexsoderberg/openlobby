@@ -44,6 +44,8 @@ Changes to delivered requirements, decided by the user (DECISION, user, 2026-11-
 | AM4 | REQ-0002 and REQ-0007 (Amendment 2026-11-04), REQ-0012 (Fourth amendment) | Invite from a popover (Group rail right-click, Invite button), no invite links section in the group view, links valid 10 minutes, default max uses 1 | Must | REQ-0002, REQ-0007, REQ-0012 |
 | AM5 | REQ-0004 (Amendment 2026-11-04, time grid), REQ-0012 (Fifth amendment), REQ-0003 (item 3) | Week view and This week as a time grid showing lobby duration; create from an empty time, prefilled with date and start time | Must | REQ-0003, REQ-0004, REQ-0012, AM3 |
 
+Delivered (2026-11-05): AM1 in PR #45, AM2 and AM3 in PR #45, AM4 in PR #48, AM5 in PR #47. REQ-0012 stays Decided until REQ-0005 delivers the Next up buttons.
+
 ## Should, after the MVP
 
 Not part of the MVP. The vision lists it as outside the MVP scope. It is prioritized after the MVP core flow (orders 1–10) is delivered and used. The user has decided it stays after the MVP (REQ-0011). If the user moves it into the MVP, it goes between REQ-0005 and REQ-0007.

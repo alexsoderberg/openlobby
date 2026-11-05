@@ -3,6 +3,8 @@ Status: Decided
 Feature: F-028
 Priority: Must
 
+Build status (2026-11-05): all criteria are built (PRs #42, #43, #45, #46, #47, #48) except the "Join lobby" and "Leave lobby" buttons on the Next up card, which wait for REQ-0005 (`joinedByMe`). Status stays Decided until REQ-0005 is delivered.
+
 ## Problem
 After login a member has no overview across their groups. To see whether anyone is playing tonight, they must open each group. Group views are not part of one layout, so moving between groups and creating a group are not reachable from one place. Phones are the main way friends check in, and the app is not designed for them yet.
 
