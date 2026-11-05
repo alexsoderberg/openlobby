@@ -14,7 +14,7 @@ import (
 // memoryMemberships serves the leave port from the memory store. It only approximates the database rules (it ignores ends_at and RemoveLeaverData); the real rules are tested in the postgres integration tests.
 type memoryMemberships struct{ store *memoryGroups }
 
-func (r memoryMemberships) WithLockedGroup(_ context.Context, groupID string, fn func(application.LeaveTx) error) error {
+func (r memoryMemberships) WithLockedGroup(_ context.Context, groupID string, fn func(application.MembershipTx) error) error {
 	r.store.calls++
 	if r.store.err != nil {
 		return r.store.err
@@ -22,12 +22,12 @@ func (r memoryMemberships) WithLockedGroup(_ context.Context, groupID string, fn
 	if _, ok := r.store.groups[groupID]; !ok {
 		return domain.ErrGroupNotFound
 	}
-	return fn(memoryLeaveTx{r.store})
+	return fn(memoryMembershipTx{r.store})
 }
 
-type memoryLeaveTx struct{ *memoryGroups }
+type memoryMembershipTx struct{ *memoryGroups }
 
-func (m memoryLeaveTx) HasUpcomingLobbyBy(_ context.Context, groupID, userID string, _ time.Time) (bool, error) {
+func (m memoryMembershipTx) HasUpcomingLobbyBy(_ context.Context, groupID, userID string, _ time.Time) (bool, error) {
 	for _, lobby := range m.lobbies {
 		if lobby.GroupID == groupID && lobby.CreatedByUserID == userID {
 			return true, nil
@@ -36,12 +36,12 @@ func (m memoryLeaveTx) HasUpcomingLobbyBy(_ context.Context, groupID, userID str
 	return false, nil
 }
 
-func (m memoryLeaveTx) RemoveLeaverData(_ context.Context, groupID, userID string, _ time.Time) error {
+func (m memoryMembershipTx) RemoveLeaverData(_ context.Context, groupID, userID string, _ time.Time) error {
 	m.members[groupID] = slices.DeleteFunc(m.members[groupID], func(member domain.Member) bool { return member.UserID == userID })
 	return nil
 }
 
-func (m memoryLeaveTx) MakeAdmin(_ context.Context, groupID, userID string) error {
+func (m memoryMembershipTx) MakeAdmin(_ context.Context, groupID, userID string) error {
 	for i := range m.members[groupID] {
 		if m.members[groupID][i].UserID == userID {
 			m.members[groupID][i].Role = domain.RoleAdmin
@@ -50,7 +50,7 @@ func (m memoryLeaveTx) MakeAdmin(_ context.Context, groupID, userID string) erro
 	return nil
 }
 
-func (m memoryLeaveTx) DeleteGroup(_ context.Context, groupID string) error {
+func (m memoryMembershipTx) DeleteGroup(_ context.Context, groupID string) error {
 	delete(m.groups, groupID)
 	delete(m.members, groupID)
 	return nil
@@ -134,7 +134,7 @@ func TestMakeGroupAdminPromotesAMemberAndIsIdempotent(t *testing.T) {
 			t.Fatalf("status %d, body %q; want 204 and no body", response.Code, response.Body.String())
 		}
 	}
-	if store.members[fridayID][1].Role != domain.RoleAdmin {
+	if roleOfMember(store, otherID) != domain.RoleAdmin {
 		t.Fatalf("members %v, want other to be admin", store.members[fridayID])
 	}
 }
@@ -160,7 +160,7 @@ func TestMakeGroupAdminGivesTheContractErrors(t *testing.T) {
 			response := call(newRouter(store, fridayDirectory()), http.MethodPut, tc.target, asUser(tc.caller), "")
 
 			assertErrorEnvelope(t, response, tc.status, tc.code)
-			if store.members[fridayID][1].Role != domain.RoleMember {
+			if roleOfMember(store, otherID) != domain.RoleMember {
 				t.Fatalf("members %v, want other to stay member", store.members[fridayID])
 			}
 		})
@@ -180,4 +180,13 @@ func TestMakeGroupAdminIs503WhenTheDatabaseDoesNotAnswer(t *testing.T) {
 	response := call(newRouter(store, fridayDirectory()), http.MethodPut, adminPath+otherID, asUser(alexID), "")
 
 	assertErrorEnvelope(t, response, http.StatusServiceUnavailable, "service_unavailable")
+}
+
+func roleOfMember(store *memoryGroups, userID string) domain.Role {
+	for _, member := range store.members[fridayID] {
+		if member.UserID == userID {
+			return member.Role
+		}
+	}
+	return ""
 }

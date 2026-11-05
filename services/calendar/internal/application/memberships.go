@@ -23,7 +23,7 @@ func NewMemberships(locker MembershipLocker, clock Clock) *Memberships {
 // non-member gets domain.ErrGroupNotFound and a creator of upcoming lobbies domain.ErrOwnUpcomingLobbiesExist; both
 // change nothing.
 func (m *Memberships) Leave(ctx context.Context, groupID, callerID string) error {
-	err := m.locker.WithLockedGroup(ctx, groupID, func(tx LeaveTx) error {
+	err := m.locker.WithLockedGroup(ctx, groupID, func(tx MembershipTx) error {
 		return m.leaveLocked(ctx, tx, groupID, callerID)
 	})
 	if err != nil {
@@ -32,7 +32,7 @@ func (m *Memberships) Leave(ctx context.Context, groupID, callerID string) error
 	return nil
 }
 
-func (m *Memberships) leaveLocked(ctx context.Context, tx LeaveTx, groupID, callerID string) error {
+func (m *Memberships) leaveLocked(ctx context.Context, tx MembershipTx, groupID, callerID string) error {
 	member, err := requireMember(ctx, tx, groupID, callerID)
 	if err != nil {
 		return err
@@ -67,7 +67,7 @@ func (m *Memberships) leaveLocked(ctx context.Context, tx LeaveTx, groupID, call
 // member gets domain.ErrGroupNotFound, a member who is not an admin domain.ErrNotAllowed and a target who is not a
 // member domain.ErrMemberNotFound; all change nothing. A target who is already admin is no error.
 func (m *Memberships) MakeAdmin(ctx context.Context, groupID, callerID, targetID string) error {
-	err := m.locker.WithLockedGroup(ctx, groupID, func(tx LeaveTx) error {
+	err := m.locker.WithLockedGroup(ctx, groupID, func(tx MembershipTx) error {
 		caller, err := requireMember(ctx, tx, groupID, callerID)
 		if err != nil {
 			return err

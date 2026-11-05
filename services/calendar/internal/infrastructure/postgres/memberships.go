@@ -22,7 +22,7 @@ const (
 
 var (
 	_ application.MembershipLocker = membershipRepo{}
-	_ application.LeaveTx          = leaveTx{}
+	_ application.MembershipTx     = membershipTx{}
 )
 
 // membershipRepo implements the membership port of the application layer.
@@ -32,19 +32,19 @@ type membershipRepo struct{ s *Store }
 func (s *Store) Memberships() membershipRepo { return membershipRepo{s} }
 
 // WithLockedGroup runs fn in one transaction that holds the group's row lock.
-func (r membershipRepo) WithLockedGroup(ctx context.Context, groupID string, fn func(application.LeaveTx) error) error {
-	return r.s.withGroupLock(ctx, groupID, func(tx *sql.Tx) error { return fn(leaveTx{tx}) })
+func (r membershipRepo) WithLockedGroup(ctx context.Context, groupID string, fn func(application.MembershipTx) error) error {
+	return r.s.withGroupLock(ctx, groupID, func(tx *sql.Tx) error { return fn(membershipTx{tx}) })
 }
 
-// leaveTx is the transaction of membershipRepo.WithLockedGroup. Its methods return the database's errors unchanged;
+// membershipTx is the transaction of membershipRepo.WithLockedGroup. Its methods return the database's errors unchanged;
 // withGroupLock translates them once.
-type leaveTx struct{ tx *sql.Tx }
+type membershipTx struct{ tx *sql.Tx }
 
-func (t leaveTx) Membership(ctx context.Context, groupID, userID string) (domain.Member, bool, error) {
+func (t membershipTx) Membership(ctx context.Context, groupID, userID string) (domain.Member, bool, error) {
 	return membership(ctx, t.tx, groupID, userID)
 }
 
-func (t leaveTx) Members(ctx context.Context, groupID string) (members []domain.Member, err error) {
+func (t membershipTx) Members(ctx context.Context, groupID string) (members []domain.Member, err error) {
 	rows, err := t.tx.QueryContext(ctx, selectMembersSQL, groupID)
 	if err != nil {
 		return nil, err
@@ -62,12 +62,12 @@ func (t leaveTx) Members(ctx context.Context, groupID string) (members []domain.
 	return members, rows.Err()
 }
 
-func (t leaveTx) HasUpcomingLobbyBy(ctx context.Context, groupID, userID string, now time.Time) (exists bool, err error) {
+func (t membershipTx) HasUpcomingLobbyBy(ctx context.Context, groupID, userID string, now time.Time) (exists bool, err error) {
 	err = t.tx.QueryRowContext(ctx, hasUpcomingLobbyBySQL, groupID, userID, now).Scan(&exists)
 	return exists, err
 }
 
-func (t leaveTx) RemoveLeaverData(ctx context.Context, groupID, userID string, now time.Time) error {
+func (t membershipTx) RemoveLeaverData(ctx context.Context, groupID, userID string, now time.Time) error {
 	if _, err := t.tx.ExecContext(ctx, deleteUpcomingPlayerSQL, groupID, userID, now); err != nil {
 		return err
 	}
@@ -78,13 +78,13 @@ func (t leaveTx) RemoveLeaverData(ctx context.Context, groupID, userID string, n
 	return err
 }
 
-func (t leaveTx) MakeAdmin(ctx context.Context, groupID, userID string) error {
+func (t membershipTx) MakeAdmin(ctx context.Context, groupID, userID string) error {
 	_, err := t.tx.ExecContext(ctx, makeAdminSQL, groupID, userID, domain.RoleAdmin)
 	return err
 }
 
 // DeleteGroup removes the group. Members, lobbies, players and links go with it (ON DELETE CASCADE).
-func (t leaveTx) DeleteGroup(ctx context.Context, groupID string) error {
+func (t membershipTx) DeleteGroup(ctx context.Context, groupID string) error {
 	_, err := t.tx.ExecContext(ctx, deleteGroupSQL, groupID)
 	return err
 }

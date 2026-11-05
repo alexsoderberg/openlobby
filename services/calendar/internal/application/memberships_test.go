@@ -22,7 +22,7 @@ type leaveStore struct {
 	deletedGrp bool
 }
 
-func (s *leaveStore) WithLockedGroup(_ context.Context, groupID string, fn func(application.LeaveTx) error) error {
+func (s *leaveStore) WithLockedGroup(_ context.Context, groupID string, fn func(application.MembershipTx) error) error {
 	if _, ok := s.groups[groupID]; !ok {
 		return domain.ErrGroupNotFound
 	}

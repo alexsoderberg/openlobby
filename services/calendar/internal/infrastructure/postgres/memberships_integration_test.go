@@ -265,3 +265,26 @@ func TestMakeAdminRefusesANonAdminAndANonMember(t *testing.T) {
 		t.Fatalf("nobody has role %q, want member", got)
 	}
 }
+
+func TestPromotedAdminCanRevokeALinkCreatedByAnotherMember(t *testing.T) {
+	store := migratedStore(t)
+	seedFriday(t, store)
+	ctx := context.Background()
+	insertLink(t, store, fridayID, "nobodys-link", nobodyID, "1 hour", 10, 0)
+	revoke := func() error {
+		return newJoins(store).Revoke(ctx, fridayID, linkIDOf(t, store, "nobodys-link"), otherID)
+	}
+
+	if err := revoke(); !errors.Is(err, domain.ErrNotAllowed) {
+		t.Fatalf("revoke before promotion: %v, want ErrNotAllowed", err)
+	}
+	if err := application.NewMemberships(store.Memberships(), systemclock.Clock{}).MakeAdmin(ctx, fridayID, alexID, otherID); err != nil {
+		t.Fatal(err)
+	}
+	if err := revoke(); err != nil {
+		t.Fatalf("revoke after promotion: %v", err)
+	}
+	if tokens := tokensOf(t, store, fridayID); len(tokens) != 0 {
+		t.Fatalf("links %v remain, want none", tokens)
+	}
+}
