@@ -3,6 +3,7 @@ import { Dashboard } from "../features/dashboard";
 import { GamesPage } from "../features/games";
 import {
   GroupDetails,
+  LeaveGroupAction,
   MyGroups,
   groupPath,
   useGroup,
@@ -24,6 +25,7 @@ export function ProtectedPage({
   groups,
   logoutError,
   onOpenGroup,
+  onLeftGroup,
   onLogout,
   onUnauthenticated,
 }: {
@@ -32,6 +34,7 @@ export function ProtectedPage({
   groups: MyGroupsLoad;
   logoutError?: string;
   onOpenGroup: (groupId: string) => void;
+  onLeftGroup: (group: { id: string; name: string }) => void;
   onLogout: () => void;
   onUnauthenticated: () => void;
 }) {
@@ -58,6 +61,7 @@ export function ProtectedPage({
       return (
         <GroupPage
           groupId={route.groupId}
+          onLeft={onLeftGroup}
           onUnauthenticated={onUnauthenticated}
         />
       );
@@ -103,9 +107,11 @@ function GroupsPage({ groups }: { groups: MyGroupsLoad }) {
 /** A group the caller is not in gives the same page as an unknown address, so its existence is not revealed. */
 function GroupPage({
   groupId,
+  onLeft,
   onUnauthenticated,
 }: {
   groupId: string;
+  onLeft: (group: { id: string; name: string }) => void;
   onUnauthenticated: () => void;
 }) {
   const { state, reload } = useGroup(groupId, onUnauthenticated);
@@ -117,10 +123,17 @@ function GroupPage({
       onUnauthenticated={onUnauthenticated}
       headerAction={
         state.status === "loaded" && (
-          <InviteAction
-            group={state.group}
-            onUnauthenticated={onUnauthenticated}
-          />
+          <div className="form-actions">
+            <InviteAction
+              group={state.group}
+              onUnauthenticated={onUnauthenticated}
+            />
+            <LeaveGroupAction
+              group={state.group}
+              onLeft={onLeft}
+              onUnauthenticated={onUnauthenticated}
+            />
+          </div>
         )
       }
     />

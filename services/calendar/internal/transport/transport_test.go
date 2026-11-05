@@ -142,7 +142,7 @@ func newRouter(store *memoryGroups, directory *fakeDirectory) http.Handler {
 	games := application.NewGames(store, store, memoryEditor{store}, logger)
 	invites := application.NewInviteLinks(store, store, store, fixedTokens{}, fixedClock{})
 	lobbies := application.NewLobbies(memoryLobbyRepo{store}, store, store, directory, fixedClock{})
-	return transport.NewRouter(groups, invites, games, lobbies, ready, logger)
+	return transport.NewRouter(groups, invites, games, lobbies, application.NewMemberships(memoryMemberships{store}, fixedClock{}), ready, logger)
 }
 
 func call(router http.Handler, method, target string, headers map[string]string, body string) *httptest.ResponseRecorder {

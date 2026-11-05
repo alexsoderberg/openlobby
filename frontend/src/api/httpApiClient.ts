@@ -138,6 +138,13 @@ export function createHttpApiClient(
         }),
       );
     },
+    leaveGroup: async (groupId) => {
+      await receive(
+        http.DELETE("/api/groups/{groupId}/membership", {
+          params: { path: { groupId } },
+        }),
+      );
+    },
   };
 }
 
