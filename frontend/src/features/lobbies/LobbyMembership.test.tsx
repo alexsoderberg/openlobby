@@ -96,7 +96,8 @@ describe("join and leave a lobby", () => {
 
     expect(await screen.findByText(en.lobbyEnded)).toBeTruthy();
     expect(screen.queryByRole("alert")).toBeNull();
-    expect(onChanged).toHaveBeenCalled();
+    // The lobby page answers not found for an ended lobby, so it must not reload.
+    expect(onChanged).not.toHaveBeenCalled();
   });
 
   it("reloads the lobby when it ended meanwhile where Ended is not shown", async () => {
