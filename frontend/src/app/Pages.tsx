@@ -23,7 +23,6 @@ export function ProtectedPage({
   route,
   user,
   groups,
-  leftGroupName,
   logoutError,
   onOpenGroup,
   onLeftGroup,
@@ -33,7 +32,6 @@ export function ProtectedPage({
   route: Exclude<Route, { name: "notFound" }>;
   user: AuthUser;
   groups: MyGroupsLoad;
-  leftGroupName?: string;
   logoutError?: string;
   onOpenGroup: (groupId: string) => void;
   onLeftGroup: (group: { id: string; name: string }) => void;
@@ -50,7 +48,7 @@ export function ProtectedPage({
         />
       );
     case "groups":
-      return <GroupsPage groups={groups} leftGroupName={leftGroupName} />;
+      return <GroupsPage groups={groups} />;
     case "profile":
       return (
         <ProfilePage
@@ -96,20 +94,11 @@ export function ProtectedPage({
   }
 }
 
-function GroupsPage({
-  groups,
-  leftGroupName,
-}: {
-  groups: MyGroupsLoad;
-  leftGroupName?: string;
-}) {
+function GroupsPage({ groups }: { groups: MyGroupsLoad }) {
   const m = useMessages();
   return (
     <>
       <h1>{m.groupsHeading}</h1>
-      {leftGroupName !== undefined && (
-        <p role="status">{m.groupLeft(leftGroupName)}</p>
-      )}
       <MyGroups state={groups.state} onRetry={groups.reload} />
     </>
   );

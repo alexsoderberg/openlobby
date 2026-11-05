@@ -186,6 +186,28 @@ describe("createHttpApiClient", () => {
     );
   });
 
+  it.each([
+    ["joinLobby", "PUT", "/api/groups/g1/lobbies/l1/players/me"],
+    ["leaveLobby", "DELETE", "/api/groups/g1/lobbies/l1/players/me"],
+    ["leaveGroup", "DELETE", "/api/groups/g1/membership"],
+  ] as const)(
+    "%s sends %s %s and resolves on 204",
+    async (name, method, path) => {
+      const sent: Request[] = [];
+      const fetchImpl = vi.fn<typeof fetch>(async (input) => {
+        sent.push(new Request(input));
+        return new Response(null, { status: 204 });
+      });
+      const api = createHttpApiClient(fetchImpl, BASE_URL);
+
+      await expect(
+        name === "leaveGroup" ? api.leaveGroup("g1") : api[name]("g1", "l1"),
+      ).resolves.toBeUndefined();
+      expect(sent[0]).toMatchObject({ method });
+      expect(new URL(sent[0].url).pathname).toBe(path);
+    },
+  );
+
   it("maps a 404 from getInvite to invite_invalid without group data", async () => {
     const fetchImpl = vi.fn(async () =>
       Response.json(errorBody("invite_invalid"), { status: 404 }),

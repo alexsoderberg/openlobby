@@ -1,4 +1,5 @@
 import {
+  act,
   fireEvent,
   render,
   screen,
@@ -9,7 +10,9 @@ import { describe, expect, it, vi } from "vitest";
 import { ApiError, ApiProvider } from "../api";
 import { en } from "../i18n/messages/en";
 import { fakeApiClient, testUser } from "../test/fakeApiClient";
+import { GROUPS_PATH, groupPath } from "../features/groups";
 import { App } from "./App";
+import { navigate } from "./navigation";
 
 function renderLoggedIn(path = "/") {
   window.history.replaceState(null, "", path);
@@ -100,20 +103,45 @@ describe("leaving a group", () => {
     expect(client.leaveGroup).not.toHaveBeenCalled();
   });
 
-  it("goes to the group list with a notice and reloads the groups on success", async () => {
-    const client = renderGroup();
+  async function leaveFromGroupView() {
+    let left = false;
+    const client = renderGroup({
+      listGroups: vi.fn(() => Promise.resolve(left ? [] : [group])),
+      leaveGroup: vi.fn(() => {
+        left = true;
+        return Promise.resolve();
+      }),
+    });
     const dialog = await openDialog();
-
     fireEvent.click(
       within(dialog).getByRole("button", { name: en.groupLeaveSubmit }),
     );
-
     await waitFor(() => expect(window.location.pathname).toBe("/groups"));
-    expect((await screen.findByRole("status")).textContent).toBe(
-      en.groupLeft(group.name),
-    );
+    return client;
+  }
+
+  it("goes to the group list with a notice and reloads the groups on success", async () => {
+    const client = await leaveFromGroupView();
+
+    const notice = await screen.findByText(en.groupLeft(group.name));
+    expect(notice.getAttribute("role")).toBe("status");
     expect(client.leaveGroup).toHaveBeenCalledWith("g1");
     await waitFor(() => expect(client.listGroups).toHaveBeenCalledTimes(2));
+    await waitFor(() =>
+      expect(screen.queryByRole("link", { name: group.name })).toBeNull(),
+    );
+  });
+
+  it("drops the notice when the user moves on, so a later visit to the list is clean", async () => {
+    await leaveFromGroupView();
+    await screen.findByText(en.groupLeft(group.name));
+
+    act(() => navigate(groupPath(group.id)));
+    await screen.findByRole("main");
+    act(() => navigate(GROUPS_PATH));
+
+    await screen.findByRole("heading", { name: en.groupsHeading });
+    expect(screen.queryByText(en.groupLeft(group.name))).toBeNull();
   });
 
   it("keeps the dialog and the page when upcoming lobbies block leaving", async () => {
