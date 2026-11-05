@@ -805,7 +805,6 @@ a {
 }
 
 .time-block__body {
-  position: relative;
   display: grid;
   align-content: start;
   height: 100%;
@@ -845,7 +844,8 @@ a {
   font-weight: 600;
 }
 
-/* The link covers the block, so the whole block is the click target. */
+/* The link covers the whole .time-block (its containing block, at least --size-tap tall), not the smaller
+   body inside its padding, so the click target is never under 44px. The body's overflow does not clip it. */
 .time-block__game::after {
   content: "";
   position: absolute;

@@ -9,7 +9,8 @@ export type GridLobby = Lobby & { groupName?: string };
 /**
  * One lobby on a day column. Top and height are its true start and duration (CSS reads them from the
  * custom properties); a short block keeps its position and only grows to stay readable. The link covers
- * the whole block.
+ * the whole block. A continuation marker comes right after the game name, so the two lines that fit the
+ * smallest block show both.
  */
 export function TimeBlock({
   block,
@@ -37,9 +38,6 @@ export function TimeBlock({
         <a className="time-block__game" href={href}>
           {lobby.gameName}
         </a>
-        <span>{formatTimeRange(lobby.startsAt, lobby.endsAt)}</span>
-        {lobby.groupName && <span>{lobby.groupName}</span>}
-        <span>{m.lobbyPlayers(lobby.playerCount, lobby.maxPlayers)}</span>
         {block.continuesBefore && (
           <span className="time-block__marker">
             {m.calendarContinuesBefore}
@@ -48,6 +46,9 @@ export function TimeBlock({
         {block.continuesAfter && (
           <span className="time-block__marker">{m.calendarContinuesAfter}</span>
         )}
+        <span>{formatTimeRange(lobby.startsAt, lobby.endsAt)}</span>
+        {lobby.groupName && <span>{lobby.groupName}</span>}
+        <span>{m.lobbyPlayers(lobby.playerCount, lobby.maxPlayers)}</span>
       </div>
     </li>
   );

@@ -39,14 +39,14 @@ function startOfClick(
 
 /**
  * One day column. When `onCreate` is given, a button fills the part of the column from now on (all of a
- * later day, none of a past one), so only that part reacts to the pointer. "Now" is read at render; the
- * column is redrawn whenever the week changes, which is often enough.
+ * later day, none of a past one), so only that part reacts to the pointer.
  */
 export function TimeGridDay<T extends GridLobby>({
   day,
   blocks,
   selected,
   isToday,
+  now,
   titleLevel,
   hrefOf,
   onCreate,
@@ -55,13 +55,14 @@ export function TimeGridDay<T extends GridLobby>({
   blocks: Block<T>[];
   selected: boolean;
   isToday: boolean;
+  now: Date;
   titleLevel: TitleLevel;
   hrefOf: (lobby: T) => string;
   onCreate?: CreateAt;
 }) {
   const m = useMessages();
   const Title = `h${titleLevel}` as const;
-  const fromMinute = onCreate && clickableFromMinute(day, new Date());
+  const fromMinute = onCreate && clickableFromMinute(day, now);
   return (
     <li className="time-grid__day" data-selected={selected || undefined}>
       <Title

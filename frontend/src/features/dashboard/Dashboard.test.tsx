@@ -21,7 +21,7 @@ import {
 } from "../../i18n";
 import { en } from "../../i18n/messages/en";
 import { fakeApiClient } from "../../test/fakeApiClient";
-import { dayColumns, selectedColumns } from "../../test/weekGrid";
+import { dayColumns, onPhone, selectedColumns } from "../../test/weekGrid";
 import type { GroupsState } from "../groups";
 import { Dashboard } from "./Dashboard";
 
@@ -262,13 +262,28 @@ describe("This week", () => {
     });
 
     it("goes to the selected day on phones, not to an earlier lobby on another day", async () => {
-      vi.spyOn(window, "matchMedia").mockReturnValue({
-        matches: true,
-      } as MediaQueryList);
+      onPhone();
       renderDashboard(earlyThursday);
       await nextUpCard();
 
       expect(scrollTop()).toBe(16 * 100);
+    });
+
+    it("keeps the scroll position on phones when another Day pill is chosen", async () => {
+      onPhone();
+      renderDashboard(earlyThursday);
+      await nextUpCard();
+      const grid = screen.getByRole("region", { name: en.calendarGridLabel });
+      grid.scrollTop = 1234;
+
+      fireEvent.click(
+        screen.getByRole("button", {
+          name: new RegExp(formatWeekdayShort(at(5, 0))),
+        }),
+      );
+
+      expect(selectedColumns()).toEqual([dayColumns()[3]]);
+      expect(grid.scrollTop).toBe(1234);
     });
   });
 

@@ -41,6 +41,7 @@ export function WeekTimeGrid<T extends GridLobby>({
         days={days}
         selected={selected}
         todayIndex={todayIndex}
+        now={now}
         titleLevel={titleLevel}
         hrefOf={hrefOf}
         onCreate={onCreate}

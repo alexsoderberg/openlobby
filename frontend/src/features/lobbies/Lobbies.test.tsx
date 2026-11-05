@@ -240,6 +240,13 @@ describe("calendar view", () => {
     expect(
       within(saturday.closest("li")!).getByText("started the day before"),
     ).toBeTruthy();
+    // Right after the game name: the smallest block shows two lines.
+    expect(friday.nextElementSibling!.textContent).toBe(
+      en.calendarContinuesAfter,
+    );
+    expect(saturday.nextElementSibling!.textContent).toBe(
+      en.calendarContinuesBefore,
+    );
     expect(blockStyle(friday)).toMatchObject({ start: "1320", span: "120" });
     expect(blockStyle(saturday)).toMatchObject({ start: "0", span: "120" });
   });
