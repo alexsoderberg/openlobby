@@ -1670,17 +1670,25 @@ a {
   background: var(--color-accent-tint);
 }
 
-/* Spacing rule: blocks inside a panel, dialog or popover card sit one space-3 apart,
-   and sibling buttons share a .form-actions row. Kept last so it wins over earlier resets. */
-.panel > * + *,
-.dialog > * + *,
-.create-popover__card > * + * {
+/* Spacing rule: a button or action row that follows other content in a panel, dialog or popover
+   sits one space-3 below it, and the invite popover's blocks after a status line do the same.
+   Headings, .status, .row-list and .step-card__text keep their own spacing, so this is not a
+   blanket rule. Specificity (0,2,0) beats .button and .alert resets whatever the source order.
+   .login-panel has its own .button margin and is left alone. */
+:is(.panel, .dialog, .create-popover__card)
+  > *
+  + :is(.button, .button-ghost, .button--secondary, .form-actions),
+.create-popover__card > .status + * {
   margin-top: var(--space-3);
+}
+
+/* Children of an action row are spaced by the row gap alone, not by their own margins. */
+.form-actions > * {
+  margin: 0;
 }
 
 .form-actions > .alert {
   flex: 1 1 100%;
-  margin: 0;
 }
 
 /* Only the first button of a row pushes right; the rest follow at the row gap. */
