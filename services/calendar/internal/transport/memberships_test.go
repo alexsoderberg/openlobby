@@ -11,7 +11,7 @@ import (
 	"openlobby/services/calendar/internal/domain"
 )
 
-// memoryMemberships serves the leave port from the memory store, with the same rules as the database.
+// memoryMemberships serves the leave port from the memory store. It only approximates the database rules (it ignores ends_at, MakeAdmin and RemoveLeaverData change nothing); the real rules are tested in the postgres integration tests.
 type memoryMemberships struct{ store *memoryGroups }
 
 func (r memoryMemberships) WithLockedGroup(_ context.Context, groupID string, fn func(application.LeaveTx) error) error {

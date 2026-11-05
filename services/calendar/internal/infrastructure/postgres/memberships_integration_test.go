@@ -182,3 +182,46 @@ func TestRejoinAfterLeavingIsAFreshMemberNotAdmin(t *testing.T) {
 		t.Fatalf("rejoined alex has role %q, want member", got)
 	}
 }
+
+// REQ-0006: a former member gets group_not_found on the group and its upcoming lobbies.
+func TestFormerMemberCannotReadTheGroupOrItsLobbies(t *testing.T) {
+	store := migratedStore(t)
+	seedFriday(t, store)
+	upcoming := newLobby(fridayID, alexID, nil, "Upcoming")
+	upcoming.StartsAt, upcoming.EndsAt = time.Now().Add(time.Hour), time.Now().Add(2*time.Hour)
+	insertLobby(t, store, upcoming)
+	if err := leave(store, fridayID, otherID); err != nil {
+		t.Fatal(err)
+	}
+	ctx := context.Background()
+
+	_, _, groupErr := application.NewGroups(store.Groups(), store.Groups(), store.Groups(), nil, systemclock.Clock{}).Get(ctx, otherID, fridayID)
+	_, lobbiesErr := application.NewLobbies(store.Lobbies(), store.Lobbies(), nil, nil, systemclock.Clock{}).Upcoming(ctx, fridayID, otherID)
+
+	if !errors.Is(groupErr, domain.ErrGroupNotFound) || !errors.Is(lobbiesErr, domain.ErrGroupNotFound) {
+		t.Fatalf("errors %v, %v; want group_not_found twice", groupErr, lobbiesErr)
+	}
+}
+
+// REQ-0006: after leaving, an active link shows the group with isMember false, and joining makes the caller a member again.
+func TestFormerMemberSeesInviteAsNonMemberAndCanJoinAgain(t *testing.T) {
+	store := migratedStore(t)
+	seedFriday(t, store)
+	insertLink(t, store, fridayID, "come-back", nobodyID, "1 hour", 10, 0)
+	if err := leave(store, fridayID, otherID); err != nil {
+		t.Fatal(err)
+	}
+	joins := newJoins(store)
+	ctx := context.Background()
+
+	group, isMember, err := joins.Get(ctx, "come-back", otherID)
+	if err != nil || group.Name != "Friday" || isMember {
+		t.Fatalf("group %+v, isMember %v, error %v; want Friday and not a member", group, isMember, err)
+	}
+	if _, err := joins.Join(ctx, "come-back", otherID); err != nil {
+		t.Fatal(err)
+	}
+	if got := roleOf(t, store, fridayID, otherID); got != "member" {
+		t.Fatalf("role %q after rejoining, want member", got)
+	}
+}
