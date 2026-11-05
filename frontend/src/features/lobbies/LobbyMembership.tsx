@@ -26,7 +26,8 @@ export function LobbyMembership({
   lobby: Membership;
   onChanged: () => void;
   onUnauthenticated: () => void;
-  /** Says "Ended" in place of the join button. Off where the view already shows the state. */
+  /** Says "Ended" in place of the join button once the clock passes the end. Off where the view already shows
+   * the state; a lobby_has_ended answer shows "Ended" everywhere. */
   showEnded?: boolean;
 }) {
   const m = useMessages();
@@ -43,18 +44,20 @@ export function LobbyMembership({
     );
     setErrorCode(code);
     // A gone lobby disappears from the view on leaving; a full one shows its real state. An ended one
-    // reloads only where "Ended" is not shown here, because a reload of the lobby page answers not found.
+    // shows "Ended" without a reload, because a reload drops it (lobby page: not found; card: not upcoming).
     if (
       code === undefined ||
       code === LOBBY_FULL ||
-      (code === LOBBY_HAS_ENDED && !showEnded) ||
       (code === LOBBY_NOT_FOUND && leaving)
     )
       onChanged();
   }
 
   const ended = errorCode === LOBBY_HAS_ENDED || hasEnded(lobby);
-  if (!leaving && ended) return showEnded ? <p>{m.lobbyEnded}</p> : null;
+  if (!leaving && ended)
+    return showEnded || errorCode === LOBBY_HAS_ENDED ? (
+      <p>{m.lobbyEnded}</p>
+    ) : null;
   const failure =
     errorCode === LOBBY_NOT_FOUND
       ? m.lobbyGone

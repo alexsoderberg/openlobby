@@ -100,7 +100,7 @@ describe("join and leave a lobby", () => {
     expect(onChanged).not.toHaveBeenCalled();
   });
 
-  it("reloads the lobby when it ended meanwhile where Ended is not shown", async () => {
+  it("shows Ended on the card too when joining answers that the lobby has ended", async () => {
     const { onChanged } = renderMembership(
       {},
       { joinLobby: refuse(409, "lobby_has_ended") },
@@ -108,8 +108,10 @@ describe("join and leave a lobby", () => {
 
     fireEvent.click(await join());
 
-    await waitFor(() => expect(onChanged).toHaveBeenCalled());
+    expect(await screen.findByText(en.lobbyEnded)).toBeTruthy();
     expect(screen.queryByRole("button")).toBeNull();
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(onChanged).not.toHaveBeenCalled();
   });
 
   it("says the lobby no longer exists when joining a deleted lobby", async () => {
