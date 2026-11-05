@@ -16,12 +16,15 @@ import { en } from "../../i18n/messages/en";
 import { fakeApiClient, testUser } from "../../test/fakeApiClient";
 import { LobbyDetailPage } from "./LobbyDetailPage";
 
+const HOUR_MS = 60 * 60 * 1000;
+
 const lobby: LobbyDetail = {
   id: "l1",
   gameName: "Catan",
   maxPlayers: 4,
-  startsAt: new Date(2026, 10, 5, 18).toISOString(),
-  endsAt: new Date(2026, 10, 5, 20).toISOString(),
+  // Relative to now: join is only offered until the end time, so a fixed date stops working once it passes.
+  startsAt: new Date(Date.now() + HOUR_MS).toISOString(),
+  endsAt: new Date(Date.now() + 3 * HOUR_MS).toISOString(),
   createdByUserId: testUser.userId,
   playerCount: 2,
   joinedByMe: true,
