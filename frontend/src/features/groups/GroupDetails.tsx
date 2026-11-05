@@ -4,16 +4,23 @@ import { useMessages } from "../../i18n";
 import type { ReactNode } from "react";
 import { ErrorAlert, Panel } from "../../ui";
 import type { GroupState } from "./useGroup";
+import { MakeGroupAdminAction } from "./MakeGroupAdminAction";
 
 /** Shows a group with its members. The admin marker is text, so it does not depend on color. */
 export function GroupDetails({
   state,
+  viewerId,
   onRetry,
+  onRefresh,
   onUnauthenticated,
   headerAction,
 }: {
   state: Exclude<GroupState, { status: "notFound" }>;
+  /** The logged-in user, to tell whether they may make others group admins. */
+  viewerId: string;
   onRetry: () => void;
+  /** Loads the group again without leaving the page. */
+  onRefresh: () => void;
   onUnauthenticated: () => void;
   /** Shown next to the heading, e.g. the Invite button. */
   headerAction?: ReactNode;
@@ -23,6 +30,10 @@ export function GroupDetails({
   if (state.status === "loading") return <p role="status">{m.groupLoading}</p>;
   if (state.status === "error")
     return <ErrorAlert code={state.code} onRetry={onRetry} />;
+
+  const viewerIsAdmin = state.group.members.some(
+    (member) => member.userId === viewerId && member.role === "admin",
+  );
 
   return (
     <>
@@ -51,6 +62,14 @@ export function GroupDetails({
                     {" "}
                     <span className="badge">{m.groupAdminMarker}</span>
                   </>
+                )}
+                {viewerIsAdmin && member.role !== "admin" && (
+                  <MakeGroupAdminAction
+                    groupId={state.group.id}
+                    member={member}
+                    onSettled={onRefresh}
+                    onUnauthenticated={onUnauthenticated}
+                  />
                 )}
               </li>
             ))}

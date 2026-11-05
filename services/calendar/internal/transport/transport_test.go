@@ -452,13 +452,6 @@ func TestHealthzAndReadyz(t *testing.T) {
 	}
 }
 
-// Operations of later requirements are in the contract but not built. They answer 500 internal_error, not a panic.
-func TestUnbuiltOperationAnswers500InternalError(t *testing.T) {
-	response := call(newRouter(fridayStore(), fridayDirectory()), http.MethodPut, "/api/groups/"+fridayID+"/admins/"+otherID, asUser(alexID), "")
-
-	assertErrorEnvelope(t, response, http.StatusInternalServerError, "internal_error")
-}
-
 // A duplicate X-Request-Id must not refuse the request: the correlation ID is replaced, not rejected (ADR 0001).
 func TestListGroupsAcceptsDuplicateRequestID(t *testing.T) {
 	request := httptest.NewRequest(http.MethodGet, "/api/groups", nil)

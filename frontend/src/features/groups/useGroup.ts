@@ -24,10 +24,10 @@ function groupStateOf(load: LoadState<Group>): GroupState {
   }
 }
 
-/** Loads one group. A non-member gets notFound, the same as an unknown group, and no group data. */
+/** Loads one group. `refresh` loads again without leaving the page. A non-member gets notFound, the same as an unknown group, and no group data. */
 export function useGroup(groupId: string, onUnauthenticated: () => void) {
   const api = useApi();
   const getGroup = useCallback(() => api.getGroup(groupId), [api, groupId]);
-  const { state, reload } = useLoad(getGroup, onUnauthenticated);
-  return { state: groupStateOf(state), reload };
+  const { state, reload, refresh } = useLoad(getGroup, onUnauthenticated);
+  return { state: groupStateOf(state), reload, refresh };
 }

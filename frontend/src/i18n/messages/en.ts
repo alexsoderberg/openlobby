@@ -64,6 +64,13 @@ export const en = {
   groupLoading: "Loading the group.",
   membersHeading: "Members",
   groupAdminMarker: "Group admin",
+  makeAdmin: "Make group admin",
+  makeAdminLabel: (member: string) => `Make ${member} a group admin`,
+  makeAdminHeading: (member: string) => `Make ${member} a group admin?`,
+  makeAdminConfirm:
+    "A group admin can revoke the group's invite links and make members group admins. This cannot be undone.",
+  makeAdminSubmit: "Yes, make group admin",
+  makeAdminKeep: "Cancel",
 
   inviteLoading: "Checking the invite link.",
   inviteIntro: "You have been invited to this group.",

@@ -61,6 +61,7 @@ export function ProtectedPage({
       return (
         <GroupPage
           groupId={route.groupId}
+          viewerId={user.userId}
           onLeft={onLeftGroup}
           onUnauthenticated={onUnauthenticated}
         />
@@ -107,19 +108,23 @@ function GroupsPage({ groups }: { groups: MyGroupsLoad }) {
 /** A group the caller is not in gives the same page as an unknown address, so its existence is not revealed. */
 function GroupPage({
   groupId,
+  viewerId,
   onLeft,
   onUnauthenticated,
 }: {
   groupId: string;
+  viewerId: string;
   onLeft: (group: { id: string; name: string }) => void;
   onUnauthenticated: () => void;
 }) {
-  const { state, reload } = useGroup(groupId, onUnauthenticated);
+  const { state, reload, refresh } = useGroup(groupId, onUnauthenticated);
   if (state.status === "notFound") return <NotFoundPage />;
   return (
     <GroupDetails
       state={state}
+      viewerId={viewerId}
       onRetry={reload}
+      onRefresh={refresh}
       onUnauthenticated={onUnauthenticated}
       headerAction={
         state.status === "loaded" && (

@@ -42,6 +42,7 @@ const failingCalls: Array<[string, (api: ApiClient) => Promise<unknown>]> = [
   ["joinLobby", (api) => api.joinLobby("g1", "l1")],
   ["leaveLobby", (api) => api.leaveLobby("g1", "l1")],
   ["leaveGroup", (api) => api.leaveGroup("g1")],
+  ["makeGroupAdmin", (api) => api.makeGroupAdmin("g1", "u1")],
 ];
 
 describe("createHttpApiClient", () => {
@@ -207,6 +208,20 @@ describe("createHttpApiClient", () => {
       expect(new URL(sent[0].url).pathname).toBe(path);
     },
   );
+
+  it("makeGroupAdmin sends PUT /api/groups/g1/admins/u1 and resolves on 204", async () => {
+    const sent: Request[] = [];
+    const fetchImpl = vi.fn<typeof fetch>(async (input) => {
+      sent.push(new Request(input));
+      return new Response(null, { status: 204 });
+    });
+
+    await expect(
+      createHttpApiClient(fetchImpl, BASE_URL).makeGroupAdmin("g1", "u1"),
+    ).resolves.toBeUndefined();
+    expect(sent[0]).toMatchObject({ method: "PUT" });
+    expect(new URL(sent[0].url).pathname).toBe("/api/groups/g1/admins/u1");
+  });
 
   it("maps a 404 from getInvite to invite_invalid without group data", async () => {
     const fetchImpl = vi.fn(async () =>

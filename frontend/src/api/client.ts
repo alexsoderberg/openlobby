@@ -66,6 +66,8 @@ export interface ApiClient {
   leaveLobby(groupId: string, lobbyId: string): Promise<void>;
   /** Leaves the group. Refused with `own_upcoming_lobbies_exist` while the caller has upcoming lobbies. */
   leaveGroup(groupId: string): Promise<void>;
+  /** Makes a member a group admin. Already an admin is a success. There is no way back in the MVP. */
+  makeGroupAdmin(groupId: string, userId: string): Promise<void>;
 }
 
 /** A failed call. `code` is the contract's error code, never a message from the server. */

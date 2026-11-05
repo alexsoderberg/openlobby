@@ -22,7 +22,7 @@ type leaveStore struct {
 	deletedGrp bool
 }
 
-func (s *leaveStore) WithLockedGroup(_ context.Context, groupID string, fn func(application.LeaveTx) error) error {
+func (s *leaveStore) WithLockedGroup(_ context.Context, groupID string, fn func(application.MembershipTx) error) error {
 	if _, ok := s.groups[groupID]; !ok {
 		return domain.ErrGroupNotFound
 	}
@@ -144,5 +144,55 @@ func TestLeaveOfAnUnknownGroupIsGroupNotFound(t *testing.T) {
 
 	if !errors.Is(err, domain.ErrGroupNotFound) {
 		t.Fatalf("error %v, want ErrGroupNotFound", err)
+	}
+}
+
+func makeAdmin(store *leaveStore, callerID, targetID string) error {
+	return application.NewMemberships(store, fixedClock{at: now}).MakeAdmin(context.Background(), fridayID, callerID, targetID)
+}
+
+func TestMakeAdminPromotesAMemberAndLeavesAnAdminAlone(t *testing.T) {
+	tests := []struct {
+		name   string
+		target string
+		want   string
+	}{
+		{name: "member", target: bobID, want: bobID},
+		{name: "already admin", target: aliceID},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			store := newLeaveStore(domain.Member{UserID: aliceID, Role: domain.RoleAdmin}, domain.Member{UserID: bobID, Role: domain.RoleMember})
+
+			if err := makeAdmin(store, aliceID, tc.target); err != nil {
+				t.Fatal(err)
+			}
+			if store.madeAdmin != tc.want {
+				t.Fatalf("new admin %q, want %q", store.madeAdmin, tc.want)
+			}
+		})
+	}
+}
+
+func TestMakeAdminRefusesWithoutChanges(t *testing.T) {
+	tests := []struct {
+		name           string
+		caller, target string
+		want           error
+	}{
+		{name: "caller is not an admin", caller: bobID, target: bobID, want: domain.ErrNotAllowed},
+		{name: "caller is not a member", caller: carolID, target: bobID, want: domain.ErrGroupNotFound},
+		{name: "target is not a member", caller: aliceID, target: carolID, want: domain.ErrMemberNotFound},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			store := newLeaveStore(domain.Member{UserID: aliceID, Role: domain.RoleAdmin}, domain.Member{UserID: bobID, Role: domain.RoleMember})
+
+			err := makeAdmin(store, tc.caller, tc.target)
+
+			if !errors.Is(err, tc.want) || store.madeAdmin != "" {
+				t.Fatalf("error %v, new admin %q; want %v and no change", err, store.madeAdmin, tc.want)
+			}
+		})
 	}
 }
