@@ -3,6 +3,8 @@ Status: Implemented
 Feature: F-005, F-018
 Priority: Must
 
+Build status (2026-11-05): all criteria are built (PR #50; the ended-lobby state on the Next up card in PR #52).
+
 ## Problem
 A list of lobbies is not enough. The group needs to know who is actually coming, and members must be able to take back their sign-up when plans change. Lobbies with a limited number of spots also need a limit, so that no more than fit can come.
 

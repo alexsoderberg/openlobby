@@ -1,5 +1,5 @@
 # REQ-0006. Leave group
-Status: Decided
+Status: Implemented
 Feature: F-010
 Priority: Must
 
