@@ -456,6 +456,7 @@ describe("lobby page", () => {
       endsAt: "2026-11-05T20:00:00Z",
       createdByUserId: testUser.userId,
       playerCount: 1,
+      joinedByMe: true,
       players: [{ userId: testUser.userId, displayName: testUser.displayName }],
     };
     renderAt(

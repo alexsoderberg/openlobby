@@ -51,6 +51,8 @@ export function fakeApiClient(overrides: Partial<ApiClient> = {}): ApiClient {
       Promise.reject(new ApiError(500, "internal_error")),
     ),
     deleteLobby: vi.fn(() => Promise.resolve()),
+    joinLobby: vi.fn(() => Promise.resolve()),
+    leaveLobby: vi.fn(() => Promise.resolve()),
     ...overrides,
   };
 }

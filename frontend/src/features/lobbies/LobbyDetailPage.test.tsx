@@ -24,6 +24,7 @@ const lobby: LobbyDetail = {
   endsAt: new Date(2026, 10, 5, 20).toISOString(),
   createdByUserId: testUser.userId,
   playerCount: 2,
+  joinedByMe: true,
   players: [
     { userId: testUser.userId, displayName: "Maja Lind" },
     { userId: "u2", displayName: "Kim Berg" },
@@ -170,5 +171,48 @@ describe("deleting a lobby", () => {
       en.errors.not_allowed,
     );
     expect(onDeleted).not.toHaveBeenCalled();
+  });
+});
+
+describe("joining and leaving on the page", () => {
+  it("offers leave to a player and loads the lobby again after leaving", async () => {
+    const after = {
+      ...lobby,
+      joinedByMe: false,
+      playerCount: 1,
+      players: [lobby.players[1]],
+    };
+    const getLobby = vi
+      .fn()
+      .mockResolvedValueOnce(lobby)
+      .mockResolvedValue(after);
+    const { client } = renderDetail({ getLobby });
+
+    fireEvent.click(await screen.findByRole("button", { name: en.lobbyLeave }));
+
+    expect(await screen.findByText("1/4 players")).toBeTruthy();
+    expect(client.leaveLobby).toHaveBeenCalledWith("g1", "l1");
+    expect(screen.queryByText("Maja Lind")).toBeNull();
+    expect(screen.getByRole("button", { name: en.lobbyJoin })).toBeTruthy();
+  });
+
+  it("shows not found when the lobby was deleted while leaving", async () => {
+    const getLobby = vi
+      .fn()
+      .mockResolvedValueOnce(lobby)
+      .mockRejectedValue(new ApiError(404, "lobby_not_found"));
+    renderDetail({
+      getLobby,
+      leaveLobby: vi.fn(() =>
+        Promise.reject(new ApiError(404, "lobby_not_found")),
+      ),
+    });
+
+    fireEvent.click(await screen.findByRole("button", { name: en.lobbyLeave }));
+
+    expect(
+      await screen.findByRole("heading", { name: en.lobbyNotFoundHeading }),
+    ).toBeTruthy();
+    expect(screen.queryByRole("alert")).toBeNull();
   });
 });

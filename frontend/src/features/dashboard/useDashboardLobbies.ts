@@ -24,6 +24,6 @@ export function useDashboardLobbies(
     );
     return perGroup.flat().sort(byStart);
   }, [api, groups]);
-  const { state, reload } = useLoad(load, onUnauthenticated);
-  return { state: loadViewOf(state), reload };
+  const { state, reload, refresh } = useLoad(load, onUnauthenticated);
+  return { state: loadViewOf(state), reload, refresh };
 }

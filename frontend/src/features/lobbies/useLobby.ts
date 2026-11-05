@@ -36,6 +36,6 @@ export function useLobby(
     () => api.getLobby(groupId, lobbyId),
     [api, groupId, lobbyId],
   );
-  const { state, reload } = useLoad(get, onUnauthenticated);
-  return { state: lobbyStateOf(state), reload };
+  const { state, reload, refresh } = useLoad(get, onUnauthenticated);
+  return { state: lobbyStateOf(state), reload, refresh };
 }

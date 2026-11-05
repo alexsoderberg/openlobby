@@ -1,16 +1,20 @@
 import { formatDateTime, useMessages } from "../../i18n";
 import { Meter } from "../../ui";
-import { lobbyPath } from "../lobbies";
+import { LobbyMembership, lobbyPath } from "../lobbies";
 import { timingText } from "./countdown";
 import type { DashboardLobby } from "./dashboardLobby";
 
-/** The lobby that starts first. No player names and no join button: those come with REQ-0005. */
+/** The lobby that starts first, with join or leave. No player names (ADR 0014). */
 export function NextUpCard({
   lobby,
   now,
+  onChanged,
+  onUnauthenticated,
 }: {
   lobby: DashboardLobby;
   now: number;
+  onChanged: () => void;
+  onUnauthenticated: () => void;
 }) {
   const m = useMessages();
   return (
@@ -35,6 +39,12 @@ export function NextUpCard({
             label={m.dashboard.playersMeter}
           />
         )}
+        <LobbyMembership
+          groupId={lobby.groupId}
+          lobby={lobby}
+          onChanged={onChanged}
+          onUnauthenticated={onUnauthenticated}
+        />
       </div>
     </article>
   );

@@ -60,6 +60,10 @@ export interface ApiClient {
   getLobby(groupId: string, lobbyId: string): Promise<LobbyDetail>;
   createLobby(groupId: string, input: CreateLobbyInput): Promise<Lobby>;
   deleteLobby(groupId: string, lobbyId: string): Promise<void>;
+  /** Joins as a player. Already a player is a success. */
+  joinLobby(groupId: string, lobbyId: string): Promise<void>;
+  /** Leaves as a player. Not a player is a success, also after the end time. */
+  leaveLobby(groupId: string, lobbyId: string): Promise<void>;
 }
 
 /** A failed call. `code` is the contract's error code, never a message from the server. */

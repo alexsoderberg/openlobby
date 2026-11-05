@@ -48,6 +48,7 @@ const lobby = (
   endsAt: end.toISOString(),
   createdByUserId: "u1",
   playerCount: 3,
+  joinedByMe: false,
   ...overrides,
 });
 
@@ -134,13 +135,6 @@ describe("Next up", () => {
     const card = await nextUpCard();
     expect(card.getByText(t.running)).toBeTruthy();
     expect(card.getByRole("link", { name: "Catan" })).toBeTruthy();
-  });
-
-  it("has no join or leave button", async () => {
-    renderDashboard({ g1: [lobby("l1", "Catan", at(4, 20), at(4, 22))] });
-
-    await nextUpCard();
-    expect(screen.queryByRole("button", { name: /join|leave/i })).toBeNull();
   });
 
   it("changes from Running to Ended when the lobby ends while the page is open", async () => {
@@ -392,5 +386,52 @@ describe("group strip", () => {
     expect(
       strip.getByRole("link", { name: "Friday crew" }).getAttribute("href"),
     ).toBe("/groups/g1");
+  });
+});
+
+describe("Next up join and leave", () => {
+  const upcoming = (overrides: Partial<Lobby> = {}) => ({
+    g1: [lobby("l1", "Overwatch 2", at(4, 20), at(4, 22), overrides)],
+  });
+
+  it("joins from the card and loads the lobbies again", async () => {
+    const { client } = renderDashboard(upcoming());
+
+    const card = await nextUpCard();
+    fireEvent.click(card.getByRole("button", { name: en.lobbyJoin }));
+
+    await waitFor(() =>
+      expect(client.joinLobby).toHaveBeenCalledWith("g1", "l1"),
+    );
+    await waitFor(() =>
+      expect(client.listUpcomingLobbies).toHaveBeenCalledTimes(4),
+    );
+  });
+
+  it("offers leave on a lobby I joined, also while it is running", async () => {
+    const { client } = renderDashboard(
+      upcoming({ joinedByMe: true, startsAt: at(4, 17).toISOString() }),
+    );
+
+    const card = await nextUpCard();
+    expect(card.getByText(t.running)).toBeTruthy();
+    fireEvent.click(card.getByRole("button", { name: en.lobbyLeave }));
+
+    await waitFor(() =>
+      expect(client.leaveLobby).toHaveBeenCalledWith("g1", "l1"),
+    );
+  });
+
+  it("shows the full message on the card", async () => {
+    renderDashboard(upcoming(), [crew, ranked], {
+      joinLobby: vi.fn(() => Promise.reject(new ApiError(409, "lobby_full"))),
+    });
+
+    const card = await nextUpCard();
+    fireEvent.click(card.getByRole("button", { name: en.lobbyJoin }));
+
+    expect((await card.findByRole("alert")).textContent).toBe(
+      en.errors.lobby_full,
+    );
   });
 });

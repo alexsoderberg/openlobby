@@ -10,6 +10,7 @@ const lobby = (id: string, start: Date, end: Date): DashboardLobby => ({
   endsAt: end.toISOString(),
   createdByUserId: "u1",
   playerCount: 1,
+  joinedByMe: false,
   groupId: "g1",
   groupName: "Crew",
 });
