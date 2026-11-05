@@ -74,6 +74,13 @@ export const en = {
 
   inviteLinksHeading: "Invite links",
   inviteButton: "Invite",
+  groupLeave: "Leave group",
+  groupLeaveHeading: (group: string) => `Leave ${group}?`,
+  groupLeaveConfirm:
+    "Your player status on upcoming lobbies is removed and your invite links stop working.",
+  groupLeaveSubmit: "Yes, leave group",
+  groupLeaveKeep: "Stay in group",
+  groupLeft: (group: string) => `You have left ${group}`,
   inviteHeading: (group: string) => `Invite people to ${group}`,
   inviteClose: "Close",
   inviteLinksLoading: "Loading invite links.",
@@ -240,8 +247,7 @@ export const en = {
     group_not_found:
       "This group does not exist, or you are not a member of it.",
     member_not_found: "This person is not a member of the group.",
-    own_upcoming_lobbies_exist:
-      "You have upcoming lobbies that you created. Delete them before you leave the group.",
+    own_upcoming_lobbies_exist: "Delete your upcoming lobbies first.",
     invalid_group_name: `The group name must be between 1 and ${GROUP_NAME_MAX_LENGTH} characters.`,
     invite_invalid: "This invite link is no longer valid. Ask for a new one.",
     invalid_max_uses: `The number of uses must be between 1 and ${INVITE_MAX_USES_LIMIT}.`,

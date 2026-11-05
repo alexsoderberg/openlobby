@@ -3,6 +3,7 @@ import { Dashboard } from "../features/dashboard";
 import { GamesPage } from "../features/games";
 import {
   GroupDetails,
+  LeaveGroupAction,
   MyGroups,
   groupPath,
   useGroup,
@@ -22,16 +23,20 @@ export function ProtectedPage({
   route,
   user,
   groups,
+  leftGroupName,
   logoutError,
   onOpenGroup,
+  onLeftGroup,
   onLogout,
   onUnauthenticated,
 }: {
   route: Exclude<Route, { name: "notFound" }>;
   user: AuthUser;
   groups: MyGroupsLoad;
+  leftGroupName?: string;
   logoutError?: string;
   onOpenGroup: (groupId: string) => void;
+  onLeftGroup: (group: { id: string; name: string }) => void;
   onLogout: () => void;
   onUnauthenticated: () => void;
 }) {
@@ -45,7 +50,7 @@ export function ProtectedPage({
         />
       );
     case "groups":
-      return <GroupsPage groups={groups} />;
+      return <GroupsPage groups={groups} leftGroupName={leftGroupName} />;
     case "profile":
       return (
         <ProfilePage
@@ -58,6 +63,7 @@ export function ProtectedPage({
       return (
         <GroupPage
           groupId={route.groupId}
+          onLeft={onLeftGroup}
           onUnauthenticated={onUnauthenticated}
         />
       );
@@ -90,11 +96,20 @@ export function ProtectedPage({
   }
 }
 
-function GroupsPage({ groups }: { groups: MyGroupsLoad }) {
+function GroupsPage({
+  groups,
+  leftGroupName,
+}: {
+  groups: MyGroupsLoad;
+  leftGroupName?: string;
+}) {
   const m = useMessages();
   return (
     <>
       <h1>{m.groupsHeading}</h1>
+      {leftGroupName !== undefined && (
+        <p role="status">{m.groupLeft(leftGroupName)}</p>
+      )}
       <MyGroups state={groups.state} onRetry={groups.reload} />
     </>
   );
@@ -103,9 +118,11 @@ function GroupsPage({ groups }: { groups: MyGroupsLoad }) {
 /** A group the caller is not in gives the same page as an unknown address, so its existence is not revealed. */
 function GroupPage({
   groupId,
+  onLeft,
   onUnauthenticated,
 }: {
   groupId: string;
+  onLeft: (group: { id: string; name: string }) => void;
   onUnauthenticated: () => void;
 }) {
   const { state, reload } = useGroup(groupId, onUnauthenticated);
@@ -117,10 +134,17 @@ function GroupPage({
       onUnauthenticated={onUnauthenticated}
       headerAction={
         state.status === "loaded" && (
-          <InviteAction
-            group={state.group}
-            onUnauthenticated={onUnauthenticated}
-          />
+          <div className="form-actions">
+            <InviteAction
+              group={state.group}
+              onUnauthenticated={onUnauthenticated}
+            />
+            <LeaveGroupAction
+              group={state.group}
+              onLeft={onLeft}
+              onUnauthenticated={onUnauthenticated}
+            />
+          </div>
         )
       }
     />

@@ -53,6 +53,7 @@ export function fakeApiClient(overrides: Partial<ApiClient> = {}): ApiClient {
     deleteLobby: vi.fn(() => Promise.resolve()),
     joinLobby: vi.fn(() => Promise.resolve()),
     leaveLobby: vi.fn(() => Promise.resolve()),
+    leaveGroup: vi.fn(() => Promise.resolve()),
     ...overrides,
   };
 }

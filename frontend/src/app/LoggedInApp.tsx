@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { AuthUser } from "../api";
-import { groupPath, useMyGroups } from "../features/groups";
+import { GROUPS_PATH, groupPath, useMyGroups } from "../features/groups";
 import { AppShell } from "../features/shell";
 import { activeNavOf } from "./activeNav";
 import { navigate } from "./navigation";
@@ -34,6 +34,18 @@ export function LoggedInApp({
     },
     [reload],
   );
+  const [left, setLeft] = useState<{ name: string; from: string }>();
+  const leaveGroup = useCallback(
+    (group: { name: string }) => {
+      setLeft({ name: group.name, from: pathname });
+      reload();
+      navigate(GROUPS_PATH);
+    },
+    [reload, pathname],
+  );
+  // The notice belongs to the Group list it leads to, so any other page drops it.
+  if (left && pathname !== left.from && pathname !== GROUPS_PATH)
+    setLeft(undefined);
   return (
     <AppShell
       user={user}
@@ -50,8 +62,10 @@ export function LoggedInApp({
           route={route}
           user={user}
           groups={groups}
+          leftGroupName={left?.name}
           logoutError={logoutError}
           onOpenGroup={openGroup}
+          onLeftGroup={leaveGroup}
           onLogout={onLogout}
           onUnauthenticated={onUnauthenticated}
         />

@@ -41,6 +41,7 @@ const failingCalls: Array<[string, (api: ApiClient) => Promise<unknown>]> = [
   ["deleteLobby", (api) => api.deleteLobby("g1", "l1")],
   ["joinLobby", (api) => api.joinLobby("g1", "l1")],
   ["leaveLobby", (api) => api.leaveLobby("g1", "l1")],
+  ["leaveGroup", (api) => api.leaveGroup("g1")],
 ];
 
 describe("createHttpApiClient", () => {

@@ -64,6 +64,8 @@ export interface ApiClient {
   joinLobby(groupId: string, lobbyId: string): Promise<void>;
   /** Leaves as a player. Not a player is a success, also after the end time. */
   leaveLobby(groupId: string, lobbyId: string): Promise<void>;
+  /** Leaves the group. Refused with `own_upcoming_lobbies_exist` while the caller has upcoming lobbies. */
+  leaveGroup(groupId: string): Promise<void>;
 }
 
 /** A failed call. `code` is the contract's error code, never a message from the server. */
