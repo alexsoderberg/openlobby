@@ -3,7 +3,7 @@ import { useApi, type Lobby } from "../../api";
 import { toUserMessage, useMessages } from "../../i18n";
 import { Alert } from "../../ui";
 import { LOBBY_FULL, LOBBY_HAS_ENDED, LOBBY_NOT_FOUND } from "./lobbyErrors";
-import { useLobbyAction } from "./useLobbyAction";
+import { useChangeAction } from "../../hooks";
 
 type Membership = Pick<Lobby, "id" | "joinedByMe" | "endsAt">;
 
@@ -34,7 +34,7 @@ export function LobbyMembership({
 }) {
   const m = useMessages();
   const api = useApi();
-  const { busy, run } = useLobbyAction(onUnauthenticated);
+  const { busy, run } = useChangeAction(onUnauthenticated);
   const [errorCode, setErrorCode] = useState<string>();
   const leaving = lobby.joinedByMe;
 

@@ -1,14 +1,11 @@
-import { useState } from "react";
-import {
-  errorCodeOf,
-  isUnauthenticated,
-  useApi,
-  type ChangeResult,
-} from "../../api";
+import { useRef } from "react";
+import { useApi, type ChangeResult } from "../../api";
+import { useChangeAction } from "../../hooks";
 
 /**
  * Makes a member a group admin and resolves to the error code of a failure, or undefined on success, so the dialog
- * can show it. `onSettled` runs after every outcome, so the member list shows what is true now. `busy` is true while the call runs.
+ * can show it. `onSettled` runs after every outcome but an ended session, so the member list shows what is true now.
+ * `busy` is true while the call runs.
  */
 export function useMakeGroupAdmin(
   groupId: string,
@@ -16,20 +13,17 @@ export function useMakeGroupAdmin(
   onUnauthenticated: () => void,
 ) {
   const api = useApi();
-  const [busy, setBusy] = useState(false);
+  const sessionEnded = useRef(false);
+  const { busy, run } = useChangeAction(() => {
+    sessionEnded.current = true;
+    onUnauthenticated();
+  });
 
   async function make(userId: string): ChangeResult {
-    setBusy(true);
-    try {
-      await api.makeGroupAdmin(groupId, userId);
-      return undefined;
-    } catch (error) {
-      if (isUnauthenticated(error)) onUnauthenticated();
-      return errorCodeOf(error);
-    } finally {
-      setBusy(false);
-      onSettled();
-    }
+    sessionEnded.current = false;
+    const code = await run(() => api.makeGroupAdmin(groupId, userId));
+    if (!sessionEnded.current) onSettled();
+    return code;
   }
 
   return { busy, make };

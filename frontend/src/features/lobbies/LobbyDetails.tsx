@@ -4,7 +4,7 @@ import { formatDateTimeRange, useMessages } from "../../i18n";
 import { Panel } from "../../ui";
 import { DeleteLobbyDialog } from "./DeleteLobbyDialog";
 import { LobbyMembership } from "./LobbyMembership";
-import { useLobbyAction } from "./useLobbyAction";
+import { useChangeAction } from "../../hooks";
 
 type Callbacks = { onDeleted: () => void; onUnauthenticated: () => void };
 type Props = Callbacks & {
@@ -73,7 +73,7 @@ function DeleteLobby({
   const m = useMessages();
   const api = useApi();
   const [confirming, setConfirming] = useState(false);
-  const { busy, run } = useLobbyAction(onUnauthenticated);
+  const { busy, run } = useChangeAction(onUnauthenticated);
 
   async function remove() {
     const code = await run(() => api.deleteLobby(groupId, lobby.id));

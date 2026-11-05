@@ -68,7 +68,7 @@ export const en = {
   makeAdminLabel: (member: string) => `Make ${member} a group admin`,
   makeAdminHeading: (member: string) => `Make ${member} a group admin?`,
   makeAdminConfirm:
-    "A group admin can manage the group and make others admins. This cannot be undone.",
+    "A group admin can revoke the group's invite links and make members group admins. This cannot be undone.",
   makeAdminSubmit: "Yes, make group admin",
   makeAdminKeep: "Cancel",
 

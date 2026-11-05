@@ -1,10 +1,5 @@
-import { useState } from "react";
-import {
-  errorCodeOf,
-  isUnauthenticated,
-  useApi,
-  type ChangeResult,
-} from "../../api";
+import { useApi, type ChangeResult } from "../../api";
+import { useChangeAction } from "../../hooks";
 import { GROUP_NOT_FOUND } from "./groupErrors";
 
 /**
@@ -13,20 +8,11 @@ import { GROUP_NOT_FOUND } from "./groupErrors";
  */
 export function useLeaveGroup(groupId: string, onUnauthenticated: () => void) {
   const api = useApi();
-  const [busy, setBusy] = useState(false);
+  const { busy, run } = useChangeAction(onUnauthenticated);
 
   async function leave(): ChangeResult {
-    setBusy(true);
-    try {
-      await api.leaveGroup(groupId);
-      return undefined;
-    } catch (error) {
-      if (isUnauthenticated(error)) onUnauthenticated();
-      const code = errorCodeOf(error);
-      return code === GROUP_NOT_FOUND ? undefined : code;
-    } finally {
-      setBusy(false);
-    }
+    const code = await run(() => api.leaveGroup(groupId));
+    return code === GROUP_NOT_FOUND ? undefined : code;
   }
 
   return { busy, leave };
