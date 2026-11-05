@@ -1633,6 +1633,11 @@ a {
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.page-heading h1 {
+  margin: 0;
 }
 
 /* The right-click menu of a group icon: placed at the pointer, no motion. */
@@ -1663,4 +1668,22 @@ a {
 .context-menu__item:hover,
 .context-menu__item:focus-visible {
   background: var(--color-accent-tint);
+}
+
+/* Spacing rule: blocks inside a panel, dialog or popover card sit one space-3 apart,
+   and sibling buttons share a .form-actions row. Kept last so it wins over earlier resets. */
+.panel > * + *,
+.dialog > * + *,
+.create-popover__card > * + * {
+  margin-top: var(--space-3);
+}
+
+.form-actions > .alert {
+  flex: 1 1 100%;
+  margin: 0;
+}
+
+/* Only the first button of a row pushes right; the rest follow at the row gap. */
+.list-row .button + .button {
+  margin-left: 0;
 }
