@@ -9,7 +9,7 @@ export type LoadState<T> =
   | { status: "failed"; error: unknown };
 
 /**
- * Runs `load` and keeps its outcome. `load` and `onUnauthenticated` must be stable (useCallback), because a change of
+ * Runs `load` and keeps its outcome. The first load is registered so a page transition can wait for it. `load` and `onUnauthenticated` must be stable (useCallback), because a change of
  * either runs the load again. With `onUnauthenticated`, an expired session is handed over and the state
  * stays loading, since the page is left. Without it, the error is kept for the caller to read.
  */
@@ -34,6 +34,7 @@ export function useLoad<T>(
         else flushSync(() => setState({ status: "failed", error }));
       },
     );
+    // Only the first load holds a page transition; refreshes and retries happen on a page already on screen.
     if (attempt === 0) trackLoad(loading);
     return () => {
       ignore = true;

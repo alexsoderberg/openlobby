@@ -1,7 +1,7 @@
+import { useCallback } from "react";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { useLoad } from "../hooks";
-import { trackLoad } from "../hooks/pageLoads";
 import { navigate, usePathname } from "./navigation";
 
 function Probe() {
@@ -24,9 +24,12 @@ function Probe() {
 }
 
 afterEach(() => {
+  vi.useRealTimers();
   Reflect.deleteProperty(document, "startViewTransition");
   window.history.replaceState(null, "", "/");
 });
+
+const PAGE_LOAD_WAIT_MS = 400; // the cap in navigation.ts
 
 describe("page navigation", () => {
   it("runs the page change inside a view transition when the browser has them", () => {
@@ -48,8 +51,14 @@ describe("page navigation", () => {
       const { state } = useLoad(load);
       return <p>{state.status === "loaded" ? state.value : "loading"}</p>;
     }
+    function Leaving() {
+      useLoad(useCallback(() => new Promise<string>(() => {}), []));
+      return null;
+    }
     function Router() {
-      return usePathname() === "/slow" ? <Page /> : null;
+      const pathname = usePathname();
+      if (pathname === "/slow") return <Page />;
+      return pathname === "/" ? <Leaving /> : null;
     }
     function startTransitions() {
       const transitions: Promise<void>[] = [];
@@ -67,25 +76,27 @@ describe("page navigation", () => {
       let released = false;
 
       act(() => navigate("/slow"));
-      void transitions[0].then(() => {
-        released = true;
-        expect(screen.getByText("done")).toBeTruthy();
-      });
+      void transitions[0].then(() => (released = true));
       await act(async () => {});
       expect(released).toBe(false);
-      await act(async () => finish("done"));
+      // Outside act, so only the hook's own commit can put the page on screen before the transition resolves.
+      finish("done");
+      await transitions[0];
 
-      expect(released).toBe(true);
+      expect(screen.getByText("done")).toBeTruthy();
     });
 
     it("does not wait for a load of the page being left", async () => {
+      vi.useFakeTimers();
       const transitions = startTransitions();
-      trackLoad(new Promise(() => {}));
       render(<Router />);
+      let released = false;
 
       act(() => navigate("/other"));
+      void transitions[0].then(() => (released = true));
+      await act(async () => vi.advanceTimersByTimeAsync(PAGE_LOAD_WAIT_MS - 1));
 
-      await expect(transitions[0]).resolves.toBeUndefined();
+      expect(released).toBe(true);
     });
   });
 

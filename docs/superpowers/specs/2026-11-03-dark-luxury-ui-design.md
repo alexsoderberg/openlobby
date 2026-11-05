@@ -67,6 +67,7 @@ Easings: `--ease-out: cubic-bezier(.16,1,.3,1)` for movement and fades; `--ease-
 - App panels: lift 3–4px and accent edge on hover; list rows get a faint background on hover.
 - Meters (e.g. invite uses): fill from 0 to the value when first visible (about 1.6s).
 - Feedback: "Copied" and similar confirmations slide/fade in next to the control and out after about 1.8s; they still use the existing persistent `role="status"` live regions.
+- Page transition: the old page stays until the new page's first data has loaded, for at most 400ms, so the transition animates to the loaded page rather than a loading one; a slower load animates anyway and the page fills in after.
 - Ambient: the page-background accent wash may drift very slowly (about 18s, alternate).
 - `prefers-reduced-motion: reduce` disables all of the above (content shown in its final state immediately).
 - Motion must never delay or block input; nothing waits for an animation to finish.

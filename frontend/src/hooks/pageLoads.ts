@@ -12,7 +12,7 @@ export function trackLoad(load: Promise<unknown>) {
   load.then(done, done);
 }
 
-/** Resolves when every registered load has settled (failures count) and committed or after `timeoutMs`, whichever is first. */
+/** Resolves when every registered load has settled (failures count) or after `timeoutMs`, whichever is first. */
 export function pageLoadsSettled(timeoutMs: number) {
   let timer: ReturnType<typeof setTimeout>;
   const timeout = new Promise<void>((resolve) => {

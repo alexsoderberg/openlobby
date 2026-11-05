@@ -4,7 +4,7 @@ import { beginPageLoads, pageLoadsSettled } from "../hooks";
 
 const NAVIGATE_EVENT = "app:navigate";
 const API_PREFIX = "/api/";
-/** How long a transition holds the old page for the new page's data before animating anyway. */
+/** How long a transition holds the old page for the new page's data before animating anyway (design spec, Motion). */
 const PAGE_LOAD_WAIT_MS = 400;
 
 /**
