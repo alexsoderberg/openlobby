@@ -175,6 +175,24 @@ describe("deleting a lobby", () => {
 });
 
 describe("joining and leaving on the page", () => {
+  it("shows Ended and does not reload when joining answers that the lobby has ended", async () => {
+    const getLobby = vi.fn(() =>
+      Promise.resolve({ ...lobby, joinedByMe: false }),
+    );
+    renderDetail({
+      getLobby,
+      joinLobby: vi.fn(() =>
+        Promise.reject(new ApiError(409, "lobby_has_ended")),
+      ),
+    });
+
+    fireEvent.click(await screen.findByRole("button", { name: en.lobbyJoin }));
+
+    expect(await screen.findByText(en.lobbyEnded)).toBeTruthy();
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(getLobby).toHaveBeenCalledOnce();
+  });
+
   it("offers leave to a player and loads the lobby again after leaving", async () => {
     const after = {
       ...lobby,

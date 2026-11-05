@@ -42,11 +42,12 @@ export function LobbyMembership({
         : api.joinLobby(groupId, lobby.id),
     );
     setErrorCode(code);
-    // A gone lobby disappears from the view on leaving; a full or ended one shows its real state.
+    // A gone lobby disappears from the view on leaving; a full one shows its real state. An ended one
+    // reloads only where "Ended" is not shown here, because a reload of the lobby page answers not found.
     if (
       code === undefined ||
       code === LOBBY_FULL ||
-      code === LOBBY_HAS_ENDED ||
+      (code === LOBBY_HAS_ENDED && !showEnded) ||
       (code === LOBBY_NOT_FOUND && leaving)
     )
       onChanged();
