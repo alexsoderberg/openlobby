@@ -143,6 +143,13 @@ type LobbyTx interface {
 	InsertLobby(ctx context.Context, lobby domain.Lobby) (domain.Lobby, error)
 	// CreatorOf returns the lobby creator's user ID, and false when the lobby is not in this group.
 	CreatorOf(ctx context.Context, groupID, lobbyID string) (string, bool, error)
+	// JoinState returns the lobby's end, capacity, player count and whether the user is a player, and false when the
+	// lobby is not in this group.
+	JoinState(ctx context.Context, groupID, lobbyID, userID string) (domain.JoinState, bool, error)
+	// AddPlayer adds the user to the lobby.
+	AddPlayer(ctx context.Context, lobbyID, userID string, joinedAt time.Time) error
+	// RemovePlayer removes the user from the lobby. A user who is not a player is no error.
+	RemovePlayer(ctx context.Context, lobbyID, userID string) error
 	// DeleteLobby removes the lobby of this group with its players.
 	DeleteLobby(ctx context.Context, groupID, lobbyID string) error
 }

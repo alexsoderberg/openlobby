@@ -14,6 +14,11 @@ const (
 	insertLobbySQL = `INSERT INTO lobbies (group_id, created_by_user_id, game_id, game_name, max_players, starts_at, ends_at, created_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`
 	insertLobbyPlayerSQL = `INSERT INTO lobby_players (lobby_id, user_id, joined_at) VALUES ($1, $2, $3)`
+	selectJoinStateSQL = `SELECT l.ends_at, l.max_players,
+		(SELECT count(*) FROM lobby_players p WHERE p.lobby_id = l.id),
+		EXISTS (SELECT 1 FROM lobby_players p WHERE p.lobby_id = l.id AND p.user_id = $3)
+		FROM lobbies l WHERE l.id = $1 AND l.group_id = $2`
+	deleteLobbyPlayerSQL = `DELETE FROM lobby_players WHERE lobby_id = $1 AND user_id = $2`
 	selectCreatorSQL     = `SELECT created_by_user_id FROM lobbies WHERE id = $1 AND group_id = $2`
 	deleteLobbySQL       = `DELETE FROM lobbies WHERE id = $1 AND group_id = $2`
 
@@ -143,4 +148,28 @@ func scanLobby(row scanner, groupID string) (domain.Lobby, error) {
 	err := row.Scan(&lobby.ID, &lobby.CreatedByUserID, &lobby.GameID, &lobby.GameName, &lobby.MaxPlayers,
 		&lobby.StartsAt, &lobby.EndsAt, &lobby.CreatedAt, &lobby.PlayerCount, &lobby.JoinedByMe)
 	return lobby, err
+}
+
+// JoinState reads the join facts under the group lock, so the count cannot change before AddPlayer.
+func (t lobbyTx) JoinState(ctx context.Context, groupID, lobbyID, userID string) (domain.JoinState, bool, error) {
+	var state domain.JoinState
+	err := t.tx.QueryRowContext(ctx, selectJoinStateSQL, lobbyID, groupID, userID).
+		Scan(&state.EndsAt, &state.MaxPlayers, &state.PlayerCount, &state.IsPlayer)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return domain.JoinState{}, false, nil
+	case err != nil:
+		return domain.JoinState{}, false, err
+	}
+	return state, true, nil
+}
+
+func (t lobbyTx) AddPlayer(ctx context.Context, lobbyID, userID string, joinedAt time.Time) error {
+	_, err := t.tx.ExecContext(ctx, insertLobbyPlayerSQL, lobbyID, userID, joinedAt)
+	return err
+}
+
+func (t lobbyTx) RemovePlayer(ctx context.Context, lobbyID, userID string) error {
+	_, err := t.tx.ExecContext(ctx, deleteLobbyPlayerSQL, lobbyID, userID)
+	return err
 }

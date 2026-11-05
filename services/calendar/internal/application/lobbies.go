@@ -124,3 +124,51 @@ func (l *Lobbies) Delete(ctx context.Context, groupID, lobbyID, callerID string)
 	}
 	return nil
 }
+
+// Join makes a member a player of a lobby, under the group lock so that two joins cannot take the last spot together.
+// The checks are in domain.JoinState.CheckJoin; a lobby missing from this group is domain.ErrLobbyNotFound.
+func (l *Lobbies) Join(ctx context.Context, groupID, lobbyID, callerID string) error {
+	err := l.repo.WithLockedGroup(ctx, groupID, func(tx LobbyTx) error {
+		if _, err := requireMember(ctx, tx, groupID, callerID); err != nil {
+			return err
+		}
+		state, found, err := tx.JoinState(ctx, groupID, lobbyID, callerID)
+		if err != nil {
+			return err
+		}
+		if !found {
+			return domain.ErrLobbyNotFound
+		}
+		now := l.clock.Now()
+		add, err := state.CheckJoin(now)
+		if err != nil || !add {
+			return err
+		}
+		return tx.AddPlayer(ctx, lobbyID, callerID, now)
+	})
+	if err != nil {
+		return fmt.Errorf("join lobby: %w", err)
+	}
+	return nil
+}
+
+// Leave removes a member from a lobby. It works at any time and for a non-player; only a missing lobby is refused.
+func (l *Lobbies) Leave(ctx context.Context, groupID, lobbyID, callerID string) error {
+	err := l.repo.WithLockedGroup(ctx, groupID, func(tx LobbyTx) error {
+		if _, err := requireMember(ctx, tx, groupID, callerID); err != nil {
+			return err
+		}
+		_, found, err := tx.CreatorOf(ctx, groupID, lobbyID)
+		switch {
+		case err != nil:
+			return err
+		case !found:
+			return domain.ErrLobbyNotFound
+		}
+		return tx.RemovePlayer(ctx, lobbyID, callerID)
+	})
+	if err != nil {
+		return fmt.Errorf("leave lobby: %w", err)
+	}
+	return nil
+}

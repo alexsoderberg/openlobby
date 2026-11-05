@@ -201,3 +201,32 @@ func TestNewLobbyAppliesTheRulesAtMicrosecondPrecision(t *testing.T) {
 		})
 	}
 }
+
+func TestCheckJoinAppliesTheContractOrder(t *testing.T) {
+	future, past := lobbyNow.Add(time.Hour), lobbyNow.Add(-time.Hour)
+	tests := []struct {
+		name    string
+		state   domain.JoinState
+		wantAdd bool
+		want    error
+	}{
+		{name: "open spot", state: domain.JoinState{EndsAt: future, MaxPlayers: maxPtr(2), PlayerCount: 1}, wantAdd: true},
+		{name: "unlimited", state: domain.JoinState{EndsAt: future, PlayerCount: 100}, wantAdd: true},
+		{name: "last spot", state: domain.JoinState{EndsAt: future, MaxPlayers: maxPtr(3), PlayerCount: 2}, wantAdd: true},
+		{name: "full", state: domain.JoinState{EndsAt: future, MaxPlayers: maxPtr(2), PlayerCount: 2}, want: domain.ErrLobbyFull},
+		{name: "already a player in a full lobby changes nothing", state: domain.JoinState{EndsAt: future, MaxPlayers: maxPtr(2), PlayerCount: 2, IsPlayer: true}},
+		{name: "ended", state: domain.JoinState{EndsAt: past}, want: domain.ErrLobbyHasEnded},
+		{name: "ends exactly now", state: domain.JoinState{EndsAt: lobbyNow}, want: domain.ErrLobbyHasEnded},
+		{name: "ended beats already a player", state: domain.JoinState{EndsAt: past, IsPlayer: true}, want: domain.ErrLobbyHasEnded},
+		{name: "ended beats full", state: domain.JoinState{EndsAt: past, MaxPlayers: maxPtr(1), PlayerCount: 1}, want: domain.ErrLobbyHasEnded},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			add, err := tc.state.CheckJoin(lobbyNow)
+
+			if add != tc.wantAdd || !errors.Is(err, tc.want) {
+				t.Fatalf("add %v, error %v; want %v, %v", add, err, tc.wantAdd, tc.want)
+			}
+		})
+	}
+}

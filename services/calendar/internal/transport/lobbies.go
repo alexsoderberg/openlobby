@@ -136,3 +136,35 @@ func lobbyBody(lobby domain.Lobby) (publicapi.CreateLobby201JSONResponse, error)
 		JoinedByMe:      lobby.JoinedByMe,
 	}, nil
 }
+
+// JoinLobby makes the caller a player. Joining twice is a 204 as well.
+func (h publicHandler) JoinLobby(ctx context.Context, request publicapi.JoinLobbyRequestObject) (publicapi.JoinLobbyResponseObject, error) {
+	err := h.lobbies.Join(ctx, request.GroupId, request.LobbyId, userIDFrom(ctx))
+	switch {
+	case errors.Is(err, domain.ErrGroupNotFound):
+		return publicapi.JoinLobby404JSONResponse{Error: publicErrorBody(ctx, publicapi.ErrorBodyCodeGroupNotFound)}, nil
+	case errors.Is(err, domain.ErrLobbyNotFound):
+		return publicapi.JoinLobby404JSONResponse{Error: publicErrorBody(ctx, publicapi.ErrorBodyCodeLobbyNotFound)}, nil
+	case errors.Is(err, domain.ErrLobbyHasEnded):
+		return publicapi.JoinLobby409JSONResponse{Error: publicErrorBody(ctx, publicapi.ErrorBodyCodeLobbyHasEnded)}, nil
+	case errors.Is(err, domain.ErrLobbyFull):
+		return publicapi.JoinLobby409JSONResponse{Error: publicErrorBody(ctx, publicapi.ErrorBodyCodeLobbyFull)}, nil
+	case err != nil:
+		return nil, err
+	}
+	return publicapi.JoinLobby204Response{}, nil
+}
+
+// LeaveLobby removes the caller from the players. Leaving when not a player is a 204 as well.
+func (h publicHandler) LeaveLobby(ctx context.Context, request publicapi.LeaveLobbyRequestObject) (publicapi.LeaveLobbyResponseObject, error) {
+	err := h.lobbies.Leave(ctx, request.GroupId, request.LobbyId, userIDFrom(ctx))
+	switch {
+	case errors.Is(err, domain.ErrGroupNotFound):
+		return publicapi.LeaveLobby404JSONResponse{Error: publicErrorBody(ctx, publicapi.ErrorBodyCodeGroupNotFound)}, nil
+	case errors.Is(err, domain.ErrLobbyNotFound):
+		return publicapi.LeaveLobby404JSONResponse{Error: publicErrorBody(ctx, publicapi.ErrorBodyCodeLobbyNotFound)}, nil
+	case err != nil:
+		return nil, err
+	}
+	return publicapi.LeaveLobby204Response{}, nil
+}
