@@ -395,7 +395,13 @@ describe("Next up join and leave", () => {
   });
 
   it("joins from the card and loads the lobbies again", async () => {
-    const { client } = renderDashboard(upcoming());
+    const lobbiesOf = upcoming();
+    const { client } = renderDashboard(lobbiesOf, [crew, ranked], {
+      joinLobby: vi.fn(() => {
+        lobbiesOf.g1 = upcoming({ joinedByMe: true }).g1;
+        return Promise.resolve();
+      }),
+    });
 
     const card = await nextUpCard();
     fireEvent.click(card.getByRole("button", { name: en.lobbyJoin }));
@@ -406,6 +412,9 @@ describe("Next up join and leave", () => {
     await waitFor(() =>
       expect(client.listUpcomingLobbies).toHaveBeenCalledTimes(4),
     );
+    expect(
+      await card.findByRole("button", { name: en.lobbyLeave }),
+    ).toBeTruthy();
   });
 
   it("offers leave on a lobby I joined, also while it is running", async () => {

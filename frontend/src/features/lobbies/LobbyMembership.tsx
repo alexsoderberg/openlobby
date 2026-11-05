@@ -5,22 +5,15 @@ import { Alert } from "../../ui";
 import { LOBBY_FULL, LOBBY_HAS_ENDED, LOBBY_NOT_FOUND } from "./lobbyErrors";
 import { useLobbyAction } from "./useLobbyAction";
 
-type Membership = Pick<
-  Lobby,
-  "id" | "joinedByMe" | "playerCount" | "maxPlayers" | "endsAt"
->;
+type Membership = Pick<Lobby, "id" | "joinedByMe" | "endsAt">;
 
 function hasEnded({ endsAt }: Membership): boolean {
   return Date.parse(endsAt) <= Date.now();
 }
 
-function isFull({ playerCount, maxPlayers }: Membership): boolean {
-  return maxPlayers !== null && playerCount >= maxPlayers;
-}
-
 /**
- * "Join lobby" or "Leave lobby" for the viewer. A player can always leave; joining is offered only
- * while the lobby has a free spot and has not ended. `onChanged` loads the lobby again.
+ * "Join lobby" or "Leave lobby" for the viewer. A player can always leave; joining is offered until the
+ * lobby has ended; a full lobby answers with the full message. `onChanged` loads the lobby again.
  */
 export function LobbyMembership({
   groupId,
@@ -49,10 +42,11 @@ export function LobbyMembership({
         : api.joinLobby(groupId, lobby.id),
     );
     setErrorCode(code);
-    // A gone lobby disappears from the view on leaving; a full one shows its real players.
+    // A gone lobby disappears from the view on leaving; a full or ended one shows its real state.
     if (
       code === undefined ||
       code === LOBBY_FULL ||
+      code === LOBBY_HAS_ENDED ||
       (code === LOBBY_NOT_FOUND && leaving)
     )
       onChanged();
@@ -60,7 +54,6 @@ export function LobbyMembership({
 
   const ended = errorCode === LOBBY_HAS_ENDED || hasEnded(lobby);
   if (!leaving && ended) return showEnded ? <p>{m.lobbyEnded}</p> : null;
-  const showButton = leaving || !isFull(lobby);
   const failure =
     errorCode === LOBBY_NOT_FOUND
       ? m.lobbyGone
@@ -69,16 +62,14 @@ export function LobbyMembership({
   return (
     <>
       {errorCode !== undefined && <Alert>{failure}</Alert>}
-      {showButton && (
-        <button
-          type="button"
-          className={leaving ? "button button--secondary" : "button"}
-          disabled={busy}
-          onClick={toggle}
-        >
-          {leaving ? m.lobbyLeave : m.lobbyJoin}
-        </button>
-      )}
+      <button
+        type="button"
+        className={leaving ? "button button--secondary" : "button"}
+        disabled={busy}
+        onClick={toggle}
+      >
+        {leaving ? m.lobbyLeave : m.lobbyJoin}
+      </button>
     </>
   );
 }

@@ -9,8 +9,6 @@ const HOUR = 3_600_000;
 const open = {
   id: "l1",
   joinedByMe: false,
-  playerCount: 1,
-  maxPlayers: 4 as number | null,
   endsAt: new Date(Date.now() + HOUR).toISOString(),
 };
 const ended = new Date(Date.now() - HOUR).toISOString();
@@ -66,16 +64,6 @@ describe("join and leave a lobby", () => {
     expect(client.leaveLobby).toHaveBeenCalledWith("g1", "l1");
   });
 
-  it("offers no join when the lobby is full", () => {
-    renderMembership({ playerCount: 4 });
-    expect(screen.queryByRole("button")).toBeNull();
-  });
-
-  it("offers join to a lobby without max players", async () => {
-    renderMembership({ maxPlayers: null, playerCount: 9 });
-    expect(await join()).toBeTruthy();
-  });
-
   it("shows Ended instead of join for an ended lobby", () => {
     renderMembership({ endsAt: ended }, {}, true);
 
@@ -83,7 +71,7 @@ describe("join and leave a lobby", () => {
     expect(screen.queryByRole("button")).toBeNull();
   });
 
-  it("shows the full message and refreshes when the last spot went first", async () => {
+  it("still offers join on a full lobby and answers with the full message", async () => {
     const { onChanged } = renderMembership(
       {},
       { joinLobby: refuse(409, "lobby_full") },
@@ -98,12 +86,29 @@ describe("join and leave a lobby", () => {
   });
 
   it("shows Ended, not an error, when the lobby ended meanwhile", async () => {
-    renderMembership({}, { joinLobby: refuse(409, "lobby_has_ended") }, true);
+    const { onChanged } = renderMembership(
+      {},
+      { joinLobby: refuse(409, "lobby_has_ended") },
+      true,
+    );
 
     fireEvent.click(await join());
 
     expect(await screen.findByText(en.lobbyEnded)).toBeTruthy();
     expect(screen.queryByRole("alert")).toBeNull();
+    expect(onChanged).toHaveBeenCalled();
+  });
+
+  it("reloads the lobby when it ended meanwhile where Ended is not shown", async () => {
+    const { onChanged } = renderMembership(
+      {},
+      { joinLobby: refuse(409, "lobby_has_ended") },
+    );
+
+    fireEvent.click(await join());
+
+    await waitFor(() => expect(onChanged).toHaveBeenCalled());
+    expect(screen.queryByRole("button")).toBeNull();
   });
 
   it("says the lobby no longer exists when joining a deleted lobby", async () => {
