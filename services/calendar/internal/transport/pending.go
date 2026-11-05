@@ -18,7 +18,3 @@ type pendingOperations struct{}
 func (pendingOperations) MakeGroupAdmin(context.Context, publicapi.MakeGroupAdminRequestObject) (publicapi.MakeGroupAdminResponseObject, error) {
 	return nil, errOperationPending
 }
-
-func (pendingOperations) LeaveGroup(context.Context, publicapi.LeaveGroupRequestObject) (publicapi.LeaveGroupResponseObject, error) {
-	return nil, errOperationPending
-}

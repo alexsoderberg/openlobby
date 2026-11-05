@@ -153,3 +153,24 @@ type LobbyTx interface {
 	// DeleteLobby removes the lobby of this group with its players.
 	DeleteLobby(ctx context.Context, groupID, lobbyID string) error
 }
+
+// MembershipLocker runs a membership change under the group's row lock (ADR 0006). It returns domain.ErrGroupNotFound
+// when the group does not exist.
+type MembershipLocker interface {
+	WithLockedGroup(ctx context.Context, groupID string, fn func(tx LeaveTx) error) error
+}
+
+// LeaveTx holds the operations of leaving a group. Each one is scoped to the group (ADR 0006 rule 12).
+type LeaveTx interface {
+	MembershipReader
+	// Members returns the members sorted by join time, then user ID.
+	Members(ctx context.Context, groupID string) ([]domain.Member, error)
+	// HasUpcomingLobbyBy tells whether the user created a lobby of the group that ends after now.
+	HasUpcomingLobbyBy(ctx context.Context, groupID, userID string, now time.Time) (bool, error)
+	// RemoveLeaverData removes the user's membership, their player rows on the group's upcoming lobbies, and the
+	// invite links they created in the group. Ended lobbies keep their players.
+	RemoveLeaverData(ctx context.Context, groupID, userID string, now time.Time) error
+	MakeAdmin(ctx context.Context, groupID, userID string) error
+	// DeleteGroup removes the group with its members, lobbies, players and invite links.
+	DeleteGroup(ctx context.Context, groupID string) error
+}

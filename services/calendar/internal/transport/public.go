@@ -17,10 +17,11 @@ import (
 // pendingOperations.
 type publicHandler struct {
 	pendingOperations
-	groups  *application.Groups
-	games   *application.Games
-	invites *application.InviteLinks
-	lobbies *application.Lobbies
+	groups      *application.Groups
+	games       *application.Games
+	invites     *application.InviteLinks
+	lobbies     *application.Lobbies
+	memberships *application.Memberships
 }
 
 var _ publicapi.StrictServerInterface = publicHandler{}
