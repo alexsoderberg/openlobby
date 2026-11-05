@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import type { Group } from "../../api";
 import { toUserMessage, useMessages } from "../../i18n";
-import { Alert, Panel } from "../../ui";
+import { Alert } from "../../ui";
 import { CreateInviteLinkForm } from "./CreateInviteLinkForm";
 import { InviteLinkList } from "./InviteLinkList";
 import { useCopyInviteLink } from "./useCopyInviteLink";
@@ -9,17 +9,21 @@ import { useInviteLinkChanges } from "./useInviteLinkChanges";
 import { useInviteLinks } from "./useInviteLinks";
 
 /**
- * The invite-link section of a group page. The two status regions stay in the page and only their
+ * The body of the invite popover. The two status regions stay in the page and only their
  * text changes, so screen readers announce each message. Focus moves to the change message.
  */
 export function InviteLinks({
   groupId,
+  groupName,
   members,
   onUnauthenticated,
+  onClose,
 }: {
   groupId: string;
+  groupName: string;
   members: Group["members"];
   onUnauthenticated: () => void;
+  onClose: () => void;
 }) {
   const m = useMessages();
   const { state, reload } = useInviteLinks(groupId, onUnauthenticated);
@@ -37,8 +41,18 @@ export function InviteLinks({
   }, [change]);
 
   return (
-    <Panel>
-      <h2>{m.inviteLinksHeading}</h2>
+    <>
+      <h2>{m.inviteHeading(groupName)}</h2>
+      <CreateInviteLinkForm busy={saving} onSubmit={create} />
+      <p ref={changeRef} tabIndex={-1} role="status" className="status">
+        {change.status === "done" &&
+          (change.change === "created"
+            ? m.inviteLinkCreated
+            : m.inviteLinkRevoked)}
+      </p>
+      {change.status === "failed" && (
+        <Alert>{toUserMessage(change.code)}</Alert>
+      )}
       <InviteLinkList
         state={state}
         members={members}
@@ -56,16 +70,13 @@ export function InviteLinks({
           </span>
         )}
       </p>
-      <CreateInviteLinkForm busy={saving} onSubmit={create} />
-      <p ref={changeRef} tabIndex={-1} role="status" className="status">
-        {change.status === "done" &&
-          (change.change === "created"
-            ? m.inviteLinkCreated
-            : m.inviteLinkRevoked)}
-      </p>
-      {change.status === "failed" && (
-        <Alert>{toUserMessage(change.code)}</Alert>
-      )}
-    </Panel>
+      <button
+        type="button"
+        className="button button--secondary"
+        onClick={onClose}
+      >
+        {m.inviteClose}
+      </button>
+    </>
   );
 }

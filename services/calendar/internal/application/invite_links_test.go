@@ -111,7 +111,7 @@ func newInviteLinks(store *linkStore) *application.InviteLinks {
 	return application.NewInviteLinks(store, store, store, fixedTokens{}, fixedClock{at: now})
 }
 
-func TestCreateStoresLinkWithDefaultMaxUsesAndTwoHourLifetime(t *testing.T) {
+func TestCreateStoresLinkWithDefaultMaxUsesAndTenMinuteLifetime(t *testing.T) {
 	store := newLinkStore()
 
 	link, err := newInviteLinks(store).Create(context.Background(), fridayID, bobID, nil)
@@ -126,7 +126,7 @@ func TestCreateStoresLinkWithDefaultMaxUsesAndTwoHourLifetime(t *testing.T) {
 		t.Fatalf("max uses %d and use count %d, want the default and 0", link.MaxUses, link.UseCount)
 	}
 	if !link.CreatedAt.Equal(now) || !link.ExpiresAt.Equal(now.Add(domain.InviteLinkLifetime)) {
-		t.Fatalf("created %v and expires %v, want now and two hours later", link.CreatedAt, link.ExpiresAt)
+		t.Fatalf("created %v and expires %v, want now and ten minutes later", link.CreatedAt, link.ExpiresAt)
 	}
 	if store.cleaned != 1 || !store.cleanedAt.Equal(now) {
 		t.Fatalf("cleanup ran %d times at %v, want once at now", store.cleaned, store.cleanedAt)

@@ -8,7 +8,7 @@ import {
   useGroup,
   type GroupsState,
 } from "../features/groups";
-import { InvitePage } from "../features/invites";
+import { InviteAction, InvitePage } from "../features/invites";
 import { LobbyDetailPage } from "../features/lobbies";
 import { ProfilePage } from "../features/profile";
 import { useMessages } from "../i18n";
@@ -115,6 +115,14 @@ function GroupPage({
       state={state}
       onRetry={reload}
       onUnauthenticated={onUnauthenticated}
+      headerAction={
+        state.status === "loaded" && (
+          <InviteAction
+            group={state.group}
+            onUnauthenticated={onUnauthenticated}
+          />
+        )
+      }
     />
   );
 }

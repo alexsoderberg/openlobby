@@ -1,9 +1,10 @@
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import type { AuthUser, GroupSummary } from "../../api";
 import { usePopover } from "../../hooks";
 import { useMessages } from "../../i18n";
 import { Popover } from "../../ui";
 import { CreateGroup, type GroupsState } from "../groups";
+import { InvitePopover } from "../invites";
 import type { ActiveNav } from "./activeNav";
 import { CreateGroupButton } from "./CreateGroupButton";
 import { GroupRail } from "./GroupRail";
@@ -32,6 +33,8 @@ export function AppShell({
 }) {
   const m = useMessages();
   const popover = usePopover();
+  const invite = usePopover();
+  const [inviteGroup, setInviteGroup] = useState<GroupSummary>();
   const canCreateGroup = active.section === "groups" && !active.groupId;
   const { open, close } = popover;
   // The "+" is gone on other pages, so a form left open would have nothing to return to.
@@ -46,6 +49,10 @@ export function AppShell({
         active={active}
         onCreate={canCreateGroup ? popover.press : undefined}
         createOpen={popover.open}
+        onInvite={(group, icon) => {
+          setInviteGroup(group);
+          invite.press(icon);
+        }}
       />
       <main
         className={
@@ -79,6 +86,11 @@ export function AppShell({
           />
         )}
       </Popover>
+      <InvitePopover
+        group={inviteGroup}
+        popover={invite}
+        onUnauthenticated={onUnauthenticated}
+      />
     </div>
   );
 }

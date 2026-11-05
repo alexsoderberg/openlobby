@@ -35,13 +35,13 @@ var ErrInviteInvalid = errors.New("invite invalid")
 var ErrNotAllowed = errors.New("not allowed")
 
 // InviteLinkLifetime is how long an invite link is valid after it is created (ADR 0007).
-const InviteLinkLifetime = 2 * time.Hour
+const InviteLinkLifetime = 10 * time.Minute
 
 // InviteLinkMaxUsesLimit is the highest allowed max uses. The check in migration 0002 mirrors it (ADR 0007).
 const InviteLinkMaxUsesLimit = 10
 
 // InviteLinkDefaultMaxUses applies when the creator does not choose a value (ADR 0007).
-const InviteLinkDefaultMaxUses = InviteLinkMaxUsesLimit
+const InviteLinkDefaultMaxUses = 1
 
 // maxNameLength is the limit of a group name and a game name, counted in Unicode code points, the same as the database
 // checks (ADR 0004 rule 1, ADR 0010).

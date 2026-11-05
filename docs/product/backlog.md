@@ -34,14 +34,15 @@ REQ-0002 and REQ-0007 have been extended with max uses on invite links (mandator
 
 ## Amendments decided 2026-11-04
 
-Changes to delivered requirements, decided by the user (DECISION, user, 2026-11-04). They are not new requirements and they add no feature. They change the UI built for REQ-0003, REQ-0004 and REQ-0012, and they are delivered before the MVP release. AM2, AM3 and AM4 change the same form or the same calendar, so they are one delivery.
+Changes to delivered requirements, decided by the user (DECISION, user, 2026-11-04). They are not new requirements and they add no feature. They change the UI built for REQ-0002, REQ-0003, REQ-0004, REQ-0007 and REQ-0012, and they are delivered before the MVP release. AM2, AM3 and AM5 change the same form or the same calendar, so they are one delivery. AM4 is a separate delivery (invite popover); it shares the group view with AM2 and AM3, and the UI expert may combine them.
 
 | Order | Requirement | Title | Priority | Depends on |
 |---|---|---|---|---|
 | AM1 | REQ-0012 (Third amendment) | "+" (Create group) only on `/groups` | Must | REQ-0012 |
 | AM2 | REQ-0003 (Amendment 2026-11-04) | Create lobby form opened by a button | Must | REQ-0003 |
 | AM3 | REQ-0004 (Amendment 2026-11-04) | Create lobby from a day in the week view | Must | REQ-0003, REQ-0004 |
-| AM4 | REQ-0004 (Amendment 2026-11-04, time grid), REQ-0012 (Fourth amendment), REQ-0003 (item 3) | Week view and This week as a time grid showing lobby duration; create from an empty time, prefilled with date and start time | Must | REQ-0003, REQ-0004, REQ-0012, AM3 |
+| AM4 | REQ-0002 and REQ-0007 (Amendment 2026-11-04), REQ-0012 (Fourth amendment) | Invite from a popover (Group rail right-click, Invite button), no invite links section in the group view, links valid 10 minutes, default max uses 1 | Must | REQ-0002, REQ-0007, REQ-0012 |
+| AM5 | REQ-0004 (Amendment 2026-11-04, time grid), REQ-0012 (Fifth amendment), REQ-0003 (item 3) | Week view and This week as a time grid showing lobby duration; create from an empty time, prefilled with date and start time | Must | REQ-0003, REQ-0004, REQ-0012, AM3 |
 
 ## Should, after the MVP
 

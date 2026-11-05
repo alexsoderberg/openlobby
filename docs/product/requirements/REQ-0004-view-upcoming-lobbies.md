@@ -77,7 +77,7 @@ Out of scope in this amendment:
 F-003 (Create lobby): the calendar is a second entry point to the same form. F-017 (calendar view): the same view, with a create control added. F-028 (dashboard): its "This week" is not changed by this amendment in the create rules, but uses the same time grid on desktop and phone (Amendment 2026-11-04 (time grid) and REQ-0012).
 
 ## Amendment 2026-11-04 (time grid)
-Status stays Implemented. Decided by the user on 2026-11-04 and not yet built. The week view is shown as a time grid: days are vertical columns and the hours run down the page. The same grid is used for "This week" on the dashboard (REQ-0012, Fourth amendment). The rules above stay, except where a criterion is marked as amended. Binding for the UI expert.
+Status stays Implemented. Decided by the user on 2026-11-04 and not yet built. The week view is shown as a time grid: days are vertical columns and the hours run down the page. The same grid is used for "This week" on the dashboard (REQ-0012, Fifth amendment). The rules above stay, except where a criterion is marked as amended. Binding for the UI expert.
 
 User's words (translated): "I also want the lobby's duration shown graphically. A calendar where the days are vertical and you can see which time slots the lobby spans."
 

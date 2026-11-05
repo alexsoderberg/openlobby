@@ -18,7 +18,8 @@ describe("useLoad", () => {
 
   it("keeps the error of a failed load", async () => {
     const error = new ApiError(503, "service_unavailable");
-    const { result } = renderHook(() => useLoad(() => Promise.reject(error)));
+    const load = () => Promise.reject(error);
+    const { result } = renderHook(() => useLoad(load));
 
     await waitFor(() =>
       expect(result.current.state).toEqual({ status: "failed", error }),
@@ -71,7 +72,8 @@ describe("useLoad", () => {
 
   it("keeps an expired session as a failure when no handler is given", async () => {
     const error = new ApiError(401, "unauthenticated");
-    const { result } = renderHook(() => useLoad(() => Promise.reject(error)));
+    const load = () => Promise.reject(error);
+    const { result } = renderHook(() => useLoad(load));
 
     await waitFor(() =>
       expect(result.current.state).toEqual({ status: "failed", error }),

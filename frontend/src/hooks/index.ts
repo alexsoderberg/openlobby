@@ -5,3 +5,4 @@ export { useScrolledPast } from "./useScrolledPast";
 export { useNow } from "./useNow";
 export { loadViewOf, type LoadView } from "./loadView";
 export { usePopover } from "./usePopover";
+export { beginPageLoads, pageLoadsSettled } from "./pageLoads";

@@ -110,8 +110,8 @@ export interface paths {
         put?: never;
         /**
          * Create invite link
-         * @description Creates a new link with the caller as creator. The link is valid for 2 hours from creation (`expiresAt`).
-         *     `maxUses` is optional. Omitted or `null` gives 10. A wrong JSON type gives `invalid_request`, checked before membership (`group_not_found`). An integer outside 1–10 gives `invalid_max_uses`, checked after membership.
+         * @description Creates a new link with the caller as creator. The link is valid for 10 minutes from creation (`expiresAt`).
+         *     `maxUses` is optional. Omitted or `null` gives 1. A wrong JSON type gives `invalid_request`, checked before membership (`group_not_found`). An integer outside 1–10 gives `invalid_max_uses`, checked after membership.
          *     Inactive links in the group are removed in the same transaction (ADR 0007).
          */
         post: operations["createInviteLink"];
@@ -412,7 +412,7 @@ export interface components {
             maxUses: components["schemas"]["InviteMaxUses"];
         };
         CreateInviteLinkRequest: {
-            /** @description Max uses, 1–10. Omitted or `null` gives 10. */
+            /** @description Max uses, 1–10. Omitted or `null` gives 1. */
             maxUses?: (number & components["schemas"]["InviteMaxUses"]) | null;
         };
         InviteInfo: {

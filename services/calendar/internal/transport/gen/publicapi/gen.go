@@ -135,7 +135,7 @@ type CreateGroupRequest struct {
 
 // CreateInviteLinkRequest defines model for CreateInviteLinkRequest.
 type CreateInviteLinkRequest struct {
-	// MaxUses Max uses, 1–10. Omitted or `null` gives 10.
+	// MaxUses Max uses, 1–10. Omitted or `null` gives 1.
 	MaxUses *InviteMaxUses `json:"maxUses,omitempty"`
 }
 

@@ -73,6 +73,9 @@ export const en = {
   inviteInvalidHeading: "Invite link not valid",
 
   inviteLinksHeading: "Invite links",
+  inviteButton: "Invite",
+  inviteHeading: (group: string) => `Invite people to ${group}`,
+  inviteClose: "Close",
   inviteLinksLoading: "Loading invite links.",
   inviteLinksEmpty:
     "There are no active invite links. Create one to invite someone.",
@@ -186,6 +189,8 @@ export const en = {
     groups: "Groups",
     you: "You",
     createGroupButton: "Create a group",
+    groupMenu: (group: string) => `${group} menu`,
+    invitePeople: "Invite people",
     openProfile: (name: string) => `${name}, your profile`,
   },
 

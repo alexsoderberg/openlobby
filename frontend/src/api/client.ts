@@ -28,8 +28,8 @@ export const DEFAULT_MAX_PLAYERS_MIN = 1;
 export const RESERVED_GAME_NAME = "Other";
 /** Contract rule: an invite link allows 1–10 uses (ADR 0007). */
 export const INVITE_MAX_USES_LIMIT = 10;
-/** The form preselects this value. The API applies the same default when none is sent (ADR 0007). */
-export const INVITE_MAX_USES_DEFAULT = INVITE_MAX_USES_LIMIT;
+/** The form preselects a single use: a quick invite is for one person. */
+export const INVITE_MAX_USES_DEFAULT = 1;
 
 const LOGIN_PATH = "/api/auth/login";
 const UNKNOWN_CODE = "internal_error";
