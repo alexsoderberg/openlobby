@@ -45,7 +45,7 @@ F-004 (View upcoming lobbies) shows what is created here. F-005 (Join and leave 
 - DECISION (concurrent editing): No locking. Two members can create lobbies at the same time.
 
 ## Amendment 2026-11-04
-Status stays Implemented. Decided by the user on 2026-11-04 and not yet built. Before this amendment the Create lobby form was shown at all times in the group view. All rules above stay the same; only the way the form is opened changes. A calendar day is a second way to open the form (REQ-0004, Amendment 2026-11-04). It is not a new feature.
+Status stays Implemented. Decided by the user on 2026-11-04. Built: item 1 in PR #45, item 3 in PR #47 (2026-11-05). Before this amendment the Create lobby form was shown at all times in the group view. All rules above stay the same; only the way the form is opened changes. A calendar day is a second way to open the form (REQ-0004, Amendment 2026-11-04). It is not a new feature.
 
 1. The form is hidden until a member asks for it (DECISION, user, 2026-11-04). User's words (translated): "The form for create a lobby should only come up when you have pressed a button to create a lobby; it should not be visible all the time."
    - Given that I am a member and I open a group view, when the page opens, then the Create lobby form is not shown, and a "Create lobby" button is shown in the upcoming lobbies section, in both the list view and the calendar view.

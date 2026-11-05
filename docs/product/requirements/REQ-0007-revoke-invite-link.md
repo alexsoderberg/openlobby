@@ -46,7 +46,7 @@ F-002 (Create and join group) creates the links and uses them. Revocation and ex
 - DECISION (implementation): The "404 page" for revoked, expired and used-up links is the same dedicated view as for unknown links, with heading "Invite link not valid" and no group information. It is not an HTTP 404 status, because the single-page app cannot set a status code (ADR 0007). See REQ-0002.
 
 ## Amendment 2026-11-04
-Decided by the user, recorded as DECISION, user, 2026-11-04. Status stays Implemented. The rules for who may revoke, the confirmation and the 404 behavior are unchanged.
+Decided by the user, recorded as DECISION, user, 2026-11-04. Status stays Implemented. Built 2026-11-05 (PR #48). The rules for who may revoke, the confirmation and the 404 behavior are unchanged.
 
 1. Revoke is done in the invite popover, not in a section of the group view (REQ-0002, Amendment 2026-11-04).
    - Replaced wording (kept for reference): "when I select "Revoke link" and confirm" (link creator), "when I select "Revoke link" on any active link in the group and confirm" (group admin), "when I open the group's page, then it is not shown among the active links".
