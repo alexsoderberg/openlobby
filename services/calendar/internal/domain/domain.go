@@ -34,6 +34,9 @@ var ErrInviteInvalid = errors.New("invite invalid")
 // ErrNotAllowed means the caller is a member but may not do this, e.g. revoke another member's link (ADR 0007).
 var ErrNotAllowed = errors.New("not allowed")
 
+// ErrMemberNotFound means the user is not a member of the group (REQ-0008).
+var ErrMemberNotFound = errors.New("member not found")
+
 // ErrOwnUpcomingLobbiesExist means the caller created lobbies that have not ended, so they cannot leave the group (ADR 0004 rule 5).
 var ErrOwnUpcomingLobbiesExist = errors.New("own upcoming lobbies exist")
 

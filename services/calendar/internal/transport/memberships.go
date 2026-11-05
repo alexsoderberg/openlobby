@@ -22,3 +22,20 @@ func (h publicHandler) LeaveGroup(ctx context.Context, request publicapi.LeaveGr
 	}
 	return publicapi.LeaveGroup204Response{}, nil
 }
+
+// MakeGroupAdmin makes a member group admin. A caller who is not a member gets group_not_found, a member who is not an
+// admin gets not_allowed, and a target who is not a member gets member_not_found (REQ-0008).
+func (h publicHandler) MakeGroupAdmin(ctx context.Context, request publicapi.MakeGroupAdminRequestObject) (publicapi.MakeGroupAdminResponseObject, error) {
+	err := h.memberships.MakeAdmin(ctx, request.GroupId, userIDFrom(ctx), request.UserId)
+	switch {
+	case errors.Is(err, domain.ErrGroupNotFound):
+		return publicapi.MakeGroupAdmin404JSONResponse{Error: publicErrorBody(ctx, publicapi.ErrorBodyCodeGroupNotFound)}, nil
+	case errors.Is(err, domain.ErrMemberNotFound):
+		return publicapi.MakeGroupAdmin404JSONResponse{Error: publicErrorBody(ctx, publicapi.ErrorBodyCodeMemberNotFound)}, nil
+	case errors.Is(err, domain.ErrNotAllowed):
+		return publicapi.MakeGroupAdmin403JSONResponse{Error: publicErrorBody(ctx, publicapi.ErrorBodyCodeNotAllowed)}, nil
+	case err != nil:
+		return nil, err
+	}
+	return publicapi.MakeGroupAdmin204Response{}, nil
+}

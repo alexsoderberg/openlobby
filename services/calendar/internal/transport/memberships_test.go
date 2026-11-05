@@ -11,7 +11,7 @@ import (
 	"openlobby/services/calendar/internal/domain"
 )
 
-// memoryMemberships serves the leave port from the memory store. It only approximates the database rules (it ignores ends_at, MakeAdmin and RemoveLeaverData change nothing); the real rules are tested in the postgres integration tests.
+// memoryMemberships serves the leave port from the memory store. It only approximates the database rules (it ignores ends_at and RemoveLeaverData); the real rules are tested in the postgres integration tests.
 type memoryMemberships struct{ store *memoryGroups }
 
 func (r memoryMemberships) WithLockedGroup(_ context.Context, groupID string, fn func(application.LeaveTx) error) error {
@@ -41,7 +41,14 @@ func (m memoryLeaveTx) RemoveLeaverData(_ context.Context, groupID, userID strin
 	return nil
 }
 
-func (m memoryLeaveTx) MakeAdmin(context.Context, string, string) error { return nil }
+func (m memoryLeaveTx) MakeAdmin(_ context.Context, groupID, userID string) error {
+	for i := range m.members[groupID] {
+		if m.members[groupID][i].UserID == userID {
+			m.members[groupID][i].Role = domain.RoleAdmin
+		}
+	}
+	return nil
+}
 
 func (m memoryLeaveTx) DeleteGroup(_ context.Context, groupID string) error {
 	delete(m.groups, groupID)
@@ -111,6 +118,66 @@ func TestLeaveGroupIs503WhenTheDatabaseDoesNotAnswer(t *testing.T) {
 	store.err = domain.ErrUnavailable
 
 	response := call(newRouter(store, fridayDirectory()), http.MethodDelete, membershipPath, asUser(alexID), "")
+
+	assertErrorEnvelope(t, response, http.StatusServiceUnavailable, "service_unavailable")
+}
+
+const adminPath = "/api/groups/" + fridayID + "/admins/"
+
+func TestMakeGroupAdminPromotesAMemberAndIsIdempotent(t *testing.T) {
+	store := fridayStore()
+	router := newRouter(store, fridayDirectory())
+
+	for range 2 {
+		response := call(router, http.MethodPut, adminPath+otherID, asUser(alexID), "")
+		if response.Code != http.StatusNoContent || response.Body.Len() != 0 {
+			t.Fatalf("status %d, body %q; want 204 and no body", response.Code, response.Body.String())
+		}
+	}
+	if store.members[fridayID][1].Role != domain.RoleAdmin {
+		t.Fatalf("members %v, want other to be admin", store.members[fridayID])
+	}
+}
+
+func TestMakeGroupAdminGivesTheContractErrors(t *testing.T) {
+	tests := []struct {
+		name   string
+		target string
+		caller string
+		status int
+		code   string
+	}{
+		{name: "malformed user ID comes first", target: adminPath + malformedUUIDs, caller: missingID, status: http.StatusNotFound, code: "member_not_found"},
+		{name: "caller is not a member", target: adminPath + otherID, caller: missingID, status: http.StatusNotFound, code: "group_not_found"},
+		{name: "caller is not an admin", target: adminPath + otherID, caller: otherID, status: http.StatusForbidden, code: "not_allowed"},
+		{name: "target is not a member", target: adminPath + missingID, caller: alexID, status: http.StatusNotFound, code: "member_not_found"},
+		{name: "unknown group", target: "/api/groups/" + missingID + "/admins/" + otherID, caller: alexID, status: http.StatusNotFound, code: "group_not_found"},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			store := fridayStore()
+
+			response := call(newRouter(store, fridayDirectory()), http.MethodPut, tc.target, asUser(tc.caller), "")
+
+			assertErrorEnvelope(t, response, tc.status, tc.code)
+			if store.members[fridayID][1].Role != domain.RoleMember {
+				t.Fatalf("members %v, want other to stay member", store.members[fridayID])
+			}
+		})
+	}
+}
+
+func TestMakeGroupAdminWithoutIdentityIs401(t *testing.T) {
+	response := call(newRouter(fridayStore(), fridayDirectory()), http.MethodPut, adminPath+otherID, nil, "")
+
+	assertErrorEnvelope(t, response, http.StatusUnauthorized, "unauthenticated")
+}
+
+func TestMakeGroupAdminIs503WhenTheDatabaseDoesNotAnswer(t *testing.T) {
+	store := fridayStore()
+	store.err = domain.ErrUnavailable
+
+	response := call(newRouter(store, fridayDirectory()), http.MethodPut, adminPath+otherID, asUser(alexID), "")
 
 	assertErrorEnvelope(t, response, http.StatusServiceUnavailable, "service_unavailable")
 }

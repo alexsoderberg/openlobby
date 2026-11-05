@@ -13,10 +13,8 @@ import (
 	publicapi "openlobby/services/calendar/internal/transport/gen/publicapi"
 )
 
-// publicHandler implements the public endpoints of the OpenAPI contract. Operations that are not built yet come from
-// pendingOperations.
+// publicHandler implements the public endpoints of the OpenAPI contract.
 type publicHandler struct {
-	pendingOperations
 	groups      *application.Groups
 	games       *application.Games
 	invites     *application.InviteLinks

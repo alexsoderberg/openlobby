@@ -225,3 +225,43 @@ func TestFormerMemberSeesInviteAsNonMemberAndCanJoinAgain(t *testing.T) {
 		t.Fatalf("role %q after rejoining, want member", got)
 	}
 }
+
+func TestMakeAdminStoresTheRoleAndAPromotedAdminCanPromoteAnother(t *testing.T) {
+	store := migratedStore(t)
+	seedFriday(t, store)
+	memberships := application.NewMemberships(store.Memberships(), systemclock.Clock{})
+	ctx := context.Background()
+
+	if err := memberships.MakeAdmin(ctx, fridayID, alexID, otherID); err != nil {
+		t.Fatal(err)
+	}
+	if err := memberships.MakeAdmin(ctx, fridayID, otherID, nobodyID); err != nil {
+		t.Fatal(err)
+	}
+	if err := memberships.MakeAdmin(ctx, fridayID, otherID, otherID); err != nil {
+		t.Fatalf("promoting an admin again: %v", err)
+	}
+
+	for _, userID := range []string{alexID, otherID, nobodyID} {
+		if got := roleOf(t, store, fridayID, userID); got != "admin" {
+			t.Fatalf("%s has role %q, want admin", userID, got)
+		}
+	}
+}
+
+func TestMakeAdminRefusesANonAdminAndANonMember(t *testing.T) {
+	store := migratedStore(t)
+	seedFriday(t, store)
+	memberships := application.NewMemberships(store.Memberships(), systemclock.Clock{})
+	ctx := context.Background()
+
+	if err := memberships.MakeAdmin(ctx, fridayID, otherID, nobodyID); !errors.Is(err, domain.ErrNotAllowed) {
+		t.Fatalf("non-admin caller: %v, want ErrNotAllowed", err)
+	}
+	if err := memberships.MakeAdmin(ctx, fridayID, alexID, "66666666-6666-4666-8666-666666666666"); !errors.Is(err, domain.ErrMemberNotFound) {
+		t.Fatalf("non-member target: %v, want ErrMemberNotFound", err)
+	}
+	if got := roleOf(t, store, fridayID, nobodyID); got != "member" {
+		t.Fatalf("nobody has role %q, want member", got)
+	}
+}
