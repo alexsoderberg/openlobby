@@ -422,19 +422,19 @@ func TestGetFailsWhenAuthFails(t *testing.T) {
 }
 
 // openLobbyStore has a lobby that ends after now, with Bob as its only player, so that Alice can join.
-func openLobbyStore(maxPlayers *int, ended bool) *lobbyStore {
+func openLobbyStore(maxPlayers *int) *lobbyStore {
+	return lobbyStoreEndingAt(maxPlayers, now.Add(time.Hour))
+}
+
+func lobbyStoreEndingAt(maxPlayers *int, endsAt time.Time) *lobbyStore {
 	store := newLobbyStore()
-	endsAt := now.Add(time.Hour)
-	if ended {
-		endsAt = now
-	}
 	store.lobbies[lobbyID] = domain.Lobby{ID: lobbyID, GroupID: fridayID, CreatedByUserID: bobID, MaxPlayers: maxPlayers, EndsAt: endsAt}
 	store.players = map[string][]string{lobbyID: {bobID}}
 	return store
 }
 
 func TestJoinAddsTheMemberOnce(t *testing.T) {
-	store := openLobbyStore(nil, false)
+	store := openLobbyStore(nil)
 	lobbies := newLobbies(store, chessCatalog())
 
 	for range 2 {
@@ -456,12 +456,12 @@ func TestJoinRefusesWithoutWriting(t *testing.T) {
 		caller  string
 		want    error
 	}{
-		{name: "non-member", store: openLobbyStore(nil, false), groupID: fridayID, lobbyID: lobbyID, caller: strangerID, want: domain.ErrGroupNotFound},
-		{name: "non-member on a missing lobby", store: openLobbyStore(nil, false), groupID: fridayID, lobbyID: missingID, caller: strangerID, want: domain.ErrGroupNotFound},
-		{name: "missing lobby", store: openLobbyStore(nil, false), groupID: fridayID, lobbyID: missingID, caller: aliceID, want: domain.ErrLobbyNotFound},
-		{name: "missing group", store: openLobbyStore(nil, false), groupID: missingID, lobbyID: lobbyID, caller: aliceID, want: domain.ErrGroupNotFound},
-		{name: "ended", store: openLobbyStore(nil, true), groupID: fridayID, lobbyID: lobbyID, caller: aliceID, want: domain.ErrLobbyHasEnded},
-		{name: "full", store: openLobbyStore(intPtr(1), false), groupID: fridayID, lobbyID: lobbyID, caller: aliceID, want: domain.ErrLobbyFull},
+		{name: "non-member", store: openLobbyStore(nil), groupID: fridayID, lobbyID: lobbyID, caller: strangerID, want: domain.ErrGroupNotFound},
+		{name: "non-member on a missing lobby", store: openLobbyStore(nil), groupID: fridayID, lobbyID: missingID, caller: strangerID, want: domain.ErrGroupNotFound},
+		{name: "missing lobby", store: openLobbyStore(nil), groupID: fridayID, lobbyID: missingID, caller: aliceID, want: domain.ErrLobbyNotFound},
+		{name: "missing group", store: openLobbyStore(nil), groupID: missingID, lobbyID: lobbyID, caller: aliceID, want: domain.ErrGroupNotFound},
+		{name: "ended", store: lobbyStoreEndingAt(nil, now), groupID: fridayID, lobbyID: lobbyID, caller: aliceID, want: domain.ErrLobbyHasEnded},
+		{name: "full", store: openLobbyStore(intPtr(1)), groupID: fridayID, lobbyID: lobbyID, caller: aliceID, want: domain.ErrLobbyFull},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
@@ -478,7 +478,7 @@ func TestJoinRefusesWithoutWriting(t *testing.T) {
 }
 
 func TestJoinByAPlayerOfAFullLobbyChangesNothing(t *testing.T) {
-	store := openLobbyStore(intPtr(1), false)
+	store := openLobbyStore(intPtr(1))
 
 	if err := newLobbies(store, chessCatalog()).Join(context.Background(), fridayID, lobbyID, bobID); err != nil {
 		t.Fatal(err)
@@ -489,7 +489,7 @@ func TestJoinByAPlayerOfAFullLobbyChangesNothing(t *testing.T) {
 }
 
 func TestLeaveRemovesThePlayerAlsoAfterTheEndAndIsIdempotent(t *testing.T) {
-	store := openLobbyStore(nil, true)
+	store := lobbyStoreEndingAt(nil, now)
 	lobbies := newLobbies(store, chessCatalog())
 
 	for range 2 {
@@ -517,7 +517,7 @@ func TestLeaveRefuses(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			store := openLobbyStore(nil, false)
+			store := openLobbyStore(nil)
 
 			err := newLobbies(store, chessCatalog()).Leave(context.Background(), fridayID, tc.lobbyID, tc.caller)
 

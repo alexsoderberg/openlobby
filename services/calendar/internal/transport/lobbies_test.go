@@ -56,28 +56,31 @@ func (t memoryLobbyTx) CreatorOf(_ context.Context, groupID, lobbyID string) (st
 	return lobby.CreatedByUserID, true, nil
 }
 
-// JoinState takes JoinedByMe as the caller's player state, so a test sets it on the lobby.
-func (t memoryLobbyTx) JoinState(_ context.Context, groupID, lobbyID, _ string) (domain.JoinState, bool, error) {
+func (t memoryLobbyTx) JoinState(_ context.Context, groupID, lobbyID, userID string) (domain.JoinState, bool, error) {
 	lobby, ok := t.store.lobbies[lobbyID]
 	if !ok || lobby.GroupID != groupID {
 		return domain.JoinState{}, false, nil
 	}
-	return domain.JoinState{EndsAt: lobby.EndsAt, MaxPlayers: lobby.MaxPlayers, PlayerCount: lobby.PlayerCount, IsPlayer: lobby.JoinedByMe}, true, nil
+	return domain.JoinState{EndsAt: lobby.EndsAt, MaxPlayers: lobby.MaxPlayers, PlayerCount: lobby.PlayerCount, IsPlayer: t.store.joined[lobbyID+"/"+userID]}, true, nil
 }
 
-func (t memoryLobbyTx) AddPlayer(_ context.Context, lobbyID, _ string, _ time.Time) error {
+func (t memoryLobbyTx) AddPlayer(_ context.Context, lobbyID, userID string, _ time.Time) error {
+	if t.store.joined == nil {
+		t.store.joined = map[string]bool{}
+	}
+	t.store.joined[lobbyID+"/"+userID] = true
 	lobby := t.store.lobbies[lobbyID]
 	lobby.PlayerCount++
-	lobby.JoinedByMe = true
 	t.store.lobbies[lobbyID] = lobby
 	return nil
 }
 
-func (t memoryLobbyTx) RemovePlayer(_ context.Context, lobbyID, _ string) error {
-	lobby := t.store.lobbies[lobbyID]
-	if lobby.JoinedByMe {
+func (t memoryLobbyTx) RemovePlayer(_ context.Context, lobbyID, userID string) error {
+	key := lobbyID + "/" + userID
+	if t.store.joined[key] {
+		delete(t.store.joined, key)
+		lobby := t.store.lobbies[lobbyID]
 		lobby.PlayerCount--
-		lobby.JoinedByMe = false
 		t.store.lobbies[lobbyID] = lobby
 	}
 	return nil

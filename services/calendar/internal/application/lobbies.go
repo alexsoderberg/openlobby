@@ -158,6 +158,7 @@ func (l *Lobbies) Leave(ctx context.Context, groupID, lobbyID, callerID string) 
 		if _, err := requireMember(ctx, tx, groupID, callerID); err != nil {
 			return err
 		}
+		// Only the existence in this group matters here, so the creator is ignored.
 		_, found, err := tx.CreatorOf(ctx, groupID, lobbyID)
 		switch {
 		case err != nil:

@@ -439,7 +439,8 @@ func addMember(t *testing.T, store *Store, groupID, userID string) {
 	}
 }
 
-func joinInTx(store *Store, groupID, lobbyID, userID string, now time.Time) error {
+// joinAt joins through the application use case with the clock fixed at now.
+func joinAt(store *Store, groupID, lobbyID, userID string, now time.Time) error {
 	ctx := context.Background()
 	return application.NewLobbies(store.Lobbies(), store.Lobbies(), nil, nil, fixedNow{now}).Join(ctx, groupID, lobbyID, userID)
 }
@@ -481,9 +482,9 @@ func TestJoinRefusesAnEndedLobbyAndANonMemberWithoutWriting(t *testing.T) {
 	other := insertLobby(t, store, newLobby(sundayID, nobodyID, nil, "Go"))
 	addMember(t, store, fridayID, otherID)
 
-	ended := joinInTx(store, fridayID, lobby.ID, otherID, lobby.EndsAt)
-	stranger := joinInTx(store, fridayID, lobby.ID, nobodyID, joinedAt)
-	elsewhere := joinInTx(store, fridayID, other.ID, otherID, joinedAt)
+	ended := joinAt(store, fridayID, lobby.ID, otherID, lobby.EndsAt)
+	stranger := joinAt(store, fridayID, lobby.ID, nobodyID, joinedAt)
+	elsewhere := joinAt(store, fridayID, other.ID, otherID, joinedAt)
 
 	if !errors.Is(ended, domain.ErrLobbyHasEnded) || !errors.Is(stranger, domain.ErrGroupNotFound) || !errors.Is(elsewhere, domain.ErrLobbyNotFound) {
 		t.Fatalf("errors %v, %v, %v; want has ended, group not found, lobby not found", ended, stranger, elsewhere)
@@ -498,8 +499,7 @@ func TestConcurrentJoinsNeverPassMaxPlayers(t *testing.T) {
 	store := migratedStore(t)
 	seedGroups(t, store)
 	request := newLobby(fridayID, alexID, nil, "Go")
-	request.MaxPlayers = new(int)
-	*request.MaxPlayers = 2
+	request.MaxPlayers = intPtr(2)
 	lobby := insertLobby(t, store, request)
 	users := []string{otherID, "33333333-3333-4333-8333-333333333333", "44444444-4444-4444-8444-444444444444"}
 	for _, user := range users {
@@ -508,7 +508,7 @@ func TestConcurrentJoinsNeverPassMaxPlayers(t *testing.T) {
 	results := make(chan error, len(users))
 
 	for _, user := range users {
-		go func() { results <- joinInTx(store, fridayID, lobby.ID, user, joinedAt) }()
+		go func() { results <- joinAt(store, fridayID, lobby.ID, user, joinedAt) }()
 	}
 	succeeded, full := 0, 0
 	for range users {
@@ -524,5 +524,32 @@ func TestConcurrentJoinsNeverPassMaxPlayers(t *testing.T) {
 
 	if n := count(t, store, `SELECT count(*) FROM lobby_players WHERE lobby_id = $1`, lobby.ID); n != 2 || succeeded != 1 || full != 2 {
 		t.Fatalf("players %d, succeeded %d, full %d; want 2, 1 and 2", n, succeeded, full)
+	}
+}
+
+// Two joins race while there are spots for both: both succeed and the count is 3 with the creator.
+func TestConcurrentJoinsWithSpareSpotsBothSucceed(t *testing.T) {
+	store := migratedStore(t)
+	seedGroups(t, store)
+	request := newLobby(fridayID, alexID, nil, "Go")
+	request.MaxPlayers = intPtr(3)
+	lobby := insertLobby(t, store, request)
+	users := []string{otherID, "33333333-3333-4333-8333-333333333333"}
+	for _, user := range users {
+		addMember(t, store, fridayID, user)
+	}
+	results := make(chan error, len(users))
+
+	for _, user := range users {
+		go func() { results <- joinAt(store, fridayID, lobby.ID, user, joinedAt) }()
+	}
+	for range users {
+		if err := <-results; err != nil {
+			t.Fatalf("join failed: %v", err)
+		}
+	}
+
+	if n := count(t, store, `SELECT count(*) FROM lobby_players WHERE lobby_id = $1`, lobby.ID); n != 3 {
+		t.Fatalf("%d players, want 3", n)
 	}
 }
