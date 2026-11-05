@@ -1,3 +1,4 @@
+import type { PickedStart } from "../../calendar";
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import type { ChangeResult, CreateLobbyInput, Game } from "../../api";
 import { toUserMessage, useMessages } from "../../i18n";
@@ -10,13 +11,13 @@ type CreateLobbyFormProps = {
   games: Game[];
   busy: boolean;
   onSubmit: (input: CreateLobbyInput) => ChangeResult;
-  initialDate?: Date;
+  initialStart?: PickedStart;
   onCancel: () => void;
 };
 
 /** Game, max players, date, start and end. `onSubmit` resolves to the error code of a failed save. */
 export function CreateLobbyForm(props: CreateLobbyFormProps) {
-  const { games, busy, onSubmit, initialDate, onCancel } = props;
+  const { games, busy, onSubmit, initialStart, onCancel } = props;
   const formRef = useRef<HTMLFormElement>(null);
   const id = useId();
   const [gameValue, setGameValue] = useState("");
@@ -50,7 +51,7 @@ export function CreateLobbyForm(props: CreateLobbyFormProps) {
       <LobbyTimeFields
         id={id}
         errorId={errorFor("date")}
-        initialDate={initialDate}
+        initialStart={initialStart}
       />
       {form.errorCode && <LobbyFormError id={errorId} code={form.errorCode} />}
       <LobbyFormActions busy={busy} onCancel={onCancel} />

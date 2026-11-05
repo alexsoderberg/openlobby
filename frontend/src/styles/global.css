@@ -176,6 +176,10 @@
   --duration-page: 0.24s;
   --duration-page-out: 0.12s;
   --page-shift: 12px;
+  --size-hour: 4rem;
+  --size-grid-height: 32rem;
+  --size-grid-title: 3rem;
+  --size-grid-gutter: 3.25rem;
 }
 
 *,
@@ -687,87 +691,174 @@ a {
   font-size: 1rem;
 }
 
-.calendar-day {
-  display: grid;
-  gap: var(--space-1) var(--space-3);
-  padding: var(--space-2) 0;
-  border-top: 1px solid var(--color-border);
-}
-
-.calendar-day__name {
-  margin: 0;
-  font-size: var(--font-size-small);
-  font-weight: 600;
-}
-
-.calendar-day__empty {
-  margin: 0;
-  font-size: var(--font-size-small);
-  color: var(--color-muted);
-}
-
-.calendar-day__lobbies {
-  display: grid;
-  gap: var(--space-2);
-}
-
-/* A run of overlapping lobbies shares one row, so none is hidden behind another. */
-.calendar-cluster {
+/* The week time grid, shared by the group calendar and the dashboard. Each block's top and height come from its
+   start and span in minutes (--start, --span), and its share of the width from --column of --columns. */
+.time-grid {
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
+  height: var(--size-grid-height);
+  overflow-y: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+}
+
+.time-grid__hours {
+  flex: none;
+  width: var(--size-grid-gutter);
+  margin: var(--size-grid-title) 0 0;
+  padding: 0;
+  list-style: none;
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  text-align: right;
+}
+
+.time-grid__hours li {
+  height: var(--size-hour);
+  padding-right: var(--space-1);
+}
+
+.time-grid__days {
+  display: grid;
+  flex: 1;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.calendar-lobby {
+.time-grid__day {
+  min-width: 0;
+  border-left: 1px solid var(--color-border);
+}
+
+.time-grid__title {
+  position: sticky;
+  top: 0;
+  z-index: 2;
   display: grid;
-  flex: 1 1 10rem;
-  gap: var(--space-1);
-  justify-items: start;
-  padding: var(--space-2);
-  background: var(--color-accent-wash);
-  border: 1px solid var(--color-border);
-  border-left: 3px solid var(--color-accent);
-  border-radius: var(--radius-control);
+  place-content: center;
+  height: var(--size-grid-title);
+  background: var(--color-bg-raised);
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  text-align: center;
+  font-family: inherit;
+  font-weight: 400;
+  margin: 0;
 }
 
-/* The day is one click target: a button fills the column and the content sits above it. Clicks pass through
-   the content to the button, except on the lobby cards and their links. Only colour changes on hover. */
-.calendar-day {
+.time-grid__title b {
+  color: var(--color-text);
+}
+
+.time-grid__title[aria-current="date"] b {
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.time-grid__track {
   position: relative;
+  height: calc(var(--size-hour) * 24);
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--color-border) 0 1px,
+    transparent 1px var(--size-hour)
+  );
 }
 
-.calendar-day__create {
+/* The part of the day that can start a lobby: from --from minutes to midnight. Only this part has a hover and a
+   pointer. The blocks sit above it and take the clicks that land on them. */
+.time-grid__create {
   position: absolute;
-  inset: 0;
+  inset: calc(var(--size-hour) * var(--from, 0) / 60) 0 0;
   padding: 0;
   border: 0;
-  border-radius: var(--radius-control);
   background: transparent;
   cursor: pointer;
   transition: background-color var(--duration-fast) var(--ease-out);
 }
 
-.calendar-day__create:hover {
+.time-grid__create:hover {
   background: var(--color-accent-wash);
 }
 
-.calendar-day__name,
-.calendar-day__lobbies {
-  position: relative;
+.time-grid__blocks {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
   pointer-events: none;
 }
 
-.calendar-lobby {
+.time-block {
+  position: absolute;
+  top: calc(var(--size-hour) * var(--start, 0) / 60);
+  height: max(calc(var(--size-hour) * var(--span, 60) / 60), var(--size-tap));
+  left: calc(100% * var(--column, 0) / var(--columns, 1));
+  width: calc(100% / var(--columns, 1));
+  padding: 1px;
   pointer-events: auto;
 }
 
-@media (min-width: 40rem) {
-  .calendar-day {
-    grid-template-columns: 9rem 1fr;
-  }
+.time-block__body {
+  display: grid;
+  align-content: start;
+  height: 100%;
+  padding: var(--space-1);
+  overflow: hidden;
+  background: var(--color-accent-tint);
+  border: 1px solid var(--color-accent-line);
+  border-left: 3px solid var(--color-accent);
+  border-radius: var(--radius-control);
+  font-size: 0.75rem;
+  line-height: 1.3;
+}
+
+.time-block[data-continues-before] .time-block__body {
+  border-top-style: dashed;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.time-block[data-continues-after] .time-block__body {
+  border-bottom-style: dashed;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.time-block__body > * {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.time-block__body:focus-within {
+  outline: 3px solid var(--color-focus);
+}
+
+.time-block__game {
+  font-weight: 600;
+}
+
+/* The link covers the whole .time-block (its containing block, at least --size-tap tall), not the smaller
+   body inside its padding, so the click target is never under 44px. The body's overflow does not clip it. */
+.time-block__game::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.time-block__game:focus-visible {
+  outline: none;
+}
+
+.time-block__marker {
+  color: var(--color-muted);
+  font-style: italic;
 }
 
 /* Landing page. Start states live in the keyframes, so with animations off the final layout shows at once. */
@@ -1346,12 +1437,15 @@ a {
   font-weight: 700;
 }
 
-.week-narrow {
-  display: block;
-}
+/* Phones: one day at a time. From 760px the pills go and all seven days show. */
+@media (max-width: 47.499rem) {
+  .time-grid__days {
+    grid-template-columns: minmax(0, 1fr);
+  }
 
-.week-wide {
-  display: none;
+  .time-grid__day:not([data-selected]) {
+    display: none;
+  }
 }
 
 .day-pills {
@@ -1398,52 +1492,6 @@ a {
   height: 5px;
   border-radius: 50%;
   background: var(--color-accent);
-}
-
-.agenda ul,
-.week-column__lobbies {
-  display: grid;
-  gap: var(--space-2);
-}
-
-.week-grid {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: var(--space-2);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.week-column {
-  min-height: 12rem;
-  padding: var(--space-2);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-control);
-  overflow-wrap: anywhere;
-}
-
-.week-column__title {
-  margin: 0 0 var(--space-2);
-  color: var(--color-muted);
-  font-family: var(--font-sans);
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: var(--tracking-wide);
-  text-transform: uppercase;
-}
-
-.week-column__title[aria-current="date"] {
-  color: var(--color-accent);
-  text-decoration: underline;
-  text-underline-offset: 0.3em;
-}
-
-.week-column__empty {
-  margin: 0;
-  color: var(--color-muted);
-  font-size: var(--font-size-small);
 }
 
 @media (min-width: 47.5rem) {
@@ -1515,12 +1563,8 @@ a {
     text-align: right;
   }
 
-  .week-narrow {
+  .day-pills {
     display: none;
-  }
-
-  .week-wide {
-    display: block;
   }
 }
 

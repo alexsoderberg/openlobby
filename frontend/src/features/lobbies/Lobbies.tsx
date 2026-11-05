@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { Group } from "../../api";
 import { usePopover } from "../../hooks";
+import type { PickedStart } from "../../calendar";
 import { useMessages } from "../../i18n";
 import { ErrorAlert, Panel, Popover } from "../../ui";
 import { CreateLobby } from "./CreateLobby";
@@ -11,7 +12,7 @@ import { useUpcomingLobbies } from "./useUpcomingLobbies";
 
 /**
  * The lobby sections of a group page: the upcoming lobbies as a list or a week calendar, and the popover
- * form that adds one, opened by the Create lobby button or from a day of the calendar. The list is the first
+ * form that adds one, opened by the Create lobby button or from a time of the calendar. The list is the first
  * view of every visit, because the choice is not saved (REQ-0004).
  */
 export function Lobbies({
@@ -25,13 +26,13 @@ export function Lobbies({
 }) {
   const m = useMessages();
   const [view, setView] = useState<LobbyView>("list");
-  const [initialDate, setInitialDate] = useState<Date>();
+  const [initialStart, setInitialStart] = useState<PickedStart>();
   const [created, setCreated] = useState(false);
   const upcoming = useUpcomingLobbies(groupId, onUnauthenticated);
   const popover = usePopover();
 
-  const openForm = (date: Date | undefined, button: HTMLElement) => {
-    setInitialDate(date);
+  const openForm = (start: PickedStart | undefined, button: HTMLElement) => {
+    setInitialStart(start);
     setCreated(false);
     popover.press(button);
   };
@@ -81,7 +82,7 @@ export function Lobbies({
           <CreateLobby
             key={popover.opening}
             groupId={groupId}
-            initialDate={initialDate}
+            initialStart={initialStart}
             onCreated={handleCreated}
             onCancel={popover.close}
             onUnauthenticated={onUnauthenticated}
@@ -104,7 +105,7 @@ function LobbyViews({
   members: Group["members"];
   view: LobbyView;
   upcoming: ReturnType<typeof useUpcomingLobbies>;
-  onCreate: (day: Date, button: HTMLElement) => void;
+  onCreate: (start: PickedStart, button: HTMLElement) => void;
 }) {
   const m = useMessages();
   if (state.status === "loading")

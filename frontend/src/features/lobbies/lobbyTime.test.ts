@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { endsNextDay, localDateText, lobbyTimesFrom } from "./lobbyTime";
+import {
+  localClockText,
+  localDateText,
+  lobbyTimesFrom,
+  suggestedEnd,
+} from "./lobbyTime";
 
 // Local times throughout, so the tests hold in any time zone.
 const now = new Date(2026, 10, 4, 12, 0);
@@ -51,19 +56,20 @@ describe("lobbyTimesFrom", () => {
   });
 });
 
-describe("endsNextDay", () => {
-  it("is true only when the end is on a later calendar day", () => {
-    expect(endsNextDay({ startsAt: local(5, 22), endsAt: local(6, 2) })).toBe(
-      true,
-    );
-    expect(
-      endsNextDay({ startsAt: local(5, 18), endsAt: local(5, 23, 59) }),
-    ).toBe(false);
-  });
-});
-
 describe("localDateText", () => {
   it("pads month and day", () => {
     expect(localDateText(new Date(2026, 0, 5))).toBe("2026-01-05");
+  });
+});
+
+describe("calendar suggestions", () => {
+  it("writes a clock time with two digits", () => {
+    expect(localClockText(new Date(2026, 10, 5, 7, 5))).toBe("07:05");
+  });
+
+  it("suggests an end two hours later, also across midnight", () => {
+    expect(suggestedEnd(new Date(2026, 10, 5, 23, 30))).toEqual(
+      new Date(2026, 10, 6, 1, 30),
+    );
   });
 });

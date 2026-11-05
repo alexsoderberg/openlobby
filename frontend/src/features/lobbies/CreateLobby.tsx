@@ -1,3 +1,4 @@
+import type { PickedStart } from "../../calendar";
 import { useMessages } from "../../i18n";
 import { ErrorAlert } from "../../ui";
 import { CreateLobbyForm } from "./CreateLobbyForm";
@@ -11,13 +12,13 @@ import { useGroupGames } from "./useGroupGames";
  */
 export function CreateLobby({
   groupId,
-  initialDate,
+  initialStart,
   onCreated,
   onCancel,
   onUnauthenticated,
 }: {
   groupId: string;
-  initialDate?: Date;
+  initialStart?: PickedStart;
   onCreated: () => void;
   onCancel: () => void;
   onUnauthenticated: () => void;
@@ -36,7 +37,7 @@ export function CreateLobby({
       <GamesAndForm
         games={games}
         busy={busy}
-        initialDate={initialDate}
+        initialStart={initialStart}
         onCancel={onCancel}
         onSubmit={create}
       />

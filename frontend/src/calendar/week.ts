@@ -29,34 +29,32 @@ export function weekDays(weekStart: Date): Date[] {
   );
 }
 
-/**
- * The position of an item in the week, or undefined when it does not overlap the week. An item is shown on
- * its start day, not split over two days. One that started before Monday and still runs is shown on Monday.
- */
-function dayIndexOf(
-  weekStart: Date,
-  days: Date[],
-  item: Span,
-): number | undefined {
-  const start = Date.parse(item.startsAt);
-  const weekEnd = nextWeekStart(weekStart).getTime();
-  if (start >= weekEnd || Date.parse(item.endsAt) <= weekStart.getTime())
-    return undefined;
-  if (start < weekStart.getTime()) return 0;
-  const startDay = new Date(start).toDateString();
-  return days.findIndex((day) => day.toDateString() === startDay);
+/** Midnight that ends `day`. */
+export function dayAfter(day: Date): Date {
+  return daysFrom(day, 1);
+}
+
+/** Whether any part of the item falls on `day` (midnight to midnight, local time). */
+function overlapsDay(day: Date, item: Span): boolean {
+  return (
+    Date.parse(item.startsAt) < dayAfter(day).getTime() &&
+    Date.parse(item.endsAt) > day.getTime()
+  );
 }
 
 export type WeekDay<T extends Span> = { day: Date; items: T[] };
 
-/** The seven days of the week, each with the items shown on it, in the order given. */
+/**
+ * The seven days of the week, each with the items that fall on it, in the order given. An item that
+ * crosses midnight is on both days; one that started before Monday is on Monday; one that ends after
+ * Sunday is on Sunday.
+ */
 export function weekItems<T extends Span>(
   weekStart: Date,
   items: T[],
 ): WeekDay<T>[] {
-  const days = weekDays(weekStart);
-  return days.map((day, index) => ({
+  return weekDays(weekStart).map((day) => ({
     day,
-    items: items.filter((item) => dayIndexOf(weekStart, days, item) === index),
+    items: items.filter((item) => overlapsDay(day, item)),
   }));
 }

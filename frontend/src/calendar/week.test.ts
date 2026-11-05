@@ -29,21 +29,34 @@ describe("weekDays and nextWeekStart", () => {
 });
 
 describe("weekItems", () => {
-  it("shows an item on its start day only, also when it ends the next day", () => {
+  it("puts an item that crosses midnight on both days and leaves out other weeks", () => {
     const overnight = span("night", at(4, 22), at(5, 2));
     const nextWeek = span("later", at(10, 12), at(10, 13));
     const week = weekItems(new Date(2026, 10, 2), [overnight, nextWeek]);
     expect(week.map((entry) => entry.items.length)).toEqual([
-      0, 0, 1, 0, 0, 0, 0,
+      0, 0, 1, 1, 0, 0, 0,
     ]);
-    expect(week[2].items).toEqual([overnight]);
+    expect(week[3].items).toEqual([overnight]);
   });
 
-  it("puts an item that started before Monday and still runs on Monday", () => {
+  it("does not put an item that ends at midnight on the next day", () => {
+    const toMidnight = span("edge", at(4, 22), at(5, 0));
+    const week = weekItems(new Date(2026, 10, 2), [toMidnight]);
+    expect(week[3].items).toEqual([]);
+  });
+
+  it("puts an item that started before Monday and still runs on Monday, but not one that has ended", () => {
     const carried = span("carried", new Date(2026, 10, 1, 22), at(2, 3));
     const ended = span("ended", new Date(2026, 10, 1, 20), at(2, 0));
     const week = weekItems(new Date(2026, 10, 2), [ended, carried]);
     expect(week[0].items).toEqual([carried]);
+  });
+
+  it("puts an item that ends after Sunday on Sunday only", () => {
+    const running = span("running", at(8, 22), at(9, 3));
+    const week = weekItems(new Date(2026, 10, 2), [running]);
+    expect(week[6].items).toEqual([running]);
+    expect(week.flatMap((entry) => entry.items)).toHaveLength(1);
   });
 
   it("keeps the order it was given within a day", () => {
