@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { INVITE_MAX_USES_DEFAULT, INVITE_MAX_USES_LIMIT } from "../../api";
 import { useMessages } from "../../i18n";
 
-const USE_COUNT_OPTIONS = Array.from(
+const MAX_USES_OPTIONS = Array.from(
   { length: INVITE_MAX_USES_LIMIT },
   (_, index) => index + 1,
 );
@@ -18,6 +18,11 @@ export function CreateInviteLinkForm({
 }) {
   const m = useMessages();
   const [maxUses, setMaxUses] = useState(INVITE_MAX_USES_DEFAULT);
+  const selectRef = useRef<HTMLSelectElement>(null);
+
+  useEffect(() => {
+    selectRef.current?.focus({ preventScroll: true });
+  }, []);
 
   return (
     <form
@@ -29,12 +34,13 @@ export function CreateInviteLinkForm({
     >
       <label htmlFor="invite-max-uses">{m.inviteMaxUsesLabel}</label>
       <select
+        ref={selectRef}
         id="invite-max-uses"
         value={maxUses}
         aria-describedby={HINT_ID}
         onChange={(event) => setMaxUses(Number(event.target.value))}
       >
-        {USE_COUNT_OPTIONS.map((count) => (
+        {MAX_USES_OPTIONS.map((count) => (
           <option key={count} value={count}>
             {count}
           </option>

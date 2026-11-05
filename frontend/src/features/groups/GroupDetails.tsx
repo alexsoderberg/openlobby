@@ -1,19 +1,22 @@
-import { InviteLinks } from "../invites";
 import { GROUPS_PATH } from "./groupPath";
 import { Lobbies } from "../lobbies";
 import { useMessages } from "../../i18n";
+import type { ReactNode } from "react";
 import { ErrorAlert, Panel } from "../../ui";
 import type { GroupState } from "./useGroup";
 
-/** Shows a group with its members and invite links. The admin marker is text, so it does not depend on color. */
+/** Shows a group with its members. The admin marker is text, so it does not depend on color. */
 export function GroupDetails({
   state,
   onRetry,
   onUnauthenticated,
+  headerAction,
 }: {
   state: Exclude<GroupState, { status: "notFound" }>;
   onRetry: () => void;
   onUnauthenticated: () => void;
+  /** Shown next to the heading, e.g. the Invite button. */
+  headerAction?: ReactNode;
 }) {
   const m = useMessages();
 
@@ -26,7 +29,10 @@ export function GroupDetails({
       <p className="crumb">
         <a href={GROUPS_PATH}>{m.backToGroups}</a>
       </p>
-      <h1>{state.group.name}</h1>
+      <div className="page-heading">
+        <h1>{state.group.name}</h1>
+        {headerAction}
+      </div>
       <div className="panel-group">
         <Lobbies
           groupId={state.group.id}
@@ -50,11 +56,6 @@ export function GroupDetails({
             ))}
           </ul>
         </Panel>
-        <InviteLinks
-          groupId={state.group.id}
-          members={state.group.members}
-          onUnauthenticated={onUnauthenticated}
-        />
       </div>
     </>
   );

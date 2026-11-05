@@ -42,7 +42,7 @@ App shell (presentation of F-001, F-002, F-004, F-005 and F-017; no new feature)
 - Given that I am on a phone and open the dashboard, when I see the top of it, then the Group strip is shown: a horizontally swipeable row of my Group icons. Tapping a group opens its group view (DECISION, user).
 - Given that I am on a screen 760 px or wider, when I see the app, then the Group rail is on the left: the Home control (house icon) at the top, a separator, one Group icon per group with the group name as accessible name, the active group marked, and, on the Group list page `/groups` only, the "+" (Create group button) at the bottom (DECISION, user; Third amendment, item 1).
 - Given that I select Home (the house icon in the Group rail or the Home tab), when I am on any page, then the dashboard opens at `/` and that control is marked active (DECISION, user; ADR 0014, point 6).
-- Given that I select a group, when its group view opens, then the view shows the group's upcoming lobbies, members and invite links in the main area, at the address /groups/{groupId}, with the navigation still visible (DECISION, user). The rules of REQ-0002 and REQ-0004 for members and non-members are unchanged.
+- Given that I select a group, when its group view opens, then the view shows the group's upcoming lobbies and members in the main area, at the address /groups/{groupId}, with the navigation still visible (DECISION, user; Fourth amendment 2026-11-04). The group view has no invite links section; inviting is done in the invite popover from the Invite button in its header (REQ-0002). The rules of REQ-0002 and REQ-0004 for members and non-members are unchanged.
 
 Motion and hover (DECISION, user, 2026-11-04; see Second amendment 2026-11-04):
 - Given that I point at or hover a content section or panel (e.g. Upcoming lobbies, Create lobby, Next up, This week), when the pointer is over it, then the section has no hover effect.
@@ -119,6 +119,13 @@ One user decision, recorded as DECISION, user, 2026-11-04. Status stays Decided.
      - Dashboard without a group: "... and a prompt to create a group with the "+" are shown (ASSUMPTION: wording)." (the "+" is not shown on the Dashboard).
    - Criteria amended in place: the phone "+", the Group rail "+", the Create group criterion (now on `/groups`), and the Dashboard without a group (now a link to `/groups`). One criterion added: no "+" on any other page.
    - Consequence (ASSUMPTION): a member with no group reaches the "+" through the link on the Dashboard. The UI expert sets the link text within the Dashboard's wording rule.
+
+## Fourth amendment 2026-11-04
+One user decision, recorded as DECISION, user, 2026-11-04. Status stays Decided. Binding for the UI expert.
+
+1. The group view has no invite links section (DECISION, user, 2026-11-04). Inviting moves to an invite popover, opened by the Invite button in the group view header or by right-clicking the group's icon in the Group rail. Details are in REQ-0002, Amendment 2026-11-04. User's words (translated): "I don't like such a big section just for invites."
+   - Replaced criterion (old wording, kept for reference): "Given that I select a group, when its group view opens, then the view shows the group's upcoming lobbies, members and invite links in the main area, at the address /groups/{groupId}, with the navigation still visible (DECISION, user)."
+   - Criterion amended in place: the group view criterion in the acceptance criteria (App shell) lists upcoming lobbies and members only.
 
 ## Open questions
 - ASSUMPTION: Group icons are generated from the group name's initials. Presentation only.

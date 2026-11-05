@@ -365,7 +365,7 @@ func TestLockTimeoutIsUnavailable(t *testing.T) {
 func insertInviteLink(store *Store, token string, maxUses, useCount int) error {
 	_, err := store.db.ExecContext(context.Background(),
 		`INSERT INTO invite_links (group_id, token, created_by_user_id, created_at, expires_at, max_uses, use_count)
-		VALUES ($1, $2, $3, now(), now() + interval '2 hours', $4, $5)`,
+		VALUES ($1, $2, $3, now(), now() + interval '10 minutes', $4, $5)`,
 		fridayID, token, alexID, maxUses, useCount)
 	return err
 }

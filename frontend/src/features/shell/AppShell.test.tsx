@@ -23,7 +23,10 @@ const groups: GroupsState = {
 
 function renderShell(active: ActiveNav = { section: "groups" }) {
   const onGroupCreated = vi.fn();
-  const client = fakeApiClient();
+  const client = fakeApiClient({
+    getGroup: () =>
+      Promise.resolve({ id: "g1", name: "Friday crew", members: [] }),
+  });
   render(
     <ApiProvider client={client}>
       <AppShell
@@ -125,6 +128,60 @@ describe("group rail", () => {
         .getByRole("link", { name: en.shell.home })
         .getAttribute("aria-current"),
     ).toBe("page");
+  });
+});
+
+describe("group icon context menu", () => {
+  const icon = () => rail().getByRole("link", { name: "Friday crew" });
+  const menu = () => screen.queryByRole("menu");
+
+  it("opens on right-click at the pointer, cancels the native menu, and Invite people opens that group's invite popover", async () => {
+    const { client } = renderShell({ section: "groups", groupId: "g1" });
+
+    const notCancelled = fireEvent.contextMenu(icon(), {
+      clientX: 40,
+      clientY: 90,
+    });
+    expect(notCancelled).toBe(false);
+    expect(document.activeElement).toBe(
+      screen.getByRole("menuitem", { name: en.shell.invitePeople }),
+    );
+    expect((menu() as HTMLElement).style.left).toBe("40px");
+
+    fireEvent.click(
+      screen.getByRole("menuitem", { name: en.shell.invitePeople }),
+    );
+
+    expect(menu()).toBeNull();
+    expect(
+      await screen.findByRole("dialog", {
+        name: en.inviteHeading("Friday crew"),
+      }),
+    ).toBeTruthy();
+    await waitFor(() =>
+      expect(client.listInviteLinks).toHaveBeenCalledWith("g1"),
+    );
+  });
+
+  it("opens from Shift+F10 on the focused icon, and Esc closes it and returns focus", () => {
+    renderShell();
+    icon().focus();
+
+    fireEvent.keyDown(icon(), { key: "F10", shiftKey: true });
+    expect(menu()).toBeTruthy();
+
+    fireEvent.keyDown(screen.getByRole("menuitem"), { key: "Escape" });
+    expect(menu()).toBeNull();
+    expect(document.activeElement).toBe(icon());
+  });
+
+  it("closes on a press outside and leaves the page's own context menu alone", () => {
+    renderShell();
+    fireEvent.contextMenu(icon());
+
+    fireEvent.pointerDown(document.body);
+    expect(menu()).toBeNull();
+    expect(fireEvent.contextMenu(screen.getByText("Page"))).toBe(true);
   });
 });
 

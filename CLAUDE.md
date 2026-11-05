@@ -38,9 +38,9 @@ This is the single shared vocabulary. Use these exact English terms in documents
 | System admin | `isSystemAdmin`, `X-User-System-Admin` | Set in configuration only (ADR 0011) |
 | Invite link | `invite_links`, `/api/invites/{token}` | |
 | Link creator | `createdByUserId` | |
-| Max uses | `maxUses` | 1–10, default 10, set at creation |
+| Max uses | `maxUses` | 1–10, default 1, set at creation |
 | Use (of a link) | `useCount` | Increases by 1 per join via the link |
-| Link expiry | `expiresAt` | 2 hours after creation |
+| Link expiry | `expiresAt` | 10 minutes after creation |
 | Join group via link | `POST /api/invites/{token}/join` | |
 | Is member | `isMember` | In `InviteInfo` |
 | Lobby | `lobbies`, `lobbyId`, schemas `Lobby` / `LobbyDetail` | A bookable slot in a group |
