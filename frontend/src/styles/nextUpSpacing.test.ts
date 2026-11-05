@@ -1,0 +1,26 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { describe, expect, it } from "vitest";
+
+const stylesheet = readFileSync(
+  join(import.meta.dirname, "global.css"),
+  "utf8",
+);
+
+/** The declarations of the first rule whose selector list contains `selector`. */
+function declarationsFor(selector: string): string {
+  const rule = new RegExp(String.raw`[^}]*${selector}[^{]*\{([^}]*)\}`).exec(
+    stylesheet,
+  );
+  return rule?.[1] ?? "";
+}
+
+describe("Next up card spacing", () => {
+  // The card is no .panel, so what follows the figure or the meter (button, Ended, alert) needs its own gap.
+  it.each([
+    String.raw`\.next-up__spots > \.meter \+ \*`,
+    String.raw`\.next-up__spots > \.next-up__figure \+ \*`,
+  ])("spaces what follows %s by space-3", (selector) => {
+    expect(declarationsFor(selector)).toMatch(/margin-top:\s*var\(--space-3\)/);
+  });
+});

@@ -1674,11 +1674,14 @@ a {
    sits one space-3 below it, and the invite popover's blocks after a status line do the same.
    Headings, .status, .row-list and .step-card__text keep their own spacing, so this is not a
    blanket rule. Specificity (0,2,0) beats .button and .alert resets whatever the source order.
-   .login-panel has its own .button margin and is left alone. */
+   .login-panel has its own .button margin and is left alone. The Next up card is no panel, so what
+   follows its players figure or meter (the join or leave button, the Ended line or an error) is spaced the same way. */
 :is(.panel, .dialog, .create-popover__card)
   > *
   + :is(.button, .button-ghost, .button--secondary, .form-actions),
-.create-popover__card > .status + * {
+.create-popover__card > .status + *,
+.next-up__spots > .next-up__figure + *,
+.next-up__spots > .meter + * {
   margin-top: var(--space-3);
 }
 
