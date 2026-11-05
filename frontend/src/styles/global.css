@@ -468,6 +468,7 @@ a {
   background: var(--color-row-hover);
 }
 
+.list-row .button,
 .list-row .badge {
   margin-left: auto;
 }

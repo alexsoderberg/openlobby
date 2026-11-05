@@ -145,6 +145,13 @@ export function createHttpApiClient(
         }),
       );
     },
+    makeGroupAdmin: async (groupId, userId) => {
+      await receive(
+        http.PUT("/api/groups/{groupId}/admins/{userId}", {
+          params: { path: { groupId, userId } },
+        }),
+      );
+    },
   };
 }
 
