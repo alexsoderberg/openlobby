@@ -1682,8 +1682,9 @@ a {
   margin-top: var(--space-3);
 }
 
-/* Children of an action row are spaced by the row gap alone, not by their own margins. */
-.form-actions > * {
+/* Children of an action row are spaced by the row gap alone, not by their own margins. A modal dialog
+   rendered in the row is excluded: it is centred by its own auto margin. */
+.form-actions > :not(dialog) {
   margin: 0;
 }
 
