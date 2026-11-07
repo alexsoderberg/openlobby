@@ -52,6 +52,8 @@ This is the single shared vocabulary. Use these exact English terms in documents
 | Game | `gameId`, `gameName` | |
 | Game list | `games` | Managed by system admin |
 | Other | `customGameName` | Free-text game name |
+| Genre | `genre` (on a game), `gameGenre` (on a lobby) | Fixed-list category of a game, one per game, optional; `null` means no genre. The values are the `Genre` schema in `api/calendar/openapi.yaml`. Names are UI text (ADR 0016) |
+| Genre theme | frontend only (`GenreTheme`, `themeForGenre`, `genreThemes.ts`) | The look of a genre: accent color, background pattern, icon and 3D motif. Lobbies without a genre get the neutral theme. The backend knows only the genre value (ADR 0016) |
 | Dashboard | `/` when logged in (ADR 0014) | The home screen after login: Next up and This week across all the user's groups (REQ-0012). Not the group list |
 | Next up | frontend only (`nextUp`), no API field | The card on the dashboard with the lobby that starts first among all lobbies of the user's groups. Running lobbies count |
 | This week | frontend only (`thisWeek`) | The dashboard section with the lobbies that start in the current week (Monday to Sunday, local time), across all groups |
