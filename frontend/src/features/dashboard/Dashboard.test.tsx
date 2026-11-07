@@ -417,6 +417,26 @@ describe("Next up join and leave", () => {
     ).toBeTruthy();
   });
 
+  it("never offers join again while the lobbies reload after joining", async () => {
+    let reloaded: (lobbies: Lobby[]) => void = () => {};
+    const { client } = renderDashboard(upcoming(), [crew, ranked], {
+      joinLobby: vi.fn(() => Promise.resolve()),
+    });
+    const card = await nextUpCard();
+    vi.mocked(client.listUpcomingLobbies).mockImplementation(
+      () => new Promise((resolve) => (reloaded = resolve)),
+    );
+
+    fireEvent.click(card.getByRole("button", { name: en.lobbyJoin }));
+
+    expect(
+      await card.findByRole("button", { name: en.lobbyLeave }),
+    ).toBeTruthy();
+    expect(card.queryByRole("button", { name: en.lobbyJoin })).toBeNull();
+    await act(async () => reloaded(upcoming({ joinedByMe: true }).g1));
+    expect(card.getByRole("button", { name: en.lobbyLeave })).toBeTruthy();
+  });
+
   it("offers leave on a lobby I joined, also while it is running", async () => {
     const { client } = renderDashboard(
       upcoming({ joinedByMe: true, startsAt: at(4, 17).toISOString() }),
