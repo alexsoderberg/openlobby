@@ -30,25 +30,25 @@ export const en = {
 
   landing: {
     topBarLogIn: "Log in",
-    eyebrow: "Game nights, without the group chat chaos",
-    // Two lines, each with its own reveal. Joined with a space they read as one headline.
-    headlineLines: ["Game night,", "planned properly."],
-    headlineHighlight: "planned",
-    lead: "Create a group, invite your friends with a link, and keep the whole crew in one place.",
+    headline: "Plan when your group plays",
+    lead: "Games are scheduled as lobbies. Members of a group see the lobbies and join the ones they want.",
     howItWorks: "How it works",
     stepsHeading: "How it works",
     steps: [
+      { title: "Log in", text: "Log in with Discord." },
       {
-        title: "Gather your group",
-        text: "Log in with Discord and create a group for your crew. You become its admin.",
+        title: "Join or create a group",
+        text: "Create a group, or open an invite link from a group member to join one.",
       },
       {
-        title: "Invite with a link",
-        text: "Share a link with the friends you want. Each link expires on its own, and you can revoke it any time.",
+        title: "Create a lobby",
+        text: "Choose a game, a start and end time and the max number of players.",
+      },
+      {
+        title: "Join a lobby",
+        text: "Group members join a lobby to take a spot, and can leave it again.",
       },
     ],
-    previewHeading: "Inside the app, it feels the same.",
-    footer: "made for game nights",
   },
 
   groupsHeading: "Your groups",

@@ -1,4 +1,4 @@
-import { Fragment, useRef, type MouseEvent } from "react";
+import { useRef, type MouseEvent } from "react";
 import { loginUrl } from "../../api";
 import { useFocusAfterLogout, useScrolledPast } from "../../hooks";
 import { useMessages } from "../../i18n";
@@ -9,35 +9,6 @@ import { StepCard } from "./StepCard";
 
 /** The top bar turns frosted once the page is scrolled this far (px). */
 const TOPBAR_SCROLL_OFFSET = 20;
-
-/** Each line rises from its own clipped mask, in turn. The highlight word is upright gold. */
-function HeadlineLines({
-  lines,
-  highlight,
-}: {
-  lines: readonly string[];
-  highlight: string;
-}) {
-  return lines.map((line, lineIndex) => (
-    <Fragment key={line}>
-      {lineIndex > 0 && " "}
-      <span className="hero__line">
-        <span className="hero__line-inner">
-          {line.split(" ").map((word, wordIndex) => (
-            <Fragment key={wordIndex}>
-              {wordIndex > 0 && " "}
-              {word === highlight ? (
-                <span className="hero__accent">{word}</span>
-              ) : (
-                word
-              )}
-            </Fragment>
-          ))}
-        </span>
-      </span>
-    </Fragment>
-  ));
-}
 
 /** Logged-out start page. Login is the only action, so every login link goes to the same URL. */
 export function LandingPage({
@@ -73,12 +44,10 @@ export function LandingPage({
       <main className="landing">
         {notice && <Alert>{notice}</Alert>}
         <section className="hero">
-          <p className="hero__chip">{t.eyebrow}</p>
           <h1 ref={headingRef} tabIndex={-1} className="hero__title">
-            <HeadlineLines
-              lines={t.headlineLines}
-              highlight={t.headlineHighlight}
-            />
+            <span className="hero__line">
+              <span className="hero__line-inner">{t.headline}</span>
+            </span>
           </h1>
           <p className="hero__lead">{t.lead}</p>
           <div className="hero__actions">
@@ -105,22 +74,19 @@ export function LandingPage({
             {t.stepsHeading}
           </h2>
           <div className="steps">
-            {t.steps.map((step) => (
-              <StepCard key={step.title} title={step.title} text={step.text} />
+            {t.steps.map((step, index) => (
+              <StepCard
+                key={step.title}
+                title={`${index + 1}. ${step.title}`}
+                text={step.text}
+              />
             ))}
           </div>
         </section>
-        <section className="landing-section" aria-labelledby="preview-heading">
-          <h2 id="preview-heading" className="landing-title">
-            {t.previewHeading}
-          </h2>
+        <section className="landing-section">
           <LandingPreview />
         </section>
       </main>
-      <footer className="landing-footer">
-        {m.brandLead}
-        {m.brandAccent} · {t.footer}
-      </footer>
     </>
   );
 }
