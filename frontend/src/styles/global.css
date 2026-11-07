@@ -1691,7 +1691,13 @@ a {
    follows its players figure or meter (the join or leave button, the Ended line or an error) is spaced the same way. */
 :is(.panel, .dialog, .create-popover__card)
   > *
-  + :is(.button, .button-ghost, .button--secondary, .form-actions),
+  + :is(
+    .button,
+    .button-ghost,
+    .button--secondary,
+    .form-actions,
+    .view-switch
+  ),
 .create-popover__card > .status + *,
 .next-up__spots > .next-up__figure + *,
 .next-up__spots > .meter + * {
