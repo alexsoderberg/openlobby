@@ -36,6 +36,8 @@ export const en = {
     headlineHighlight: "planned",
     lead: "Create a group, invite your friends with a link, and keep the whole crew in one place.",
     howItWorks: "How it works",
+    // Made-up game names for the decorative hero cards. Never real titles.
+    heroGames: ["Board game night", "Co-op adventure", "Party quiz"],
     stepsHeading: "How it works",
     steps: [
       {
