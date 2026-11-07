@@ -124,7 +124,6 @@
   --blur-glass: 8px;
 
   --font-size-hero: clamp(2.75rem, 8vw, 5.5rem);
-  --font-size-section: clamp(2rem, 4.5vw, 3.25rem);
   --font-size-title: clamp(1.75rem, 4vw, 2.25rem);
   --font-size-small: 0.875rem;
   --font-size-figure: 2.5rem;
@@ -132,7 +131,6 @@
   --width-landing: 64rem;
   --radius-chip: 999px;
   --rise-offset: 110%;
-  --stagger-rise: 0.12s;
   --stagger-fade: 0.15s;
   --stagger-step: 0.1s;
   --reveal-delay: 0s;
@@ -899,29 +897,8 @@ a {
   scroll-margin-top: var(--scroll-offset);
 }
 
-.landing-title {
-  margin: 0 0 var(--space-3);
-  font-family: var(--font-display);
-  font-size: var(--font-size-section);
-  font-weight: 600;
-  line-height: 1.05;
-}
-
 .hero {
   padding-top: var(--space-6);
-}
-
-.hero__chip {
-  display: inline-block;
-  margin: 0 0 var(--space-3);
-  padding: var(--space-1) var(--space-3);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-chip);
-  background: var(--color-surface);
-  color: var(--color-muted);
-  font-size: var(--font-size-small);
-  animation: fade-up var(--duration-slow) var(--ease-out) var(--stagger-fade)
-    both;
 }
 
 .hero__title {
@@ -933,7 +910,7 @@ a {
   letter-spacing: var(--tracking-snug);
 }
 
-/* Descender room: the mask clips each line, so it needs space below the glyphs. */
+/* Descender room: the mask clips the line, so it needs space below the glyphs. */
 .hero__line {
   display: block;
   overflow: hidden;
@@ -944,14 +921,6 @@ a {
 .hero__line-inner {
   display: block;
   animation: rise var(--duration-rise) var(--ease-out) both;
-}
-
-.hero__line:nth-child(2) .hero__line-inner {
-  animation-delay: var(--stagger-rise);
-}
-
-.hero__accent {
-  color: var(--color-accent);
 }
 
 .hero__lead {
@@ -1025,15 +994,6 @@ a {
 
 [data-reveal="pending"] .meter > span {
   width: 0;
-}
-
-.landing-footer {
-  max-width: var(--width-landing);
-  margin: 0 auto;
-  padding: var(--space-4);
-  border-top: 1px solid var(--color-border);
-  color: var(--color-muted);
-  font-size: var(--font-size-small);
 }
 
 @keyframes rise {

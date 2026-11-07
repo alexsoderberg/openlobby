@@ -163,7 +163,7 @@ describe("logged in", () => {
     fireEvent.click(await screen.findByRole("button", { name: en.logOut }));
 
     const heading = await screen.findByRole("heading", {
-      name: en.landing.headlineLines.join(" "),
+      name: en.landing.headline,
     });
     await waitFor(() => expect(document.activeElement).toBe(heading));
   });

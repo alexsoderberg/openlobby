@@ -4,7 +4,7 @@ import { en } from "../../i18n/messages/en";
 import { LandingPage } from "./LandingPage";
 
 const LOGIN_HREF = "/api/auth/login?returnTo=%2F";
-const HEADLINE = en.landing.headlineLines.join(" ");
+const HEADLINE = en.landing.headline;
 
 function renderLanding(props: Partial<Parameters<typeof LandingPage>[0]> = {}) {
   return render(<LandingPage returnTo="/" reason="start" {...props} />);
@@ -56,14 +56,20 @@ describe("LandingPage", () => {
     expect(steps.id).toBe("how-it-works");
   });
 
-  it("shows one card per step, two of them", () => {
+  it("shows one card per step, four of them", () => {
     const { container } = renderLanding();
 
     const cards = container.querySelectorAll(".step-card");
     expect(cards).toHaveLength(en.landing.steps.length);
-    expect(cards).toHaveLength(2);
-    for (const step of en.landing.steps) {
-      expect(screen.getByRole("heading", { name: step.title })).toBeTruthy();
+    expect(cards).toHaveLength(4);
+    for (const [index, step] of en.landing.steps.entries()) {
+      expect(
+        screen.getByRole("heading", {
+          level: 3,
+          name: `${index + 1}. ${step.title}`,
+        }),
+      ).toBeTruthy();
+      expect(screen.getByText(step.text)).toBeTruthy();
     }
   });
 
