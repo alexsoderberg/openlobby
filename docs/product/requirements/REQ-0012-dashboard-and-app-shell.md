@@ -3,7 +3,7 @@ Status: Implemented
 Feature: F-028
 Priority: Must
 
-Build status (2026-11-05): all criteria are built (PRs #42, #43, #45, #46, #47, #48). The "Join lobby" and "Leave lobby" buttons on the Next up card came with REQ-0005 (`joinedByMe`, PR #50).
+Build status (2026-11-05): all criteria are built (PRs #42, #43, #45, #46, #47, #48). The "Join lobby" and "Leave lobby" buttons on the Next up card came with REQ-0005 (`joinedByMe`, PR #50). Amendment 2026-11-07 (week view toggle) is pending implementation; the status stays Implemented.
 
 ## Problem
 After login a member has no overview across their groups. To see whether anyone is playing tonight, they must open each group. Group views are not part of one layout, so moving between groups and creating a group are not reachable from one place. Phones are the main way friends check in, and the app is not designed for them yet.
@@ -78,7 +78,7 @@ Mobile first (cross-cutting, applies to all UI requirements):
 ## Related features
 F-028 (this requirement) is new: no feature shows lobbies across groups. It changes the out-of-scope line of REQ-0004 for this view only. It is not a duplicate of F-004 (list per group) or F-017 (calendar per group): the data is the same, but the scope is different, and REQ-0004 excludes cross-group views on purpose.
 
-F-017 is unchanged for the group view: list is the default, week is the switch, no month view (DECISION, product owner). The This week section is a cross-group overview, not the calendar view. It has no view switch, so it does not create a second calendar. On desktop and on phones it is the same time grid as the group week view (DECISION, user, 2026-11-04; Fifth amendment). The list-first rule of F-017 applies to the group view only; the dashboard has no list view for This week. Old wording: "On phones the Day pills and Agenda show that week as a list, which keeps the list-first rule. On desktop it is a 7-day grid".
+F-017 is unchanged for the group view: list is the default, week is the switch, no month view (DECISION, product owner). The This week section is a cross-group overview, not the calendar view. It has no view switch, so it does not create a second calendar. Amended 2026-11-07: it has a toggle between the week calendar and a compact day list of the same lobbies (Amendment 2026-11-07). That is a choice between two forms of the same section, not a second calendar, and it does not change the group view's switch. On desktop and on phones it is the same time grid as the group week view (DECISION, user, 2026-11-04; Fifth amendment). The list-first rule of F-017 applies to the group view only; the dashboard has no list view for This week. Old wording: "On phones the Day pills and Agenda show that week as a list, which keeps the list-first rule. On desktop it is a 7-day grid".
 
 F-001: after login the dashboard is shown at `/` instead of the group list. Groups are reached through the Group list at `/groups`, the Group strip and the Group rail. This changes the login criterion of REQ-0001, recorded as Amendment 2026-11-04 in REQ-0001. It is not a new feature.
 
@@ -140,6 +140,45 @@ One user decision, recorded as DECISION, user, 2026-11-04. Status stays Decided.
    - Given that a lobby is shown in the grid, when I select its block, then its lobby page opens (criterion of the Third amendment, item 3, and REQ-0004 for the block's height and layout).
    - Given that I select an empty time in the grid, when I select it, then nothing opens, because the grid on the dashboard has no group context (DECISION, product owner, 2026-11-04; out of scope above).
 2. The "This week" criterion that lists lobbies in start-time order and the rules for which lobbies appear are unchanged. The grid shows the same set of lobbies, so a lobby that started before Monday and has not ended is shown from 00:00 in Monday's column (criterion above).
+
+## Amendment 2026-11-07 (week view toggle)
+One user decision, recorded as DECISION, user, 2026-11-07. Status stays Implemented: the build status above covers everything before this amendment, and this amendment is pending implementation. Binding for the UI expert. The user's words (translated): "The calendar on the dashboard should be a toggle switch. Either you show the whole calendar as now, or only the days and booked sessions are shown, as it was before. Each user chooses this themselves." Where the choice is saved is decided by the user on the same date: per browser, not per account (DECISION, user, 2026-11-07).
+
+What the compact form was (from the history above): before the Fifth amendment, on a phone "This week" showed the Day pills and, below them, the Agenda, which listed the lobbies of the selected day only, each with clock time, game, group name and Spot / max players (the original criterion). On desktop it was a 7-column grid. The day list in this amendment is a different shape from the old Agenda: it shows every day of the week that has lobbies at once (ASSUMPTION; see open questions).
+
+Acceptance criteria:
+- Given that I see the This week section, when I look at it, then a toggle switch with two options is shown inside the section. The options are icons only, with no visible text, in one segmented toggle (a pill track with a sliding thumb): a calendar icon for "Week calendar" and a list icon for "Day list". Each option has the accessible name "Week calendar" or "Day list" (`aria-label`) and shows that name as a tooltip (DECISION, user, 2026-11-07: "show 'list' and 'calendar' as icons instead of text, and also make them a toggle switch"). Old wording: "a toggle with two options is shown inside the section: "Week calendar" and "Day list" (ASSUMPTION: wording).
+- Given that the toggle is shown, when I select an option, then This week shows that view and the other option is no longer selected. Both views show the same lobbies, following the This week criteria above (not ended, overlapping this week, Next up included).
+- Given that "Week calendar" is selected, when I am on a screen 760 px or wider, then the time grid of the Fifth amendment is shown; when I am on a screen narrower than 760 px, then the Day pills and the time grid of the selected day are shown. Both are unchanged.
+- Given that "Day list" is selected, when I am on any screen size, then each day of this week (Monday to Sunday, local time) that has lobbies is shown, in Monday-to-Sunday order, with a heading that gives the weekday and date, and under it its lobbies in start-time order, each with clock time, game, group name and Spot / max players. Days without lobbies are not shown.
+- Given that a lobby started before Monday and has not ended, when "Day list" is selected, then it is listed under Monday with its start time (the time grid shows it from 00:00 in Monday's column).
+- Given that a lobby is listed in the day list, when I select it, then its lobby page opens (Third amendment, item 3).
+- Given that "Day list" is selected and no lobby of mine is in this week, when the section is shown, then no day is listed and the text "Nothing booked this week" is shown (ASSUMPTION: wording). Given that "Week calendar" is selected and no lobby is in this week, then the empty rule of the Dashboard criteria applies unchanged (each day shows "Nothing booked").
+- Given that a lobby is shown in the day list, when it is shown, then its genre theme appears as REQ-0014 defines for lobby lists (REQ-0014 is Decided and not yet built; see F-032).
+- Given that I have chosen an option, when I reload the page or open the dashboard again later in the same browser, then the same option is selected and shown.
+- Given that I open the dashboard in another browser or on another device, when no choice is saved there, then "Week calendar" is shown. A choice made in one browser does not change other browsers or the account (DECISION, user, 2026-11-07).
+- Given that I have not chosen in this browser, or the saved value is not one of the two options, when the dashboard opens, then "Week calendar" is shown (ASSUMPTION: default, today's behavior).
+- Given that the browser does not allow saving (storage unavailable or refused), when I select an option, then the view switches as normal and no error is shown. The choice is lost on the next load, and the default applies (ASSUMPTION).
+- Given that "Day list" was saved in this browser, when the dashboard opens, then This week shows the day list from its first paint, not the week calendar followed by a switch (no flash of the wrong view).
+- Given that the dashboard is loading, when the lobbies arrive, then the toggle is shown together with This week; the dashboard has no This week placeholder while loading, so there is no toggle to move (DECISION, orchestrator, 2026-11-07: a loading skeleton for the whole dashboard is out of scope for this amendment).
+- Given that the page-level error of the dashboard is shown, then no toggle is shown, because the error rule above shows no week content.
+- Given that I am in no group, then no toggle is shown, because there is no This week section.
+- Given that I open a group view, when I use its list / week switch, then it works as F-017 and REQ-0004 define. The choice in This week does not apply to the group view, and the group view has no day list.
+- Given that I use a keyboard or a screen reader, when I reach the toggle, then both options can be reached and selected with the keyboard alone, and the selected option is announced as selected. The selected state is not shown by colour alone.
+
+Out of scope:
+- Saving the choice in the account, on the server or in the database (DECISION, user, 2026-11-07).
+- A day list in the group view or in Next up, and any third view. The group view keeps its own switch (F-017).
+- Day pills in the day list.
+- A month view and week navigation on the dashboard (unchanged).
+
+Related features:
+F-028 (this amendment extends it). The day list shows the same lobbies as This week, across groups, so it is not F-004 (list per group). It is a compact form of the This week section, not a second calendar, so it is not F-017 either.
+
+Open questions:
+- ASSUMPTION: the day list shows all days with lobbies at once, as drafted. The old phone Agenda showed only the selected day. The user decides if one day at a time is wanted instead.
+- ASSUMPTION: the wording of "Nothing booked this week" is set by the UI expert within these rules. The toggle options are icons; their accessible names are fixed by the criterion above (Amendment 2026-11-07, icon toggle).
+- ASSUMPTION: a saved choice stays after log out, because it belongs to the browser and not to the account. Everyone who uses the same browser shares the choice.
 
 ## Open questions
 - ASSUMPTION: Group icons are generated from the group name's initials. Presentation only.

@@ -220,6 +220,13 @@ Interfaces are **not** used for pure domain logic with a single implementation a
 - No magic numbers or strings; use named constants.
 - Comments explain *why*, not *what*.
 - Errors are handled explicitly; no silent `catch` and no ignored `err`. Log with context and never expose internal details to the client.
+  - **Expected browser refusals** are the one exception to "log with context". A `catch` around a browser API that the user's browser may refuse (`localStorage`, `navigator.clipboard`) is explicit handling when all of these hold:
+    1. the `try` covers only that call, or the property access that can throw;
+    2. the catch returns a fallback that the requirement describes, and a one-line comment in the catch names the fallback and cites the requirement (e.g. `REQ-0012`);
+    3. a test makes the browser refuse and asserts the fallback.
+  - Such refusals are not logged: the fallback is the expected outcome and nobody can act on it. A catch whose comment only says "nothing to report" does not qualify, because the fallback is not named.
+  - API and network errors are never covered by this exception. They are converted to a typed error and rethrown, or shown to the user (see `frontend/src/api/httpApiClient.ts`). A catch that returns a default for an error nobody named is a `BLOCKER`.
+  - If the team later needs refusal rates, the architect adds one shared `reportError` (ADR). Until then there is none (YAGNI).
 - No dead code, commented-out code, or TODO without an issue reference.
 - Linters and formatters are authoritative (`gofmt`, `golangci-lint`, ESLint, Prettier).
 
