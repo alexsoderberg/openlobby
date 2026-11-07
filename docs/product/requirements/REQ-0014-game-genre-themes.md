@@ -51,7 +51,8 @@ Brands and content:
 - Given the genre names, when the UI is translated (cross-cutting note in features.md), then the genre names come from the UI text catalog and can be translated. They are not stored data.
 
 Landing hero (extends REQ-0013):
-- Given that I am logged out and open `/`, when the hero shows its sample cards, then each sample card uses one of these genre themes, and each sample card uses a different genre (REQ-0013 amendment 2026-11-07).
+- Note: the landing hero's genre-themed sample cards are verified with REQ-0013 (Amendment 2026-11-07: each sample card uses a different genre theme from this requirement). The hero exists only on an unmerged branch (PR #61), so this requirement does not verify it. REQ-0014 can be Implemented without it.
+- DECISION (orchestrator, 2026-11-07): the landing hero criterion is delivered and verified with the REQ-0013 rebuild, not with REQ-0014.
 
 ## Genre themes
 
