@@ -172,3 +172,79 @@ describe("join and leave a lobby", () => {
     await waitFor(() => expect(onUnauthenticated).toHaveBeenCalled());
   });
 });
+
+describe("the shown state follows the lobby", () => {
+  function renderChangeable(overrides: Partial<ApiClient> = {}) {
+    const client = fakeApiClient(overrides);
+    const view = (lobby: typeof open) => (
+      <ApiProvider client={client}>
+        <LobbyMembership
+          groupId="g1"
+          lobby={lobby}
+          onChanged={vi.fn()}
+          onUnauthenticated={vi.fn()}
+        />
+      </ApiProvider>
+    );
+    const { rerender } = render(view(open));
+    return (lobby: typeof open) => rerender(view(lobby));
+  }
+
+  it("keeps Join when joining fails", async () => {
+    renderMembership({}, { joinLobby: refuse(409, "lobby_full") });
+
+    fireEvent.click(await join());
+
+    await screen.findByRole("alert");
+    expect(await join()).toBeTruthy();
+  });
+
+  it("resets the label when another lobby is shown", async () => {
+    const show = renderChangeable();
+    fireEvent.click(await join());
+    await leave();
+
+    show({ ...open, id: "l2" });
+
+    expect(await join()).toBeTruthy();
+  });
+
+  it("drops the error of a lobby when another lobby is shown", async () => {
+    const show = renderChangeable({ joinLobby: refuse(409, "lobby_full") });
+    fireEvent.click(await join());
+    await screen.findByRole("alert");
+
+    show({ ...open, id: "l2" });
+
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+
+  it("ignores the answer for a lobby that is no longer shown", async () => {
+    let answer: (error: ApiError) => void = () => {};
+    const show = renderChangeable({
+      joinLobby: vi.fn(
+        () => new Promise<void>((_, reject) => (answer = reject)),
+      ),
+    });
+    fireEvent.click(await join());
+
+    show({ ...open, id: "l2" });
+    answer(new ApiError(409, "lobby_full"));
+
+    await waitFor(() =>
+      expect((screen.getByRole("button") as HTMLButtonElement).disabled).toBe(
+        false,
+      ),
+    );
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+
+  it("follows a changed joinedByMe of the same lobby", async () => {
+    const show = renderChangeable();
+    expect(await join()).toBeTruthy();
+
+    show({ ...open, joinedByMe: true });
+
+    expect(await leave()).toBeTruthy();
+  });
+});

@@ -11,6 +11,15 @@ function hasEnded({ endsAt }: Membership): boolean {
   return Date.parse(endsAt) <= Date.now();
 }
 
+function startFrom({ id, joinedByMe }: Membership) {
+  return {
+    id,
+    joinedByMe,
+    joined: joinedByMe,
+    errorCode: undefined as string | undefined,
+  };
+}
+
 /**
  * "Join lobby" or "Leave lobby" for the viewer. A player can always leave; joining is offered until the
  * lobby has ended; a full lobby answers with the full message. `onChanged` loads the lobby again.
@@ -35,16 +44,24 @@ export function LobbyMembership({
   const m = useMessages();
   const api = useApi();
   const { busy, run } = useChangeAction(onUnauthenticated);
-  const [errorCode, setErrorCode] = useState<string>();
-  const leaving = lobby.joinedByMe;
+  // The answer sets `joined` at once and the reloaded lobby confirms it later, so the old button never
+  // shows again in between. A different lobby or a changed `joinedByMe` starts over from the prop.
+  const [shown, setShown] = useState(() => startFrom(lobby));
+  if (shown.id !== lobby.id || shown.joinedByMe !== lobby.joinedByMe)
+    setShown(startFrom(lobby));
+  const { joined: leaving, errorCode } = shown;
 
   async function toggle() {
+    const { id } = lobby;
     const code = await run(() =>
-      leaving
-        ? api.leaveLobby(groupId, lobby.id)
-        : api.joinLobby(groupId, lobby.id),
+      leaving ? api.leaveLobby(groupId, id) : api.joinLobby(groupId, id),
     );
-    setErrorCode(code);
+    // An answer for a lobby that is no longer shown must not land on the new one.
+    setShown((now) =>
+      now.id !== id
+        ? now
+        : { ...now, errorCode: code, joined: code ? now.joined : !leaving },
+    );
     // A gone lobby disappears from the view on leaving; a full one shows its real state. An ended one
     // shows "Ended" without a reload, because a reload drops it (lobby page: not found; card: not upcoming).
     if (
