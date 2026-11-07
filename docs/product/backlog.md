@@ -65,8 +65,11 @@ Ordered after the Should items, because priority comes first. Not yet a requirem
 | Order | Requirement | Title | Priority | Depends on |
 |---|---|---|---|---|
 | B1 | – (to be written, F-030) | Game presentation: logo and accent color | Could | REQ-0009, REQ-0010 (amends REQ-0009) |
+| C1 | REQ-0013 | Landing hero with 3D lobby cards | Could | REQ-0001 (landing page exists), REQ-0014 (themes and motifs for the sample cards, Amendment 2026-11-07) |
 
 Ordering reason: B1 is after A1 because A1 is prioritized higher. Both A1 and B1 extend the game form (F-025) and amend REQ-0009, so the architect should review them together when B1 is written, to avoid two rounds of changes to the same form and data model. B1 has no dependency on A1 and can be moved earlier by the user at any time.
+
+C1 is after B1 because no core flow depends on it, and it adds a visual only. It is `Could` by the product owner's judgment; the user asked for it and may move it earlier. The three.js dependency is decided in ADR 0015. Open questions in REQ-0013 (decorative preview, landing copy with a lobby step) are decisions for the user and are not blocking.
 
 The item goals idea (F-031) is `Proposed`, decision postponed until the MVP has been used. It is not ordered here.
 
