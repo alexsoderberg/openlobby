@@ -44,7 +44,7 @@ export function GroupDetails({
         <h1>{state.group.name}</h1>
         {headerAction}
       </div>
-      <div className="panel-group">
+      <div className="panel-group panel-group--aside">
         <Lobbies
           groupId={state.group.id}
           members={state.group.members}
