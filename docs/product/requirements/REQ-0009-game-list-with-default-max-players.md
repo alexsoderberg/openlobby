@@ -49,7 +49,7 @@ Management:
 - Members or group admins proposing or adding games to the list.
 - Group-specific game lists.
 - Changing max players after the lobby is created (F-011).
-- More fields per game than name and default max, e.g. image, genre or category.
+- More fields per game than name, default max and genre (Amendment 2026-11-07), e.g. image or category. Image and accent color (F-030) are still future.
 - Connection to the games' own systems or APIs.
 - Search in the game list.
 - Changing the game list in the app (adding, changing, removing games). This is described in REQ-0010. This requirement covers only how members see and choose from the list.
@@ -76,3 +76,13 @@ F-025 (Manage game list as system admin) is the only way to change the list. Not
 - ASSUMPTION (alphabetical): Names are compared without regard to case.
 - ASSUMPTION (most used, timing): The order is recalculated each time the game choice is opened.
 - OPEN QUESTION: Should members be able to propose new games in a later version? Not decided. In the MVP: no.
+
+## Amendment 2026-11-07
+DECISION (user, 2026-11-07, REQ-0014 and ADR 0016 section 9): a game in the game list has one optional new field, `genre`, besides name and default max. It is one of the fixed genres of REQ-0014 or no genre (`null`). No other field is added. Image and accent color (F-030) are still future.
+
+Acceptance criteria (additions):
+- Given that I am a system admin, when I add or change a game, then the form lets me choose one genre from the fixed list or "No genre". The form asks for no other new field.
+- Given that I am a system admin, when I save a game with "No genre", then the game has no genre.
+- Given that a game has a genre, when a member opens the game choice, then the game is shown and ordered as before. The genre does not change the choice or the order.
+- Given that a game has a genre, when a lobby with that game is shown, then it shows the genre theme of REQ-0014. Lobbies keep their name and max players as before; the genre follows the game (REQ-0014).
+- Given that this amendment is delivered, when I look at games that were in the list before, then each has no genre. No name, default max, identity or order changes.

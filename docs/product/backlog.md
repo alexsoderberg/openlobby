@@ -54,9 +54,12 @@ Not part of the MVP. The vision lists it as outside the MVP scope. It is priorit
 
 | Order | Requirement | Title | Priority | Depends on |
 |---|---|---|---|---|
-| A1 | REQ-0011 | Game roles and role slots in lobbies | Should | REQ-0005, REQ-0009, REQ-0010 |
+| A1 | REQ-0014 | Game genre themes | Should | REQ-0004, REQ-0010, REQ-0012 (themes on the views); amends REQ-0009 |
+| A2 | REQ-0011 | Game roles and role slots in lobbies | Should | REQ-0005, REQ-0009, REQ-0010 |
 
 Confirmed by the user on 2026-11-04: game roles (REQ-0011) stay after the MVP (DECISION, user).
+
+Order decided by the user on 2026-11-07: genre themes (REQ-0014) come first, ahead of game roles (REQ-0011). The user asked for the genre themes now ("we also need more gaming aesthetics"). Game roles stay Should and follow directly. REQ-0014 needs no game roles and can be delivered on its own.
 
 ## Could, after the MVP
 
@@ -64,9 +67,9 @@ Ordered after the Should items, because priority comes first. Not yet a requirem
 
 | Order | Requirement | Title | Priority | Depends on |
 |---|---|---|---|---|
-| B1 | – (to be written, F-030) | Game presentation: logo and accent color | Could | REQ-0009, REQ-0010 (amends REQ-0009) |
+| B1 | – (to be written, F-030) | Game presentation: logo and per-game accent color (the accent color overrides the genre theme of A1, F-032) | Could | REQ-0009, REQ-0010 (amends REQ-0009), REQ-0014 (for the accent override) |
 
-Ordering reason: B1 is after A1 because A1 is prioritized higher. Both A1 and B1 extend the game form (F-025) and amend REQ-0009, so the architect should review them together when B1 is written, to avoid two rounds of changes to the same form and data model. B1 has no dependency on A1 and can be moved earlier by the user at any time.
+Ordering reason: B1 is after A2 because A2 is prioritized higher. Both A2 and B1 extend the game form (F-025) and amend REQ-0009, so the architect should review them together when B1 is written, to avoid two rounds of changes to the same form and data model. B1 has no dependency on A2 and can be moved earlier by the user at any time. B1's accent color overrides the genre theme's accent color for its game (DECISION, user, 2026-11-07).
 
 The item goals idea (F-031) is `Proposed`, decision postponed until the MVP has been used. It is not ordered here.
 
