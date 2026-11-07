@@ -4,6 +4,7 @@ import { useFocusAfterLogout, useScrolledPast } from "../../hooks";
 import { useMessages } from "../../i18n";
 import { Alert, Brand } from "../../ui";
 import { loggedOutNotice, type LoggedOutPageProps } from "../session";
+import { LandingHero } from "./LandingHero";
 import { LandingPreview } from "./LandingPreview";
 import { StepCard } from "./StepCard";
 
@@ -93,6 +94,7 @@ export function LandingPage({
               {t.howItWorks}
             </a>
           </div>
+          <LandingHero />
         </section>
         <section
           id="how-it-works"

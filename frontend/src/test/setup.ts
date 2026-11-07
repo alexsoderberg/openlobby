@@ -22,3 +22,6 @@ if (!window.matchMedia) {
 
 // jsdom has no scrolling; page changes scroll to the top.
 window.scrollTo = () => undefined;
+
+// jsdom has no canvas. Without this it logs "not implemented" on every getContext call.
+HTMLCanvasElement.prototype.getContext = () => null;

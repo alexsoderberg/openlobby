@@ -130,6 +130,7 @@
   --font-size-figure: 2.5rem;
   --line-hero: 0.98;
   --width-landing: 64rem;
+  --stage-height: clamp(12rem, 30vw, 20rem);
   --radius-chip: 999px;
   --rise-offset: 110%;
   --stagger-rise: 0.12s;
@@ -959,6 +960,51 @@ a {
   gap: var(--space-2) var(--space-3);
   animation: fade-up var(--duration-slow) var(--ease-out)
     calc(var(--stagger-fade) * 3) both;
+}
+
+/* The cards' room is reserved from the first paint, so the 3D scene never moves the text.
+   Static cards get size and place from LandingHero, in the same units as the scene. */
+.hero-stage {
+  position: relative;
+  height: var(--stage-height);
+  /* The static cards' width fit. Without container units: the .landing content box. */
+  --stage-width: calc(min(100vw, var(--width-landing)) - 2 * var(--space-4));
+  margin-top: var(--space-4);
+  pointer-events: none;
+  animation: fade-up var(--duration-slow) var(--ease-out)
+    calc(var(--stagger-fade) * 4) both;
+}
+
+@supports (width: 1cqw) {
+  .hero-stage {
+    container-type: inline-size;
+    --stage-width: 100cqw;
+  }
+}
+
+.hero-stage__card {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transition: opacity var(--duration-base) var(--ease-out);
+}
+
+.hero-stage[data-live] .hero-stage__card {
+  opacity: 0;
+}
+
+.hero-stage__gl {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  animation: fade-in var(--duration-base) var(--ease-out) both;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
 }
 
 .steps {
