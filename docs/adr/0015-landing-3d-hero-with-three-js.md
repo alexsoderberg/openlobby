@@ -1,5 +1,6 @@
 # 0015. Landing 3D hero with three.js, lazy-loaded
 Status: Accepted (2026-11-07)
+Amended by ADR 0016 (points 2, 4, 5, 6, 7 and 10: genre themes and the fill cycle)
 
 ## Context
 The logged-out landing page (F-001 presentation, REQ-0013) gets a decorative 3D hero in `frontend/src/features/landing/LandingPage.tsx`. Three sample lobby cards (a generic game name, a start time, "3/5 players") float in 3D, tilt slowly and react to the mouse pointer. The user asked for three.js. Constraints from the user: the three.js code loads only on the landing page, after first paint, login is never blocked, `prefers-reduced-motion` and browsers without WebGL get a static fallback, and the page is hosted on a Raspberry Pi 5 and opened on phones.
