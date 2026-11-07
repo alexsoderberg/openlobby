@@ -1,5 +1,6 @@
 # 0010. Game list: table in calendar, managed by system admin in the app
 Status: Accepted (2026-11-01)
+Amended by ADR 0016 (genre only: the genre is read live from the game, unlike the name and preset max)
 
 ## Context
 REQ-0009 (F-024) requires a shared game list where each game has a preset max number of players. The list is shared across all groups and is managed by the project, not by members or group admins. A lobby stores the game's name and stays unchanged if the game is removed from the list.
