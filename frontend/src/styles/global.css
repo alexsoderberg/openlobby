@@ -149,6 +149,7 @@
   /* The top bar grows by the notch / status bar inset when viewport-fit=cover applies. */
   --size-top-bar-total: calc(var(--size-top-bar) + env(safe-area-inset-top));
   --size-rail: 5.25rem;
+  --width-aside: 19rem;
   --size-tab-bar: 5.5rem;
   --size-group-icon: 3.25rem;
   --size-plus: 3.25rem;
@@ -437,6 +438,15 @@ a {
 
 .panel-group > :nth-child(2) {
   --reveal-delay: var(--stagger-step);
+}
+
+/* Wide screens: the second panel sits beside the first (DOM order is kept). Below 75rem the seven-day week grid
+   would get too narrow next to a side column, so it stays stacked until then. */
+@media (min-width: 75rem) {
+  .panel-group--aside {
+    grid-template-columns: minmax(0, 1fr) var(--width-aside);
+    align-items: start;
+  }
 }
 
 .crumb {
