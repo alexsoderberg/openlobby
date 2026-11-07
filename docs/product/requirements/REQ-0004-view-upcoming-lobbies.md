@@ -114,3 +114,13 @@ Old wording of criteria amended in this section (kept for reference):
 
 Related features (time grid)
 F-017 (calendar view): the view is the same; only its layout changes. F-028 (dashboard, REQ-0012): the same grid, with the group name on each block and no create from the grid (no group context).
+
+## Amendment 2026-11-07 (icon toggle)
+Status stays Implemented. DECISION, user, 2026-11-07. Binding for the UI expert. The user's words (translated): "We should probably show 'list' and 'calendar' as icons instead of text, and also make them a toggle switch."
+
+- Given that I am a member and I see the List / Calendar switch on the group's page, when I look at it, then it is one segmented toggle (a pill track with a sliding thumb) with two icon-only options: a list icon and a calendar icon, with no visible text. Each option has the accessible name "List" or "Calendar" (`aria-label`) and shows that name as a tooltip.
+- Given that I use a screen reader, when I focus an option, then its name is announced, and the selected option is announced as pressed (`aria-pressed`). The selected state is not shown by colour alone.
+- Given that I open the group's page, when no view has been chosen, then the list view is selected (unchanged default).
+- The criteria above that name the options "List" and "Calendar" (the switch, the view switch by selecting "Calendar" and "List", and the keyboard criterion) still apply to these icon options, with the accessible names as the labels.
+
+Related features (icon toggle): F-017 (the same switch, icon form only). The dashboard's This week toggle (REQ-0012, Amendment 2026-11-07) uses the same kind of control with its own names; it is not a second group switch.

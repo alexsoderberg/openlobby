@@ -657,16 +657,59 @@ a {
 
 /* Lobbies: the list rows, the view switch and the week calendar. */
 .view-switch {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
   margin-bottom: var(--space-3);
 }
 
-.view-switch [aria-pressed="true"] {
-  background: var(--color-accent-tint);
-  border-color: var(--color-accent);
-  color: var(--color-text);
+/* A pill track; the thumb slides by transform to the selected option, so nothing reflows. */
+.view-toggle {
+  position: relative;
+  display: inline-grid;
+  grid-auto-flow: column;
+  grid-auto-columns: var(--size-tap);
+  padding: var(--space-1);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-chip);
+  background: var(--color-surface);
+}
+
+.view-toggle__thumb {
+  position: absolute;
+  inset-block: var(--space-1);
+  inset-inline-start: var(--space-1);
+  width: var(--size-tap);
+  border-radius: var(--radius-chip);
+  background: var(--color-accent);
+  transition: transform var(--duration-base) var(--ease-out);
+}
+
+/* Two options only: the second one pressed moves the thumb one step. */
+.view-toggle:has(.view-toggle__option:last-of-type[aria-pressed="true"])
+  .view-toggle__thumb {
+  transform: translateX(100%);
+}
+
+.view-toggle__option {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: var(--size-tap);
+  height: var(--size-tap);
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-chip);
+  background: none;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+/* Dark icon on the accent thumb for contrast; the thumb position says the same without colour. */
+.view-toggle__option[aria-pressed="true"] {
+  color: var(--color-bg);
+}
+
+.view-toggle__icon {
+  width: 1.4rem;
+  height: 1.4rem;
 }
 
 .lobby-row__game {

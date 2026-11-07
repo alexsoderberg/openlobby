@@ -3,12 +3,20 @@ import type { Group } from "../../api";
 import { usePopover } from "../../hooks";
 import type { PickedStart } from "../../calendar";
 import { useMessages } from "../../i18n";
-import { ErrorAlert, Panel, Popover } from "../../ui";
+import {
+  CalendarIcon,
+  ErrorAlert,
+  ListIcon,
+  Panel,
+  Popover,
+  ViewToggle,
+} from "../../ui";
 import { CreateLobby } from "./CreateLobby";
 import { LobbyCalendar } from "./LobbyCalendar";
 import { LobbyList } from "./LobbyList";
-import { LobbyViewSwitch, type LobbyView } from "./LobbyViewSwitch";
 import { useUpcomingLobbies } from "./useUpcomingLobbies";
+
+type LobbyView = "list" | "calendar";
 
 /**
  * The lobby sections of a group page: the upcoming lobbies as a list or a week calendar, and the popover
@@ -60,7 +68,19 @@ export function Lobbies({
         <p role="status" className="status">
           {created && m.lobbyCreated}
         </p>
-        <LobbyViewSwitch view={view} onChange={setView} />
+        <ViewToggle
+          label={m.lobbyViewLabel}
+          value={view}
+          options={[
+            { value: "list", label: m.lobbyViewList, icon: <ListIcon /> },
+            {
+              value: "calendar",
+              label: m.lobbyViewCalendar,
+              icon: <CalendarIcon />,
+            },
+          ]}
+          onChange={setView}
+        />
         <LobbyViews
           groupId={groupId}
           members={members}
