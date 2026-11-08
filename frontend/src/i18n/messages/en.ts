@@ -33,7 +33,6 @@ export const en = {
     topBarLogIn: "Log in",
     headline: "Plan when your group plays",
     lead: "Games are scheduled as lobbies. Members of a group see the lobbies and join the ones they want.",
-    howItWorks: "How it works",
     stepsHeading: "How it works",
     steps: [
       { title: "Log in", text: "Log in with Discord." },

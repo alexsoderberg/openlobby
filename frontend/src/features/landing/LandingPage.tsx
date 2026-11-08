@@ -1,4 +1,4 @@
-import { useRef, type MouseEvent } from "react";
+import { useRef } from "react";
 import { loginUrl } from "../../api";
 import { useFocusAfterLogout, useScrolledPast } from "../../hooks";
 import { useMessages } from "../../i18n";
@@ -19,17 +19,10 @@ export function LandingPage({
   const m = useMessages();
   const t = m.landing;
   const headingRef = useRef<HTMLHeadingElement>(null);
-  const stepsRef = useRef<HTMLElement>(null);
   const scrolled = useScrolledPast(TOPBAR_SCROLL_OFFSET);
   const notice = loggedOutNotice(m, loginError, reason);
   const href = loginUrl(returnTo);
   useFocusAfterLogout(headingRef, reason === "loggedOut");
-
-  // Focus moves with the scroll, so keyboard users land in the section, not just above it.
-  function showSteps(event: MouseEvent<HTMLAnchorElement>) {
-    event.preventDefault();
-    stepsRef.current?.focus();
-  }
 
   return (
     <>
@@ -54,22 +47,12 @@ export function LandingPage({
             <a className="button" href={href}>
               {m.logInWithDiscord}
             </a>
-            <a
-              className="button button-ghost"
-              href="#how-it-works"
-              onClick={showSteps}
-            >
-              {t.howItWorks}
-            </a>
           </div>
           <LandingHero />
         </section>
         <section
-          id="how-it-works"
-          ref={stepsRef}
-          tabIndex={-1}
           aria-labelledby="how-it-works-heading"
-          className="landing-section landing-steps"
+          className="landing-section"
         >
           <h2 id="how-it-works-heading" className="visually-hidden">
             {t.stepsHeading}
