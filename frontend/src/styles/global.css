@@ -129,6 +129,7 @@
   --font-size-figure: 2.5rem;
   --line-hero: 0.98;
   --width-landing: 64rem;
+  --stage-height: clamp(17rem, 60vw, 24rem);
   --radius-chip: 999px;
   --rise-offset: 110%;
   --stagger-fade: 0.15s;
@@ -138,7 +139,6 @@
   --duration-flash: 1.8s;
   --flash-offset: 0.5rem;
   --duration-rise: 1.1s;
-  --scroll-offset: 5rem;
 
   /* App shell. The wide layout starts at 760px (47.5rem); media queries cannot read tokens, so it is written out there. */
   --width-app: 72rem;
@@ -417,8 +417,7 @@ a {
 }
 
 .panel,
-.login-panel,
-.preview {
+.login-panel {
   padding: var(--space-4);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -493,7 +492,7 @@ a {
   transition: background-color var(--duration-base) var(--ease-out);
 }
 
-/* Scoped to real lists, so the decorative landing preview rows do not react to hover. */
+/* Scoped to real lists. */
 .row-list > .list-row:hover {
   background: var(--color-row-hover);
 }
@@ -963,10 +962,6 @@ a {
   padding-block: var(--space-6);
 }
 
-.landing-steps {
-  scroll-margin-top: var(--scroll-offset);
-}
-
 .hero {
   padding-top: var(--space-6);
 }
@@ -1010,9 +1005,55 @@ a {
     calc(var(--stagger-fade) * 3) both;
 }
 
+/* The cards' room is reserved from the first paint, so the 3D scene never moves the text.
+   Static cards get size and place from LandingHero, in the same units as the scene. */
+.hero-stage {
+  position: relative;
+  height: var(--stage-height);
+  /* The static cards' width fit. Without container units: the .landing content box. */
+  --stage-width: calc(min(100vw, var(--width-landing)) - 2 * var(--space-4));
+  margin-top: var(--space-4);
+  pointer-events: none;
+  animation: fade-up var(--duration-slow) var(--ease-out)
+    calc(var(--stagger-fade) * 4) both;
+}
+
+@supports (width: 1cqw) {
+  .hero-stage {
+    container-type: inline-size;
+    --stage-width: 100cqw;
+  }
+}
+
+.hero-stage__card {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transition: opacity var(--duration-base) var(--ease-out);
+}
+
+.hero-stage[data-live] .hero-stage__card {
+  opacity: 0;
+}
+
+.hero-stage__gl {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  animation: fade-in var(--duration-base) var(--ease-out) both;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* One column: four auto-fit cards wrapped as 3 + 1 on mid widths. */
 .steps {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  max-width: 40rem;
   gap: var(--space-3);
 }
 
@@ -1031,18 +1072,6 @@ a {
 .step-card__text {
   margin: 0;
   color: var(--color-muted);
-}
-
-.preview-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
-  gap: var(--space-3);
-}
-
-.preview__title {
-  margin: 0;
-  font-family: var(--font-heading);
-  font-weight: 600;
 }
 
 /* Fills from 0 to --meter-value (0 to 1) when the element around it reveals. Used by ui/Meter. */

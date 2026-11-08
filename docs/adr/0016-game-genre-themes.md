@@ -146,7 +146,7 @@ export interface HeroScene {
   dispose(): void;
 }
 ```
-`startHeroLoop` calls `update` only when the frame key (focus, count, phase) differs from the last one, so a canvas is not repainted on every frame. `lobbyCardPainter.ts` gets the accent, the pattern and icon images and the card text as arguments, and paints a state (count, glow, phase). It has no theme knowledge.
+`startHeroLoop` calls `update` only when the frame key (focus, count, phase) differs from the last one, so a canvas is not repainted on every frame. `heroCardPainter.ts` gets the accent, the pattern and icon images and the card text as arguments, and paints a state (count, glow, phase). It has no theme knowledge.
 
 **Motif in the scene (amends point 2).** `heroScene.ts` (lazy chunk) imports from `genres` with `import type` only: `GenreThemeKey`, `MotifKind` and `MotifDescriptor`. `createHeroScene(container, cards, maxPixelRatio)` receives each card's `motif: MotifDescriptor`, taken from `themeForGenre(...).motif`, as an argument. Its `Record<MotifKind, (count: number) => Object3D>` turns a kind into three.js geometry. The motif data is in `genreThemes.ts`, so `heroScene.ts` holds no definition of which genre has which motif. Three.js stays out of the main chunk.
 
@@ -160,7 +160,7 @@ export interface HeroScene {
   - the cycle restarts with the first card after the last;
   - the durations are 6.5, 6.5 and 8.5 seconds, derived from `HERO_TIMING` and `HERO_SAMPLE_CARDS`, and each is within 6 to 10 seconds.
 - `heroLoop.test.ts`: a pause and a resume continue the frame from the same point; `update` is called only when the frame key changes.
-- `lobbyCardPainter.test.ts`: the text drawn for each state; the full state uses the glow token color.
+- `heroCardPainter.test.ts`: the text drawn for each state; the full state uses the glow token color.
 - Static frame test: `vi.getTimerCount()` is 0 and `requestAnimationFrame` is not called; the focused card and the card behind differ in name, time, count and genre.
 - Layout at 320 and 390 px is checked by hand (REQ-0013), with no layout shift.
 
@@ -220,3 +220,24 @@ The backend change and the admin form ship in one change. An old browser tab tha
 - **Three.js motif in lobby views.** Rejected: REQ-0014 requires a static motif there. Only the hero moves it.
 - **A separate `genreTheme` feature.** Rejected: features may not import each other's internals, and the theme is shared. A shared module is the right place.
 - **Per-game accent color (F-030).** Not built now (YAGNI). A later change adds an `accent` field to `Game` and an optional override in `themeForGenre`, and changes nothing in this design.
+
+## Amendment 2026-11-08
+Status of the amendment: Accepted (2026-11-08).
+
+The architect ruled on the review findings for the landing hero (section 8), so the implementation and this section match. Section 8 is amended as follows; the rest of section 8 stays as it is. ADR 0015 has a matching amendment for points 2, 3, 4 and 6.
+
+**Sample data (section 8, "Single source").** `HERO_SAMPLE_CARDS` in `hero.ts` is the only place of sample data. Each card carries its own `gameName`, `genre`, `startCount`, `maxCount` and `startTime`. The names are "Sample shooter", "Sample racing" and "Sample party", in cycle order. The key `landing.heroGames` in the i18n catalog is removed.
+- Reason: the sample names are placeholders, never translated and never real titles. They are data, not UI copy. The rule of ADR 0013 ("All user-facing text goes through the message catalog; no hard-coded UI strings in components") covers copy that is translated and shown as text by components. A placeholder value in a feature's sample data is not copy and stays with the sample data. A sentence or a label that a visitor reads as text still goes through the catalog.
+- `startTime` is set per card, not one `HERO_SAMPLE_START` for all three. The earlier text gave all three cards the same start time, but REQ-0013 requires a different start time on each card. Each value is fixed, so the card does not depend on the clock.
+
+**Port and frame (section 8, "Cycle state" and "Scene update").**
+- `HeroFrame` is `{ focusIndex, count, phase, progress }`. `progress` is 0..1 through the current phase. It drives only the enter and leave motion of the focused card and of the card behind. `isSameHeroFrame` ignores it, so a canvas repaints only when focus, count or phase changes.
+- The port's `render` takes the frame: `render(frame, elapsedSeconds, pointer)`. See the ADR 0015 amendment, point 4.
+
+**Scene factory (section 8, "Motif in the scene").** `createHeroScene(container, cards, maxPixelRatio)` receives `cards: readonly HeroSceneCard[]`, where each card is `{ canvas, motif, accent, paint(count) }`. `motif` is `themeForGenre(genre).motif` (section 7) and `accent` is the genre's accent colour. `paint` is a closure built in `LandingHero.tsx` that calls `paintHeroCard` with the texts for that count. The scene calls `paint` only when a card's count changes. The scene imports the `genres` types with `import type` and imports no painter.
+
+**Static frame and stage (section 8, "Static frame").** The stage has a clamped height, `--stage-height: clamp(12rem, 30vw, 20rem)`, and no `aspect-ratio`. The scene has a fixed visible height in world units (`HERO_VIEW_HEIGHT`), so the stage height is set in CSS and not by the width. The static cards are placed with the same units through `staticCardStyle`, which takes the smaller of the height fit and the width fit. The static frame and the scene therefore share one layout, and neither shifts when the images load. Reason: `aspect-ratio` would make the stage height follow the width, which leaves a 320 px phone with a stage too short for the card row.
+
+**Module names (section 8, "Tests").** The painter is `heroCardPainter.ts`, with `heroCardPainter.test.ts`. The pose and tilt maths are in `heroPose.ts` (ADR 0015 amendment, point 2). The test names in section 8 follow the new names; the tests themselves are unchanged.
+
+**Consequences.** Section 8 changes no contract, no budget and no service. The glossary is unchanged.

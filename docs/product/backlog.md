@@ -77,7 +77,7 @@ Ordered after the Should items, because priority comes first. Not yet a requirem
 
 Ordering reason: B1 is after A2 because A2 is prioritized higher. Both A2 and B1 extend the game form (F-025) and amend REQ-0009, so the architect should review them together when B1 is written, to avoid two rounds of changes to the same form and data model. B1 has no dependency on A2 and can be moved earlier by the user at any time. B1's accent color overrides the genre theme's accent color for its game (DECISION, user, 2026-11-07).
 
-C1 is after B1 because no core flow depends on it, and it adds a visual only. It is `Could` by the product owner's judgment; the user asked for it and may move it earlier. The three.js dependency is decided in ADR 0015. Open questions in REQ-0013 (decorative preview, landing copy with a lobby step) are decisions for the user and are not blocking.
+C1 is after B1 because no core flow depends on it, and it adds a visual only. It is `Could` by the product owner's judgment; the user asked for it and may move it earlier. The three.js dependency is decided in ADR 0015. The decorative preview question in REQ-0013 is decided (DECISION, user, 2026-11-08: removed, see REQ-0013 Amendment 2026-11-08). The open question in REQ-0013 (landing copy with a lobby step) is a decision for the user and is not blocking.
 
 The item goals idea (F-031) is `Proposed`, decision postponed until the MVP has been used. It is not ordered here.
 

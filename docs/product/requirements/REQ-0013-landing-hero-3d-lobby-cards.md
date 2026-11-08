@@ -24,7 +24,7 @@ Scene in the hero:
 
 Login is never blocked:
 - Given that I open `/` logged out, when the page first paints, then the headline, the lead and the "Log in with Discord" button are visible and usable before the 3D code has been downloaded.
-- Given that the 3D code is slow to download, or fails to download, when I use the page, then the "Log in with Discord" button works, the "How it works" link works, and no error message or toast is shown because of the scene.
+- Given that the 3D code is slow to download, or fails to download, when I use the page, then the "Log in with Discord" button works, and no error message or toast is shown because of the scene.
 - Given that I open `/` with a login error (`?loginError=`) or an expired session, when the page loads, then the notice and its focus behavior are the same as today, with or without the scene.
 
 Lazy loading and weight:
@@ -39,7 +39,7 @@ Fallback (reduced motion, no WebGL):
 
 Accessibility:
 - Given that the scene is shown, when assistive technology reads the page, then the scene is hidden from it (`aria-hidden="true"`), and the scene contains no focusable element (no link, button or tab stop).
-- Given that I navigate with the keyboard from the top of `/`, when I press Tab, then the focus order is the same as today: the headline is the first heading in reading order, followed by the "Log in with Discord" and "How it works" controls. The scene is skipped.
+- Given that I navigate with the keyboard from the top of `/`, when I press Tab, then the focus order is: the headline is the first heading in reading order, followed by the "Log in with Discord" button, which is the hero's only control (Amendment 2026-11-08). The scene is skipped.
 - Given that I read the visible card text, when I check its contrast, then it meets WCAG AA against the card background, as all text in the app does.
 - Given that I use the page on a phone, when I touch or scroll over the hero, then the page scrolls and the touch is not captured by the scene.
 - Given that the scene is shown over or behind the hero text, when I click a button that the scene overlaps, then the button receives the click (the scene does not intercept pointer events).
@@ -68,11 +68,10 @@ Other visitors and the logged-in app:
 ## Related features
 F-001 (Log in with Discord): the landing page is a presentation of login and has no feature of its own (features.md, F-001). The hero scene adds no behavior, only a visual, so it is a presentation of F-001 and not a new feature. It is not a duplicate of F-004 or F-017: those show lobbies inside the logged-in app, and the scene is decorative and shows no real data.
 
-The landing page already has a decorative group preview below the steps (`LandingPreview`, generic sample data, `aria-hidden`). The scene is a second decorative visual with a similar purpose. This requirement does not change that preview; see the open questions.
+The landing page already has a decorative group preview below the steps (`LandingPreview`, generic sample data, `aria-hidden`). The scene is a second decorative visual with a similar purpose. Amendment 2026-11-08 removes that preview, so the hero is the only decorative visual on the landing page.
 
 ## Open questions
 - ASSUMPTION: tilt at most 12 degrees, 60 frames per second target on a mid-range phone. The user may overrule these numbers. The "three cards" ASSUMPTION is replaced by Amendment 2026-11-07.
-- DECISION FOR THE USER: keep or remove the existing decorative group preview below the steps now that the hero shows lobby cards? The product owner has not changed it.
 - DECISION FOR THE USER: the landing copy leaves out the lobby step "until lobbies ship" (copy decision of 2026-11-03). Lobbies have now shipped. Should the copy get a lobby step? This is a copy decision and is not part of this requirement.
 - DECISION FOR THE USER: priority. The product owner set `Could` because no core flow depends on the hero. The user may move it up in `backlog.md`.
 
@@ -111,3 +110,18 @@ Out of scope (additions):
 - More than three sample cards.
 
 Related features (addition): REQ-0014 F-032 (Game genre themes) supplies the themes for the sample cards, including each genre's 3D motif, which is defined once there. The hero stays a presentation of F-001 and adds no feature of its own.
+
+## Amendment 2026-11-08
+DECISION (user, 2026-11-08): the decorative group preview below the steps (`LandingPreview`, the sample member list and sample invite links) is removed. The user does not want the invite link and group member demos on the landing page. This answers the open question on the preview. The landing copy question stays open.
+
+DECISION (user, 2026-11-08): the "How it works" button in the hero is removed. User's words (translated): the "How it works" button adds nothing. The "How it works" steps section below the hero stays. The hero's only control is "Log in with Discord".
+
+Criteria changed in place above (old wording kept for reference):
+- Login is never blocked, second criterion. Old: "...then the "Log in with Discord" button works, the "How it works" link works, and no error message or toast is shown because of the scene." New: the "How it works" link is removed from the sentence; the "Log in with Discord" button works, and no error message or toast is shown because of the scene.
+- Accessibility, keyboard criterion. Old: "...then the focus order is the same as today: the headline is the first heading in reading order, followed by the "Log in with Discord" and "How it works" controls. The scene is skipped." New: the focus order is the headline, then "Log in with Discord". "The same as today" no longer holds, because the link is removed.
+
+Acceptance criteria (addition):
+- Given that I open `/` logged out, when the page has loaded, then the page shows the hero and the "How it works" steps, and no sample member list or sample invite links.
+- Given that I open `/` logged out, when the page has loaded, then the hero has no "How it works" button or link, and the "How it works" steps section is still shown.
+
+Out of scope (addition): replacing the removed preview with another demo or preview on the landing page.

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { en } from "../../i18n/messages/en";
 import { LandingPage } from "./LandingPage";
@@ -46,14 +46,18 @@ describe("LandingPage", () => {
     await waitFor(() => expect(document.activeElement).toBe(heading));
   });
 
-  it("How it works moves focus to the steps section", () => {
+  it("has the headline then Discord login first in focus order, and no How it works link", () => {
     renderLanding();
 
-    fireEvent.click(screen.getByRole("link", { name: en.landing.howItWorks }));
-
-    const steps = screen.getByRole("region", { name: en.landing.stepsHeading });
-    expect(document.activeElement).toBe(steps);
-    expect(steps.id).toBe("how-it-works");
+    const focusable = screen
+      .getAllByRole("link")
+      .filter((link) => link.closest("main"));
+    expect(focusable[0].textContent).toBe(en.logInWithDiscord);
+    expect(screen.getByRole("heading", { level: 1 }).tabIndex).toBe(-1);
+    expect(screen.queryByRole("link", { name: "How it works" })).toBeNull();
+    expect(
+      screen.getByRole("region", { name: en.landing.stepsHeading }),
+    ).toBeTruthy();
   });
 
   it("shows one card per step, four of them", () => {
@@ -73,11 +77,12 @@ describe("LandingPage", () => {
     }
   });
 
-  it("hides the app preview from assistive technology", () => {
+  it("shows no sample member list and no sample invite links", () => {
     renderLanding();
 
-    const sampleMember = screen.getByText("Jordan Lee");
-    expect(sampleMember.closest('[aria-hidden="true"]')).not.toBeNull();
+    expect(screen.queryByText("Jordan Lee")).toBeNull();
+    expect(screen.queryByText(en.inviteLinksHeading)).toBeNull();
+    expect(screen.queryByText(en.groupAdminMarker)).toBeNull();
   });
 
   it("loads no resource from a third-party origin", () => {
