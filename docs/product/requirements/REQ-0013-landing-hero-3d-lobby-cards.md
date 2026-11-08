@@ -1,7 +1,9 @@
 # REQ-0013. Landing hero with 3D lobby cards
-Status: Decided
+Status: Implemented
 Feature: F-001
 Priority: Could
+
+Implemented in PR #72 (merged 2026-11-08): the 3D hero (Amendment 2026-11-07) and the removals of Amendment 2026-11-08, with the four landing steps stacked in one column (the user asked for it on 2026-11-08).
 
 Decided by the user (DECISION, user, 2026-11-07): the concept "floating lobby cards" and the weight "lazy-loaded, light" (answer to the question on the landing page's visual). The product owner wrote the criteria. The library and the rendering approach are the architect's (ADR for the three.js dependency).
 
