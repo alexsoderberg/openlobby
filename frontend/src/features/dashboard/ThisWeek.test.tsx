@@ -81,6 +81,23 @@ describe("This week view toggle", () => {
     expect(dayColumns()).toHaveLength(7);
   });
 
+  it("themes each day-list row by its game genre, neutral without one", () => {
+    renderWeek([
+      {
+        ...lobby("l1", "Overwatch 2", at(4, 20), at(4, 22)),
+        gameGenre: "shooter",
+      },
+      lobby("l2", "Catan", at(5, 20), at(5, 22)),
+    ]);
+    fireEvent.click(button(t.viewDays));
+
+    const row = (name: string) =>
+      screen.getByRole("link", { name }).closest("li")!;
+    expect(row("Overwatch 2").getAttribute("data-genre")).toBe("shooter");
+    expect(row("Catan").getAttribute("data-genre")).toBe("neutral");
+    expect(within(row("Overwatch 2")).getByText(en.genre.shooter)).toBeTruthy();
+  });
+
   it("keeps the choice in the browser and shows it from the first render", () => {
     const saved = stubStorage();
     const { unmount } = renderWeek();

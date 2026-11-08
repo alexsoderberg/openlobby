@@ -143,6 +143,9 @@
   /* App shell. The wide layout starts at 760px (47.5rem); media queries cannot read tokens, so it is written out there. */
   --width-app: 72rem;
   --size-tap: 2.75rem;
+  /* A lobby row is a card: one and a half taps tall keeps it roomy yet calm. */
+  --size-lobby-row: calc(var(--size-tap) * 1.5);
+  --font-size-lobby-name: 1.125rem; /* a step above body text so the game leads the row */
   --size-top-bar: 4rem;
   /* The top bar grows by the notch / status bar inset when viewport-fit=cover applies. */
   --size-top-bar-total: calc(var(--size-top-bar) + env(safe-area-inset-top));
@@ -742,13 +745,50 @@ a {
   height: 1.4rem;
 }
 
+/* A lobby row is a small card with an edge in its genre accent (neutral without a genre). */
+.lobby-row {
+  min-height: var(--size-lobby-row);
+  padding: var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--genre-accent);
+  border-radius: var(--radius-panel);
+}
+
+.lobby-row + .lobby-row {
+  margin-top: var(--space-2);
+}
+
 .lobby-row__game {
+  font-size: var(--font-size-lobby-name);
   font-weight: 600;
 }
 
+/* The link covers the whole row (position: relative via .genre-frame), so the tap target is the row.
+   The row shows the focus ring, since the link's own box is only one line. */
+.lobby-row__game::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.lobby-row__game:focus-visible {
+  outline: none;
+}
+
+.lobby-row:has(.lobby-row__game:focus-visible) {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
 .lobby-row__meta {
-  font-size: var(--font-size-small);
   color: var(--color-muted);
+}
+
+/* Game and group names allow up to 50 characters without spaces; wrap them inside the card at 320 px. */
+.lobby-row__game,
+.lobby-row__meta {
+  overflow-wrap: anywhere;
 }
 
 .calendar__bar {
