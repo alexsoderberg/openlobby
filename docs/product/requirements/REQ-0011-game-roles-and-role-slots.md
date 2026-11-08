@@ -102,3 +102,12 @@ Not a duplicate of the group roles `admin` and `member` (REQ-0002, REQ-0008). Th
 - **Flex (any game role)** (technical form to be decided by the architect; suggestion: `gameRoleId` null on `lobby_players` in a lobby with game roles): a player who takes one spot of the lobby total without a role slot. Shown as "Flex N". Avoid: any role, wildcard, fill.
 - **Player's game role** (`gameRoleId` on `lobby_players`): the game role a player has taken in a lobby. Not used for flex.
 - Note: the API field `role` already means group role (`admin`/`member`, api/calendar/openapi.yaml). Game roles must not reuse that name.
+
+## Amendment 2026-11-08 (REQ-0015, game modes and open lobbies)
+Status stays Decided. Decided by the user (DECISION, user, 2026-11-07, point 2: roles per mode; answers 2026-11-08). Pending implementation, delivered together with REQ-0015 (backlog A2 and A3).
+- Game roles may be defined on a mode of a game instead of on the game. A game with modes has no game roles of its own. A game without modes keeps its game roles as written above.
+- Max players of a mode with game roles is the sum of its slots, as for a game. A mode is never unlimited.
+- The role slots of a lobby are prefilled from its mode (or from its game, for a game without modes). The creator may change them at creation, as written above. After creation they follow the chosen mode (REQ-0015, "Applying a choice").
+- A lobby has game roles if its mode has them. A lobby with no mode (an open lobby, REQ-0015) has game roles only if its game has no modes and game roles of its own, or if it was created before its game got its first mode. In the last case it keeps its role slots and its players' game roles until a mode is set (DECISION, product owner, 2026-11-08; see REQ-0015, "Changed or removed modes and activities"). In all other cases it works as in "Lobbies without game roles".
+- A mode change that adds game roles makes every existing player flex (DECISION, user, 2026-11-08, question 3). The rules for flex and for switching between game role and flex stay as written above.
+- The glossary term "Game role" also applies to a game role of a mode. Its technical form (game or mode) is the architect's decision.

@@ -55,11 +55,14 @@ Not part of the MVP. The vision lists it as outside the MVP scope. It is priorit
 | Order | Requirement | Title | Priority | Depends on |
 |---|---|---|---|---|
 | A1 | REQ-0014 | Game genre themes | Should | REQ-0004, REQ-0010, REQ-0012 (themes on the views); amends REQ-0009 |
-| A2 | REQ-0011 | Game roles and role slots in lobbies | Should | REQ-0005, REQ-0009, REQ-0010 |
+| A2 | REQ-0011 | Game roles and role slots in lobbies (amended by REQ-0015: roles may sit on a mode) | Should | REQ-0005, REQ-0009, REQ-0010 |
+| A3 | REQ-0015 | Game modes, named activities and open lobbies | Should | REQ-0003, REQ-0004, REQ-0005, REQ-0009, REQ-0010, REQ-0011 (roles on modes); REQ-0012 (labels on the dashboard); REQ-0014 (genre theme on the lobby's game) |
 
 Confirmed by the user on 2026-11-04: game roles (REQ-0011) stay after the MVP (DECISION, user).
 
 Order decided by the user on 2026-11-07: genre themes (REQ-0014) come first, ahead of game roles (REQ-0011). The user asked for the genre themes now ("we also need more gaming aesthetics"). Game roles stay Should and follow directly. REQ-0014 needs no game roles and can be delivered on its own.
+
+Order decided by the user on 2026-11-08 (question 12): A2 (REQ-0011, game roles) and A3 (REQ-0015, modes, named activities and open lobbies) are delivered together, after A1 (REQ-0014). Reason: both change the same game form (F-025), the same lobby data and the role slots, so game roles are not built on the game and then moved to a mode. The open-lobby slice (F-034) is not built first on its own.
 
 ## Could, after the MVP
 

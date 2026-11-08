@@ -49,7 +49,7 @@ Management:
 - Members or group admins proposing or adding games to the list.
 - Group-specific game lists.
 - Changing max players after the lobby is created (F-011).
-- More fields per game than name, default max and genre (Amendment 2026-11-07), e.g. image or category. Image and accent color (F-030) are still future.
+- More fields per game than name, default max, genre (Amendment 2026-11-07) and modes and activities (Amendment 2026-11-08, REQ-0015), e.g. image or category. Image and accent color (F-030) are still future. Old wording: "More fields per game than name, default max and genre (Amendment 2026-11-07), e.g. image or category."
 - Connection to the games' own systems or APIs.
 - Search in the game list.
 - Changing the game list in the app (adding, changing, removing games). This is described in REQ-0010. This requirement covers only how members see and choose from the list.
@@ -86,3 +86,17 @@ Acceptance criteria (additions):
 - Given that a game has a genre, when a member opens the game choice, then the game is shown and ordered as before. The genre does not change the choice or the order.
 - Given that a game has a genre, when a lobby with that game is shown, then it shows the genre theme of REQ-0014. Lobbies keep their name and max players as before; the genre follows the game (REQ-0014).
 - Given that this amendment is delivered, when I look at games that were in the list before, then each has no genre. No name, default max, identity or order changes.
+
+## Amendment 2026-11-08 (REQ-0015, game modes and open lobbies)
+Status stays Implemented. Decided by the user on 2026-11-08 (REQ-0015, F-033). Pending implementation. Binding for the backend and UI experts.
+
+DECISION, user, 2026-11-07 (point 1) and 2026-11-08 (question 8): a game in the game list may have modes, each with its own named activities (REQ-0015). A game with modes has no default max players and no game roles of its own; the mode gives the limit. A game without modes keeps this requirement as written.
+
+Acceptance criteria (additions):
+- Given that I am a system admin, when I add or change a game, then the form also lists its modes and their activities, as REQ-0015 defines. The game's own default max is not asked for when the game has at least one mode.
+- Given that a game has modes, when a member opens the game choice, then the game is shown and ordered as before. Modes do not change the choice or the order.
+- Given that a lobby has no game (an open lobby, REQ-0015), when a member's most used order is counted, then the lobby does not count toward any game (its "Other" and no-game lobbies do not count, as in the decided rule above).
+- Given that a game gets its first mode, when a lobby of that game exists, then the lobby keeps its max players and its game name, and it has no mode (REQ-0015: lobbies keep the values they have).
+- Given that this amendment is delivered, when I look at games that were in the list before, then each has no modes. No name, default max, genre, identity or order changes.
+
+Old wording of the out-of-scope line is kept in the Out of scope section above.

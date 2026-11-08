@@ -25,7 +25,7 @@ Genre on a game (extends REQ-0010, see Related features):
 
 Themed views:
 - Given that a lobby has a game with a genre, when I see it in a lobby list (REQ-0004), on the dashboard under Next up or This week (REQ-0012), on the lobby page, or as a block in the week calendar (REQ-0004, time grid), then the lobby shows the theme of that genre: its accent color, background pattern, icon and 3D motif, as defined in the Genre themes table below.
-- Given that a lobby has "Other" (customGameName), or a game with "No genre", when I see it in any of these views, then it shows the neutral theme and no genre theme.
+- Given that a lobby has "Other" (customGameName), a game with "No genre", or no game at all (an open lobby, REQ-0015), when I see it in any of these views, then it shows the neutral theme and no genre theme. Amendment 2026-11-08 (REQ-0015): the open lobby case is added. Old wording: "Given that a lobby has "Other" (customGameName), or a game with "No genre", when I see it in any of these views, then it shows the neutral theme and no genre theme."
 - Given that two genres are shown in the same view, when I compare their cards, then their accent colors and icons differ, so the genres can be told apart without reading.
 
 Genre themes (each genre has all four parts; the exact visuals are designed by the UI/UX expert under the rules below):
@@ -100,3 +100,9 @@ REQ-0013 (Landing hero): the hero's sample cards use the genre themes of this re
 - ASSUMPTION (priority): Should. The user asked for it now, so it is placed first among the Should items in backlog.md. The user may move it ahead of the other items at any time.
 - For the architect (not decided here): the storage and API of the genre (a field on the game, a fixed list as a database enum or a constant list), how the genre reaches the lobby views, and the new terms for the glossary: **Genre** (`genre`: a fixed-list category of a game, one per game, optional, e.g. "Shooter") and **Genre theme** (the look of a genre: accent color, pattern, icon and 3D motif; a neutral genre theme for lobbies without a genre). These terms are not added to CLAUDE.md by the product owner; the architect owns that file.
 - For the UI/UX expert (not decided here): the exact colors, patterns, icons and motifs in the table, under the contrast and motion rules.
+
+## Amendment 2026-11-08 (REQ-0015, game modes and open lobbies)
+Status stays Decided. Written by the product owner within REQ-0015 (2026-11-08); the user's decisions are in REQ-0015. The genre stays per game. Modes and activities have no genre theme.
+- Given that a lobby has a game with modes, when I see it, then the genre of its game gives the theme, whatever the mode or activity (DECISION, product owner, within REQ-0015).
+- Given that a lobby has no game (an open lobby, REQ-0015), when I see it, then it shows the neutral theme and no genre name (REQ-0015).
+- Out of scope addition: a genre per mode or per activity.

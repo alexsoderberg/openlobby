@@ -19,7 +19,7 @@ Permissions:
 - Given that I am not logged in, when I open the game list's address, then the login is shown (REQ-0001), and after a successful login I am denied if I am not a system admin.
 
 Identity and the form:
-- Given that I am a system admin, when I add or change a game, then the form asks only for name and default max players. No ID is entered by anyone.
+- Given that I am a system admin, when I add or change a game, then the form asks only for name and default max players. No ID is entered by anyone. Amendment 2026-11-08 (REQ-0015): the form also lists the game's modes and their activities, each with a name and its limit or game roles, as REQ-0015 defines. A game with modes does not ask for its own default max players. Old wording: "Given that I am a system admin, when I add or change a game, then the form asks only for name and default max players. No ID is entered by anyone."
 - Given that I am a system admin, when I rename a game, then the game keeps its identity, and lobbies created with it still count toward its place in the "most used first" order (REQ-0009).
 
 Reserved name:
@@ -66,3 +66,14 @@ F-024 (Game list with default max players) is the members' view of the list and 
 - ASSUMPTION ("Other"): "Other" is not an entry in the game list and cannot be changed or removed here (REQ-0009).
 - ASSUMPTION (concurrent change): No locking, just as in REQ-0003. For concurrent changes to the same game, the last saved change applies. The duplicate rule still applies.
 - ASSUMPTION (display of use): The app does not show how many lobbies use a game before it is removed. If that is wanted, it becomes a separate requirement.
+
+## Amendment 2026-11-08 (REQ-0015, game modes and open lobbies)
+Status stays Implemented. Decided by the user on 2026-11-08 (REQ-0015, F-033, F-025). Pending implementation. Binding for the backend and UI experts. The management rules above stay the same; the form gets modes and activities.
+
+Acceptance criteria (additions):
+- Given that I am a system admin, when I add or change a game, then the form lists its modes; each mode has a name and either game roles or a max players value; each mode may list activities, each with a name (REQ-0015 defines the rules).
+- Given that I am a system admin, when I add or rename a mode or activity, then the name rules of REQ-0015 apply (1–50 characters, unique within its game or mode, ignoring case and surrounding spaces), and "Other" cannot have a mode or an activity.
+- Given that I am a system admin, when I remove a mode or activity, then I must confirm first, and lobbies that use it keep their names, limits and players (REQ-0015).
+- Given that I am a group admin or a member, when I try to add, change or remove a mode or activity, then it is denied (as above for games).
+
+Out of scope addition: modes and activities of their own in the game list beyond what REQ-0015 defines (e.g. a mode with its own genre).
