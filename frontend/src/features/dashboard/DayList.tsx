@@ -1,4 +1,5 @@
 import type { WeekDay } from "../../calendar";
+import { GenreFrame, GenreName } from "../../genres";
 import { formatTimeRange, formatWeekday, useMessages } from "../../i18n";
 import { lobbyPath } from "../lobbies";
 import type { DashboardLobby } from "./dashboardLobby";
@@ -33,19 +34,25 @@ export function DayList({ days }: { days: WeekDay<DashboardLobby>[] }) {
           <h3 id={`day-${day.getTime()}`}>{formatWeekday(day)}</h3>
           <ul className="row-list" role="list">
             {items.map((lobby) => (
-              <li key={lobby.id} className="list-row lobby-row">
+              <GenreFrame
+                as="li"
+                key={lobby.id}
+                genre={lobby.gameGenre}
+                className="list-row lobby-row"
+              >
                 <a
                   className="lobby-row__game"
                   href={lobbyPath(lobby.groupId, lobby.id)}
                 >
                   {lobby.gameName}
                 </a>
+                <GenreName genre={lobby.gameGenre} />
                 <span>{formatTimeRange(lobby.startsAt, lobby.endsAt)}</span>
                 <span className="lobby-row__meta">{lobby.groupName}</span>
                 <span className="badge">
                   {m.lobbyPlayers(lobby.playerCount, lobby.maxPlayers)}
                 </span>
-              </li>
+              </GenreFrame>
             ))}
           </ul>
         </section>

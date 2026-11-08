@@ -52,7 +52,10 @@ const accents = Object.values(GENRE_THEMES).map((theme) => ({
  * the week block puts its tint over the pattern.
  */
 const views: Record<string, (accent: string) => Layer[]> = {
-  "lobby row": (accent) => [[accent, PATTERN_ALPHA]],
+  "lobby row": (accent) => [
+    rgbaLayer("--color-surface"),
+    [accent, PATTERN_ALPHA],
+  ],
   "lobby row on hover": (accent) => [
     rgbaLayer("--color-row-hover"),
     [accent, PATTERN_ALPHA],
