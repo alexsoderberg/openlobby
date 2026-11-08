@@ -19,11 +19,17 @@ const failingCalls: Array<[string, (api: ApiClient) => Promise<unknown>]> = [
   ["listGames", (api) => api.listGames()],
   [
     "createGame",
-    (api) => api.createGame({ name: "Catan", defaultMaxPlayers: 4 }),
+    (api) =>
+      api.createGame({ name: "Catan", defaultMaxPlayers: 4, genre: null }),
   ],
   [
     "replaceGame",
-    (api) => api.replaceGame("g1", { name: "Catan", defaultMaxPlayers: null }),
+    (api) =>
+      api.replaceGame("g1", {
+        name: "Catan",
+        defaultMaxPlayers: null,
+        genre: null,
+      }),
   ],
   ["deleteGame", (api) => api.deleteGame("g1")],
   ["listGroupGames", (api) => api.listGroupGames("g1")],
@@ -155,12 +161,21 @@ describe("createHttpApiClient", () => {
     const fetchImpl = vi.fn<typeof fetch>(async (input) => {
       sent.push(new Request(input));
       return sent.length === 1
-        ? Response.json({ id: "g1", name: "Catan", defaultMaxPlayers: null })
+        ? Response.json({
+            id: "g1",
+            name: "Catan",
+            defaultMaxPlayers: null,
+            genre: null,
+          })
         : new Response(null, { status: 204 });
     });
     const api = createHttpApiClient(fetchImpl, BASE_URL);
 
-    await api.replaceGame("g1", { name: "Catan", defaultMaxPlayers: null });
+    await api.replaceGame("g1", {
+      name: "Catan",
+      defaultMaxPlayers: null,
+      genre: null,
+    });
     await api.deleteGame("g1");
 
     expect(sent.map((request) => request.method)).toEqual(["PUT", "DELETE"]);
@@ -168,6 +183,7 @@ describe("createHttpApiClient", () => {
     await expect(sent[0].json()).resolves.toEqual({
       name: "Catan",
       defaultMaxPlayers: null,
+      genre: null,
     });
   });
 

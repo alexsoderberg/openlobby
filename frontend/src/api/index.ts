@@ -4,6 +4,7 @@ export type {
   AuthUser,
   CreateLobbyInput,
   Game,
+  Genre,
   GameInput,
   Group,
   GroupSummary,
@@ -30,6 +31,7 @@ export { createHttpApiClient } from "./httpApiClient";
 export {
   INVALID_CAPACITY,
   INVALID_GAME,
+  INVALID_GENRE,
   isGameNameLength,
   parseMaxPlayers,
   trimLikeServer,

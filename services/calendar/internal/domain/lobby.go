@@ -27,7 +27,8 @@ type Lobby struct {
 	CreatedByUserID string
 	GameID          *string // nil for a custom game name
 	GameName        string
-	MaxPlayers      *int // nil means unlimited
+	GameGenre       *Genre // the game's genre now, read from the game list; nil for a custom name or a removed game
+	MaxPlayers      *int   // nil means unlimited
 	StartsAt        time.Time
 	EndsAt          time.Time
 	CreatedAt       time.Time
@@ -70,11 +71,16 @@ func NewLobby(request NewLobbyRequest, now time.Time) (Lobby, error) {
 	if !validCapacity(request.MaxPlayers) {
 		return Lobby{}, ErrInvalidCapacity
 	}
+	var gameGenre *Genre
+	if gameID != nil {
+		gameGenre = request.Game.Genre // chooseGame guarantees Game is set when gameID is
+	}
 	return Lobby{
 		GroupID:         request.GroupID,
 		CreatedByUserID: request.CreatorID,
 		GameID:          gameID,
 		GameName:        gameName,
+		GameGenre:       gameGenre,
 		MaxPlayers:      request.MaxPlayers,
 		StartsAt:        request.StartsAt,
 		EndsAt:          request.EndsAt,

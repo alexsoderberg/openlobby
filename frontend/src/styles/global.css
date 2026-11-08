@@ -179,6 +179,28 @@
   --size-grid-height: 32rem;
   --size-grid-title: 3rem;
   --size-grid-gutter: 3.25rem;
+
+  /* Genre themes (ADR 0016): one accent per genre. Each reads at 4.5:1 or more on the page and panels,
+     pinned by genres/genreContrast.test.ts. The art in public/genre-art uses the same values. */
+  --color-genre-shooter: #ff5f6d;
+  --color-genre-moba: #4da3ff;
+  --color-genre-racing: #ff8a3d;
+  --color-genre-strategy: #a78bfa;
+  --color-genre-survival: #7bd36b;
+  --color-genre-party: #ff6ad5;
+  --color-genre-rpg: #e9d172;
+  --color-genre-sports: #3fd6c4;
+  --color-genre-neutral: #9a9ba6;
+  /* Set per view by GenreFrame; outside a frame the app accent shows. */
+  --genre-accent: var(--color-accent);
+  --genre-pattern: none;
+  --genre-tint: 4%;
+  --genre-wash: 5%;
+  /* Muted text inside a genre frame: lighter, because the pattern, tint and motif lift the plate behind it. */
+  --color-muted-themed: #a8a9b2;
+  --genre-motif-opacity: 0.12;
+  --size-genre-icon: 1.5rem;
+  --size-genre-motif: 6rem;
 }
 
 *,
@@ -862,9 +884,14 @@ a {
   height: 100%;
   padding: var(--space-1);
   overflow: hidden;
-  background: var(--color-accent-tint);
-  border: 1px solid var(--color-accent-line);
-  border-left: 3px solid var(--color-accent);
+  padding-right: calc(var(--size-genre-icon) - var(--space-1));
+  background: color-mix(
+    in srgb,
+    var(--genre-accent) var(--genre-tint),
+    transparent
+  );
+  border: 1px solid color-mix(in srgb, var(--genre-accent) 45%, transparent);
+  border-left: 3px solid var(--genre-accent);
   border-radius: var(--radius-control);
   font-size: 0.75rem;
   line-height: 1.3;
@@ -1410,7 +1437,7 @@ a {
   background:
     radial-gradient(
       26rem 14rem at 0 0,
-      var(--color-accent-wash),
+      color-mix(in srgb, var(--genre-accent) var(--genre-wash), transparent),
       transparent 70%
     ),
     var(--color-surface);
@@ -1717,4 +1744,84 @@ a {
 /* Only the first button of a row pushes right; the rest follow at the row gap. */
 .list-row .button + .button {
   margin-left: 0;
+}
+
+/* Genre themes (ADR 0016). The theme is static: no transition or animation in these rules. The pattern is
+   a layer behind the content; the icon and the motif are decorative images. */
+:where(.genre-frame) {
+  position: relative;
+}
+
+.genre-frame {
+  --color-muted: var(--color-muted-themed);
+  isolation: isolate;
+}
+
+.genre-frame::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background-image: var(--genre-pattern);
+  pointer-events: none;
+}
+
+.genre-frame__icon {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  width: var(--size-genre-icon);
+  height: var(--size-genre-icon);
+  pointer-events: none;
+}
+
+.genre-frame__motif {
+  position: absolute;
+  right: var(--space-3);
+  bottom: var(--space-3);
+  z-index: -1;
+  width: var(--size-genre-motif);
+  height: var(--size-genre-motif);
+  opacity: var(--genre-motif-opacity);
+  pointer-events: none;
+}
+
+.genre-name {
+  color: var(--genre-accent);
+  font-size: var(--font-size-small);
+  font-weight: 600;
+}
+
+.lobby-row > .genre-frame__icon {
+  position: static;
+  flex: none;
+}
+
+.time-block > .genre-frame__icon {
+  top: var(--space-1);
+  right: var(--space-1);
+  width: calc(var(--size-genre-icon) - var(--space-2));
+  height: calc(var(--size-genre-icon) - var(--space-2));
+}
+
+.time-block.genre-frame::before {
+  inset: 1px;
+  border-radius: var(--radius-control);
+}
+
+.lobby-head {
+  display: grid;
+  gap: var(--space-1);
+  margin-bottom: var(--space-3);
+  padding: var(--space-4);
+  padding-right: calc(var(--size-genre-icon) + var(--space-4));
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--genre-accent);
+  border-radius: var(--radius-panel);
+}
+
+.lobby-head h1 {
+  margin: 0;
 }

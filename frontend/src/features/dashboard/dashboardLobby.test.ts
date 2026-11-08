@@ -5,6 +5,7 @@ const at = (day: number, hour: number) => new Date(2026, 10, day, hour);
 const lobby = (id: string, start: Date, end: Date): DashboardLobby => ({
   id,
   gameName: id,
+  gameGenre: null,
   maxPlayers: 5,
   startsAt: start.toISOString(),
   endsAt: end.toISOString(),

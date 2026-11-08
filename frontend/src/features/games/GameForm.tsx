@@ -2,17 +2,19 @@ import { useId, useRef, useState, type ComponentProps, type Ref } from "react";
 import {
   INVALID_CAPACITY,
   INVALID_GAME,
+  INVALID_GENRE,
   type ChangeResult,
   type Game,
   type GameInput,
 } from "../../api";
 import { toUserMessage, useMessages } from "../../i18n";
+import { GameGenreField } from "./GameGenreField";
 import { parseGameInput } from "./gameInput";
 
 type SubmitGame = (input: GameInput) => ChangeResult;
 
 /**
- * Name and default max players, nothing else (the ID is made by the server). A failure, local or from
+ * Name, default max players and genre, nothing else (the ID is made by the server). A failure, local or from
  * the server, is shown next to the field it is about and focus moves to that field.
  * `onSubmit` resolves to the error code of a failed save.
  */
@@ -30,7 +32,8 @@ export function GameForm({
   onCancel?: () => void;
 }) {
   const id = useId();
-  const { errorCode, nameRef, maxRef, submit } = useGameFormSubmit(onSubmit);
+  const { errorCode, nameRef, maxRef, genreRef, submit } =
+    useGameFormSubmit(onSubmit);
   const errorId = `${id}-error`;
 
   return (
@@ -49,6 +52,7 @@ export function GameForm({
         errorId={errorId}
         nameRef={nameRef}
         maxRef={maxRef}
+        genreRef={genreRef}
       />
       {errorCode !== undefined && (
         <GameFormError id={errorId} code={errorCode} />
@@ -70,6 +74,7 @@ function GameFormFields({
   errorId,
   nameRef,
   maxRef,
+  genreRef,
 }: {
   id: string;
   game?: Game;
@@ -77,9 +82,11 @@ function GameFormFields({
   errorId: string;
   nameRef: Ref<HTMLInputElement>;
   maxRef: Ref<HTMLInputElement>;
+  genreRef: Ref<HTMLSelectElement>;
 }) {
   const m = useMessages();
   const aboutMax = errorCode === INVALID_CAPACITY;
+  const aboutGenre = errorCode === INVALID_GENRE;
   return (
     <>
       <GameFormField
@@ -89,7 +96,11 @@ function GameFormFields({
         label={m.gameNameLabel}
         hint={m.gameNameHint}
         defaultValue={game?.name}
-        errorId={errorCode !== undefined && !aboutMax ? errorId : undefined}
+        errorId={
+          errorCode !== undefined && !aboutMax && !aboutGenre
+            ? errorId
+            : undefined
+        }
       />
       <GameFormField
         id={`${id}-max`}
@@ -100,6 +111,12 @@ function GameFormFields({
         hint={m.gameMaxPlayersHint}
         defaultValue={game?.defaultMaxPlayers ?? ""}
         errorId={aboutMax ? errorId : undefined}
+      />
+      <GameGenreField
+        id={`${id}-genre`}
+        ref={genreRef}
+        genre={game?.genre ?? null}
+        errorId={aboutGenre ? errorId : undefined}
       />
     </>
   );
@@ -147,21 +164,24 @@ function useGameFormSubmit(onSubmit: SubmitGame) {
   const [errorCode, setErrorCode] = useState<string>();
   const nameRef = useRef<HTMLInputElement>(null);
   const maxRef = useRef<HTMLInputElement>(null);
+  const genreRef = useRef<HTMLSelectElement>(null);
 
   async function submit(form: HTMLFormElement) {
     const data = new FormData(form);
     const parsed = parseGameInput(
       String(data.get("name")),
       String(data.get("defaultMaxPlayers")),
+      String(data.get("genre")),
     );
     const code = parsed.ok ? await onSubmit(parsed.input) : parsed.code;
     setErrorCode(code);
     if (code === undefined) form.reset();
     else if (code === INVALID_CAPACITY) maxRef.current?.focus();
+    else if (code === INVALID_GENRE) genreRef.current?.focus();
     else nameRef.current?.focus();
   }
 
-  return { errorCode, nameRef, maxRef, submit };
+  return { errorCode, nameRef, maxRef, genreRef, submit };
 }
 
 /** A labelled text field with its hint. `errorId` is set when the form's error is about this field. */

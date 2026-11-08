@@ -1,3 +1,4 @@
+import type { Genre } from "../api";
 import type { CSSProperties, MouseEvent } from "react";
 import {
   formatDayOfMonth,
@@ -49,6 +50,7 @@ export function TimeGridDay<T extends GridLobby>({
   now,
   titleLevel,
   hrefOf,
+  genreOf,
   onCreate,
 }: {
   day: Date;
@@ -58,6 +60,8 @@ export function TimeGridDay<T extends GridLobby>({
   now: Date;
   titleLevel: TitleLevel;
   hrefOf: (lobby: T) => string;
+  /** The genre to theme a lobby with, or null for the neutral theme. The calendar reads no lobby genre itself. */
+  genreOf: (lobby: T) => Genre | null;
   onCreate?: CreateAt;
 }) {
   const m = useMessages();
@@ -95,6 +99,7 @@ export function TimeGridDay<T extends GridLobby>({
               key={block.item.id}
               block={block}
               href={hrefOf(block.item)}
+              genre={genreOf(block.item)}
             />
           ))}
         </ul>

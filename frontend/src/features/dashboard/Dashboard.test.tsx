@@ -43,6 +43,7 @@ const lobby = (
 ): Lobby => ({
   id,
   gameName,
+  gameGenre: null,
   maxPlayers: 5,
   startsAt: start.toISOString(),
   endsAt: end.toISOString(),
@@ -116,6 +117,32 @@ describe("Next up", () => {
     expect(card.getByText("in 1 h 42 min")).toBeTruthy();
     expect(card.getByText("3/5 players")).toBeTruthy();
     expect(card.queryByText("Counter-Strike 2")).toBeNull();
+  });
+
+  it("shows the genre name and theme on the card, and no genre name for a neutral lobby", async () => {
+    renderDashboard({
+      g1: [
+        lobby("l1", "Overwatch 2", at(4, 20), at(4, 22), {
+          gameGenre: "shooter",
+        }),
+      ],
+    });
+
+    const card = await nextUpCard();
+    expect(card.getByText(en.genre.shooter)).toBeTruthy();
+    expect(card.getByRole("article").getAttribute("data-genre")).toBe(
+      "shooter",
+    );
+  });
+
+  it("shows no genre name on a neutral Next up card", async () => {
+    renderDashboard({ g1: [lobby("l1", "Catan", at(4, 20), at(4, 22))] });
+
+    const card = await nextUpCard();
+    expect(card.getByRole("article").getAttribute("data-genre")).toBe(
+      "neutral",
+    );
+    expect(card.queryByText(en.genre.shooter)).toBeNull();
   });
 
   it("shows players without a max as a plain count", async () => {

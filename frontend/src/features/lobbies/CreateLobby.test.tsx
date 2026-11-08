@@ -8,8 +8,8 @@ import { CreateLobby } from "./CreateLobby";
 // Wednesday 4 November 2026, 12:00 local time.
 const NOW = new Date(2026, 10, 4, 12, 0);
 const games = [
-  { id: "g-chess", name: "Chess", defaultMaxPlayers: null },
-  { id: "g-catan", name: "Catan", defaultMaxPlayers: 4 },
+  { id: "g-chess", name: "Chess", defaultMaxPlayers: null, genre: null },
+  { id: "g-catan", name: "Catan", defaultMaxPlayers: 4, genre: null },
 ];
 
 beforeEach(() => {
@@ -25,6 +25,7 @@ function renderForm(overrides: Partial<ApiClient> = {}) {
       Promise.resolve({
         id: "new",
         gameName: "Catan",
+        gameGenre: null,
         maxPlayers: 4,
         startsAt: "",
         endsAt: "",

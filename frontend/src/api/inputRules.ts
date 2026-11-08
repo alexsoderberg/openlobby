@@ -7,6 +7,7 @@ import {
 /** Contract error codes that both the game and the lobby flows branch on. */
 export const INVALID_GAME = "invalid_game";
 export const INVALID_CAPACITY = "invalid_capacity";
+export const INVALID_GENRE = "invalid_genre";
 
 /** What a change resolves to: the error code of a failure, or undefined on success. */
 export type ChangeResult = Promise<string | undefined>;

@@ -54,6 +54,7 @@ export function ThisWeek({
           now={new Date(now)}
           titleLevel={3}
           hrefOf={(lobby) => lobbyPath(lobby.groupId, lobby.id)}
+          genreOf={(lobby) => lobby.gameGenre}
         />
       )}
     </section>

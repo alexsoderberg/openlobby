@@ -230,3 +230,20 @@ func TestCheckJoinAppliesTheContractOrder(t *testing.T) {
 		})
 	}
 }
+
+// The lobby shows the genre of the game it was made with; a custom name has none (ADR 0016).
+func TestNewLobbyTakesTheGenreFromTheGame(t *testing.T) {
+	shooter := domain.Genre("shooter")
+	game := domain.Game{ID: "game-1", Name: "Chess", Genre: &shooter}
+	start := time.Date(2026, 11, 7, 18, 0, 0, 0, time.UTC)
+	custom := "Go"
+
+	fromGame, err := domain.NewLobby(domain.NewLobbyRequest{GameID: &game.ID, Game: &game, StartsAt: start, EndsAt: start.Add(time.Hour)}, start.Add(-time.Hour))
+	if err != nil || fromGame.GameGenre == nil || *fromGame.GameGenre != shooter {
+		t.Fatalf("lobby %+v, error %v; want genre shooter", fromGame, err)
+	}
+	named, err := domain.NewLobby(domain.NewLobbyRequest{CustomGameName: &custom, StartsAt: start, EndsAt: start.Add(time.Hour)}, start.Add(-time.Hour))
+	if err != nil || named.GameGenre != nil {
+		t.Fatalf("lobby %+v, error %v; want no genre", named, err)
+	}
+}

@@ -4,6 +4,7 @@ import {
   INVITE_MAX_USES_LIMIT,
   RESERVED_GAME_NAME,
   type ApiErrorCode,
+  type Genre,
 } from "../../api";
 
 export const en = {
@@ -128,6 +129,18 @@ export const en = {
   gameNameHint: `1 to ${GAME_NAME_MAX_LENGTH} characters. "${RESERVED_GAME_NAME}" is reserved.`,
   gameMaxPlayersLabel: "Default max players",
   gameMaxPlayersHint: "Leave empty for no limit.",
+  gameGenreLabel: "Genre",
+  genre: {
+    none: "No genre",
+    shooter: "Shooter",
+    moba: "MOBA",
+    racing: "Racing",
+    strategy: "Strategy",
+    survival: "Survival",
+    party: "Party",
+    rpg: "RPG",
+    sports: "Sports",
+  } satisfies Record<Genre | "none", string>,
   gameAddHeading: "Add a game",
   gameAddSubmit: "Add game",
   gameEdit: "Change",
@@ -272,6 +285,7 @@ export const en = {
       "Choose a game from the list, or enter a name of 1 to 50 characters.",
     invalid_capacity:
       "The number of players must be from 1 to 2147483647, or empty for no limit.",
+    invalid_genre: "Choose a genre from the list, or no genre.",
     game_taken: "A game with this name already exists.",
     game_not_found: "This game does not exist anymore.",
   } satisfies Record<ApiErrorCode, string>,

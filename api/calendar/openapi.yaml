@@ -666,7 +666,7 @@ paths:
       description: |
         System admin only. The server generates the game's ID (uuid). The change takes effect immediately, without a new version.
         Rules in this order: invalid JSON or wrong JSON type (400 `invalid_request`), permission (403 `not_allowed`, before any domain validation),
-        name (400 `invalid_game`, including `Other`), default max (400 `invalid_capacity`), name already used ignoring case (409 `game_taken`).
+        name (400 `invalid_game`, including `Other`), default max (400 `invalid_capacity`), genre (400 `invalid_genre`), name already used ignoring case (409 `game_taken`).
       parameters:
         - $ref: '#/components/parameters/RequestIdHeader'
       requestBody:
@@ -685,7 +685,7 @@ paths:
         '400':
           description: |
             `invalid_game` (the name is omitted, `null`, empty after trim, longer than 50 characters, or `Other`),
-            `invalid_capacity` (default max is not `null` or an integer from 1 to 2147483647), or `invalid_request` (invalid JSON or a wrong JSON type).
+            `invalid_capacity` (default max is not `null` or an integer from 1 to 2147483647), `invalid_genre` (genre is not in the list), or `invalid_request` (invalid JSON or a wrong JSON type).
           content:
             application/json:
               schema:
@@ -715,10 +715,10 @@ paths:
       tags: [Game list]
       summary: Replace game (system admin)
       description: |
-        System admin only. Replaces the name and the default max. The `gameId` in the path cannot be changed.
-        Replaces the whole game: an omitted or `null` `defaultMaxPlayers` makes the game unlimited, and an omitted `name` gives `invalid_game`. Lobbies that were already created are not changed.
+        System admin only. Replaces the name, the default max and the genre. The `gameId` in the path cannot be changed.
+        Replaces the whole game: an omitted or `null` `defaultMaxPlayers` makes the game unlimited, an omitted or `null` `genre` gives the game no genre, and an omitted `name` gives `invalid_game`. Lobbies that were already created are not changed.
         Rules in this order: a `gameId` in invalid form (404 `game_not_found`), invalid JSON or wrong JSON type (400 `invalid_request`), permission (403 `not_allowed`),
-        name (400 `invalid_game`, including `Other`) and default max (400 `invalid_capacity`), unknown `gameId` (404 `game_not_found`), name used by another game (409 `game_taken`).
+        name (400 `invalid_game`, including `Other`), default max (400 `invalid_capacity`) and genre (400 `invalid_genre`), unknown `gameId` (404 `game_not_found`), name used by another game (409 `game_taken`).
       parameters:
         - $ref: '#/components/parameters/RequestIdHeader'
         - $ref: '#/components/parameters/GameIdPath'
@@ -737,7 +737,7 @@ paths:
                 $ref: '#/components/schemas/Game'
         '400':
           description: |
-            `invalid_game` (name omitted, `null`, empty after trim, too long, or `Other`), `invalid_capacity` (default max),
+            `invalid_game` (name omitted, `null`, empty after trim, too long, or `Other`), `invalid_capacity` (default max), `invalid_genre` (genre is not in the list),
             or `invalid_request` (invalid JSON or a wrong JSON type).
           content:
             application/json:
@@ -921,6 +921,7 @@ components:
             - lobby_full
             - invalid_game
             - invalid_capacity
+            - invalid_genre
             - game_taken
             - game_not_found
             - internal_error
@@ -1064,15 +1065,26 @@ components:
       maxLength: 50
       description: Game name, 1–50 characters after trim.
 
+    Genre:
+      type: string
+      enum: [shooter, moba, racing, strategy, survival, party, rpg, sports]
+      description: Genre of a game from a fixed list (REQ-0014, ADR 0016). `null` means no genre.
+
     Lobby:
       type: object
-      required: [id, gameName, maxPlayers, startsAt, endsAt, createdByUserId, playerCount, joinedByMe]
+      required: [id, gameName, gameGenre, maxPlayers, startsAt, endsAt, createdByUserId, playerCount, joinedByMe]
       properties:
         id:
           type: string
           format: uuid
         gameName:
           $ref: '#/components/schemas/GameName'
+        gameGenre:
+          type: string
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/Genre'
+          description: Genre of the lobby's game as it is in the game list now. `null` for a custom name ("Other"), a game without a genre, or a game that was removed. Not stored in the lobby, so a genre change shows at the next read.
         maxPlayers:
           $ref: '#/components/schemas/MaxPlayers'
         startsAt:
@@ -1137,7 +1149,7 @@ components:
 
     Game:
       type: object
-      required: [id, name, defaultMaxPlayers]
+      required: [id, name, defaultMaxPlayers, genre]
       properties:
         id:
           $ref: '#/components/schemas/GameId'
@@ -1145,6 +1157,12 @@ components:
           $ref: '#/components/schemas/GameName'
         defaultMaxPlayers:
           $ref: '#/components/schemas/DefaultMaxPlayers'
+        genre:
+          type: string
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/Genre'
+          description: The game's genre, or `null` for no genre.
 
     CreateGameRequest:
       type: object
@@ -1157,6 +1175,12 @@ components:
           description: Game name. Omitted or `null` gives `invalid_game`. The name `Other` (ignoring case, after trim) is reserved for the client's free-text choice and gives `invalid_game` (ADR 0010).
         defaultMaxPlayers:
           $ref: '#/components/schemas/DefaultMaxPlayers'
+        genre:
+          type: string
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/Genre'
+          description: The game's genre. Omitted or `null` means no genre. A value outside the list gives `invalid_genre`.
 
     ReplaceGameRequest:
       type: object
@@ -1169,3 +1193,9 @@ components:
           description: Game name. Omitted or `null` gives `invalid_game`. The name `Other` (ignoring case, after trim) is reserved for the client's free-text choice and gives `invalid_game` (ADR 0010).
         defaultMaxPlayers:
           $ref: '#/components/schemas/DefaultMaxPlayers'
+        genre:
+          type: string
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/Genre'
+          description: The game's genre. Omitted or `null` means no genre. A value outside the list gives `invalid_genre`.

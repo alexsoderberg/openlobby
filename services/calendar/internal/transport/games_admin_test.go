@@ -5,12 +5,15 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"net/http/httptest"
 	"reflect"
+	"slices"
 	"strings"
 	"testing"
 
 	"openlobby/services/calendar/internal/application"
 	"openlobby/services/calendar/internal/domain"
+	publicapi "openlobby/services/calendar/internal/transport/gen/publicapi"
 )
 
 const (
@@ -120,9 +123,9 @@ func TestListGamesReturnsWholeListToSystemAdmin(t *testing.T) {
 		t.Fatalf("decode %q: %v", response.Body.String(), err)
 	}
 	want := []map[string]any{
-		{"id": counterStrikeID, "name": "Counter-Strike 2", "defaultMaxPlayers": float64(5)},
-		{"id": overwatchID, "name": "Overwatch", "defaultMaxPlayers": float64(5)},
-		{"id": chessID, "name": "Chess", "defaultMaxPlayers": nil},
+		{"id": counterStrikeID, "name": "Counter-Strike 2", "defaultMaxPlayers": float64(5), "genre": nil},
+		{"id": overwatchID, "name": "Overwatch", "defaultMaxPlayers": float64(5), "genre": nil},
+		{"id": chessID, "name": "Chess", "defaultMaxPlayers": nil, "genre": nil},
 	}
 	if response.Code != http.StatusOK || !reflect.DeepEqual(list, want) {
 		t.Fatalf("status %d, list %v; want 200 and %v", response.Code, list, want)
@@ -201,7 +204,7 @@ func TestCreateGameAddsGameWithGeneratedIDForSystemAdmin(t *testing.T) {
 
 	response := call(gameRouter(store), http.MethodPost, gameRoot, asAdminUser(alexID), `{"name":"  Chess  ","defaultMaxPlayers":2}`)
 
-	want := map[string]any{"id": createdGameID, "name": "Chess", "defaultMaxPlayers": float64(2)}
+	want := map[string]any{"id": createdGameID, "name": "Chess", "defaultMaxPlayers": float64(2), "genre": nil}
 	var body map[string]any
 	if err := json.Unmarshal(response.Body.Bytes(), &body); err != nil {
 		t.Fatalf("decode %q: %v", response.Body.String(), err)
@@ -319,7 +322,7 @@ func TestReplaceGameReplacesNameAndMaxAndKeepsID(t *testing.T) {
 
 	response := call(gameRouter(store), http.MethodPut, gamePath, asAdminUser(alexID), `{"name":"overwatch","defaultMaxPlayers":6}`)
 
-	want := map[string]any{"id": overwatchID, "name": "overwatch", "defaultMaxPlayers": float64(6)}
+	want := map[string]any{"id": overwatchID, "name": "overwatch", "defaultMaxPlayers": float64(6), "genre": nil}
 	var body map[string]any
 	if err := json.Unmarshal(response.Body.Bytes(), &body); err != nil {
 		t.Fatalf("decode %q: %v", response.Body.String(), err)
@@ -437,5 +440,56 @@ func TestCreateAndReplaceAcceptTheLargestDefaultMax(t *testing.T) {
 
 	if created.Code != http.StatusCreated || replaced.Code != http.StatusOK {
 		t.Fatalf("create %d, replace %d; want 201 and 200", created.Code, replaced.Code)
+	}
+}
+
+func TestGameGenreIsWrittenAndReturned(t *testing.T) {
+	store := gameStore()
+
+	created := call(gameRouter(store), http.MethodPost, gameRoot, asAdminUser(alexID), `{"name":"Chess","genre":"strategy"}`)
+	replaced := call(gameRouter(store), http.MethodPut, gamePath, asAdminUser(alexID), `{"name":"Overwatch","genre":"shooter"}`)
+	cleared := call(gameRouter(store), http.MethodPut, gamePath, asAdminUser(alexID), `{"name":"Overwatch"}`)
+
+	for response, want := range map[*httptest.ResponseRecorder]string{created: `"genre":"strategy"`, replaced: `"genre":"shooter"`, cleared: `"genre":null`} {
+		if !strings.Contains(response.Body.String(), want) {
+			t.Fatalf("status %d, body %q; want %s", response.Code, response.Body.String(), want)
+		}
+	}
+}
+
+func TestGameGenreRefusesWrongValueAndType(t *testing.T) {
+	tests := []struct{ name, body, code string }{
+		{name: "unknown genre", body: `{"name":"Chess","genre":"puzzle"}`, code: "invalid_genre"},
+		{name: "capital letter", body: `{"name":"Chess","genre":"Shooter"}`, code: "invalid_genre"},
+		{name: "number", body: `{"name":"Chess","genre":5}`, code: "invalid_request"},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			store := gameStore()
+
+			response := call(gameRouter(store), http.MethodPost, gameRoot, asAdminUser(alexID), tc.body)
+
+			assertErrorEnvelope(t, response, http.StatusBadRequest, tc.code)
+			response = call(gameRouter(store), http.MethodPut, gamePath, asAdminUser(alexID), tc.body)
+			assertErrorEnvelope(t, response, http.StatusBadRequest, tc.code)
+		})
+	}
+}
+
+// The Go list and the contract enum are kept equal (ADR 0016 section 2).
+func TestDomainGenresEqualTheContractEnum(t *testing.T) {
+	contract := []publicapi.Genre{publicapi.Moba, publicapi.Party, publicapi.Racing, publicapi.Rpg, publicapi.Shooter, publicapi.Sports, publicapi.Strategy, publicapi.Survival}
+	var fromContract, fromDomain []string
+	for _, genre := range contract {
+		fromContract = append(fromContract, string(genre))
+	}
+	for _, genre := range domain.Genres() {
+		fromDomain = append(fromDomain, string(genre))
+	}
+	slices.Sort(fromContract)
+	slices.Sort(fromDomain)
+
+	if !slices.Equal(fromContract, fromDomain) {
+		t.Fatalf("contract genres %v, domain genres %v; want equal sets", fromContract, fromDomain)
 	}
 }
