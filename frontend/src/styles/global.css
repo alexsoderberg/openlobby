@@ -1090,10 +1090,10 @@ a {
   }
 }
 
-/* One column: four auto-fit cards wrapped as 3 + 1 on mid widths. */
 .steps {
   display: grid;
   max-width: 40rem;
+  margin-inline: auto;
   gap: var(--space-3);
 }
 
