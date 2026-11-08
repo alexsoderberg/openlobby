@@ -16,7 +16,7 @@ As a member, I want to create a lobby for a certain game so that others in the g
 - Given that the lobby would be 24 hours or longer, when I try to save, then it is denied with an error message and no lobby is saved (DECISION: exactly 24 hours is denied).
 - Given that the end time has the same clock time as the start time, when I try to save, then it is denied with an error message and no lobby is saved, because the end is not after the start.
 - Given that the start time has already passed, when I try to save, then it is denied with an error message.
-- Given that no game is chosen, or "Other" is chosen with a name that is empty or longer than 50 characters, when I try to save, then it is denied with an error message and no lobby is saved.
+- Given that "Other" is chosen with a name that is empty or longer than 50 characters, when I try to save, then it is denied with an error message and no lobby is saved. Amendment 2026-11-08 (REQ-0015): a lobby with no game is allowed (an open lobby). Old wording: "Given that no game is chosen, or "Other" is chosen with a name that is empty or longer than 50 characters, when I try to save, then it is denied with an error message and no lobby is saved."
 - Given that I am not a member of the group, when I try to create a lobby, then it is denied and no lobby is saved.
 - Given that I am the creator of a lobby, when I delete it, then it disappears for all members of the group.
 - Given that I am not the creator of a lobby, when I try to delete it, then it is denied.
@@ -38,8 +38,8 @@ F-004 (View upcoming lobbies) shows what is created here. F-005 (Join and leave 
 - DECISION (time zone): The user enters date and clock time in their own local time zone. The lobby is saved as an exact moment and shown to each member in their local time zone.
 - DECISION (over midnight): An end time as a clock time earlier than the start time is read as the next day. Consequence: a mistyped clock time (e.g. 09:00 instead of 21:00) gives a long lobby without a warning.
 - DECISION (warning): No warning for long lobbies, not even over 12 hours. Mistyped clock times are accepted in the MVP.
-- DECISION (game): Games are chosen from the game list (REQ-0009) or are "Other" with a free-text name. Game is mandatory. The same game may be spelled differently under "Other"; this is accepted in the MVP. Replaces the earlier decision that games were free text.
-- DECISION (max players): Max players is set at creation and does not change in the MVP. Replaces the earlier decision that there was no max limit on players (REQ-0005).
+- DECISION (game): Games are chosen from the game list (REQ-0009) or are "Other" with a free-text name. Game is mandatory. The same game may be spelled differently under "Other"; this is accepted in the MVP. Replaces the earlier decision that games were free text. Superseded 2026-11-08 by Amendment 2026-11-08 (REQ-0015): the game is optional.
+- DECISION (max players): Max players is set at creation and does not change in the MVP. Replaces the earlier decision that there was no max limit on players (REQ-0005). Superseded 2026-11-08 by Amendment 2026-11-08 (REQ-0015) for mode changes.
 - ASSUMPTION (wrong max): A wrong max value is corrected by deleting the lobby and creating a new one (F-011).
 - DECISION (lobby in the past): It is not possible to create a lobby whose start time has already passed.
 - DECISION (concurrent editing): No locking. Two members can create lobbies at the same time.
@@ -71,3 +71,14 @@ Status stays Implemented. Decided by the user on 2026-11-04. Built: item 1 in PR
 ## Related features (amendment)
 F-002: the Create group form is the pattern for the open and close behavior, and is not changed by this amendment.
 F-017 (calendar view): the time grid is the entry point for the prefill in item 3. The form, its rules and its data are unchanged.
+
+## Amendment 2026-11-08 (REQ-0015, game modes and open lobbies)
+Status stays Implemented. Decided by the user on 2026-11-08 (REQ-0015, F-033, F-034). Pending implementation. Binding for the backend and UI experts.
+
+1. The game is optional (DECISION, user, 2026-11-08). A lobby with no game is an open lobby (REQ-0015). Old wording: "Game is mandatory" (DECISION game, above), and the criterion on no game being chosen (criterion 7 under "Acceptance criteria", amended in place).
+2. The create form also offers a mode and an activity, each optional, as in REQ-0015 ("Creating a lobby"). Max players is prefilled from the chosen mode or game as in REQ-0015 ("Applying a choice").
+3. Max players of a lobby changes after creation only when a player sets or changes the mode (REQ-0015). This is an exception to the DECISION "Max players is set at creation and does not change in the MVP" (F-018), decided by the user on 2026-11-08. Old wording: "Max players is set at creation and does not change in the MVP."
+4. Max players is optional for an open lobby; empty means no limit (DECISION, user, 2026-11-08).
+
+## Related features (amendment 2026-11-08)
+F-033 (game modes) and F-034 (open lobbies) extend this requirement (REQ-0015). The time rules, the creator as a player, and deletion are unchanged.

@@ -12,7 +12,7 @@ As a member, I want to see all upcoming lobbies in my group, with who is playing
 ## Acceptance criteria
 
 List (F-004):
-- Given that I am a member and there are upcoming lobbies, when I open the group's page, then the lobbies are sorted by start time, and each row shows game, date and clock time, creator, and Spot / max players: "X/Y players" if the lobby has a max players value, and "X players" if it has no max.
+- Given that I am a member and there are upcoming lobbies, when I open the group's page, then the lobbies are sorted by start time, and each row shows the label (game, mode and activity, or "Open" for a lobby with no game; Amendment 2026-11-08, REQ-0015), date and clock time, creator, and Spot / max players: "X/Y players" if the lobby has a max players value, and "X players" if it has no max.
 - Given that a lobby ends the next day, when it is shown in the list, then the end date is also shown.
 - Given that my locale formats dates or clock times differently from the English default, when I see a lobby in the list or the calendar, then its dates and clock times are formatted for my locale, and the interface text stays English until translations exist (vision.md DECISION: UI language).
 - Given that I am a member, when I open the group's page, then a lobby is shown only until its end time has passed.
@@ -85,7 +85,7 @@ Layout (screen 760 px or wider):
 - Given that I am in the week view, when it is shown, then the days are columns Monday to Sunday, the hours run vertically from 00:00 to 24:00, and the grid scrolls vertically (DECISION, user).
 - Given that the week view opens, when the page loads, then 16:00 is at the top of the visible grid, or, if a lobby in the displayed week starts earlier, the full hour containing the earliest such lobby's start is at the top (DECISION, product owner, 2026-11-05: the hour line gives orientation and the lobby is in view at once). A lobby that continues from the previous day counts as starting at 00:00 (DECISION, user: "around 16:00" and "the week's first lobby if earlier"; ASSUMPTION for the exact offset).
 - Given that a lobby is shown, when I look at its block, then its height is proportional to its duration, so that the block covers the clock times its lobby spans (DECISION, user; amended 2026-11-05: DECISION, product owner, the height uses wall-clock minutes, so on a daylight-saving change day a lobby across the switch shows its clock span, which can differ from its real duration by one hour; the grid shows clock times and such lobbies are rare).
-- Given that a lobby is shown, when I look at its block, then it shows the game, the time range and Spot / max players ("X/Y players" or "X players"). When a block is too short to show them, they stay available to assistive technology (ASSUMPTION).
+- Given that a lobby is shown, when I look at its block, then it shows the label (game, mode and activity, REQ-0015 Amendment 2026-11-08), the time range and Spot / max players ("X/Y players" or "X players"). When a block is too short to show them, they stay available to assistive technology (ASSUMPTION).
 - Given that a lobby starts on one day and ends after midnight, when it is shown, then its block runs to 24:00 in the start day's column with the marker "ends next day", and in the next day's column from 00:00 to its end time with the marker "started the day before" (DECISION, user; marker wording ASSUMPTION). Both blocks open the same detail view.
 - Given that a lobby started before Monday and has not ended, when the current week is shown, then its remaining part is shown in Monday's column from 00:00 to its end time with the marker "started the day before" (DECISION, user).
 - Given that two lobbies overlap in a day, when the grid is shown, then they sit side by side in that day's column, sharing its width, and neither is hidden (DECISION, user).
@@ -124,3 +124,13 @@ Status stays Implemented. DECISION, user, 2026-11-07. Binding for the UI expert.
 - The criteria above that name the options "List" and "Calendar" (the switch, the view switch by selecting "Calendar" and "List", and the keyboard criterion) still apply to these icon options, with the accessible names as the labels.
 
 Related features (icon toggle): F-017 (the same switch, icon form only). The dashboard's This week toggle (REQ-0012, Amendment 2026-11-07) uses the same kind of control with its own names; it is not a second group switch.
+
+## Amendment 2026-11-08 (REQ-0015, game modes and open lobbies)
+Status stays Implemented. Decided by the user on 2026-11-08 (REQ-0015, F-033, F-034). Pending implementation. Binding for the UI expert. Build together with REQ-0011 and REQ-0015 (backlog A2 and A3).
+
+- Given that I see a lobby in the list, the calendar or the week grid, when it has a game, then its label is "game › mode › activity", leaving out a missing mode or activity (e.g. "WoW › Dungeon › <activity>", "WoW › Dungeon" or "WoW"). When it has no game, its label is "Open". An "Other" lobby shows its free-text name only. Old wording: "each row shows game, date and clock time, creator, and Spot / max players" and "it shows the game, the time range and Spot / max players" (the criteria above, kept for reference).
+- Given that a lobby has a mode with game roles, when I see its player count, then the game role display of REQ-0011 applies in the list and in the detail view. The Spot / max players criteria above are unchanged for lobbies without game roles.
+- Given that a week block is too small for the full label, when I see it, then the game name stays as text and the mode and activity may be shortened (REQ-0015, Display).
+- Given that a lobby is shown, when I change nothing, then no control to change its game, mode or activity is shown in the list or the calendar. These are changed on the lobby page (REQ-0015, "Setting or changing ... later"). ASSUMPTION for the UI expert to confirm.
+
+Related features (amendment 2026-11-08): F-033 and F-034 (REQ-0015) change the label and the open lobby case only. The list, calendar and detail rules are unchanged.
