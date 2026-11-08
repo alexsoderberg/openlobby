@@ -3,7 +3,7 @@ Status: Implemented
 Feature: F-032
 Priority: Should
 
-Implemented in PR #70 (merged 2026-11-08, after reviewer approval and the user's visual check at 320 and 390 px). Pending: the REQ-0013 criterion (Amendment 2026-11-07) that a sample card uses its genre's theme. It is verified with the REQ-0013 rebuild (backlog C1), not in PR #70.
+Implemented in PR #70 (merged 2026-11-08, after reviewer approval and the user's visual check at 320 and 390 px). The REQ-0013 criterion (Amendment 2026-11-07) that a sample card uses its genre's theme is delivered in PR #72 (merged 2026-11-08) with the landing hero. PR #73 (merged 2026-11-08) adds the genre name to the This week day list and makes the lobby rows larger, with a genre-accent border.
 
 Decided by the user (DECISION, user, 2026-11-07): genre themes, chosen from three options (where, how, which games). The product owner wrote the criteria. The data model, the API and the design of the themes are the architect's and the UI/UX expert's.
 
@@ -53,8 +53,7 @@ Brands and content:
 - Given the genre names, when the UI is translated (cross-cutting note in features.md), then the genre names come from the UI text catalog and can be translated. They are not stored data.
 
 Landing hero (extends REQ-0013):
-- Note: the landing hero's genre-themed sample cards are verified with REQ-0013 (Amendment 2026-11-07: each sample card uses a different genre theme from this requirement). The hero exists only on an unmerged branch (PR #61), so this requirement does not verify it. REQ-0014 can be Implemented without it.
-- DECISION (orchestrator, 2026-11-07): the landing hero criterion is delivered and verified with the REQ-0013 rebuild, not with REQ-0014.
+- Delivered in PR #72 (merged 2026-11-08) with REQ-0013 (Amendment 2026-11-07: each sample card uses a different genre theme from this requirement). Verified with the REQ-0013 rebuild, as decided on 2026-11-07 (orchestrator).
 
 ## Genre themes
 

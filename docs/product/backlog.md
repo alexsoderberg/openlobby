@@ -60,7 +60,7 @@ Not part of the MVP. The vision lists it as outside the MVP scope. It is priorit
 
 Confirmed by the user on 2026-11-04: game roles (REQ-0011) stay after the MVP (DECISION, user).
 
-Delivered (2026-11-08): A1 (REQ-0014, game genre themes) in PR #70. The landing hero criterion of REQ-0014 is not part of it; it is verified with C1 (REQ-0013 rebuild).
+Delivered (2026-11-08): A1 (REQ-0014, game genre themes) in PR #70. The landing hero criterion of REQ-0014 is not part of it; it is delivered with C1 (see below).
 
 Order decided by the user on 2026-11-07: genre themes (REQ-0014) come first, ahead of game roles (REQ-0011). The user asked for the genre themes now ("we also need more gaming aesthetics"). Game roles stay Should and follow directly. REQ-0014 needs no game roles and can be delivered on its own.
 
@@ -78,6 +78,8 @@ Ordered after the Should items, because priority comes first. Not yet a requirem
 Ordering reason: B1 is after A2 because A2 is prioritized higher. Both A2 and B1 extend the game form (F-025) and amend REQ-0009, so the architect should review them together when B1 is written, to avoid two rounds of changes to the same form and data model. B1 has no dependency on A2 and can be moved earlier by the user at any time. B1's accent color overrides the genre theme's accent color for its game (DECISION, user, 2026-11-07).
 
 C1 is after B1 because no core flow depends on it, and it adds a visual only. It is `Could` by the product owner's judgment; the user asked for it and may move it earlier. The three.js dependency is decided in ADR 0015. The decorative preview question in REQ-0013 is decided (DECISION, user, 2026-11-08: removed, see REQ-0013 Amendment 2026-11-08). The open question in REQ-0013 (landing copy with a lobby step) is a decision for the user and is not blocking.
+
+Delivered (2026-11-08): C1 (REQ-0013, landing hero) in PR #72, with the removals of REQ-0013 Amendment 2026-11-08 and the steps in one column. Its REQ-0014 criterion (sample cards with genre themes) is delivered with it.
 
 The item goals idea (F-031) is `Proposed`, decision postponed until the MVP has been used. It is not ordered here.
 
