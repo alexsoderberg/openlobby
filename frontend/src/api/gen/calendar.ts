@@ -313,7 +313,7 @@ export interface paths {
          * Add game (system admin)
          * @description System admin only. The server generates the game's ID (uuid). The change takes effect immediately, without a new version.
          *     Rules in this order: invalid JSON or wrong JSON type (400 `invalid_request`), permission (403 `not_allowed`, before any domain validation),
-         *     name (400 `invalid_game`, including `Other`), default max (400 `invalid_capacity`), name already used ignoring case (409 `game_taken`).
+         *     name (400 `invalid_game`, including `Other`), default max (400 `invalid_capacity`), genre (400 `invalid_genre`), name already used ignoring case (409 `game_taken`).
          */
         post: operations["createGame"];
         delete?: never;
@@ -332,10 +332,10 @@ export interface paths {
         get?: never;
         /**
          * Replace game (system admin)
-         * @description System admin only. Replaces the name and the default max. The `gameId` in the path cannot be changed.
-         *     Replaces the whole game: an omitted or `null` `defaultMaxPlayers` makes the game unlimited, and an omitted `name` gives `invalid_game`. Lobbies that were already created are not changed.
+         * @description System admin only. Replaces the name, the default max and the genre. The `gameId` in the path cannot be changed.
+         *     Replaces the whole game: an omitted or `null` `defaultMaxPlayers` makes the game unlimited, an omitted or `null` `genre` gives the game no genre, and an omitted `name` gives `invalid_game`. Lobbies that were already created are not changed.
          *     Rules in this order: a `gameId` in invalid form (404 `game_not_found`), invalid JSON or wrong JSON type (400 `invalid_request`), permission (403 `not_allowed`),
-         *     name (400 `invalid_game`, including `Other`) and default max (400 `invalid_capacity`), unknown `gameId` (404 `game_not_found`), name used by another game (409 `game_taken`).
+         *     name (400 `invalid_game`, including `Other`), default max (400 `invalid_capacity`) and genre (400 `invalid_genre`), unknown `gameId` (404 `game_not_found`), name used by another game (409 `game_taken`).
          */
         put: operations["replaceGame"];
         post?: never;
@@ -363,7 +363,7 @@ export interface components {
              * @description Machine-readable error code. The text for the user belongs to the frontend. not_found and method_not_allowed are returned by the gateway only.
              * @enum {string}
              */
-            code: "unauthenticated" | "service_unavailable" | "invalid_request" | "not_allowed" | "group_not_found" | "member_not_found" | "own_upcoming_lobbies_exist" | "invalid_group_name" | "invite_invalid" | "invalid_max_uses" | "lobby_not_found" | "lobby_in_past" | "lobby_end_not_after_start" | "lobby_too_long" | "lobby_has_ended" | "lobby_full" | "invalid_game" | "invalid_capacity" | "game_taken" | "game_not_found" | "internal_error" | "not_found" | "method_not_allowed";
+            code: "unauthenticated" | "service_unavailable" | "invalid_request" | "not_allowed" | "group_not_found" | "member_not_found" | "own_upcoming_lobbies_exist" | "invalid_group_name" | "invite_invalid" | "invalid_max_uses" | "lobby_not_found" | "lobby_in_past" | "lobby_end_not_after_start" | "lobby_too_long" | "lobby_has_ended" | "lobby_full" | "invalid_game" | "invalid_capacity" | "invalid_genre" | "game_taken" | "game_not_found" | "internal_error" | "not_found" | "method_not_allowed";
             /** @description Same value as `X-Request-Id` in the response. Used to match logs. */
             requestId: string;
         };
@@ -431,10 +431,17 @@ export interface components {
         DefaultMaxPlayers: number | null;
         /** @description Game name, 1–50 characters after trim. */
         GameName: string;
+        /**
+         * @description Genre of a game from a fixed list (REQ-0014, ADR 0016). `null` means no genre.
+         * @enum {string}
+         */
+        Genre: "shooter" | "moba" | "racing" | "strategy" | "survival" | "party" | "rpg" | "sports";
         Lobby: {
             /** Format: uuid */
             id: string;
             gameName: components["schemas"]["GameName"];
+            /** @description Genre of the lobby's game as it is in the game list now. `null` for a custom name ("Other"), a game without a genre, or a game that was removed. Not stored in the lobby, so a genre change shows at the next read. */
+            gameGenre: (string & components["schemas"]["Genre"]) | null;
             maxPlayers: components["schemas"]["MaxPlayers"];
             /**
              * Format: date-time
@@ -482,16 +489,22 @@ export interface components {
             id: components["schemas"]["GameId"];
             name: components["schemas"]["GameName"];
             defaultMaxPlayers: components["schemas"]["DefaultMaxPlayers"];
+            /** @description The game's genre, or `null` for no genre. */
+            genre: (string & components["schemas"]["Genre"]) | null;
         };
         CreateGameRequest: {
             /** @description Game name. Omitted or `null` gives `invalid_game`. The name `Other` (ignoring case, after trim) is reserved for the client's free-text choice and gives `invalid_game` (ADR 0010). */
             name?: (string & components["schemas"]["GameName"]) | null;
             defaultMaxPlayers?: components["schemas"]["DefaultMaxPlayers"];
+            /** @description The game's genre. Omitted or `null` means no genre. A value outside the list gives `invalid_genre`. */
+            genre?: (string & components["schemas"]["Genre"]) | null;
         };
         ReplaceGameRequest: {
             /** @description Game name. Omitted or `null` gives `invalid_game`. The name `Other` (ignoring case, after trim) is reserved for the client's free-text choice and gives `invalid_game` (ADR 0010). */
             name?: (string & components["schemas"]["GameName"]) | null;
             defaultMaxPlayers?: components["schemas"]["DefaultMaxPlayers"];
+            /** @description The game's genre. Omitted or `null` means no genre. A value outside the list gives `invalid_genre`. */
+            genre?: (string & components["schemas"]["Genre"]) | null;
         };
     };
     responses: {
@@ -1336,7 +1349,7 @@ export interface operations {
             };
             /**
              * @description `invalid_game` (the name is omitted, `null`, empty after trim, longer than 50 characters, or `Other`),
-             *     `invalid_capacity` (default max is not `null` or an integer from 1 to 2147483647), or `invalid_request` (invalid JSON or a wrong JSON type).
+             *     `invalid_capacity` (default max is not `null` or an integer from 1 to 2147483647), `invalid_genre` (genre is not in the list), or `invalid_request` (invalid JSON or a wrong JSON type).
              */
             400: {
                 headers: {
@@ -1398,7 +1411,7 @@ export interface operations {
                 };
             };
             /**
-             * @description `invalid_game` (name omitted, `null`, empty after trim, too long, or `Other`), `invalid_capacity` (default max),
+             * @description `invalid_game` (name omitted, `null`, empty after trim, too long, or `Other`), `invalid_capacity` (default max), `invalid_genre` (genre is not in the list),
              *     or `invalid_request` (invalid JSON or a wrong JSON type).
              */
             400: {

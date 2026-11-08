@@ -4,6 +4,7 @@ import type { components as calendarComponents } from "./gen/calendar";
 export type AuthUser = authComponents["schemas"]["AuthUser"];
 export type GroupSummary = calendarComponents["schemas"]["GroupSummary"];
 export type Group = calendarComponents["schemas"]["Group"];
+export type Genre = calendarComponents["schemas"]["Genre"];
 export type Game = calendarComponents["schemas"]["Game"];
 export type InviteLink = calendarComponents["schemas"]["InviteLink"];
 export type InviteInfo = calendarComponents["schemas"]["InviteInfo"];

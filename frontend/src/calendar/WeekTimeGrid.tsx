@@ -1,3 +1,4 @@
+import type { Genre } from "../api";
 import { useState } from "react";
 import { DayPills } from "./DayPills";
 import { TimeGrid } from "./TimeGrid";
@@ -15,6 +16,7 @@ export function WeekTimeGrid<T extends GridLobby>({
   now,
   titleLevel,
   hrefOf,
+  genreOf,
   onCreate,
 }: {
   days: WeekDay<T>[];
@@ -23,6 +25,8 @@ export function WeekTimeGrid<T extends GridLobby>({
   /** Heading level of the day titles, one below the heading of the section the grid sits in. */
   titleLevel: TitleLevel;
   hrefOf: (lobby: T) => string;
+  /** The genre to theme a lobby with, or null for the neutral theme. The calendar reads no lobby genre itself. */
+  genreOf: (lobby: T) => Genre | null;
   onCreate?: CreateAt;
 }) {
   const today = now.toDateString();
@@ -44,6 +48,7 @@ export function WeekTimeGrid<T extends GridLobby>({
         now={now}
         titleLevel={titleLevel}
         hrefOf={hrefOf}
+        genreOf={genreOf}
         onCreate={onCreate}
       />
     </>

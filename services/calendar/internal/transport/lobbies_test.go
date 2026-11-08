@@ -178,7 +178,7 @@ func TestCreateLobbyReturns201WithTheContractShape(t *testing.T) {
 				t.Fatal(err)
 			}
 			want := map[string]any{
-				"id": createdID, "gameName": tc.wantGame, "maxPlayers": tc.wantMax, "startsAt": tc.wantStart,
+				"id": createdID, "gameName": tc.wantGame, "gameGenre": nil, "maxPlayers": tc.wantMax, "startsAt": tc.wantStart,
 				"endsAt": validEnd, "createdByUserId": otherID, "playerCount": float64(1), "joinedByMe": true,
 			}
 			for key, value := range want {
@@ -351,7 +351,7 @@ func TestListUpcomingLobbiesReturns200WithTheContractShape(t *testing.T) {
 		t.Fatalf("body %v, want the lobbies of Alex then Other, without the ended one", got)
 	}
 	want := map[string]any{
-		"id": aliceLobby, "gameName": "Go", "maxPlayers": nil, "startsAt": "2026-11-02T19:00:00Z",
+		"id": aliceLobby, "gameName": "Go", "gameGenre": nil, "maxPlayers": nil, "startsAt": "2026-11-02T19:00:00Z",
 		"endsAt": "2026-11-02T20:00:00Z", "createdByUserId": alexID, "playerCount": float64(2), "joinedByMe": false,
 	}
 	for key, value := range want {
@@ -503,5 +503,20 @@ func TestJoinAndLeaveLobbyNeedALogin(t *testing.T) {
 		if response.Code != http.StatusUnauthorized {
 			t.Errorf("%s status %d, want 401", method, response.Code)
 		}
+	}
+}
+
+// The create response and the lists carry the genre of the lobby's game (ADR 0016).
+func TestLobbyResponsesCarryTheGameGenre(t *testing.T) {
+	store := lobbyStore()
+	strategy := domain.Genre("strategy")
+	store.games[0].Genre = &strategy
+	store.lobbies[aliceLobby] = domain.Lobby{ID: aliceLobby, GroupID: fridayID, CreatedByUserID: alexID, GameName: "Chess", GameGenre: &strategy}
+
+	created := call(newRouter(store, fridayDirectory()), http.MethodPost, lobbiesPath, asUser(otherID), lobbyJSON(validStart, validEnd, withChess))
+	listed := call(newRouter(store, fridayDirectory()), http.MethodGet, lobbiesPath, asUser(otherID), "")
+
+	if !strings.Contains(created.Body.String(), `"gameGenre":"strategy"`) || !strings.Contains(listed.Body.String(), `"gameGenre":"strategy"`) {
+		t.Fatalf("created %q, listed %q; want gameGenre strategy in both", created.Body.String(), listed.Body.String())
 	}
 }

@@ -19,6 +19,7 @@ const lobby = (
 ): DashboardLobby => ({
   id,
   gameName,
+  gameGenre: null,
   maxPlayers: 5,
   startsAt: start.toISOString(),
   endsAt: end.toISOString(),

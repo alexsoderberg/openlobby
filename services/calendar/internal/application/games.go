@@ -44,13 +44,13 @@ func (g *Games) ListGames(ctx context.Context, actor domain.Actor) ([]domain.Gam
 	return games, nil
 }
 
-// CreateGame adds a game to the list. The admin check comes first and the name and default max are checked before
+// CreateGame adds a game to the list. The admin check comes first and the name, default max and genre are checked before
 // any write (ADR 0010).
-func (g *Games) CreateGame(ctx context.Context, actor domain.Actor, rawName string, defaultMaxPlayers *int) (domain.Game, error) {
+func (g *Games) CreateGame(ctx context.Context, actor domain.Actor, rawName string, defaultMaxPlayers *int, genre *domain.Genre) (domain.Game, error) {
 	if err := requireSystemAdmin(actor); err != nil {
 		return domain.Game{}, fmt.Errorf("create game: %w", err)
 	}
-	game, err := domain.NewGame("", rawName, defaultMaxPlayers)
+	game, err := domain.NewGame("", rawName, defaultMaxPlayers, genre)
 	if err != nil {
 		return domain.Game{}, fmt.Errorf("create game: %w", err)
 	}
@@ -62,12 +62,12 @@ func (g *Games) CreateGame(ctx context.Context, actor domain.Actor, rawName stri
 	return created, nil
 }
 
-// ReplaceGame changes the name and default max of a game. The ID never changes, and lobbies keep their own values (ADR 0010).
-func (g *Games) ReplaceGame(ctx context.Context, actor domain.Actor, gameID, rawName string, defaultMaxPlayers *int) (domain.Game, error) {
+// ReplaceGame changes the name, default max and genre of a game; a nil genre clears it. The ID never changes, and lobbies keep their own values (ADR 0010).
+func (g *Games) ReplaceGame(ctx context.Context, actor domain.Actor, gameID, rawName string, defaultMaxPlayers *int, genre *domain.Genre) (domain.Game, error) {
 	if err := requireSystemAdmin(actor); err != nil {
 		return domain.Game{}, fmt.Errorf("replace game: %w", err)
 	}
-	game, err := domain.NewGame(gameID, rawName, defaultMaxPlayers)
+	game, err := domain.NewGame(gameID, rawName, defaultMaxPlayers, genre)
 	if err != nil {
 		return domain.Game{}, fmt.Errorf("replace game: %w", err)
 	}

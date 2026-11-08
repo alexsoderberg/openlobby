@@ -1,4 +1,5 @@
 import type { Group, Lobby } from "../../api";
+import { GenreFrame, GenreName } from "../../genres";
 import { formatDateTimeRange, useMessages } from "../../i18n";
 import { creatorName } from "./creatorName";
 import { lobbyPath } from "./lobbyPath";
@@ -39,15 +40,16 @@ function LobbyRow({
   const m = useMessages();
   const creator = creatorName(members, lobby, m.lobbyUnknownCreator);
   return (
-    <li className="list-row lobby-row">
+    <GenreFrame as="li" genre={lobby.gameGenre} className="list-row lobby-row">
       <a className="lobby-row__game" href={lobbyPath(groupId, lobby.id)}>
         {lobby.gameName}
       </a>
+      <GenreName genre={lobby.gameGenre} />
       <span>{formatDateTimeRange(lobby.startsAt, lobby.endsAt)}</span>
       <span className="lobby-row__meta">{m.lobbyCreatedBy(creator)}</span>
       <span className="badge">
         {m.lobbyPlayers(lobby.playerCount, lobby.maxPlayers)}
       </span>
-    </li>
+    </GenreFrame>
   );
 }

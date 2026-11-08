@@ -48,6 +48,7 @@ export function LobbyCalendar({
         now={new Date()}
         titleLevel={4}
         hrefOf={(lobby) => lobbyPath(groupId, lobby.id)}
+        genreOf={(lobby) => lobby.gameGenre}
         onCreate={onCreate}
       />
     </div>

@@ -27,6 +27,7 @@ function lobby(
   overrides: Partial<Lobby> & Pick<Lobby, "id" | "gameName">,
 ): Lobby {
   return {
+    gameGenre: null,
     maxPlayers: 4,
     startsAt: local(5, 18),
     endsAt: local(5, 20),
@@ -48,8 +49,8 @@ const chess = lobby({
   createdByUserId: "u2",
 });
 const games = [
-  { id: "g-chess", name: "Chess", defaultMaxPlayers: null },
-  { id: "g-catan", name: "Catan", defaultMaxPlayers: 4 },
+  { id: "g-chess", name: "Chess", defaultMaxPlayers: null, genre: null },
+  { id: "g-catan", name: "Catan", defaultMaxPlayers: 4, genre: null },
 ];
 
 beforeEach(() => {
@@ -100,6 +101,33 @@ describe("lobby list", () => {
     expect(within(rows[1]).getByRole("link").textContent).toBe("Chess");
     expect(rows[1].textContent).toContain(en.lobbyCreatedBy("Kim Berg"));
     expect(rows[1].textContent).toContain("3 players");
+  });
+
+  it("shows the genre name and its theme on a genre lobby, and no genre name on a neutral one", async () => {
+    renderLobbies(withLobbies({ ...catan, gameGenre: "strategy" }, chess));
+
+    const [themed, neutral] = await screen.findAllByRole("listitem");
+    expect(within(themed).getByText(en.genre.strategy)).toBeTruthy();
+    expect(themed.getAttribute("data-genre")).toBe("strategy");
+    expect(neutral.getAttribute("data-genre")).toBe("neutral");
+    for (const genre of Object.values(en.genre).filter(
+      (name) => name !== en.genre.none,
+    ))
+      expect(within(neutral).queryByText(genre)).toBeNull();
+    expect(
+      themed.querySelector("img[aria-hidden='true']")?.getAttribute("alt"),
+    ).toBe("");
+  });
+
+  it("themes the week calendar blocks by genre", async () => {
+    renderLobbies(withLobbies({ ...catan, gameGenre: "racing" }));
+    await screen.findAllByRole("listitem");
+    fireEvent.click(screen.getByRole("button", { name: en.lobbyViewCalendar }));
+
+    const block = (await screen.findByRole("link", { name: "Catan" })).closest(
+      "li",
+    )!;
+    expect(block.getAttribute("data-genre")).toBe("racing");
   });
 
   it("links each lobby to its detail page", async () => {

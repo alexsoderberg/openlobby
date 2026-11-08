@@ -4,6 +4,7 @@ package domain
 import (
 	"errors"
 	"math"
+	"slices"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -23,6 +24,9 @@ var ErrInvalidGame = errors.New("invalid game")
 
 // ErrInvalidCapacity means the default max players is neither omitted nor an integer from 1 to 2147483647 (ADR 0010).
 var ErrInvalidCapacity = errors.New("invalid capacity")
+
+// ErrInvalidGenre means the genre is not in the fixed list (REQ-0014, ADR 0016).
+var ErrInvalidGenre = errors.New("invalid genre")
 
 // ErrInvalidMaxUses means the requested max uses is outside 1 to InviteLinkMaxUsesLimit (ADR 0007).
 var ErrInvalidMaxUses = errors.New("invalid max uses")
@@ -74,12 +78,26 @@ type Group struct {
 	Name string
 }
 
+// Genre is the genre of a game from a fixed list (REQ-0014, ADR 0016). A nil *Genre means no genre.
+type Genre string
+
+// Genres returns the allowed genres. The list is kept equal to the contract's Genre enum and the database check by tests.
+func Genres() []Genre {
+	return []Genre{"shooter", "moba", "racing", "strategy", "survival", "party", "rpg", "sports"}
+}
+
+// IsGenre reports whether the value is one of Genres, exactly as written (lowercase).
+func IsGenre(value string) bool {
+	return slices.Contains(Genres(), Genre(value))
+}
+
 // Game is an entry of the game list (ADR 0010). Lobbies refer to it by ID, so a rename keeps its identity. A nil
-// DefaultMaxPlayers means unlimited.
+// DefaultMaxPlayers means unlimited and a nil Genre means no genre.
 type Game struct {
 	ID                string
 	Name              string
 	DefaultMaxPlayers *int
+	Genre             *Genre
 }
 
 // Actor is the verified caller of a request (ADR 0011). Only the transport layer builds it, from the gateway's headers.
@@ -116,9 +134,9 @@ func validCapacity(maxPlayers *int) bool {
 	return maxPlayers == nil || (*maxPlayers >= 1 && *maxPlayers <= maxPlayersLimit)
 }
 
-// NewGame trims and checks a game's name and default max players (ADR 0010). The ID is kept as given; it is empty
+// NewGame trims and checks a game's name, default max players and genre (ADR 0010, ADR 0016). The ID is kept as given; it is empty
 // for a new game until the database generates it.
-func NewGame(id, rawName string, defaultMaxPlayers *int) (Game, error) {
+func NewGame(id, rawName string, defaultMaxPlayers *int, genre *Genre) (Game, error) {
 	name, ok := trimName(rawName)
 	if !ok || strings.EqualFold(name, reservedGameName) {
 		return Game{}, ErrInvalidGame
@@ -126,7 +144,10 @@ func NewGame(id, rawName string, defaultMaxPlayers *int) (Game, error) {
 	if !validCapacity(defaultMaxPlayers) {
 		return Game{}, ErrInvalidCapacity
 	}
-	return Game{ID: id, Name: name, DefaultMaxPlayers: defaultMaxPlayers}, nil
+	if genre != nil && !IsGenre(string(*genre)) {
+		return Game{}, ErrInvalidGenre
+	}
+	return Game{ID: id, Name: name, DefaultMaxPlayers: defaultMaxPlayers, Genre: genre}, nil
 }
 
 // InviteLinkMaxUses is how many joins an invite link allows, always from 1 to InviteLinkMaxUsesLimit.

@@ -21,6 +21,7 @@ const HOUR_MS = 60 * 60 * 1000;
 const lobby: LobbyDetail = {
   id: "l1",
   gameName: "Catan",
+  gameGenre: null,
   maxPlayers: 4,
   // Relative to now: join is only offered until the end time, so a fixed date stops working once it passes.
   startsAt: new Date(Date.now() + HOUR_MS).toISOString(),
@@ -57,6 +58,30 @@ function renderDetail(
   );
   return { client, onDeleted };
 }
+
+describe("lobby theme", () => {
+  it("shows the genre name beside the game name", async () => {
+    renderDetail({
+      getLobby: () => Promise.resolve({ ...lobby, gameGenre: "survival" }),
+    });
+
+    expect(await screen.findByText(en.genre.survival)).toBeTruthy();
+    expect(
+      screen
+        .getByRole("heading", { name: "Catan" })
+        .closest("header")
+        ?.getAttribute("data-genre"),
+    ).toBe("survival");
+  });
+
+  it("shows no genre name for a neutral lobby", async () => {
+    renderDetail();
+
+    await screen.findByRole("heading", { name: "Catan" });
+    for (const name of Object.values(en.genre))
+      if (name !== en.genre.none) expect(screen.queryByText(name)).toBeNull();
+  });
+});
 
 describe("lobby detail", () => {
   it("shows the game, spots and the names of all players in joined order", async () => {

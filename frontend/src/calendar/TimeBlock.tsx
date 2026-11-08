@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
-import type { Lobby } from "../api";
+import type { Genre, Lobby } from "../api";
+import { GenreFrame } from "../genres";
 import { formatTimeRange, useMessages } from "../i18n";
 import type { Block } from "./gridGeometry";
 
@@ -15,9 +16,11 @@ export type GridLobby = Lobby & { groupName?: string };
 export function TimeBlock({
   block,
   href,
+  genre,
 }: {
   block: Block<GridLobby>;
   href: string;
+  genre: Genre | null;
 }) {
   const m = useMessages();
   const { item: lobby } = block;
@@ -28,7 +31,9 @@ export function TimeBlock({
     "--columns": block.columns,
   } as CSSProperties;
   return (
-    <li
+    <GenreFrame
+      as="li"
+      genre={genre}
       className="time-block"
       style={place}
       data-continues-before={block.continuesBefore || undefined}
@@ -50,6 +55,6 @@ export function TimeBlock({
         {lobby.groupName && <span>{lobby.groupName}</span>}
         <span>{m.lobbyPlayers(lobby.playerCount, lobby.maxPlayers)}</span>
       </div>
-    </li>
+    </GenreFrame>
   );
 }

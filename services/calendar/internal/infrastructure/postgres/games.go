@@ -12,18 +12,18 @@ import (
 )
 
 // The order is the system admin's list order (ADR 0010); the group order is decided in application.
-const listGamesSQL = `SELECT id, name, default_max_players FROM games ORDER BY lower(name), id`
+const listGamesSQL = `SELECT id, name, default_max_players, genre FROM games ORDER BY lower(name), id`
 
-const selectGameSQL = `SELECT id, name, default_max_players FROM games WHERE id = $1`
+const selectGameSQL = `SELECT id, name, default_max_players, genre FROM games WHERE id = $1`
 
 // Lobbies of other groups and lobbies with a custom name (game_id NULL) or a removed game do not join, so they do not count.
-const listGroupGamesSQL = `SELECT g.id, g.name, g.default_max_players, count(l.id)
+const listGroupGamesSQL = `SELECT g.id, g.name, g.default_max_players, g.genre, count(l.id)
 	FROM games g LEFT JOIN lobbies l ON l.game_id = g.id AND l.group_id = $1
 	GROUP BY g.id ORDER BY lower(g.name), g.id`
 
-const insertGameSQL = `INSERT INTO games (name, default_max_players) VALUES ($1, $2) RETURNING id`
+const insertGameSQL = `INSERT INTO games (name, default_max_players, genre) VALUES ($1, $2, $3) RETURNING id`
 
-const updateGameSQL = `UPDATE games SET name = $2, default_max_players = $3 WHERE id = $1`
+const updateGameSQL = `UPDATE games SET name = $2, default_max_players = $3, genre = $4 WHERE id = $1`
 
 const deleteGameSQL = `DELETE FROM games WHERE id = $1`
 
@@ -53,7 +53,7 @@ func (r gameRepo) List(ctx context.Context) (games []domain.Game, err error) {
 	defer func() { err = errors.Join(err, translate(rows.Close())) }()
 	for rows.Next() {
 		var game domain.Game
-		if scanErr := rows.Scan(&game.ID, &game.Name, &game.DefaultMaxPlayers); scanErr != nil {
+		if scanErr := rows.Scan(&game.ID, &game.Name, &game.DefaultMaxPlayers, &game.Genre); scanErr != nil {
 			return nil, translate(scanErr)
 		}
 		games = append(games, game)
@@ -71,7 +71,7 @@ func (r gameRepo) ListForGroup(ctx context.Context, groupID string) (usages []ap
 	for rows.Next() {
 		var usage application.GameUsage
 		game := &usage.Game
-		if scanErr := rows.Scan(&game.ID, &game.Name, &game.DefaultMaxPlayers, &usage.LobbyCount); scanErr != nil {
+		if scanErr := rows.Scan(&game.ID, &game.Name, &game.DefaultMaxPlayers, &game.Genre, &usage.LobbyCount); scanErr != nil {
 			return nil, translate(scanErr)
 		}
 		usages = append(usages, usage)
@@ -82,7 +82,7 @@ func (r gameRepo) ListForGroup(ctx context.Context, groupID string) (usages []ap
 // Find returns the game, or ErrGameNotFound when no game has the ID, also when it is not a uuid (ADR 0010).
 func (r gameRepo) Find(ctx context.Context, id string) (domain.Game, error) {
 	var game domain.Game
-	err := r.s.db.QueryRowContext(ctx, selectGameSQL, id).Scan(&game.ID, &game.Name, &game.DefaultMaxPlayers)
+	err := r.s.db.QueryRowContext(ctx, selectGameSQL, id).Scan(&game.ID, &game.Name, &game.DefaultMaxPlayers, &game.Genre)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return domain.Game{}, application.ErrGameNotFound
@@ -94,15 +94,15 @@ func (r gameRepo) Find(ctx context.Context, id string) (domain.Game, error) {
 
 // Create inserts the game and returns it with the ID the database generated.
 func (r gameRepo) Create(ctx context.Context, game domain.Game) (domain.Game, error) {
-	if err := r.s.db.QueryRowContext(ctx, insertGameSQL, game.Name, game.DefaultMaxPlayers).Scan(&game.ID); err != nil {
+	if err := r.s.db.QueryRowContext(ctx, insertGameSQL, game.Name, game.DefaultMaxPlayers, game.Genre).Scan(&game.ID); err != nil {
 		return domain.Game{}, gameWriteError(err)
 	}
 	return game, nil
 }
 
-// Replace updates the name and default max of the game with the ID. ErrGameNotFound when no game has the ID.
+// Replace updates the name, default max and genre of the game with the ID. ErrGameNotFound when no game has the ID.
 func (r gameRepo) Replace(ctx context.Context, game domain.Game) error {
-	result, err := r.s.db.ExecContext(ctx, updateGameSQL, game.ID, game.Name, game.DefaultMaxPlayers)
+	result, err := r.s.db.ExecContext(ctx, updateGameSQL, game.ID, game.Name, game.DefaultMaxPlayers, game.Genre)
 	if err != nil {
 		return gameWriteError(err)
 	}

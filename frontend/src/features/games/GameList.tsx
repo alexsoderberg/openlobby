@@ -1,4 +1,5 @@
 import type { ChangeResult, Game, GameInput } from "../../api";
+import { GenreName } from "../../genres";
 import { useMessages } from "../../i18n";
 import { ErrorAlert } from "../../ui";
 import { GameForm } from "./GameForm";
@@ -68,6 +69,7 @@ function GameRow({
   return (
     <li className="list-row">
       <span>{game.name}</span>
+      <GenreName genre={game.genre} />
       <span className="badge">
         {game.defaultMaxPlayers === null
           ? m.gameUnlimited

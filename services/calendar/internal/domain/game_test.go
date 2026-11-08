@@ -24,7 +24,7 @@ func TestNewGameAcceptsValidNamesAndTrims(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			game, err := domain.NewGame("", tc.raw, nil)
+			game, err := domain.NewGame("", tc.raw, nil, nil)
 
 			if err != nil || game.Name != tc.want {
 				t.Fatalf("name %q, error %v; want %q", game.Name, err, tc.want)
@@ -49,7 +49,7 @@ func TestNewGameRejectsInvalidNames(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			_, err := domain.NewGame("", tc.raw, nil)
+			_, err := domain.NewGame("", tc.raw, nil, nil)
 
 			if !errors.Is(err, domain.ErrInvalidGame) {
 				t.Fatalf("error %v, want ErrInvalidGame", err)
@@ -75,7 +75,7 @@ func TestNewGameDefaultMaxPlayers(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			game, err := domain.NewGame("", "Chess", tc.max)
+			game, err := domain.NewGame("", "Chess", tc.max, nil)
 
 			if !errors.Is(err, tc.wantErr) {
 				t.Fatalf("error %v, want %v", err, tc.wantErr)
@@ -91,7 +91,7 @@ func TestNewGameDefaultMaxPlayers(t *testing.T) {
 func TestNewGameReportsNameBeforeCapacity(t *testing.T) {
 	zero := 0
 
-	_, err := domain.NewGame("", "", &zero)
+	_, err := domain.NewGame("", "", &zero, nil)
 
 	if !errors.Is(err, domain.ErrInvalidGame) {
 		t.Fatalf("error %v, want ErrInvalidGame", err)
@@ -100,7 +100,7 @@ func TestNewGameReportsNameBeforeCapacity(t *testing.T) {
 
 // The ID is kept as given, so a replaced game keeps its identity (ADR 0010).
 func TestNewGameKeepsTheID(t *testing.T) {
-	game, err := domain.NewGame("ce3ff9c1-dabb-4270-b5e0-7b34de37410b", "Chess", nil)
+	game, err := domain.NewGame("ce3ff9c1-dabb-4270-b5e0-7b34de37410b", "Chess", nil, nil)
 
 	if err != nil || game.ID != "ce3ff9c1-dabb-4270-b5e0-7b34de37410b" {
 		t.Fatalf("game %+v, error %v; want the ID kept", game, err)
@@ -112,4 +112,63 @@ func equalMax(a, b *int) bool {
 		return a == b
 	}
 	return *a == *b
+}
+
+// The genre rule of ADR 0016: nil or one of Genres() exactly as written.
+func TestNewGameGenre(t *testing.T) {
+	type genreCase struct {
+		name    string
+		genre   string
+		wantErr error
+	}
+	tests := []genreCase{
+		{name: "unknown value", genre: "puzzle", wantErr: domain.ErrInvalidGenre},
+		{name: "capital letter", genre: "Shooter", wantErr: domain.ErrInvalidGenre},
+		{name: "empty string", genre: "", wantErr: domain.ErrInvalidGenre},
+	}
+	for _, genre := range domain.Genres() {
+		tests = append(tests, genreCase{name: string(genre), genre: string(genre)})
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			genre := domain.Genre(tc.genre)
+
+			game, err := domain.NewGame("", "Chess", nil, &genre)
+
+			if !errors.Is(err, tc.wantErr) || (err == nil && (game.Genre == nil || *game.Genre != genre)) {
+				t.Fatalf("game %+v, error %v; want error %v", game, err, tc.wantErr)
+			}
+		})
+	}
+}
+
+func TestNewGameWithoutGenreHasNone(t *testing.T) {
+	game, err := domain.NewGame("", "Chess", nil, nil)
+
+	if err != nil || game.Genre != nil {
+		t.Fatalf("game %+v, error %v; want no genre", game, err)
+	}
+}
+
+// Name and capacity are reported before the genre, the order of the contract.
+func TestNewGameReportsGenreAfterNameAndCapacity(t *testing.T) {
+	bad, zero := domain.Genre("puzzle"), 0
+
+	if _, err := domain.NewGame("", "", &zero, &bad); !errors.Is(err, domain.ErrInvalidGame) {
+		t.Fatalf("error %v, want ErrInvalidGame", err)
+	}
+	if _, err := domain.NewGame("", "Chess", &zero, &bad); !errors.Is(err, domain.ErrInvalidCapacity) {
+		t.Fatalf("error %v, want ErrInvalidCapacity", err)
+	}
+}
+
+func TestIsGenreAgreesWithGenres(t *testing.T) {
+	for _, genre := range domain.Genres() {
+		if !domain.IsGenre(string(genre)) {
+			t.Fatalf("IsGenre(%q) is false for a listed genre", genre)
+		}
+	}
+	if domain.IsGenre("Shooter") || domain.IsGenre("") {
+		t.Fatal("IsGenre accepted a value outside the list")
+	}
 }

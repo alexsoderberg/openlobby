@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useApi, type LobbyDetail } from "../../api";
+import { GenreFrame, GenreName } from "../../genres";
 import { formatDateTimeRange, useMessages } from "../../i18n";
 import { Panel } from "../../ui";
 import { DeleteLobbyDialog } from "./DeleteLobbyDialog";
@@ -25,7 +26,15 @@ export function LobbyDetails({
   const m = useMessages();
   return (
     <>
-      <h1>{lobby.gameName}</h1>
+      <GenreFrame
+        as="header"
+        genre={lobby.gameGenre}
+        className="lobby-head"
+        motif
+      >
+        <h1>{lobby.gameName}</h1>
+        <GenreName genre={lobby.gameGenre} />
+      </GenreFrame>
       <div className="panel-group">
         <Panel>
           <p>{formatDateTimeRange(lobby.startsAt, lobby.endsAt)}</p>

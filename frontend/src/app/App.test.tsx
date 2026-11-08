@@ -393,7 +393,9 @@ describe("game list page", () => {
     loggedInClient({
       getCurrentUser: () => Promise.resolve(admin),
       listGames: vi.fn(() =>
-        Promise.resolve([{ id: "g1", name: "Catan", defaultMaxPlayers: 4 }]),
+        Promise.resolve([
+          { id: "g1", name: "Catan", defaultMaxPlayers: 4, genre: null },
+        ]),
       ),
       ...overrides,
     });
@@ -451,6 +453,7 @@ describe("lobby page", () => {
     const lobby = {
       id: "l1",
       gameName: "Catan",
+      gameGenre: null,
       maxPlayers: 4,
       startsAt: "2026-11-05T18:00:00Z",
       endsAt: "2026-11-05T20:00:00Z",

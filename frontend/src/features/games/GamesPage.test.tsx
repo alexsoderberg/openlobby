@@ -11,8 +11,18 @@ import { en } from "../../i18n/messages/en";
 import { fakeApiClient } from "../../test/fakeApiClient";
 import { GamesPage } from "./GamesPage";
 
-const catan: Game = { id: "g1", name: "Catan", defaultMaxPlayers: 4 };
-const chess: Game = { id: "g2", name: "Chess", defaultMaxPlayers: null };
+const catan: Game = {
+  id: "g1",
+  name: "Catan",
+  defaultMaxPlayers: 4,
+  genre: null,
+};
+const chess: Game = {
+  id: "g2",
+  name: "Chess",
+  defaultMaxPlayers: null,
+  genre: null,
+};
 
 function renderPage(client: ApiClient, isSystemAdmin = true) {
   const onUnauthenticated = vi.fn();
@@ -125,6 +135,7 @@ describe("add", () => {
       expect(client.createGame).toHaveBeenCalledWith({
         name: "Azul",
         defaultMaxPlayers: 2,
+        genre: null,
       }),
     );
     const status = await screen.findByText(en.gameAdded);
@@ -143,6 +154,7 @@ describe("add", () => {
       expect(client.createGame).toHaveBeenCalledWith({
         name: "Azul",
         defaultMaxPlayers: null,
+        genre: null,
       }),
     );
   });
@@ -178,6 +190,7 @@ describe("add", () => {
   it.each([
     ["invalid_game", en.gameNameLabel],
     ["invalid_capacity", en.gameMaxPlayersLabel],
+    ["invalid_genre", en.gameGenreLabel],
     ["game_taken", en.gameNameLabel],
     ["not_allowed", en.gameNameLabel],
   ] as const)(
@@ -199,6 +212,129 @@ describe("add", () => {
       expect(valueOf(form, en.gameNameLabel)).toBe("Azul");
     },
   );
+});
+
+describe("genre", () => {
+  function chooseGenre(scope: HTMLElement, genre: string) {
+    fireEvent.change(within(scope).getByLabelText(en.gameGenreLabel), {
+      target: { value: genre },
+    });
+  }
+
+  it("offers No genre first, then the eight genres", async () => {
+    renderPage(adminClient());
+    const select = within(await addForm()).getByLabelText(en.gameGenreLabel);
+
+    expect(
+      within(select)
+        .getAllByRole("option")
+        .map((option) => option.textContent),
+    ).toEqual(Object.values(en.genre));
+    expect((select as HTMLSelectElement).value).toBe("");
+  });
+
+  it("sends the chosen genre on create", async () => {
+    const client = adminClient();
+    renderPage(client);
+    const form = await addForm();
+
+    fill(form, "Azul", "2");
+    chooseGenre(form, "party");
+    fireEvent.click(screen.getByRole("button", { name: en.gameAddSubmit }));
+
+    await waitFor(() =>
+      expect(client.createGame).toHaveBeenCalledWith({
+        name: "Azul",
+        defaultMaxPlayers: 2,
+        genre: "party",
+      }),
+    );
+  });
+
+  it("shows the genre in the list", async () => {
+    renderPage(
+      adminClient({
+        listGames: () => Promise.resolve([{ ...catan, genre: "strategy" }]),
+      }),
+    );
+    expect(await screen.findByText(en.genre.strategy)).toBeTruthy();
+  });
+
+  it("starts the edit form on the current genre and sends a change and a clear", async () => {
+    const client = adminClient({
+      listGames: () => Promise.resolve([{ ...catan, genre: "strategy" }]),
+    });
+    renderPage(client);
+    await screen.findByText("Catan");
+    fireEvent.click(
+      screen.getByRole("button", { name: `${en.gameEdit}, Catan` }),
+    );
+    const form = screen
+      .getByRole("button", { name: en.gameEditSubmit })
+      .closest("form")!;
+    expect(valueOf(form, en.gameGenreLabel)).toBe("strategy");
+
+    chooseGenre(form, "rpg");
+    fireEvent.click(
+      within(form).getByRole("button", { name: en.gameEditSubmit }),
+    );
+    await waitFor(() =>
+      expect(client.replaceGame).toHaveBeenLastCalledWith("g1", {
+        name: "Catan",
+        defaultMaxPlayers: 4,
+        genre: "rpg",
+      }),
+    );
+  });
+
+  it("sends the saved genre again when it is left untouched", async () => {
+    const client = adminClient({
+      listGames: () => Promise.resolve([{ ...catan, genre: "strategy" }]),
+    });
+    renderPage(client);
+    await screen.findByText("Catan");
+    fireEvent.click(
+      screen.getByRole("button", { name: `${en.gameEdit}, Catan` }),
+    );
+    const form = screen
+      .getByRole("button", { name: en.gameEditSubmit })
+      .closest("form")!;
+
+    fireEvent.click(
+      within(form).getByRole("button", { name: en.gameEditSubmit }),
+    );
+    await waitFor(() =>
+      expect(client.replaceGame).toHaveBeenLastCalledWith(
+        "g1",
+        expect.objectContaining({ genre: "strategy" }),
+      ),
+    );
+  });
+
+  it("sends null when No genre is chosen", async () => {
+    const client = adminClient({
+      listGames: () => Promise.resolve([{ ...catan, genre: "strategy" }]),
+    });
+    renderPage(client);
+    await screen.findByText("Catan");
+    fireEvent.click(
+      screen.getByRole("button", { name: `${en.gameEdit}, Catan` }),
+    );
+    const form = screen
+      .getByRole("button", { name: en.gameEditSubmit })
+      .closest("form")!;
+
+    chooseGenre(form, "");
+    fireEvent.click(
+      within(form).getByRole("button", { name: en.gameEditSubmit }),
+    );
+    await waitFor(() =>
+      expect(client.replaceGame).toHaveBeenLastCalledWith(
+        "g1",
+        expect.objectContaining({ genre: null }),
+      ),
+    );
+  });
 });
 
 describe("change", () => {
@@ -228,6 +364,7 @@ describe("change", () => {
       expect(client.replaceGame).toHaveBeenCalledWith("g1", {
         name: "Catan 5th",
         defaultMaxPlayers: null,
+        genre: null,
       }),
     );
     const status = await screen.findByText(en.gameChanged);

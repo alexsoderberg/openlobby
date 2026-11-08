@@ -1,3 +1,4 @@
+import type { Genre } from "../api";
 import { useEffect, useRef, useState } from "react";
 import { formatTime, useMessages } from "../i18n";
 import type { GridLobby } from "./TimeBlock";
@@ -21,6 +22,7 @@ export function TimeGrid<T extends GridLobby>({
   now,
   titleLevel,
   hrefOf,
+  genreOf,
   onCreate,
 }: {
   days: WeekDay<T>[];
@@ -29,6 +31,8 @@ export function TimeGrid<T extends GridLobby>({
   now: Date;
   titleLevel: TitleLevel;
   hrefOf: (lobby: T) => string;
+  /** The genre to theme a lobby with, or null for the neutral theme. The calendar reads no lobby genre itself. */
+  genreOf: (lobby: T) => Genre | null;
   onCreate?: CreateAt;
 }) {
   const m = useMessages();
@@ -78,6 +82,7 @@ export function TimeGrid<T extends GridLobby>({
             now={now}
             titleLevel={titleLevel}
             hrefOf={hrefOf}
+            genreOf={genreOf}
             onCreate={onCreate}
           />
         ))}

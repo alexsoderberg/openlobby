@@ -43,9 +43,9 @@ func (h publicHandler) ListGames(ctx context.Context, _ publicapi.ListGamesReque
 }
 
 // CreateGame adds a game and returns it with its generated ID. The checks run in the order of ADR 0001: permission,
-// then the name, then the default max, then the duplicate name.
+// then the name, then the default max, then the genre, then the duplicate name.
 func (h publicHandler) CreateGame(ctx context.Context, request publicapi.CreateGameRequestObject) (publicapi.CreateGameResponseObject, error) {
-	game, err := h.games.CreateGame(ctx, actorFrom(ctx), valueOrEmpty(request.Body.Name), request.Body.DefaultMaxPlayers)
+	game, err := h.games.CreateGame(ctx, actorFrom(ctx), valueOrEmpty(request.Body.Name), request.Body.DefaultMaxPlayers, convertGenre[domain.Genre](request.Body.Genre))
 	switch {
 	case errors.Is(err, domain.ErrNotAllowed):
 		return publicapi.CreateGame403JSONResponse{Error: publicErrorBody(ctx, publicapi.ErrorBodyCodeNotAllowed)}, nil
@@ -53,6 +53,8 @@ func (h publicHandler) CreateGame(ctx context.Context, request publicapi.CreateG
 		return publicapi.CreateGame400JSONResponse{Error: publicErrorBody(ctx, publicapi.ErrorBodyCodeInvalidGame)}, nil
 	case errors.Is(err, domain.ErrInvalidCapacity):
 		return publicapi.CreateGame400JSONResponse{Error: publicErrorBody(ctx, publicapi.ErrorBodyCodeInvalidCapacity)}, nil
+	case errors.Is(err, domain.ErrInvalidGenre):
+		return publicapi.CreateGame400JSONResponse{Error: publicErrorBody(ctx, publicapi.ErrorBodyCodeInvalidGenre)}, nil
 	case errors.Is(err, application.ErrGameTaken):
 		return publicapi.CreateGame409JSONResponse{Error: publicErrorBody(ctx, publicapi.ErrorBodyCodeGameTaken)}, nil
 	case err != nil:
@@ -65,10 +67,10 @@ func (h publicHandler) CreateGame(ctx context.Context, request publicapi.CreateG
 	return publicapi.CreateGame201JSONResponse(body), nil
 }
 
-// ReplaceGame changes a game's name and default max and keeps its ID. A malformed ID is 404 before the permission check
+// ReplaceGame changes a game's name, default max and genre and keeps its ID. A malformed ID is 404 before the permission check
 // (ADR 0001 step 1), so a non-admin learns nothing from it.
 func (h publicHandler) ReplaceGame(ctx context.Context, request publicapi.ReplaceGameRequestObject) (publicapi.ReplaceGameResponseObject, error) {
-	game, err := h.games.ReplaceGame(ctx, actorFrom(ctx), request.GameId, valueOrEmpty(request.Body.Name), request.Body.DefaultMaxPlayers)
+	game, err := h.games.ReplaceGame(ctx, actorFrom(ctx), request.GameId, valueOrEmpty(request.Body.Name), request.Body.DefaultMaxPlayers, convertGenre[domain.Genre](request.Body.Genre))
 	switch {
 	case errors.Is(err, domain.ErrNotAllowed):
 		return publicapi.ReplaceGame403JSONResponse{Error: publicErrorBody(ctx, publicapi.ErrorBodyCodeNotAllowed)}, nil
@@ -76,6 +78,8 @@ func (h publicHandler) ReplaceGame(ctx context.Context, request publicapi.Replac
 		return publicapi.ReplaceGame400JSONResponse{Error: publicErrorBody(ctx, publicapi.ErrorBodyCodeInvalidGame)}, nil
 	case errors.Is(err, domain.ErrInvalidCapacity):
 		return publicapi.ReplaceGame400JSONResponse{Error: publicErrorBody(ctx, publicapi.ErrorBodyCodeInvalidCapacity)}, nil
+	case errors.Is(err, domain.ErrInvalidGenre):
+		return publicapi.ReplaceGame400JSONResponse{Error: publicErrorBody(ctx, publicapi.ErrorBodyCodeInvalidGenre)}, nil
 	case errors.Is(err, application.ErrGameNotFound):
 		return publicapi.ReplaceGame404JSONResponse{Error: publicErrorBody(ctx, publicapi.ErrorBodyCodeGameNotFound)}, nil
 	case errors.Is(err, application.ErrGameTaken):
@@ -131,5 +135,14 @@ func gameBody(game domain.Game) (publicapi.Game, error) {
 	if err != nil {
 		return publicapi.Game{}, err
 	}
-	return publicapi.Game{Id: id, Name: game.Name, DefaultMaxPlayers: game.DefaultMaxPlayers}, nil
+	return publicapi.Game{Id: id, Name: game.Name, DefaultMaxPlayers: game.DefaultMaxPlayers, Genre: convertGenre[publicapi.Genre](game.Genre)}, nil
+}
+
+// convertGenre moves a genre between the contract type and the domain type. Both are strings; the domain checks the value.
+func convertGenre[To, From ~string](genre *From) *To {
+	if genre == nil {
+		return nil
+	}
+	converted := To(*genre)
+	return &converted
 }
