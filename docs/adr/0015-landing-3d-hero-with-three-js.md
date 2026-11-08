@@ -14,7 +14,7 @@ CLAUDE.md allows another tool "only if React cannot solve the need, and then wit
 
 2. **Files.** Everything lives in `frontend/src/features/landing/`:
    - `hero.ts` (main chunk, no vendor code): the port `HeroScene`, the type `HeroPointer`, the pure mode rule `chooseHeroMode`, the fit rule shared by the scene and the static cards (`HERO_ROW_WIDTH`, `heroRowScale`), the tilt limit `clampTilt`, and the named constants (`HERO_MAX_PIXEL_RATIO = 1.5`, `HERO_MAX_TILT_RAD`, `HERO_MAX_FRAME_SECONDS = 0.1`, the sample start date).
-   - `lobbyCardPainter.ts` (main chunk, no vendor code): paints one sample card onto a 2D canvas from strings it is given.
+   - `heroCardPainter.ts` (main chunk, no vendor code): paints one sample card onto a 2D canvas from strings it is given.
    - `heroLoop.ts` (main chunk, no vendor code): `startHeroLoop(scene, stage, hero, env)` runs the animation loop, the pointer tracking (mouse only), the visibility pause (tab hidden or hero off screen), the resize and the cleanup. `env` injects `document`, `requestFrame`, `cancelFrame`, `now` and the observer constructors, so the loop is tested without a browser.
    - `LandingHero.tsx` (main chunk, React): chooses the mode, paints the cards, does the dynamic import, creates the scene, starts the loop with `startHeroLoop` and sets `data-live`. It is the only place that loads the scene.
    - `heroScene.ts` (lazy chunk): the only file in the repository that imports `three`. It exports one factory, `createHeroScene(container, cardCanvases, maxPixelRatio): HeroScene`.
@@ -39,7 +39,7 @@ CLAUDE.md allows another tool "only if React cannot solve the need, and then wit
 
 6. **Card content, without duplicated knowledge.**
    - Texts come from i18n (`frontend/src/i18n/`). The sample game name is a new key in the `landing` messages. The spots text uses the existing "x/y players" message that the lobby list already uses. The time uses the existing time formatter from `frontend/src/i18n/format.ts`, applied to a fixed sample start date in `hero.ts`, so the card does not depend on the clock.
-   - `lobbyCardPainter.ts` receives already formatted strings (`gameName`, `timeText`, `spotsText`) and does not format them itself.
+   - `heroCardPainter.ts` receives already formatted strings (`gameName`, `timeText`, `spotsText`) and does not format them itself.
    - Colors are read once from the existing CSS custom properties with `getComputedStyle`, so the palette is not copied. Layout sizes are named constants in the painter.
    - Painting waits for `document.fonts.ready`, so the canvas text uses the app font.
    - The layout of a canvas card and of a DOM lobby card is code that looks alike, not shared knowledge. It is not extracted (DRY, rule of three).
@@ -59,14 +59,14 @@ CLAUDE.md allows another tool "only if React cannot solve the need, and then wit
 
 9. **Budget.**
    - The lazy `three` chunk (`heroScene.ts` with `three`): at most 135 KB gzip, as reported by `vite build` (raised from 100 KB, see Amendment 2026-11-07). The original 100 KB was an estimate for a tree-shaken build with named imports; `three` declares `sideEffects` only for `src/nodes/**`, so tree shaking works.
-   - The main chunk added by the landing hero (`hero.ts`, `lobbyCardPainter.ts`, `LandingHero.tsx`): at most 4 KB gzip.
+   - The main chunk added by the landing hero (`hero.ts`, `heroCardPainter.ts`, `LandingHero.tsx`): at most 4 KB gzip.
    - Over budget: the implementer stops and returns to the architect. The budget is not raised silently.
    - The implementing change records both sizes in its handover. The entry chunk of the build must not contain `WebGLRenderer`. Checked by hand at review until it is automated (a follow-up, not part of this ADR).
 
 10. **Tests.**
     - `hero.ts`: unit tests for `chooseHeroMode` (reduced motion gives `static`; no WebGL gives `static`; otherwise `scene`) and for `clampTilt` (the total tilt never exceeds `HERO_MAX_TILT_RAD`).
     - `heroLoop.ts`: unit tests in `heroLoop.test.ts` with a fake scene and a fake `env`. They cover the loop, the visibility pause, mouse-only pointer tracking, the resize and the cleanup.
-    - `lobbyCardPainter.ts`: unit test with a fake 2D context that records `fillText` calls. It asserts that exactly the given strings are drawn.
+    - `heroCardPainter.ts`: unit test with a fake 2D context that records `fillText` calls. It asserts that exactly the given strings are drawn.
     - `LandingHero.tsx`: `vi.mock("./heroScene")`. Tests: mode `static` never calls the factory; mode `scene` calls the factory after mount, not during render; unmount before the import resolves does not call the factory; unmount calls `dispose`.
     - `LandingHeroImport.test.tsx`: a rejected import keeps the static frame and does not throw.
     - `heroScene.ts`: not unit tested, because jsdom has no WebGL. It is kept thin (three calls only). Verified by hand before release: desktop Chrome, Android Chrome, iOS Safari; reduced motion on; WebGL disabled; tab hidden (loop stops in DevTools); hero scrolled out of view (loop stops).
@@ -105,3 +105,35 @@ Status of the amendment: Accepted (2026-11-07).
 **Alternatives considered.**
 - **Switch to the CSS 3D fallback now.** Drops `three` and the 130 KB chunk, and loses the lighting and materials the user asked for. Rejected: it reverses a decided product choice to fix a size estimate, and the cost is paid only by visitors who can use the scene.
 - **Keep 100 KB and split or minify further.** No code remains to remove, and `WebGLRenderer` is needed by any three.js scene. Rejected.
+
+## Amendment 2026-11-08
+Status of the amendment: Accepted (2026-11-08).
+
+The architect ruled on the review findings for the landing hero implementation (uncommitted on `feat/landing-hero-fill-cycle`). Where this amendment differs from points 2, 3, 4 and 6, this amendment applies. ADR 0016 has a matching amendment for section 8 of that ADR.
+
+**Point 2, files.** The implementation in `frontend/src/features/landing/` is:
+- `hero.ts` (main chunk): the port types `HeroScene`, `HeroPointer`, `HeroSceneCard` and `HeroMode`, the mode rule `chooseHeroMode`, the constants `HERO_MAX_PIXEL_RATIO` and `HERO_MAX_FRAME_SECONDS`, the sample data and timing (`HERO_SAMPLE_CARDS`, `HERO_TIMING`) and `heroCardContent`. It changes for sample content and the mode rule only.
+- `heroPose.ts` (main chunk, new): where the cards rest and how they move: `HERO_FRONT`, `HERO_BEHIND`, `HERO_AWAY`, the card and view sizes, `HERO_ROW_WIDTH`, `heroCardPose`, `heroRowScale`, `staticCardStyle`, `HERO_MAX_TILT_RAD`, `clampTilt`, `pointerToUnit` and `easeToward`. Point 2 placed `HERO_ROW_WIDTH`, `heroRowScale` and `clampTilt` in `hero.ts`; they move here. Reason: `hero.ts` had four reasons to change (sample content, layout, tilt tuning, mode rule), which breaks the single-responsibility rule.
+- `heroCycle.ts` (main chunk, ADR 0016 section 8), `heroLoop.ts` (main chunk), `heroCardPainter.ts` (main chunk, renamed from `lobbyCardPainter.ts`, see point 6), `LandingHero.tsx` (main chunk) and `heroScene.ts` (lazy chunk).
+- `heroScene.ts` exports `createHeroScene(container: HTMLElement, cards: readonly HeroSceneCard[], maxPixelRatio: number): HeroScene`. It replaces `(container, cardCanvases, maxPixelRatio)`. Each `HeroSceneCard` is `{ canvas, motif, accent, paint(count) }`. The scene sets the canvas texture and poses the meshes. It knows no card texts, no art and no painter. `paint` is a closure built in `LandingHero.tsx`, so the lazy chunk never imports `heroCardPainter.ts`. Reason: painting is 2D work of the main chunk, and this keeps the scene free of card content. The shape is smaller and clearer than the original signature.
+
+**Point 3, static imports and tests.** The rule stands for production code: a static import of `heroScene.ts` or of `three` anywhere under `frontend/src` is a `BLOCKER`, except in test files. Test files (`*.test.ts`, `*.test.tsx`) are not in the Vite build graph, so they cannot put `three` into the main chunk. A test may import `createHeroScene` statically to mock it with `vi.mock("./heroScene")`, as `LandingHero.test.tsx` does. A test must never import `three` itself.
+- The rule is enforced by lint, not by review alone. `frontend/eslint.config.js` forbids a static `ImportDeclaration` of `heroScene` or of `three` in non-test files. The dynamic `import("./heroScene")` in `LandingHero.tsx` stays the one allowed load. The lint rule is required before the change merges. It was a COULD in review; the architect makes it a requirement.
+
+**Point 4, port.** The port is:
+```ts
+export interface HeroScene {
+  update(frame: HeroFrame, cards: readonly HeroSampleCard[]): void;
+  render(frame: HeroFrame, elapsedSeconds: number, pointer: HeroPointer): void;
+  setSize(width: number, height: number): void;
+  dispose(): void;
+}
+```
+`render` takes the frame that the loop already computed. The scene needs `frame.progress` for the enter and leave motion, and it must not derive the cycle a second time. `elapsedSeconds` stays for the idle float. `HeroFrame` gets `progress` (ADR 0016 section 8).
+
+**Point 6, names and painter.**
+- The sample game name is sample data in `HERO_SAMPLE_CARDS` (`gameName`, in `hero.ts`). It is not an i18n key. This replaces the sentence "The sample game name is a new key in the `landing` messages". The key `landing.heroGames` is removed. Reason: the names are placeholders that are never translated and are not real titles. A lookup into the catalog by array index breaks silently when the cycle order changes, and one card's name, genre and counts belong in one record. ADR 0016 section 8 already placed them in `hero.ts`.
+- The painter is `heroCardPainter.ts` and its function is `paintHeroCard`. The name `paintLobbyCard` used the glossary term `Lobby` for a hero card, which point 6 forbids. The painter receives the numbers `count` and `maxCount` for the avatars and the meter, plus the three texts. It still formats nothing.
+- Reusing the catalog message `lobbyPlayers` for the "x/y players" text stays as point 6 says. Reusing an existing message is not a hero name.
+
+**Consequences.** No change to the budgets (point 9), the modes (point 5), the lifecycle (point 7) or the accessibility rules (point 8). The file list of point 2 is replaced by the list above.

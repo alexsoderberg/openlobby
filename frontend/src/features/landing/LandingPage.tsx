@@ -4,7 +4,7 @@ import { useFocusAfterLogout, useScrolledPast } from "../../hooks";
 import { useMessages } from "../../i18n";
 import { Alert, Brand } from "../../ui";
 import { loggedOutNotice, type LoggedOutPageProps } from "../session";
-import { LandingPreview } from "./LandingPreview";
+import { LandingHero } from "./LandingHero";
 import { StepCard } from "./StepCard";
 
 /** The top bar turns frosted once the page is scrolled this far (px). */
@@ -62,6 +62,7 @@ export function LandingPage({
               {t.howItWorks}
             </a>
           </div>
+          <LandingHero />
         </section>
         <section
           id="how-it-works"
@@ -82,9 +83,6 @@ export function LandingPage({
               />
             ))}
           </div>
-        </section>
-        <section className="landing-section">
-          <LandingPreview />
         </section>
       </main>
     </>

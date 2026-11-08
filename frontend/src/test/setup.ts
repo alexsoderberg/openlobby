@@ -22,3 +22,17 @@ if (!window.matchMedia) {
 
 // jsdom has no scrolling; page changes scroll to the top.
 window.scrollTo = () => undefined;
+
+// jsdom has no canvas. Without this it logs "not implemented" on every getContext call.
+HTMLCanvasElement.prototype.getContext = () => null;
+
+// jsdom never loads images. Keep the address and settle at once, so code that waits for the image can run.
+Object.defineProperty(HTMLImageElement.prototype, "src", {
+  get() {
+    return this.getAttribute("src") ?? "";
+  },
+  set(value: string) {
+    this.setAttribute("src", value);
+    queueMicrotask(() => this.dispatchEvent(new Event("load")));
+  },
+});

@@ -68,11 +68,10 @@ Other visitors and the logged-in app:
 ## Related features
 F-001 (Log in with Discord): the landing page is a presentation of login and has no feature of its own (features.md, F-001). The hero scene adds no behavior, only a visual, so it is a presentation of F-001 and not a new feature. It is not a duplicate of F-004 or F-017: those show lobbies inside the logged-in app, and the scene is decorative and shows no real data.
 
-The landing page already has a decorative group preview below the steps (`LandingPreview`, generic sample data, `aria-hidden`). The scene is a second decorative visual with a similar purpose. This requirement does not change that preview; see the open questions.
+The landing page already has a decorative group preview below the steps (`LandingPreview`, generic sample data, `aria-hidden`). The scene is a second decorative visual with a similar purpose. Amendment 2026-11-08 removes that preview, so the hero is the only decorative visual on the landing page.
 
 ## Open questions
 - ASSUMPTION: tilt at most 12 degrees, 60 frames per second target on a mid-range phone. The user may overrule these numbers. The "three cards" ASSUMPTION is replaced by Amendment 2026-11-07.
-- DECISION FOR THE USER: keep or remove the existing decorative group preview below the steps now that the hero shows lobby cards? The product owner has not changed it.
 - DECISION FOR THE USER: the landing copy leaves out the lobby step "until lobbies ship" (copy decision of 2026-11-03). Lobbies have now shipped. Should the copy get a lobby step? This is a copy decision and is not part of this requirement.
 - DECISION FOR THE USER: priority. The product owner set `Could` because no core flow depends on the hero. The user may move it up in `backlog.md`.
 
@@ -111,3 +110,11 @@ Out of scope (additions):
 - More than three sample cards.
 
 Related features (addition): REQ-0014 F-032 (Game genre themes) supplies the themes for the sample cards, including each genre's 3D motif, which is defined once there. The hero stays a presentation of F-001 and adds no feature of its own.
+
+## Amendment 2026-11-08
+DECISION (user, 2026-11-08): the decorative group preview below the steps (`LandingPreview`, the sample member list and sample invite links) is removed. The user does not want the invite link and group member demos on the landing page. This answers the open question on the preview. The landing copy question stays open.
+
+Acceptance criteria (addition):
+- Given that I open `/` logged out, when the page has loaded, then the page shows the hero and the "How it works" steps, and no sample member list or sample invite links.
+
+Out of scope (addition): replacing the removed preview with another demo or preview on the landing page.

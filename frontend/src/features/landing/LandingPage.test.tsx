@@ -73,11 +73,12 @@ describe("LandingPage", () => {
     }
   });
 
-  it("hides the app preview from assistive technology", () => {
+  it("shows no sample member list and no sample invite links", () => {
     renderLanding();
 
-    const sampleMember = screen.getByText("Jordan Lee");
-    expect(sampleMember.closest('[aria-hidden="true"]')).not.toBeNull();
+    expect(screen.queryByText("Jordan Lee")).toBeNull();
+    expect(screen.queryByText(en.inviteLinksHeading)).toBeNull();
+    expect(screen.queryByText(en.groupAdminMarker)).toBeNull();
   });
 
   it("loads no resource from a third-party origin", () => {

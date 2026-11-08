@@ -11,4 +11,21 @@ export default tseslint.config(
     plugins: { "react-hooks": reactHooks },
     rules: reactHooks.configs.recommended.rules,
   },
+  {
+    // ADR 0015 point 3: no static import of the 3D scene or of three outside the scene itself.
+    // Re-exports are caught too. Tests may import heroScene to mock it. `import()` is an ImportExpression, so it passes.
+    files: ["src/**/*.{ts,tsx}"],
+    ignores: ["src/**/*.test.{ts,tsx}", "src/features/landing/heroScene.ts"],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector:
+            ":matches(ImportDeclaration, ExportNamedDeclaration, ExportAllDeclaration)[source.value=/heroScene$|^three(\\/|$)/]",
+          message:
+            "Load the 3D scene only with import() in LandingHero.tsx (ADR 0015 point 3).",
+        },
+      ],
+    },
+  },
 );
