@@ -14,7 +14,7 @@ As a member, I want to choose my game role when I join a lobby, or join as flex 
 Game roles in the game list (extends REQ-0010):
 - Given that I am a system admin, when I add or change a game, then the form also lets me list the game's game roles, each with a name and a number of slots of at least 1. A game may have no game roles, as today.
 - Given that a game has game roles, when I save it, then its default max players is the sum of the slots of its game roles, and I do not enter max players separately.
-- Given that I am a system admin, when I save a game role with an empty name, a name longer than 30 characters, or a name that another game role of the same game already has (ignoring case and surrounding spaces), then it is denied with an error message and no change is saved.
+- Given that I am a system admin, when I save a game role with an empty name, a name longer than 30 characters, or a name that another game role with the same owner already has (ignoring case and surrounding spaces), then it is denied with an error message and no change is saved. The owner is the game mode the game role sits on, or the game when it sits on the game (Amendment 2026-11-08, DECISION, user, 2026-11-08).
 - Given that I am a system admin, when I enter slots that are not a whole number of at least 1, then it is denied with an error message and no change is saved.
 - Given that I am a system admin, when I change or remove a game role, when a lobby already uses it, then that lobby keeps its game role, its slots and its players (same rule as REQ-0009 for changed and removed games).
 - Given that a game has no game roles, when a member creates a lobby with it, then no role is asked for and the lobby works as in REQ-0003 and REQ-0005.
@@ -92,7 +92,7 @@ Not a duplicate of the group roles `admin` and `member` (REQ-0002, REQ-0008). Th
 - DECISION (user, max from slots): For a game with game roles, max players is the sum of the slots and is never unlimited.
 - DECISION (product owner, within the user's flex decision): No reservation of spots for game roles. Flex can take any free spot. Creator may be flex. Switching between flex and a game role is allowed while the lobby can still be joined, with the same rules as for joining.
 - ASSUMPTION (changing role): A player can change game role or flex while the lobby can still be joined (until its end time), in the same way as joining. Leaving always works.
-- ASSUMPTION (name rules): A game role name is 1–30 characters, unique within its game ignoring case and surrounding spaces. Slots are whole numbers of at least 1 in the game list, and 0 or more in a lobby, where 0 leaves the game role out.
+- ASSUMPTION (name rules): A game role name is 1–30 characters, unique within its owner (its game mode, or its game when it sits on the game) ignoring case and surrounding spaces. Uniqueness per owner is decided by the user (see Amendment 2026-11-08). Slots are whole numbers of at least 1 in the game list, and 0 or more in a lobby, where 0 leaves the game role out.
 - ASSUMPTION (order): Game roles are shown in the order the system admin entered them.
 - ASSUMPTION (data language): Game role names are shown as entered. They are not translated until F-026 is decided.
 
@@ -111,3 +111,9 @@ Status stays Decided. Decided by the user (DECISION, user, 2026-11-07, point 2: 
 - A lobby has game roles if its mode has them. A lobby with no mode (an open lobby, REQ-0015) has game roles only if its game has no modes and game roles of its own, or if it was created before its game got its first mode. In the last case it keeps its role slots and its players' game roles until a mode is set (DECISION, product owner, 2026-11-08; see REQ-0015, "Changed or removed modes and activities"). In all other cases it works as in "Lobbies without game roles".
 - A mode change that adds game roles makes every existing player flex (DECISION, user, 2026-11-08, question 3). The rules for flex and for switching between game role and flex stay as written above.
 - The glossary term "Game role" also applies to a game role of a mode. Its technical form (game or mode) is the architect's decision.
+
+## Amendment 2026-11-08 (game role names per owner)
+Status stays Decided. Old wording of the name criterion in "Game roles in the game list": "a name that another game role of the same game already has (ignoring case and surrounding spaces)".
+- A game role name must be unique per owner, not per game. The owner is the game mode the game role sits on, or the game when the game role sits on the game (a game without modes). Two game modes of the same game may each have a game role with the same name, e.g. "Tank" in both "Dungeon" and "Raid".
+- Within one owner, the name rules are unchanged: 1–30 characters, unique ignoring case and surrounding spaces, and an empty or too long name is denied as before.
+- DECISION (user, 2026-11-08, decision 3): game role names are unique per owner, as above.

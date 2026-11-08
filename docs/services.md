@@ -53,10 +53,10 @@ All services use synchronous HTTP/JSON. No service reads another service's datab
 
 ### calendar
 - **Responsibility:** groups, membership and roles (one or more admins, at least one as long as the group has members), invite links expiring after 10 minutes, max uses per link (1–10, default 1), lobbies with game and max players, players joining and leaving lobbies, and the game list (F-024). The game list is managed by the system admin. Members see it ordered by use in their group. Authorization is checked here.
-- **Owns data (database `calendar`):** `groups`, `group_members` (with `role` and `joined_at`), `invite_links` (with `expires_at`, `max_uses`, `use_count`), `lobbies` (with `game_name`, `game_id` and `max_players`), `lobby_players`, `games` (the game list with uuid IDs and the optional `genre`, ADR 0010, ADR 0016).
+- **Owns data (database `calendar`):** `groups`, `group_members` (with `role` and `joined_at`), `invite_links` (with `expires_at`, `max_uses`, `use_count`), `lobbies` (with `game_id`, `game_name` and `max_players`), `lobby_players`, `games` (the game list with uuid IDs and the optional `genre`, ADR 0010, ADR 0016). Planned by ADR 0017 (not yet built): `game_modes`, `game_roles` (on a game or a mode) and `activities` in the game list; `lobby_role_slots`; on `lobbies` a nullable `game_name` (no game), `game_mode_id`, `mode_name`, `activity_id` and `activity_name`; on `lobby_players` a nullable `game_role_id` (null means flex).
 - **Dependencies:** `auth` (display names via internal `POST /internal/users/lookup`, from REQ-0002; no call and no Compose dependency before, ADR 0008 amendment REQ-0001 calendar), PostgreSQL.
-- **Realizes:** F-002 (REQ-0002), F-003 (REQ-0003, REQ-0009), F-004 and F-017 (REQ-0004), F-005 (REQ-0005), F-018 (REQ-0005, REQ-0009), F-024 (REQ-0009, management by system admin), F-010 (REQ-0006), F-013 (REQ-0007), F-028 (REQ-0012, data only: the group list, each group's upcoming lobbies and `joinedByMe` on each lobby, ADR 0014), F-032 (REQ-0014, data only: `games.genre` and `gameGenre` on lobbies, read live through a join on `games`, ADR 0016).
-- **Decisions:** ADR 0004, 0006, 0007, 0010, 0011, 0016.
+- **Realizes:** F-002 (REQ-0002), F-003 (REQ-0003, REQ-0009), F-004 and F-017 (REQ-0004), F-005 (REQ-0005), F-018 (REQ-0005, REQ-0009), F-024 (REQ-0009, management by system admin), F-010 (REQ-0006), F-013 (REQ-0007), F-028 (REQ-0012, data only: the group list, each group's upcoming lobbies and `joinedByMe` on each lobby, ADR 0014), F-032 (REQ-0014, data only: `games.genre` and `gameGenre` on lobbies, read live through a join on `games`, ADR 0016). Planned, ADR 0017: F-027 (REQ-0011), F-033 and F-034 (REQ-0015), game modes, game roles, named activities and open lobbies.
+- **Decisions:** ADR 0004, 0006, 0007, 0010, 0011, 0016, 0017 (0017 proposed).
 
 ### frontend
 - **Responsibility:** React + TypeScript (Vite). The user interface, the app shell and dashboard ("Next up", "This week" computed from `calendar` and `auth` data, ADR 0014), local time, filtering of the week view, interpretation of an end time as the next day, game selection from `GET /api/groups/{groupId}/games` with the max prefilled from `defaultMaxPlayers`, player count display ("X/Y players" or "X players"), expiry time and uses of links, error messages based on error codes, 404 page for `invite_invalid`, the genre themes of lobby views and the landing hero (`frontend/src/genres`, ADR 0016), and the page `/systemadmin/games` for the system admin (shown when `isSystemAdmin` is true).
@@ -97,16 +97,20 @@ Public endpoints (via `gateway`, which receives traffic from `edge`):
 | GET | `/api/invites/{token}` | calendar | yes | REQ-0002 (active link: `groupId`, `groupName`, `isMember`; 404 `invite_invalid` if revoked, expired, used up or unknown, or the token has an invalid form. ADR 0007 amendment 2026-11-02) |
 | POST | `/api/invites/{token}/join` | calendar | yes | REQ-0002 (404 `invite_invalid` as above. Counts one use for a new membership) |
 | GET | `/api/games` | calendar | yes, system admin | REQ-0010 (the game list for the system admin page; non-admin `not_allowed`. Response `[{id, name, defaultMaxPlayers}]`, sorted by name ignoring case, then `id`, ADR 0010 consolidated) |
-| POST | `/api/games` | calendar | yes, system admin | REQ-0010 (ADR 0010 review 3. Body `{name, defaultMaxPlayers}`, 201 with the generated `id`. Order: `invalid_request`, `not_allowed`, `invalid_game` (name, including `Other`), `invalid_capacity`, `game_taken`) |
-| PUT | `/api/games/{gameId}` | calendar | yes, system admin | REQ-0010 (ADR 0010 review 3. Body `{name, defaultMaxPlayers}`, 200. Order: `game_not_found` (invalid form in path), `invalid_request`, `not_allowed`, `invalid_game`, `invalid_capacity`, `game_not_found` (unknown), `game_taken`) |
+| POST | `/api/games` | calendar | yes, system admin | REQ-0010 (ADR 0010 review 3. Body `{name, defaultMaxPlayers}`, 201 with the generated `id`. Planned, ADR 0017: optional `gameRoles` and `modes` arrays; omitted keeps the stored ones. Order: `invalid_request`, `not_allowed`, `invalid_game` (name, including `Other`), `invalid_capacity`, `game_taken`) |
+| PUT | `/api/games/{gameId}` | calendar | yes, system admin | REQ-0010 (ADR 0010 review 3. Body `{name, defaultMaxPlayers}`, 200. Planned, ADR 0017: optional `gameRoles` and `modes` arrays; omitted keeps the stored ones. Order: `game_not_found` (invalid form in path), `invalid_request`, `not_allowed`, `invalid_game`, `invalid_capacity`, `game_not_found` (unknown), `game_taken`) |
 | DELETE | `/api/games/{gameId}` | calendar | yes, system admin | REQ-0010 (ADR 0010 review 3. 204. Order: `game_not_found` (invalid form in path), `not_allowed`, `game_not_found` (unknown). Lobbies keep their game name) |
 | GET | `/api/groups/{groupId}/games` | calendar | yes, member | REQ-0009 (ADR 0010 review 3. The game list in the order of use in the group: most lobbies first, then by name ignoring case, then `id`; `Other` is not included and is shown last by the client. Non-member `group_not_found`) |
 | GET | `/api/groups/{groupId}/lobbies` | calendar | yes, member | REQ-0004 (all upcoming lobbies, sorted by start time, without interval filter; shows `gameName`, `maxPlayers`, `playerCount`) |
-| POST | `/api/groups/{groupId}/lobbies` | calendar | yes, member | REQ-0003, REQ-0009 (`startsAt`, `endsAt` as RFC 3339, both required. Exactly one of `gameId` or `customGameName`. `maxPlayers` omitted, `null` (unlimited) or an integer from 1 to 2147483647. Order: `invalid_request`, `group_not_found`, then the lobby rules. 201 response `Lobby` without `players`) |
+| POST | `/api/groups/{groupId}/lobbies` | calendar | yes, member | REQ-0003, REQ-0009 (`startsAt`, `endsAt` as RFC 3339, both required. Exactly one of `gameId` or `customGameName`. `maxPlayers` omitted, `null` (unlimited) or an integer from 1 to 2147483647. Order: `invalid_request`, `group_not_found`, then the lobby rules. 201 response `Lobby` without `players`. Planned, ADR 0017: optional `modeId`, `activityId`, `roleSlots`, `gameRoleId`, `flex`; `gameId` and `customGameName` "at most one" in PR6) |
 | GET | `/api/groups/{groupId}/lobbies/{lobbyId}` | calendar | yes, member | REQ-0004, REQ-0005 (shows the players who have joined. `lobby_not_found` also after the end time, since past lobbies are not shown, ADR 0004) |
 | DELETE | `/api/groups/{groupId}/lobbies/{lobbyId}` | calendar | yes, creator | REQ-0003 |
-| PUT | `/api/groups/{groupId}/lobbies/{lobbyId}/players/me` | calendar | yes, member | REQ-0005, F-018 (order: `lobby_not_found`, `lobby_has_ended` (also for a caller who is already a player), already a player → 204, `lobby_full`. ADR 0004 rule 7) |
+| PUT | `/api/groups/{groupId}/lobbies/{lobbyId}/players/me` | calendar | yes, member | REQ-0005, F-018 (planned, ADR 0017: optional body `{gameRoleId, flex}`, `invalid_game_role`, `game_role_full`. Order: `lobby_not_found`, `lobby_has_ended` (also for a caller who is already a player), already a player → 204, `lobby_full`. ADR 0004 rule 7) |
 | DELETE | `/api/groups/{groupId}/lobbies/{lobbyId}/players/me` | calendar | yes, member | REQ-0005 (204 when the lobby exists, also after the end time and idempotent. 404 `lobby_not_found` when the lobby is missing) |
+| PUT | `/api/groups/{groupId}/lobbies/{lobbyId}/mode` | calendar | yes, player | planned, ADR 0017 (REQ-0015). Body `{modeId, currentModeId}`; `lobby_changed` if `currentModeId` is stale |
+| PUT | `/api/groups/{groupId}/lobbies/{lobbyId}/activity` | calendar | yes, player | planned, ADR 0017 (REQ-0015). Body `{activityId}` |
+| DELETE | `/api/groups/{groupId}/lobbies/{lobbyId}/activity` | calendar | yes, player | planned, ADR 0017 (REQ-0015). Clears the activity, keeps the mode |
+| PUT | `/api/groups/{groupId}/lobbies/{lobbyId}/game` | calendar | yes, player | planned, ADR 0017 (REQ-0015). Body `{gameId}`; only for a lobby without a game (`lobby_game_set` otherwise) |
 
 Internal endpoints (not public, blocked by `gateway`, reachable only on the internal network `services`, ADR 0008):
 
@@ -155,6 +159,16 @@ The source is `enum` in `api/` (`auth/openapi.yaml` and `calendar/openapi.yaml` 
 | `lobby_full` | 409 | Joining when all spots are taken |
 | `own_upcoming_lobbies_exist` | 409 | Leaving a group with own upcoming lobbies |
 | `game_taken` | 409 | Name (case-insensitive) already used by another game |
+| `invalid_mode` | 400 | Planned, ADR 0017. Mode name invalid in the game list. Lobby: unknown mode, a mode not of the lobby's game, or a mode given for a lobby with no game (including "Other") |
+| `mode_taken` | 409 | Planned, ADR 0017. Mode name already used in the game |
+| `invalid_activity` | 400 | Planned, ADR 0017. Activity name invalid in the game list. Lobby: unknown activity, an activity not of the lobby's mode, or a lobby with no mode |
+| `activity_taken` | 409 | Planned, ADR 0017. Activity name already used in the mode |
+| `invalid_game_role` | 400 | Planned, ADR 0017. Game list: role name invalid (1–30 characters after trim). Lobby: unknown or malformed `gameRoleId`, duplicate in `roleSlots`, a seat missing or extra for the lobby's roles, or roles given for a lobby without roles |
+| `game_role_taken` | 409 | Planned, ADR 0017. Game role name already used by another role of the same owner (the game, or the mode), ignoring case |
+| `game_role_full` | 409 | Planned, ADR 0017. The chosen game role has no free slot |
+| `lobby_game_set` | 409 | Planned, ADR 0017. The lobby already has a game, including "Other" |
+| `lobby_changed` | 409 | Planned, ADR 0017. `currentModeId` is not the lobby's current mode (another change was saved first) |
+| `lobby_has_more_players` | 409 | Planned, ADR 0017. The new mode's limit is below the number of players |
 | `service_unavailable` | 503 | A dependency (auth, database) does not respond. Never after a committed write |
 | `internal_error` | 500 | Unexpected error. No details to the client. Documented on every operation |
 
