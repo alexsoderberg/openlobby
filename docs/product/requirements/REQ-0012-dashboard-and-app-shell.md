@@ -154,7 +154,7 @@ Acceptance criteria:
 - Given that a lobby started before Monday and has not ended, when "Day list" is selected, then it is listed under Monday with its start time (the time grid shows it from 00:00 in Monday's column).
 - Given that a lobby is listed in the day list, when I select it, then its lobby page opens (Third amendment, item 3).
 - Given that "Day list" is selected and no lobby of mine is in this week, when the section is shown, then no day is listed and the text "Nothing booked this week" is shown (ASSUMPTION: wording). Given that "Week calendar" is selected and no lobby is in this week, then the empty rule of the Dashboard criteria applies unchanged (each day shows "Nothing booked").
-- Given that a lobby is shown in the day list, when it is shown, then its genre theme appears as REQ-0014 defines for lobby lists (REQ-0014 is Decided and not yet built; see F-032).
+- Given that a lobby is shown in the day list, when it is shown, then its genre theme appears as REQ-0014 defines for lobby lists (REQ-0014 is Implemented in PR #70; see F-032).
 - Given that I have chosen an option, when I reload the page or open the dashboard again later in the same browser, then the same option is selected and shown.
 - Given that I open the dashboard in another browser or on another device, when no choice is saved there, then "Week calendar" is shown. A choice made in one browser does not change other browsers or the account (DECISION, user, 2026-11-07).
 - Given that I have not chosen in this browser, or the saved value is not one of the two options, when the dashboard opens, then "Week calendar" is shown (ASSUMPTION: default, today's behavior).

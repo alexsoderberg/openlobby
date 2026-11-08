@@ -60,6 +60,8 @@ Not part of the MVP. The vision lists it as outside the MVP scope. It is priorit
 
 Confirmed by the user on 2026-11-04: game roles (REQ-0011) stay after the MVP (DECISION, user).
 
+Delivered (2026-11-08): A1 (REQ-0014, game genre themes) in PR #70. The landing hero criterion of REQ-0014 is not part of it; it is verified with C1 (REQ-0013 rebuild).
+
 Order decided by the user on 2026-11-07: genre themes (REQ-0014) come first, ahead of game roles (REQ-0011). The user asked for the genre themes now ("we also need more gaming aesthetics"). Game roles stay Should and follow directly. REQ-0014 needs no game roles and can be delivered on its own.
 
 Order decided by the user on 2026-11-08 (question 12): A2 (REQ-0011, game roles) and A3 (REQ-0015, modes, named activities and open lobbies) are delivered together, after A1 (REQ-0014). Reason: both change the same game form (F-025), the same lobby data and the role slots, so game roles are not built on the game and then moved to a mode. The open-lobby slice (F-034) is not built first on its own.

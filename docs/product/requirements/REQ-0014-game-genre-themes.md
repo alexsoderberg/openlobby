@@ -1,7 +1,9 @@
 # REQ-0014. Game genre themes
-Status: Decided
+Status: Implemented
 Feature: F-032
 Priority: Should
+
+Implemented in PR #70 (merged 2026-11-08, after reviewer approval and the user's visual check at 320 and 390 px). Pending: the REQ-0013 criterion (Amendment 2026-11-07) that a sample card uses its genre's theme. It is verified with the REQ-0013 rebuild (backlog C1), not in PR #70.
 
 Decided by the user (DECISION, user, 2026-11-07): genre themes, chosen from three options (where, how, which games). The product owner wrote the criteria. The data model, the API and the design of the themes are the architect's and the UI/UX expert's.
 
@@ -102,7 +104,7 @@ REQ-0013 (Landing hero): the hero's sample cards use the genre themes of this re
 - For the UI/UX expert (not decided here): the exact colors, patterns, icons and motifs in the table, under the contrast and motion rules.
 
 ## Amendment 2026-11-08 (REQ-0015, game modes and open lobbies)
-Status stays Decided. Written by the product owner within REQ-0015 (2026-11-08); the user's decisions are in REQ-0015. The genre stays per game. Modes and activities have no genre theme.
+Status at the time of this amendment: Decided. Written by the product owner within REQ-0015 (2026-11-08); the user's decisions are in REQ-0015. The genre stays per game. Modes and activities have no genre theme.
 - Given that a lobby has a game with modes, when I see it, then the genre of its game gives the theme, whatever the mode or activity (DECISION, product owner, within REQ-0015).
 - Given that a lobby has no game (an open lobby, REQ-0015), when I see it, then it shows the neutral theme and no genre name (REQ-0015).
 - Out of scope addition: a genre per mode or per activity.
