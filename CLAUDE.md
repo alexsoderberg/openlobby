@@ -62,6 +62,14 @@ This is the single shared vocabulary. Use these exact English terms in documents
 | Joined by me | `joinedByMe` | `true` when the caller is a player of the lobby. On `Lobby` (ADR 0014) |
 | Group list | `GET /api/groups`, page `/groups` | The groups the user is a member of, opened by the Groups tab. Not the Game list |
 | Group view | `/groups/{groupId}` | A group's page inside the app shell: upcoming lobbies, members and invite links |
+| Game mode | `game_modes`, `gameModes`, `modeId`, `modeName` | A kind of play within a game, with its own limit: its game roles (their sum is max players) or a max players value. Entered by the system admin. Avoid: type, category, difficulty, queue, playlist (REQ-0015, ADR 0017) |
+| Named activity | `activities`, `activityId`, `activityName` | A specific thing played in a mode, e.g. a particular dungeon. Optional, at most one per lobby, belongs to exactly one mode. Avoid: instance, content, map, boss, target. Do not use the bare word "activity" for anything else. Today it means the order of permission checks in `api/calendar/openapi.yaml` (line 295), its generated copy `frontend/src/api/gen/calendar.ts` (line 140) and `services/calendar/internal/application/invite_links.go` (lines 128, 162); PR2 of ADR 0017 rewords them |
+| Open lobby | no `modeId` (`lobbies.game_mode_id` NULL) | A lobby with no mode: with no game (shown as "Open") or with a game only. Game and mode can be set later (REQ-0015, ADR 0017). Avoid: free lobby, unnamed lobby, drop-in |
+| Label | frontend only (no API field) | The text a lobby shows in lists, Next up, This week and on its page: "game › mode › activity", or "Open" with no game (ADR 0017). Avoid: title (a lobby has no title field) |
+| Game role | `game_roles`, `gameRoles`, `gameRoleId` (on a player; `null` means flex) | A named role of a game, or of a mode of a game, with slots, e.g. "Tank". Entered by the system admin. Not the group role `role` (`admin`, `member`). Avoid: role (alone), position, class (REQ-0011, ADR 0017) |
+| Role slot | `lobby_role_slots`, `roleSlots`, `slots` | The number of players a lobby allows in one game role, shown as "Tank 0/1". A copy of the game role in the lobby. Avoid: spot (spot means a place in the lobby total) |
+| Flex (any game role) | `gameRoleId` null on `lobby_players`, `flexCount`, request field `flex: true` | A player who takes one spot of the lobby total without a role slot, shown as "Flex N". Avoid: any role, wildcard, fill |
+| Seat | request fields `gameRoleId` or `flex: true` (create and join) | The choice a player makes when joining a lobby with game roles: one game role, or flex. Avoid: spot (spot means a place in the lobby total), slot (slot means a role slot) (ADR 0017) |
 
 Notes:
 - "Time" in the sense of a clock time or timestamp is "time" (`startsAt`, `endsAt`, time zone). Only the bookable slot is a "lobby".

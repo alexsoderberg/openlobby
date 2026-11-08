@@ -21,11 +21,12 @@ As a member, I want to choose the kind of play and, if I know it, the named acti
 Modes and activities (system admin, in the game form of REQ-0010):
 - Given that I am a system admin, when I add or change a game, then the form lets me list its modes, each with a name and either its game roles (REQ-0011) or a max players value. A game may have no modes.
 - Given that I am a system admin, when I save a mode with game roles, then its max players is the sum of its role slots, and I do not enter max players separately.
-- Given that I am a system admin, when I save a mode without game roles, then max players is required: a whole number of at least 1. A mode is never unlimited (DECISION, user, 2026-11-08).
+- Given that I am a system admin, when I save a mode without game roles, then max players is required: a whole number of at least 1. A mode is never unlimited, so a cleared value is denied with an error message and no change is saved (DECISION, user, 2026-11-08).
+- Given that I am a system admin, when I enter a role slot number for a game role of a mode, then any whole number of at least 1 is accepted, with no upper bound of its own. The mode's max players is the sum of its slots and has the same limit as any max players value: no product cap, and the technical upper bound of REQ-0009 (DECISION, user, 2026-11-08).
 - Given that I am a system admin, when I save a mode with an empty name, a name longer than 50 characters, or a name that another mode of the same game already has (ignoring case and surrounding spaces), then it is denied with an error message and no change is saved.
 - Given that I am a system admin, when I add an activity to a mode, then I enter a name of 1–50 characters, unique within that mode (ignoring case and surrounding spaces). A mode may have no activities.
 - Given that I am a system admin, when I save an activity with an invalid or duplicate name, then it is denied with an error message and no change is saved.
-- Given that a game has at least one mode, when I look at the game's form, then the game's own default max players and game roles (REQ-0009, REQ-0011) are not offered. If the game had them before its first mode was saved, they are no longer used by new lobbies (DECISION, user, 2026-11-08). Lobbies created before keep their values until a mode is set (see "Changed or removed modes and activities").
+- Given that a game has at least one mode, when I look at the game's form, then the game's own default max players and game roles (REQ-0009, REQ-0011) are not offered. If the game had them before its first mode was saved, they are no longer used by new lobbies (DECISION, user, 2026-11-08). Lobbies created before keep their values until a mode is set (see "Changed or removed modes and activities"). They apply again when the last mode is removed (DECISION, user, 2026-11-08).
 - Given that I am a system admin, when I add or change a mode or activity, then no other field is asked for.
 - Given that I am a system admin, when I remove a mode or activity, then I must confirm first, as in REQ-0010 (ASSUMPTION, see Assumptions).
 - Given that I am a group admin or a member in a group, when I try to add, change or remove a mode or activity, then it is denied and nothing is changed.
@@ -96,7 +97,7 @@ Changed or removed modes and activities (same rule as REQ-0009 and REQ-0010):
 - Given that a system admin has changed the role slots or max players of a mode, when a lobby already uses it, then the lobby keeps its values. Only lobbies created or changed after the change take the new values.
 - Given that a system admin has removed a game, when a lobby uses it, then the lobby keeps its game, mode and activity labels and its players (REQ-0009).
 - Given that a game gets its first mode, when a lobby of that game was created before without a mode, then the lobby stays an open lobby with no mode and keeps its max players, its role slots and its players' game roles. Joining and changing follow REQ-0005 and REQ-0011 for those role slots. Its values change only when a mode is set (DECISION, product owner, 2026-11-08: no player is moved or dropped when a game gets its first mode).
-- Given that a system admin has removed the last mode of a game, when I create a lobby with that game and no mode, then the game's own default max players applies again as in REQ-0009 (ASSUMPTION, see Assumptions). Existing lobbies keep their values.
+- Given that a system admin has removed the last mode of a game, when I create a lobby with that game and no mode, then the game's own default max players and game roles apply again, as in REQ-0009 and REQ-0011 (DECISION, user, 2026-11-08). Existing lobbies keep their values.
 
 "Other" (free-text game):
 - Given that I choose "Other" as the game when I create a lobby, then no mode and no activity are offered, and max players and genre are as today (REQ-0009, REQ-0014).
@@ -162,6 +163,7 @@ Each amendment is written in the requirement it changes, marked "Amendment 2026-
 - DECISION (user, 2026-11-08, question 9): "Open lobby" means a lobby with no mode. A lobby with no game shows "Open".
 - DECISION (user, 2026-11-08, question 10): A mode change replaces the role slots the creator typed with the mode's defaults.
 - DECISION (user, 2026-11-08, question 11): Modes and activities are shown in the order the system admin entered them.
+- DECISION (user, 2026-11-08, decisions 1, 2, 4): See "Amendment 2026-11-08 (user decisions 1, 2 and 4)": last mode removed restores the game's own max and game roles; a mode is never unlimited; role slots have no upper bound of their own.
 - DECISION (user, 2026-11-08, question 12): REQ-0011 and REQ-0015 are delivered together, after REQ-0014 (backlog A1). The open-lobby slice alone is not built first.
 - DECISION (user, 2026-11-08, game choice): Choosing a game after creation does not change max players. Max players changes after creation only when a player sets or changes the mode.
 - DECISION (product owner, 2026-11-08, first mode of a game): A lobby created before its game got its first mode keeps its max players, role slots and players' game roles until a mode is set. No player is moved or dropped when the game gets its first mode. The user did not address this case; the product owner chose the simplest rule that does not drop players silently.
@@ -175,7 +177,7 @@ Not among the twelve questions answered on 2026-11-08. They are the product owne
 - ASSUMPTION (activity name length): Activity names are 1–50 characters, as game names are (REQ-0010).
 - ASSUMPTION (label separator): The label separator " › " and the "Open" wording are set here as examples; the exact copy belongs to the UI expert within these rules and the UI text catalog.
 - ASSUMPTION (change control): The game, mode and activity are changed on the lobby page only. The lists, the week view and the Next up card show them but do not change them (REQ-0004 and REQ-0012 amendments). For the UI expert to confirm.
-- ASSUMPTION (last mode removed): When a game's last mode is removed, the game's own default max players applies again to new lobbies with that game and no mode, as in REQ-0009. Existing lobbies keep their values.
+- ASSUMPTION (last mode removed): Decided 2026-11-08 by the user, no longer an assumption. See "Amendment 2026-11-08 (user decisions 1, 2 and 4)".
 
 ## Amendments of REQ-0011 (see REQ-0011 for the text in place)
 - Game roles may be defined on a mode of a game instead of on the game. A game with modes has no game roles of its own.
@@ -184,6 +186,13 @@ Not among the twelve questions answered on 2026-11-08. They are the product owne
 - A mode change makes existing players flex when the new mode has game roles (DECISION, user, 2026-11-08).
 - A lobby created before its game got its first mode keeps its role slots and its players' game roles until a mode is set (DECISION, product owner, 2026-11-08). Then the rules of "Applying a choice" apply.
 - Choosing a game after creation does not change max players or role slots (DECISION, user, 2026-11-08 for max players; see "Applying a choice").
+
+## Amendment 2026-11-08 (user decisions 1, 2 and 4)
+Status stays Decided. The three decisions are written in the criteria named below; this section records them and the replaced wording.
+- DECISION (user, 2026-11-08, decision 1): After a game's last mode is removed, the game's own default max players and game roles apply again to new lobbies with that game and no mode. Existing lobbies keep their values. Was: ASSUMPTION (last mode removed). Criterion: "Changed or removed modes and activities".
+- DECISION (user, 2026-11-08, decision 2): A game mode is never unlimited. A mode without game roles must have a max players value (a whole number of at least 1). A cleared value is denied with an error message and nothing is saved. Criterion: "Modes and activities", the save of a mode without game roles.
+- DECISION (user, 2026-11-08, decision 4): Role slots have no upper bound of their own, beyond the normal max players limit. The sum of a mode's or game's slots is its max players and has no product cap (technical upper bound as in REQ-0009). Criterion: "Modes and activities", the role slot number of a game role of a mode.
+- DECISION (user, 2026-11-08, decision 3): Game role names are unique per owner, not per game. This is recorded in REQ-0011 (Amendment 2026-11-08, game role names per owner) and affects REQ-0015 only through "Game role" on a mode.
 
 ## Glossary proposal (new terms: Game mode, Named activity, Open lobby, Label; for the architect to add to CLAUDE.md, not yet added)
 - **Game mode** (`game_modes`, `gameModes`, `modeId`): a kind of play within a game, with its own limit (role slots or max players), e.g. "Dungeon" or "Raid". Entered by a system admin. Avoid: type, category, difficulty, queue, playlist.
