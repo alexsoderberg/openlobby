@@ -79,7 +79,7 @@ func TestReplaceKeepsIDAndAllowsOwnNameInOtherCase(t *testing.T) {
 	store := migratedStore(t)
 	ctx := context.Background()
 
-	err := store.Games().Replace(ctx, domain.Game{ID: overwatchID, Name: "OVERWATCH"})
+	_, err := store.Games().Replace(ctx, domain.Game{ID: overwatchID, Name: "OVERWATCH"})
 
 	games, listErr := store.Games().List(ctx)
 	if err != nil || listErr != nil {
@@ -95,7 +95,7 @@ func TestReplaceKeepsIDAndAllowsOwnNameInOtherCase(t *testing.T) {
 func TestReplaceRejectsUnknownGame(t *testing.T) {
 	store := migratedStore(t)
 
-	err := store.Games().Replace(context.Background(), domain.Game{ID: missingGame, Name: "Chess"})
+	_, err := store.Games().Replace(context.Background(), domain.Game{ID: missingGame, Name: "Chess"})
 
 	if !errors.Is(err, application.ErrGameNotFound) {
 		t.Fatalf("error %v, want ErrGameNotFound", err)
@@ -105,7 +105,7 @@ func TestReplaceRejectsUnknownGame(t *testing.T) {
 func TestReplaceRejectsNameOfAnotherGame(t *testing.T) {
 	store := migratedStore(t)
 
-	err := store.Games().Replace(context.Background(), domain.Game{ID: overwatchID, Name: "league of legends"})
+	_, err := store.Games().Replace(context.Background(), domain.Game{ID: overwatchID, Name: "league of legends"})
 
 	if !errors.Is(err, application.ErrGameTaken) {
 		t.Fatalf("error %v, want ErrGameTaken", err)
@@ -139,7 +139,7 @@ func TestReplaceAndDeleteMapMalformedIDToNotFound(t *testing.T) {
 	store := migratedStore(t)
 	ctx := context.Background()
 
-	replaceErr := store.Games().Replace(ctx, domain.Game{ID: "not-a-uuid", Name: "Chess"})
+	_, replaceErr := store.Games().Replace(ctx, domain.Game{ID: "not-a-uuid", Name: "Chess"})
 	deleteErr := store.Games().Delete(ctx, "not-a-uuid")
 
 	if !errors.Is(replaceErr, application.ErrGameNotFound) || !errors.Is(deleteErr, application.ErrGameNotFound) {

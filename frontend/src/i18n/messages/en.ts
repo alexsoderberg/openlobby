@@ -285,7 +285,14 @@ export const en = {
     invalid_capacity:
       "The number of players must be from 1 to 2147483647, or empty for no limit.",
     invalid_genre: "Choose a genre from the list, or no genre.",
+    invalid_mode: "A mode name must be 1 to 50 characters.",
+    invalid_activity: "An activity name must be 1 to 50 characters.",
+    invalid_game_role: "A game role name must be 1 to 30 characters.",
     game_taken: "A game with this name already exists.",
+    mode_taken: "This game already has a mode with this name.",
+    activity_taken: "This mode already has an activity with this name.",
+    game_role_taken:
+      "A game role with this name already exists for this game or mode.",
     game_not_found: "This game does not exist anymore.",
   } satisfies Record<ApiErrorCode, string>,
 };

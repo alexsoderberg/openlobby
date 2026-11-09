@@ -21,15 +21,20 @@ import (
 
 // Defines values for ErrorBodyCode.
 const (
+	ErrorBodyCodeActivityTaken           ErrorBodyCode = "activity_taken"
 	ErrorBodyCodeGameNotFound            ErrorBodyCode = "game_not_found"
+	ErrorBodyCodeGameRoleTaken           ErrorBodyCode = "game_role_taken"
 	ErrorBodyCodeGameTaken               ErrorBodyCode = "game_taken"
 	ErrorBodyCodeGroupNotFound           ErrorBodyCode = "group_not_found"
 	ErrorBodyCodeInternalError           ErrorBodyCode = "internal_error"
+	ErrorBodyCodeInvalidActivity         ErrorBodyCode = "invalid_activity"
 	ErrorBodyCodeInvalidCapacity         ErrorBodyCode = "invalid_capacity"
 	ErrorBodyCodeInvalidGame             ErrorBodyCode = "invalid_game"
+	ErrorBodyCodeInvalidGameRole         ErrorBodyCode = "invalid_game_role"
 	ErrorBodyCodeInvalidGenre            ErrorBodyCode = "invalid_genre"
 	ErrorBodyCodeInvalidGroupName        ErrorBodyCode = "invalid_group_name"
 	ErrorBodyCodeInvalidMaxUses          ErrorBodyCode = "invalid_max_uses"
+	ErrorBodyCodeInvalidMode             ErrorBodyCode = "invalid_mode"
 	ErrorBodyCodeInvalidRequest          ErrorBodyCode = "invalid_request"
 	ErrorBodyCodeInviteInvalid           ErrorBodyCode = "invite_invalid"
 	ErrorBodyCodeLobbyEndNotAfterStart   ErrorBodyCode = "lobby_end_not_after_start"
@@ -40,6 +45,7 @@ const (
 	ErrorBodyCodeLobbyTooLong            ErrorBodyCode = "lobby_too_long"
 	ErrorBodyCodeMemberNotFound          ErrorBodyCode = "member_not_found"
 	ErrorBodyCodeMethodNotAllowed        ErrorBodyCode = "method_not_allowed"
+	ErrorBodyCodeModeTaken               ErrorBodyCode = "mode_taken"
 	ErrorBodyCodeNotAllowed              ErrorBodyCode = "not_allowed"
 	ErrorBodyCodeNotFound                ErrorBodyCode = "not_found"
 	ErrorBodyCodeOwnUpcomingLobbiesExist ErrorBodyCode = "own_upcoming_lobbies_exist"
@@ -50,7 +56,11 @@ const (
 // Valid indicates whether the value is a known member of the ErrorBodyCode enum.
 func (e ErrorBodyCode) Valid() bool {
 	switch e {
+	case ErrorBodyCodeActivityTaken:
+		return true
 	case ErrorBodyCodeGameNotFound:
+		return true
+	case ErrorBodyCodeGameRoleTaken:
 		return true
 	case ErrorBodyCodeGameTaken:
 		return true
@@ -58,15 +68,21 @@ func (e ErrorBodyCode) Valid() bool {
 		return true
 	case ErrorBodyCodeInternalError:
 		return true
+	case ErrorBodyCodeInvalidActivity:
+		return true
 	case ErrorBodyCodeInvalidCapacity:
 		return true
 	case ErrorBodyCodeInvalidGame:
+		return true
+	case ErrorBodyCodeInvalidGameRole:
 		return true
 	case ErrorBodyCodeInvalidGenre:
 		return true
 	case ErrorBodyCodeInvalidGroupName:
 		return true
 	case ErrorBodyCodeInvalidMaxUses:
+		return true
+	case ErrorBodyCodeInvalidMode:
 		return true
 	case ErrorBodyCodeInvalidRequest:
 		return true
@@ -87,6 +103,8 @@ func (e ErrorBodyCode) Valid() bool {
 	case ErrorBodyCodeMemberNotFound:
 		return true
 	case ErrorBodyCodeMethodNotAllowed:
+		return true
+	case ErrorBodyCodeModeTaken:
 		return true
 	case ErrorBodyCodeNotAllowed:
 		return true
@@ -157,13 +175,36 @@ func (e MemberRole) Valid() bool {
 	}
 }
 
+// Activity defines model for Activity.
+type Activity struct {
+	Id openapi_types.UUID `json:"id"`
+
+	// Name Activity name, 1–50 characters after trim. Unique ignoring case within the mode.
+	Name string `json:"name"`
+}
+
+// ActivityInput defines model for ActivityInput.
+type ActivityInput struct {
+	// Id Keeps the identity of an existing activity of the same mode. Omitted for a new one.
+	Id *openapi_types.UUID `json:"id,omitempty"`
+
+	// Name Activity name. Empty after trim or longer than 50 characters gives `invalid_activity`.
+	Name string `json:"name"`
+}
+
 // CreateGameRequest defines model for CreateGameRequest.
 type CreateGameRequest struct {
 	// DefaultMaxPlayers Default max players of a game in the game list, an integer from 1 to 2147483647. `null` or omitted means unlimited. Changed by the system admin. Lobbies keep the value they were created with.
 	DefaultMaxPlayers *DefaultMaxPlayers `json:"defaultMaxPlayers,omitempty"`
 
+	// GameRoles The game roles of the game itself. Omitted or `null` leaves the stored roles unchanged, an empty array removes them, otherwise they replace the stored roles. ADR 0017.
+	GameRoles *[]GameRoleInput `json:"gameRoles,omitempty"`
+
 	// Genre The game's genre. Omitted or `null` means no genre. A value outside the list gives `invalid_genre`.
 	Genre *Genre `json:"genre,omitempty"`
+
+	// Modes The modes of the game. Omitted or `null` leaves the stored modes unchanged, an empty array removes them, otherwise they replace the stored modes. ADR 0017.
+	Modes *[]GameModeInput `json:"modes,omitempty"`
 
 	// Name Game name. Omitted or `null` gives `invalid_game`. The name `Other` (ignoring case, after trim) is reserved for the client's free-text choice and gives `invalid_game` (ADR 0010).
 	Name *GameName `json:"name,omitempty"`
@@ -224,11 +265,17 @@ type Game struct {
 	// DefaultMaxPlayers Default max players of a game in the game list, an integer from 1 to 2147483647. `null` or omitted means unlimited. Changed by the system admin. Lobbies keep the value they were created with.
 	DefaultMaxPlayers *DefaultMaxPlayers `json:"defaultMaxPlayers"`
 
+	// GameRoles The game roles of the game itself, in the order entered. Not used while the game has modes. Not in `required` so that existing fixtures stay valid, but the server always sends it (ADR 0017).
+	GameRoles *[]GameRole `json:"gameRoles,omitempty"`
+
 	// Genre The game's genre, or `null` for no genre.
 	Genre *Genre `json:"genre"`
 
 	// Id The game's ID. A uuid generated by the system when the game is created. Never changed.
 	Id GameId `json:"id"`
+
+	// Modes The modes of the game, in the order entered. Not in `required` so that existing fixtures stay valid, but the server always sends it (ADR 0017).
+	Modes *[]GameMode `json:"modes,omitempty"`
 
 	// Name Game name, 1–50 characters after trim.
 	Name GameName `json:"name"`
@@ -237,8 +284,62 @@ type Game struct {
 // GameId The game's ID. A uuid generated by the system when the game is created. Never changed.
 type GameId = openapi_types.UUID
 
+// GameMode defines model for GameMode.
+type GameMode struct {
+	Activities []Activity         `json:"activities"`
+	GameRoles  []GameRole         `json:"gameRoles"`
+	Id         openapi_types.UUID `json:"id"`
+
+	// MaxPlayers Max players of the mode. For a mode with game roles it is the sum of their slots.
+	MaxPlayers int `json:"maxPlayers"`
+
+	// Name Mode name, 1–50 characters after trim. Unique ignoring case within the game.
+	Name string `json:"name"`
+}
+
+// GameModeInput defines model for GameModeInput.
+type GameModeInput struct {
+	// Activities The activities of the mode. A mode entry replaces the stored mode, so an omitted list means no activities.
+	Activities *[]ActivityInput `json:"activities,omitempty"`
+
+	// GameRoles The roles of the mode. A mode entry replaces the stored mode, so an omitted list means no roles.
+	GameRoles *[]GameRoleInput `json:"gameRoles,omitempty"`
+
+	// Id Keeps the identity of an existing mode of the same game. Omitted for a new mode.
+	Id *openapi_types.UUID `json:"id,omitempty"`
+
+	// MaxPlayers Required, 1 to 2147483647, for a mode without game roles. Must be omitted or `null` for a mode with game roles (the sum is used). Otherwise `invalid_capacity`.
+	MaxPlayers *int `json:"maxPlayers,omitempty"`
+
+	// Name Mode name. Empty after trim or longer than 50 characters gives `invalid_mode`.
+	Name string `json:"name"`
+}
+
 // GameName Game name, 1–50 characters after trim.
 type GameName = string
+
+// GameRole defines model for GameRole.
+type GameRole struct {
+	Id openapi_types.UUID `json:"id"`
+
+	// Name Game role name, 1–30 characters after trim. Unique ignoring case among the roles of the same owner (the game, or the mode).
+	Name string `json:"name"`
+
+	// Slots How many players the role takes in a lobby.
+	Slots int `json:"slots"`
+}
+
+// GameRoleInput defines model for GameRoleInput.
+type GameRoleInput struct {
+	// Id Keeps the identity of an existing role of the same owner. Omitted for a new role. An `id` of another owner, or a repeated `id`, gives `invalid_request`.
+	Id *openapi_types.UUID `json:"id,omitempty"`
+
+	// Name Game role name. Empty after trim or longer than 30 characters gives `invalid_game_role`.
+	Name string `json:"name"`
+
+	// Slots An integer from 1 to 2147483647, otherwise `invalid_capacity`. The sum of the slots of one owner must also be within that range.
+	Slots int `json:"slots"`
+}
 
 // Genre Genre of a game from a fixed list (REQ-0014, ADR 0016). `null` means no genre.
 type Genre string
@@ -370,8 +471,14 @@ type ReplaceGameRequest struct {
 	// DefaultMaxPlayers Default max players of a game in the game list, an integer from 1 to 2147483647. `null` or omitted means unlimited. Changed by the system admin. Lobbies keep the value they were created with.
 	DefaultMaxPlayers *DefaultMaxPlayers `json:"defaultMaxPlayers,omitempty"`
 
+	// GameRoles The game roles of the game itself. Omitted or `null` leaves the stored roles unchanged, an empty array removes them, otherwise they replace the stored roles. ADR 0017.
+	GameRoles *[]GameRoleInput `json:"gameRoles,omitempty"`
+
 	// Genre The game's genre. Omitted or `null` means no genre. A value outside the list gives `invalid_genre`.
 	Genre *Genre `json:"genre,omitempty"`
+
+	// Modes The modes of the game. Omitted or `null` leaves the stored modes unchanged, an empty array removes them, otherwise they replace the stored modes. ADR 0017.
+	Modes *[]GameModeInput `json:"modes,omitempty"`
 
 	// Name Game name. Omitted or `null` gives `invalid_game`. The name `Other` (ignoring case, after trim) is reserved for the client's free-text choice and gives `invalid_game` (ADR 0010).
 	Name *GameName `json:"name,omitempty"`

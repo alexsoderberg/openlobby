@@ -114,7 +114,7 @@ func chooseGame(request NewLobbyRequest) (*string, string, error) {
 		id := request.Game.ID
 		return &id, request.Game.Name, nil
 	}
-	name, ok := trimName(*request.CustomGameName)
+	name, ok := trimName(*request.CustomGameName, maxNameLength)
 	if !ok {
 		return nil, "", ErrInvalidGame
 	}

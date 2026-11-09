@@ -57,11 +57,11 @@ func TestReplaceWithoutGenreClearsItAndExistingGamesHaveNone(t *testing.T) {
 		t.Fatalf("game %+v, error %v; want a seeded game without genre", before, err)
 	}
 	racing := domain.Genre("racing")
-	if err := store.Games().Replace(ctx, domain.Game{ID: overwatchID, Name: "Overwatch", Genre: &racing}); err != nil {
+	if _, err := store.Games().Replace(ctx, domain.Game{ID: overwatchID, Name: "Overwatch", Genre: &racing}); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := store.Games().Replace(ctx, domain.Game{ID: overwatchID, Name: "Overwatch"}); err != nil {
+	if _, err := store.Games().Replace(ctx, domain.Game{ID: overwatchID, Name: "Overwatch"}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -92,7 +92,7 @@ func TestLobbyGameGenreFollowsTheGame(t *testing.T) {
 		t.Fatal("lobby of a game without genre has a genre")
 	}
 	shooter := domain.Genre("shooter")
-	if err := store.Games().Replace(ctx, domain.Game{ID: counterStrikeID, Name: "Counter-Strike 2", Genre: &shooter}); err != nil {
+	if _, err := store.Games().Replace(ctx, domain.Game{ID: counterStrikeID, Name: "Counter-Strike 2", Genre: &shooter}); err != nil {
 		t.Fatal(err)
 	}
 	if got := genreOf(byGame.ID); got == nil || *got != shooter {

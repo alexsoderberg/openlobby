@@ -100,11 +100,14 @@ type GameCatalog interface {
 }
 
 // GameCatalogEditor changes the game list. Only the system admin use cases call it (ADR 0010). Each method returns
-// ErrGameNotFound or ErrGameTaken for the rules it cannot check without the database.
+// ErrGameNotFound, ErrGameTaken, ErrModeTaken, ErrActivityTaken or ErrGameRoleTaken for the rules it cannot check without
+// the database. A write is one transaction on the locked game row. Under the lock it applies Game.CheckIDs and
+// Game.EffectiveDefaultMax to the stored game, because both need it (ADR 0017 section 6).
 type GameCatalogEditor interface {
-	// Create stores the game with a generated ID and returns it.
+	// Create stores the game with a generated ID and returns it as stored.
 	Create(ctx context.Context, game domain.Game) (domain.Game, error)
-	Replace(ctx context.Context, game domain.Game) error
+	// Replace writes the game and returns it as stored. Nil game roles or modes leave the stored ones unchanged.
+	Replace(ctx context.Context, game domain.Game) (domain.Game, error)
 	Delete(ctx context.Context, id string) error
 }
 

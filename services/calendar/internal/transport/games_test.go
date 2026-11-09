@@ -34,8 +34,8 @@ func TestListGroupGamesReturnsTheListInOrderWithNullMax(t *testing.T) {
 		t.Fatalf("decode %q: %v", response.Body.String(), err)
 	}
 	want := []map[string]any{
-		{"id": chessID, "name": "Chess", "defaultMaxPlayers": nil, "genre": nil},
-		{"id": counterStrikeID, "name": "Counter-Strike 2", "defaultMaxPlayers": float64(5), "genre": nil},
+		{"id": chessID, "name": "Chess", "defaultMaxPlayers": nil, "genre": nil, "gameRoles": []any{}, "modes": []any{}},
+		{"id": counterStrikeID, "name": "Counter-Strike 2", "defaultMaxPlayers": float64(5), "genre": nil, "gameRoles": []any{}, "modes": []any{}},
 	}
 	if response.Code != http.StatusOK || !reflect.DeepEqual(list, want) {
 		t.Fatalf("status %d, list %v; want 200 and %v", response.Code, list, want)

@@ -38,23 +38,31 @@ func (e memoryEditor) Create(_ context.Context, game domain.Game) (domain.Game, 
 		return domain.Game{}, application.ErrGameTaken
 	}
 	game.ID = createdGameID
+	numberEntries(&game)
 	e.store.games = append(e.store.games, game)
 	return game, nil
 }
 
-func (e memoryEditor) Replace(_ context.Context, game domain.Game) error {
+func (e memoryEditor) Replace(_ context.Context, game domain.Game) (domain.Game, error) {
 	e.store.calls++
 	index := e.store.gameIndex(game.ID)
 	switch {
 	case e.store.err != nil:
-		return e.store.err
+		return domain.Game{}, e.store.err
 	case index < 0:
-		return application.ErrGameNotFound
+		return domain.Game{}, application.ErrGameNotFound
 	case e.store.gameNameTaken(game.Name, game.ID):
-		return application.ErrGameTaken
+		return domain.Game{}, application.ErrGameTaken
+	}
+	// Like the adapter: omitted game roles and modes keep the stored ones.
+	if game.GameRoles == nil {
+		game.GameRoles = e.store.games[index].GameRoles
+	}
+	if game.Modes == nil {
+		game.Modes = e.store.games[index].Modes
 	}
 	e.store.games[index] = game
-	return nil
+	return game, nil
 }
 
 func (e memoryEditor) Delete(_ context.Context, id string) error {
@@ -123,9 +131,9 @@ func TestListGamesReturnsWholeListToSystemAdmin(t *testing.T) {
 		t.Fatalf("decode %q: %v", response.Body.String(), err)
 	}
 	want := []map[string]any{
-		{"id": counterStrikeID, "name": "Counter-Strike 2", "defaultMaxPlayers": float64(5), "genre": nil},
-		{"id": overwatchID, "name": "Overwatch", "defaultMaxPlayers": float64(5), "genre": nil},
-		{"id": chessID, "name": "Chess", "defaultMaxPlayers": nil, "genre": nil},
+		{"id": counterStrikeID, "name": "Counter-Strike 2", "defaultMaxPlayers": float64(5), "genre": nil, "gameRoles": []any{}, "modes": []any{}},
+		{"id": overwatchID, "name": "Overwatch", "defaultMaxPlayers": float64(5), "genre": nil, "gameRoles": []any{}, "modes": []any{}},
+		{"id": chessID, "name": "Chess", "defaultMaxPlayers": nil, "genre": nil, "gameRoles": []any{}, "modes": []any{}},
 	}
 	if response.Code != http.StatusOK || !reflect.DeepEqual(list, want) {
 		t.Fatalf("status %d, list %v; want 200 and %v", response.Code, list, want)
@@ -204,7 +212,7 @@ func TestCreateGameAddsGameWithGeneratedIDForSystemAdmin(t *testing.T) {
 
 	response := call(gameRouter(store), http.MethodPost, gameRoot, asAdminUser(alexID), `{"name":"  Chess  ","defaultMaxPlayers":2}`)
 
-	want := map[string]any{"id": createdGameID, "name": "Chess", "defaultMaxPlayers": float64(2), "genre": nil}
+	want := map[string]any{"id": createdGameID, "name": "Chess", "defaultMaxPlayers": float64(2), "genre": nil, "gameRoles": []any{}, "modes": []any{}}
 	var body map[string]any
 	if err := json.Unmarshal(response.Body.Bytes(), &body); err != nil {
 		t.Fatalf("decode %q: %v", response.Body.String(), err)
@@ -322,7 +330,7 @@ func TestReplaceGameReplacesNameAndMaxAndKeepsID(t *testing.T) {
 
 	response := call(gameRouter(store), http.MethodPut, gamePath, asAdminUser(alexID), `{"name":"overwatch","defaultMaxPlayers":6}`)
 
-	want := map[string]any{"id": overwatchID, "name": "overwatch", "defaultMaxPlayers": float64(6), "genre": nil}
+	want := map[string]any{"id": overwatchID, "name": "overwatch", "defaultMaxPlayers": float64(6), "genre": nil, "gameRoles": []any{}, "modes": []any{}}
 	var body map[string]any
 	if err := json.Unmarshal(response.Body.Bytes(), &body); err != nil {
 		t.Fatalf("decode %q: %v", response.Body.String(), err)

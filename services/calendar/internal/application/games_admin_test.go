@@ -43,19 +43,19 @@ func (f *fakeEditor) Create(_ context.Context, game domain.Game) (domain.Game, e
 	return game, nil
 }
 
-func (f *fakeEditor) Replace(_ context.Context, game domain.Game) error {
+func (f *fakeEditor) Replace(_ context.Context, game domain.Game) (domain.Game, error) {
 	f.calls++
 	index := f.indexOf(game.ID)
 	switch {
 	case f.err != nil:
-		return f.err
+		return domain.Game{}, f.err
 	case index < 0:
-		return application.ErrGameNotFound
+		return domain.Game{}, application.ErrGameNotFound
 	case f.taken(game.Name, game.ID):
-		return application.ErrGameTaken
+		return domain.Game{}, application.ErrGameTaken
 	}
 	f.games[index] = game
-	return nil
+	return game, nil
 }
 
 func (f *fakeEditor) Delete(_ context.Context, id string) error {
@@ -125,7 +125,7 @@ func TestListGamesKeepsUnavailable(t *testing.T) {
 func TestCreateGameAddsTrimmedGameForSystemAdmin(t *testing.T) {
 	editor := &fakeEditor{}
 
-	created, err := newAdminGames(&fakeCatalog{}, editor).CreateGame(context.Background(), admin, "  Chess  ", fiveMax, nil)
+	created, err := newAdminGames(&fakeCatalog{}, editor).CreateGame(context.Background(), admin, "  Chess  ", fiveMax, nil, nil, nil)
 
 	if err != nil || created.ID != newID || created.Name != chessName || *created.DefaultMaxPlayers != 5 {
 		t.Fatalf("created %+v, error %v; want the generated ID and the trimmed name", created, err)
@@ -135,7 +135,7 @@ func TestCreateGameAddsTrimmedGameForSystemAdmin(t *testing.T) {
 func TestCreateGameAllowsOmittedDefaultMax(t *testing.T) {
 	editor := &fakeEditor{}
 
-	created, err := newAdminGames(&fakeCatalog{}, editor).CreateGame(context.Background(), admin, chessName, nil, nil)
+	created, err := newAdminGames(&fakeCatalog{}, editor).CreateGame(context.Background(), admin, chessName, nil, nil, nil, nil)
 
 	if err != nil || created.DefaultMaxPlayers != nil {
 		t.Fatalf("created %+v, error %v; want no default max", created, err)
@@ -146,7 +146,7 @@ func TestCreateGameAllowsOmittedDefaultMax(t *testing.T) {
 func TestCreateGameRefusesNonAdminBeforeValidationAndWrite(t *testing.T) {
 	editor := &fakeEditor{}
 
-	_, err := newAdminGames(&fakeCatalog{}, editor).CreateGame(context.Background(), nonAdmin, "", intPtr(0), nil)
+	_, err := newAdminGames(&fakeCatalog{}, editor).CreateGame(context.Background(), nonAdmin, "", intPtr(0), nil, nil, nil)
 
 	if !errors.Is(err, domain.ErrNotAllowed) {
 		t.Fatalf("error %v, want ErrNotAllowed", err)
@@ -171,7 +171,7 @@ func TestCreateGameRefusesInvalidInputAndSavesNothing(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			editor := &fakeEditor{}
 
-			_, err := newAdminGames(&fakeCatalog{}, editor).CreateGame(context.Background(), admin, tc.raw, tc.max, nil)
+			_, err := newAdminGames(&fakeCatalog{}, editor).CreateGame(context.Background(), admin, tc.raw, tc.max, nil, nil, nil)
 
 			if !errors.Is(err, tc.wantErr) {
 				t.Fatalf("error %v, want %v", err, tc.wantErr)
@@ -186,7 +186,7 @@ func TestCreateGameRefusesInvalidInputAndSavesNothing(t *testing.T) {
 func TestCreateGameReportsTakenNameIgnoringCase(t *testing.T) {
 	editor := &fakeEditor{games: []domain.Game{{ID: gameID, Name: "Overwatch"}}}
 
-	_, err := newAdminGames(&fakeCatalog{}, editor).CreateGame(context.Background(), admin, "OVERWATCH", nil, nil)
+	_, err := newAdminGames(&fakeCatalog{}, editor).CreateGame(context.Background(), admin, "OVERWATCH", nil, nil, nil, nil)
 
 	if !errors.Is(err, application.ErrGameTaken) {
 		t.Fatalf("error %v, want ErrGameTaken", err)
@@ -194,7 +194,7 @@ func TestCreateGameReportsTakenNameIgnoringCase(t *testing.T) {
 }
 
 func TestCreateGameKeepsUnavailable(t *testing.T) {
-	_, err := newAdminGames(&fakeCatalog{}, &fakeEditor{err: domain.ErrUnavailable}).CreateGame(context.Background(), admin, chessName, nil, nil)
+	_, err := newAdminGames(&fakeCatalog{}, &fakeEditor{err: domain.ErrUnavailable}).CreateGame(context.Background(), admin, chessName, nil, nil, nil, nil)
 
 	if !errors.Is(err, domain.ErrUnavailable) {
 		t.Fatalf("error %v, want ErrUnavailable", err)
@@ -228,7 +228,7 @@ func TestReplaceGameOrdersChecksAsTheContractDoes(t *testing.T) {
 				editor = &fakeEditor{}
 			}
 
-			_, err := newAdminGames(&fakeCatalog{}, editor).ReplaceGame(context.Background(), tc.actor, gameID, tc.raw, nil, nil)
+			_, err := newAdminGames(&fakeCatalog{}, editor).ReplaceGame(context.Background(), tc.actor, gameID, tc.raw, nil, nil, nil, nil)
 
 			if !errors.Is(err, tc.wantErr) {
 				t.Fatalf("error %v, want %v", err, tc.wantErr)
@@ -240,7 +240,7 @@ func TestReplaceGameOrdersChecksAsTheContractDoes(t *testing.T) {
 func TestReplaceGameKeepsIDAndAllowsKeepingOwnName(t *testing.T) {
 	editor := &fakeEditor{games: []domain.Game{{ID: gameID, Name: chessName, DefaultMaxPlayers: fiveMax}}}
 
-	replaced, err := newAdminGames(&fakeCatalog{}, editor).ReplaceGame(context.Background(), admin, gameID, "chess", nil, nil)
+	replaced, err := newAdminGames(&fakeCatalog{}, editor).ReplaceGame(context.Background(), admin, gameID, "chess", nil, nil, nil, nil)
 
 	if err != nil || replaced.ID != gameID || replaced.DefaultMaxPlayers != nil {
 		t.Fatalf("replaced %+v, error %v; want the same ID and no default max", replaced, err)
@@ -279,7 +279,7 @@ func TestWritesAreLoggedWithActorAndGame(t *testing.T) {
 	var logged bytes.Buffer
 	games := application.NewGames(&fakeStore{}, &fakeCatalog{}, &fakeEditor{}, slog.New(slog.NewTextHandler(&logged, nil)))
 
-	if _, err := games.CreateGame(context.Background(), admin, chessName, nil, nil); err != nil {
+	if _, err := games.CreateGame(context.Background(), admin, chessName, nil, nil, nil, nil); err != nil {
 		t.Fatal(err)
 	}
 
@@ -295,7 +295,7 @@ func TestReplaceAndDeleteAreLogged(t *testing.T) {
 	editor := &fakeEditor{games: []domain.Game{{ID: gameID, Name: "Old"}}}
 	games := application.NewGames(&fakeStore{}, &fakeCatalog{}, editor, slog.New(slog.NewTextHandler(&logged, nil)))
 
-	if _, err := games.ReplaceGame(context.Background(), admin, gameID, chessName, nil, nil); err != nil {
+	if _, err := games.ReplaceGame(context.Background(), admin, gameID, chessName, nil, nil, nil, nil); err != nil {
 		t.Fatal(err)
 	}
 	if err := games.DeleteGame(context.Background(), admin, gameID); err != nil {
@@ -315,13 +315,13 @@ func TestGameWritesCheckPermissionBeforeGenreAndGenreBeforeWrite(t *testing.T) {
 	editor := &fakeEditor{games: []domain.Game{{ID: gameID, Name: chessName}}}
 	games := newAdminGames(&fakeCatalog{}, editor)
 
-	_, createErr := games.CreateGame(context.Background(), nonAdmin, chessName, nil, &bad)
-	_, replaceErr := games.ReplaceGame(context.Background(), nonAdmin, gameID, chessName, nil, &bad)
+	_, createErr := games.CreateGame(context.Background(), nonAdmin, chessName, nil, &bad, nil, nil)
+	_, replaceErr := games.ReplaceGame(context.Background(), nonAdmin, gameID, chessName, nil, &bad, nil, nil)
 	if !errors.Is(createErr, domain.ErrNotAllowed) || !errors.Is(replaceErr, domain.ErrNotAllowed) {
 		t.Fatalf("errors %v and %v, want ErrNotAllowed", createErr, replaceErr)
 	}
-	_, createErr = games.CreateGame(context.Background(), admin, "Other Chess", nil, &bad)
-	_, replaceErr = games.ReplaceGame(context.Background(), admin, gameID, chessName, nil, &bad)
+	_, createErr = games.CreateGame(context.Background(), admin, "Other Chess", nil, &bad, nil, nil)
+	_, replaceErr = games.ReplaceGame(context.Background(), admin, gameID, chessName, nil, &bad, nil, nil)
 
 	if !errors.Is(createErr, domain.ErrInvalidGenre) || !errors.Is(replaceErr, domain.ErrInvalidGenre) || editor.calls != 0 {
 		t.Fatalf("errors %v and %v, editor calls %d; want ErrInvalidGenre and no write", createErr, replaceErr, editor.calls)
@@ -333,11 +333,11 @@ func TestReplaceGameSetsAndClearsTheGenre(t *testing.T) {
 	editor := &fakeEditor{games: []domain.Game{{ID: gameID, Name: chessName}}}
 	games := newAdminGames(&fakeCatalog{}, editor)
 
-	set, err := games.ReplaceGame(context.Background(), admin, gameID, chessName, nil, &racing)
+	set, err := games.ReplaceGame(context.Background(), admin, gameID, chessName, nil, &racing, nil, nil)
 	if err != nil || set.Genre == nil || *editor.games[0].Genre != racing {
 		t.Fatalf("game %+v, error %v; want genre racing stored", set, err)
 	}
-	cleared, err := games.ReplaceGame(context.Background(), admin, gameID, chessName, nil, nil)
+	cleared, err := games.ReplaceGame(context.Background(), admin, gameID, chessName, nil, nil, nil, nil)
 
 	if err != nil || cleared.Genre != nil || editor.games[0].Genre != nil {
 		t.Fatalf("game %+v, error %v; want a PUT without genre to clear it", cleared, err)
