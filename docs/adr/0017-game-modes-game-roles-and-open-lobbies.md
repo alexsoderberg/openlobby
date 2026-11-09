@@ -1,5 +1,5 @@
 # 0017. Game modes, game roles, named activities and open lobbies
-Status: Proposed (2026-11-08)
+Status: Accepted (2026-11-09)
 Amends ADR 0004 (rule 6: lobby creation, game and mode optional; the value of a lobby is no longer fixed after creation for a mode change; rule 7: join order and seat checks), ADR 0006 (lobby tables and lobby writes), ADR 0010 (game list: default max and game roles are used only by games without modes).
 Requirements: REQ-0011 (F-027, with its amendment of 2026-11-08) and REQ-0015 (F-033, F-034). Backlog A2 and A3, delivered together.
 
@@ -32,6 +32,7 @@ Lobbies (existing tables changed by migration 0007):
 
 CHECK constraints on `lobbies` (safety net, the rules are in the domain):
 - `game_name` is NULL or passes today's name check. The inline check `lobbies_game_name_check` is replaced.
+- `mode_name` and `activity_name` are NULL or pass the name check (trimmed, 1–50 characters), named `lobbies_mode_name_check` and `lobbies_activity_name_check`.
 - `game_id IS NULL OR game_name IS NOT NULL`.
 - `game_mode_id IS NULL OR game_id IS NOT NULL`.
 - `(game_mode_id IS NULL) = (mode_name IS NULL)` and `(activity_id IS NULL) = (activity_name IS NULL)`.
