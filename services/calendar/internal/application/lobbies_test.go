@@ -26,8 +26,12 @@ type lobbyStore struct {
 	// insertErr fails InsertLobby, to show that nothing is committed.
 	insertErr error
 	inserted  []domain.Lobby
+	// onLock runs when the group lock is taken, to show what happened before it.
+	onLock func()
 	// players lists the player IDs of a lobby in join order.
 	players map[string][]string
+	// seats holds the game role of a player by "lobbyID/userID"; a missing key or a nil value is flex.
+	seats map[string]*string
 }
 
 func (s *lobbyStore) Upcoming(_ context.Context, groupID, callerID string, at time.Time) ([]domain.Lobby, error) {
@@ -51,8 +55,12 @@ func (s *lobbyStore) Lobby(_ context.Context, groupID, id, callerID string, at t
 	return lobby, s.err
 }
 
-func (s *lobbyStore) PlayerIDs(_ context.Context, id string) ([]string, error) {
-	return s.players[id], s.err
+func (s *lobbyStore) Players(_ context.Context, id string) ([]domain.Player, error) {
+	var players []domain.Player
+	for _, userID := range s.players[id] {
+		players = append(players, domain.Player{UserID: userID, GameRoleID: s.seats[id+"/"+userID]})
+	}
+	return players, s.err
 }
 
 func newLobbyStore() *lobbyStore {
@@ -62,12 +70,16 @@ func newLobbyStore() *lobbyStore {
 			members: map[string][]domain.Member{fridayID: {{UserID: aliceID, Role: domain.RoleAdmin}, {UserID: bobID, Role: domain.RoleMember}}},
 		},
 		lobbies: map[string]domain.Lobby{lobbyID: {ID: lobbyID, GroupID: fridayID, CreatedByUserID: bobID}},
+		seats:   map[string]*string{},
 	}
 }
 
 func (s *lobbyStore) WithLockedGroup(_ context.Context, groupID string, fn func(application.LobbyTx) error) error {
 	if _, ok := s.groups[groupID]; !ok {
 		return domain.ErrGroupNotFound
+	}
+	if s.onLock != nil {
+		s.onLock()
 	}
 	staged := &lobbyTx{lobbyStore: s, lobbies: map[string]domain.Lobby{}}
 	for id, lobby := range s.lobbies {
@@ -108,12 +120,24 @@ func (t *lobbyTx) JoinState(_ context.Context, groupID, id, userID string) (doma
 	if !ok || lobby.GroupID != groupID {
 		return domain.JoinState{}, false, nil
 	}
+	roles := slices.Clone(lobby.RoleSlots)
+	for i := range roles {
+		roles[i].PlayerCount = 0
+		for _, player := range t.players[id] {
+			if seat := t.seats[id+"/"+player]; seat != nil && *seat == roles[i].GameRoleID {
+				roles[i].PlayerCount++
+			}
+		}
+	}
 	return domain.JoinState{EndsAt: lobby.EndsAt, MaxPlayers: lobby.MaxPlayers, PlayerCount: len(t.players[id]),
-		IsPlayer: slices.Contains(t.players[id], userID)}, true, nil
+		IsPlayer: slices.Contains(t.players[id], userID), Roles: roles, CurrentRole: t.seats[id+"/"+userID]}, true, nil
 }
 
-func (t *lobbyTx) AddPlayer(_ context.Context, id, userID string, _ time.Time) error {
-	t.players[id] = append(t.players[id], userID)
+func (t *lobbyTx) SavePlayer(_ context.Context, id, userID string, gameRoleID *string, _ time.Time) error {
+	if !slices.Contains(t.players[id], userID) {
+		t.players[id] = append(t.players[id], userID)
+	}
+	t.seats[id+"/"+userID] = gameRoleID
 	return nil
 }
 
@@ -438,7 +462,7 @@ func TestJoinAddsTheMemberOnce(t *testing.T) {
 	lobbies := newLobbies(store, chessCatalog())
 
 	for range 2 {
-		if err := lobbies.Join(context.Background(), fridayID, lobbyID, aliceID); err != nil {
+		if err := lobbies.Join(context.Background(), fridayID, lobbyID, aliceID, domain.Seat{}); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -465,7 +489,7 @@ func TestJoinRefusesWithoutWriting(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			err := newLobbies(tc.store, chessCatalog()).Join(context.Background(), tc.groupID, tc.lobbyID, tc.caller)
+			err := newLobbies(tc.store, chessCatalog()).Join(context.Background(), tc.groupID, tc.lobbyID, tc.caller, domain.Seat{})
 
 			if !errors.Is(err, tc.want) {
 				t.Fatalf("error %v, want %v", err, tc.want)
@@ -480,7 +504,7 @@ func TestJoinRefusesWithoutWriting(t *testing.T) {
 func TestJoinByAPlayerOfAFullLobbyChangesNothing(t *testing.T) {
 	store := openLobbyStore(intPtr(1))
 
-	if err := newLobbies(store, chessCatalog()).Join(context.Background(), fridayID, lobbyID, bobID); err != nil {
+	if err := newLobbies(store, chessCatalog()).Join(context.Background(), fridayID, lobbyID, bobID, domain.Seat{}); err != nil {
 		t.Fatal(err)
 	}
 	if !slices.Equal(store.players[lobbyID], []string{bobID}) {

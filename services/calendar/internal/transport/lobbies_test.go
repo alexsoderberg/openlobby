@@ -61,10 +61,11 @@ func (t memoryLobbyTx) JoinState(_ context.Context, groupID, lobbyID, userID str
 	if !ok || lobby.GroupID != groupID {
 		return domain.JoinState{}, false, nil
 	}
-	return domain.JoinState{EndsAt: lobby.EndsAt, MaxPlayers: lobby.MaxPlayers, PlayerCount: lobby.PlayerCount, IsPlayer: t.store.joined[lobbyID+"/"+userID]}, true, nil
+	return domain.JoinState{EndsAt: lobby.EndsAt, MaxPlayers: lobby.MaxPlayers, PlayerCount: lobby.PlayerCount, IsPlayer: t.store.joined[lobbyID+"/"+userID],
+		Roles: lobby.RoleSlots}, true, nil
 }
 
-func (t memoryLobbyTx) AddPlayer(_ context.Context, lobbyID, userID string, _ time.Time) error {
+func (t memoryLobbyTx) SavePlayer(_ context.Context, lobbyID, userID string, _ *string, _ time.Time) error {
 	if t.store.joined == nil {
 		t.store.joined = map[string]bool{}
 	}
@@ -114,8 +115,9 @@ func (m *memoryGroups) Lobby(_ context.Context, groupID, lobbyID, callerID strin
 	return lobby, m.err
 }
 
-func (m *memoryGroups) PlayerIDs(_ context.Context, _ string) ([]string, error) {
-	return []string{otherID, alexID}, m.err
+// Players gives Other as flex and Alex in the Tank role.
+func (m *memoryGroups) Players(_ context.Context, _ string) ([]domain.Player, error) {
+	return []domain.Player{{UserID: otherID}, {UserID: alexID, GameRoleID: intpStr(tankRoleID)}}, m.err
 }
 
 func (m *memoryGroups) Find(_ context.Context, id string) (domain.Game, error) {
@@ -177,9 +179,14 @@ func TestCreateLobbyReturns201WithTheContractShape(t *testing.T) {
 			if err := json.Unmarshal(response.Body.Bytes(), &got); err != nil {
 				t.Fatal(err)
 			}
+			assertNoRoleSlots(t, got)
 			want := map[string]any{
 				"id": createdID, "gameName": tc.wantGame, "gameGenre": nil, "maxPlayers": tc.wantMax, "startsAt": tc.wantStart,
-				"endsAt": validEnd, "createdByUserId": otherID, "playerCount": float64(1), "joinedByMe": true,
+				"endsAt": validEnd, "createdByUserId": otherID, "playerCount": float64(1), "joinedByMe": true, "flexCount": float64(0),
+				"gameId": nil, "modeId": nil, "modeName": nil, "activityId": nil, "activityName": nil,
+			}
+			if tc.wantGame == "Chess" {
+				want["gameId"] = chessGameID
 			}
 			for key, value := range want {
 				if got[key] != value {
@@ -350,9 +357,11 @@ func TestListUpcomingLobbiesReturns200WithTheContractShape(t *testing.T) {
 	if len(got) != 2 || got[0]["id"] != aliceLobby || got[1]["id"] != otherLobby {
 		t.Fatalf("body %v, want the lobbies of Alex then Other, without the ended one", got)
 	}
+	assertNoRoleSlots(t, got[0])
 	want := map[string]any{
 		"id": aliceLobby, "gameName": "Go", "gameGenre": nil, "maxPlayers": nil, "startsAt": "2026-11-02T19:00:00Z",
-		"endsAt": "2026-11-02T20:00:00Z", "createdByUserId": alexID, "playerCount": float64(2), "joinedByMe": false,
+		"endsAt": "2026-11-02T20:00:00Z", "createdByUserId": alexID, "playerCount": float64(2), "joinedByMe": false, "flexCount": float64(0),
+		"gameId": nil, "modeId": nil, "modeName": nil, "activityId": nil, "activityName": nil,
 	}
 	for key, value := range want {
 		if got[0][key] != value {
@@ -385,14 +394,16 @@ func TestGetLobbyReturns200WithPlayers(t *testing.T) {
 		ID         string `json:"id"`
 		JoinedByMe bool   `json:"joinedByMe"`
 		Players    []struct {
-			UserID      string `json:"userId"`
-			DisplayName string `json:"displayName"`
+			UserID      string  `json:"userId"`
+			DisplayName string  `json:"displayName"`
+			GameRoleID  *string `json:"gameRoleId"`
 		} `json:"players"`
 	}
 	if err := json.Unmarshal(response.Body.Bytes(), &got); err != nil {
 		t.Fatal(err)
 	}
-	if got.ID != otherLobby || !got.JoinedByMe || len(got.Players) != 2 || got.Players[0].UserID != otherID || got.Players[0].DisplayName == "" || got.Players[1].UserID != alexID {
+	if got.ID != otherLobby || !got.JoinedByMe || len(got.Players) != 2 || got.Players[0].UserID != otherID || got.Players[0].DisplayName == "" || got.Players[1].UserID != alexID ||
+		got.Players[0].GameRoleID != nil || got.Players[1].GameRoleID == nil || *got.Players[1].GameRoleID != tankRoleID {
 		t.Fatalf("body %q, want the lobby with Other and Alex as named players", response.Body.String())
 	}
 }
