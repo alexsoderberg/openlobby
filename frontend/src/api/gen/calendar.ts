@@ -137,7 +137,7 @@ export interface paths {
          *     The link is removed. No new link is created. A link that is already inactive cannot be revoked (`invite_invalid`).
          *     Order: an invalid uuid in the path, from left to right (`groupId` gives `group_not_found`, `linkId` gives `invite_invalid`),
          *     membership (`group_not_found`), the link exists in this group (`invite_invalid`), the caller is creator or admin (`not_allowed`),
-         *     the link is active (`invite_invalid`). The permission is checked before the activity (ADR 0007).
+         *     the link is active (`invite_invalid`). The permission check comes before the link-state check (ADR 0007).
          */
         delete: operations["revokeInviteLink"];
         options?: never;
@@ -313,7 +313,8 @@ export interface paths {
          * Add game (system admin)
          * @description System admin only. The server generates the game's ID (uuid). The change takes effect immediately, without a new version.
          *     Rules in this order: invalid JSON or wrong JSON type (400 `invalid_request`), permission (403 `not_allowed`, before any domain validation),
-         *     name (400 `invalid_game`, including `Other`), default max (400 `invalid_capacity`), genre (400 `invalid_genre`), name already used ignoring case (409 `game_taken`).
+         *     name (400 `invalid_game`, including `Other`), default max (400 `invalid_capacity`), genre (400 `invalid_genre`), then the game roles and modes (400 `invalid_game_role`, `invalid_capacity`, `invalid_mode`, `invalid_activity`),
+         *     then the conflicts (409 `game_taken`, `mode_taken`, `game_role_taken`, `activity_taken`). Names are unique ignoring case: games in the list, modes in a game, game roles of one owner (the game or the mode), activities in a mode. ADR 0017.
          */
         post: operations["createGame"];
         delete?: never;
@@ -334,8 +335,10 @@ export interface paths {
          * Replace game (system admin)
          * @description System admin only. Replaces the name, the default max and the genre. The `gameId` in the path cannot be changed.
          *     Replaces the whole game: an omitted or `null` `defaultMaxPlayers` makes the game unlimited, an omitted or `null` `genre` gives the game no genre, and an omitted `name` gives `invalid_game`. Lobbies that were already created are not changed.
+         *     An omitted or `null` `gameRoles` or `modes` leaves the stored entries unchanged, so a client that does not know them cannot remove them. An empty array removes all entries. An array with entries replaces them: an entry with an `id` keeps its identity, an entry without gets a new one, and the order is kept. A game without modes and with game roles has the sum of the slots as its default max (a given `defaultMaxPlayers` must be omitted, `null` or equal to the sum, otherwise `invalid_capacity`). ADR 0017.
          *     Rules in this order: a `gameId` in invalid form (404 `game_not_found`), invalid JSON or wrong JSON type (400 `invalid_request`), permission (403 `not_allowed`),
-         *     name (400 `invalid_game`, including `Other`), default max (400 `invalid_capacity`) and genre (400 `invalid_genre`), unknown `gameId` (404 `game_not_found`), name used by another game (409 `game_taken`).
+         *     name (400 `invalid_game`, including `Other`), default max (400 `invalid_capacity`) and genre (400 `invalid_genre`), the game roles and modes (400 `invalid_game_role`, `invalid_capacity`, `invalid_mode`, `invalid_activity`), unknown `gameId` (404 `game_not_found`), an `id` that is repeated or not of the same owner (400 `invalid_request`),
+         *     name used by another game, mode, game role or activity (409 `game_taken`, `mode_taken`, `game_role_taken`, `activity_taken`).
          */
         put: operations["replaceGame"];
         post?: never;
@@ -363,7 +366,7 @@ export interface components {
              * @description Machine-readable error code. The text for the user belongs to the frontend. not_found and method_not_allowed are returned by the gateway only.
              * @enum {string}
              */
-            code: "unauthenticated" | "service_unavailable" | "invalid_request" | "not_allowed" | "group_not_found" | "member_not_found" | "own_upcoming_lobbies_exist" | "invalid_group_name" | "invite_invalid" | "invalid_max_uses" | "lobby_not_found" | "lobby_in_past" | "lobby_end_not_after_start" | "lobby_too_long" | "lobby_has_ended" | "lobby_full" | "invalid_game" | "invalid_capacity" | "invalid_genre" | "game_taken" | "game_not_found" | "internal_error" | "not_found" | "method_not_allowed";
+            code: "unauthenticated" | "service_unavailable" | "invalid_request" | "not_allowed" | "group_not_found" | "member_not_found" | "own_upcoming_lobbies_exist" | "invalid_group_name" | "invite_invalid" | "invalid_max_uses" | "lobby_not_found" | "lobby_in_past" | "lobby_end_not_after_start" | "lobby_too_long" | "lobby_has_ended" | "lobby_full" | "invalid_game" | "invalid_capacity" | "invalid_genre" | "invalid_mode" | "invalid_activity" | "invalid_game_role" | "game_taken" | "mode_taken" | "activity_taken" | "game_role_taken" | "game_not_found" | "internal_error" | "not_found" | "method_not_allowed";
             /** @description Same value as `X-Request-Id` in the response. Used to match logs. */
             requestId: string;
         };
@@ -491,6 +494,10 @@ export interface components {
             defaultMaxPlayers: components["schemas"]["DefaultMaxPlayers"];
             /** @description The game's genre, or `null` for no genre. */
             genre: (string & components["schemas"]["Genre"]) | null;
+            /** @description The game roles of the game itself, in the order entered. Not used while the game has modes. Not in `required` so that existing fixtures stay valid, but the server always sends it (ADR 0017). */
+            gameRoles?: components["schemas"]["GameRole"][];
+            /** @description The modes of the game, in the order entered. Not in `required` so that existing fixtures stay valid, but the server always sends it (ADR 0017). */
+            modes?: components["schemas"]["GameMode"][];
         };
         CreateGameRequest: {
             /** @description Game name. Omitted or `null` gives `invalid_game`. The name `Other` (ignoring case, after trim) is reserved for the client's free-text choice and gives `invalid_game` (ADR 0010). */
@@ -498,6 +505,10 @@ export interface components {
             defaultMaxPlayers?: components["schemas"]["DefaultMaxPlayers"];
             /** @description The game's genre. Omitted or `null` means no genre. A value outside the list gives `invalid_genre`. */
             genre?: (string & components["schemas"]["Genre"]) | null;
+            /** @description The game roles of the game itself. Omitted or `null` leaves the stored roles unchanged, an empty array removes them, otherwise they replace the stored roles. ADR 0017. */
+            gameRoles?: components["schemas"]["GameRoleInput"][] | null;
+            /** @description The modes of the game. Omitted or `null` leaves the stored modes unchanged, an empty array removes them, otherwise they replace the stored modes. ADR 0017. */
+            modes?: components["schemas"]["GameModeInput"][] | null;
         };
         ReplaceGameRequest: {
             /** @description Game name. Omitted or `null` gives `invalid_game`. The name `Other` (ignoring case, after trim) is reserved for the client's free-text choice and gives `invalid_game` (ADR 0010). */
@@ -505,6 +516,69 @@ export interface components {
             defaultMaxPlayers?: components["schemas"]["DefaultMaxPlayers"];
             /** @description The game's genre. Omitted or `null` means no genre. A value outside the list gives `invalid_genre`. */
             genre?: (string & components["schemas"]["Genre"]) | null;
+            /** @description The game roles of the game itself. Omitted or `null` leaves the stored roles unchanged, an empty array removes them, otherwise they replace the stored roles. ADR 0017. */
+            gameRoles?: components["schemas"]["GameRoleInput"][] | null;
+            /** @description The modes of the game. Omitted or `null` leaves the stored modes unchanged, an empty array removes them, otherwise they replace the stored modes. ADR 0017. */
+            modes?: components["schemas"]["GameModeInput"][] | null;
+        };
+        GameRole: {
+            /** Format: uuid */
+            id: string;
+            /** @description Game role name, 1–30 characters after trim. Unique ignoring case among the roles of the same owner (the game, or the mode). */
+            name: string;
+            /** @description How many players the role takes in a lobby. */
+            slots: number;
+        };
+        GameRoleInput: {
+            /**
+             * Format: uuid
+             * @description Keeps the identity of an existing role of the same owner. Omitted for a new role. An `id` of another owner, or a repeated `id`, gives `invalid_request`.
+             */
+            id?: string;
+            /** @description Game role name. Empty after trim or longer than 30 characters gives `invalid_game_role`. */
+            name: string;
+            /** @description An integer from 1 to 2147483647, otherwise `invalid_capacity`. The sum of the slots of one owner must also be within that range. */
+            slots: number;
+        };
+        Activity: {
+            /** Format: uuid */
+            id: string;
+            /** @description Activity name, 1–50 characters after trim. Unique ignoring case within the mode. */
+            name: string;
+        };
+        ActivityInput: {
+            /**
+             * Format: uuid
+             * @description Keeps the identity of an existing activity of the same mode. Omitted for a new one.
+             */
+            id?: string;
+            /** @description Activity name. Empty after trim or longer than 50 characters gives `invalid_activity`. */
+            name: string;
+        };
+        GameMode: {
+            /** Format: uuid */
+            id: string;
+            /** @description Mode name, 1–50 characters after trim. Unique ignoring case within the game. */
+            name: string;
+            /** @description Max players of the mode. For a mode with game roles it is the sum of their slots. */
+            maxPlayers: number;
+            gameRoles: components["schemas"]["GameRole"][];
+            activities: components["schemas"]["Activity"][];
+        };
+        GameModeInput: {
+            /**
+             * Format: uuid
+             * @description Keeps the identity of an existing mode of the same game. Omitted for a new mode.
+             */
+            id?: string;
+            /** @description Mode name. Empty after trim or longer than 50 characters gives `invalid_mode`. */
+            name: string;
+            /** @description Required, 1 to 2147483647, for a mode without game roles. Must be omitted or `null` for a mode with game roles (the sum is used). Otherwise `invalid_capacity`. */
+            maxPlayers?: number | null;
+            /** @description The roles of the mode. A mode entry replaces the stored mode, so an omitted list means no roles. */
+            gameRoles?: components["schemas"]["GameRoleInput"][] | null;
+            /** @description The activities of the mode. A mode entry replaces the stored mode, so an omitted list means no activities. */
+            activities?: components["schemas"]["ActivityInput"][] | null;
         };
     };
     responses: {
@@ -1349,7 +1423,8 @@ export interface operations {
             };
             /**
              * @description `invalid_game` (the name is omitted, `null`, empty after trim, longer than 50 characters, or `Other`),
-             *     `invalid_capacity` (default max is not `null` or an integer from 1 to 2147483647), `invalid_genre` (genre is not in the list), or `invalid_request` (invalid JSON or a wrong JSON type).
+             *     `invalid_capacity` (default max is not `null` or an integer from 1 to 2147483647, or a slot, a sum or a mode max is out of range), `invalid_genre` (genre is not in the list),
+             *     `invalid_game_role`, `invalid_mode`, `invalid_activity` (the name is empty after trim or too long), or `invalid_request` (invalid JSON or a wrong JSON type, or an `id` that is repeated or not of the same owner).
              */
             400: {
                 headers: {
@@ -1369,7 +1444,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description `game_taken`: the name is already used by another game, ignoring case. */
+            /** @description `game_taken`, `mode_taken`, `game_role_taken` or `activity_taken`: the name is already used, ignoring case. */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -1411,8 +1486,9 @@ export interface operations {
                 };
             };
             /**
-             * @description `invalid_game` (name omitted, `null`, empty after trim, too long, or `Other`), `invalid_capacity` (default max), `invalid_genre` (genre is not in the list),
-             *     or `invalid_request` (invalid JSON or a wrong JSON type).
+             * @description `invalid_game` (name omitted, `null`, empty after trim, too long, or `Other`), `invalid_capacity` (default max, a slot, a sum or a mode max), `invalid_genre` (genre is not in the list),
+             *     `invalid_game_role`, `invalid_mode`, `invalid_activity` (the name is empty after trim or too long),
+             *     or `invalid_request` (invalid JSON or a wrong JSON type, or an `id` that is repeated or not of the same owner).
              */
             400: {
                 headers: {
@@ -1441,7 +1517,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description `game_taken`: the name is already used by another game. */
+            /** @description `game_taken`, `mode_taken`, `game_role_taken` or `activity_taken`: the name is already used, ignoring case. */
             409: {
                 headers: {
                     [name: string]: unknown;

@@ -125,7 +125,7 @@ func (l *InviteLinks) Join(ctx context.Context, token, callerID string) (domain.
 }
 
 // Revoke deletes a link of the group. Its creator and a group admin may revoke it (ADR 0007, REQ-0007). The checks run
-// in the contract's order: membership, the link in this group, permission, then activity.
+// in the contract's order: membership, the link in this group, permission, then the link state.
 func (l *InviteLinks) Revoke(ctx context.Context, groupID, linkID, callerID string) error {
 	err := l.locker.WithLockedGroup(ctx, groupID, func(tx GroupTx) error {
 		return l.revokeLocked(ctx, tx, groupID, linkID, callerID)
@@ -159,7 +159,7 @@ func (l *InviteLinks) revokeLocked(ctx context.Context, tx GroupTx, groupID, lin
 }
 
 // joinLocked runs under the group lock. The link is read again, because the lookup had no lock (ADR 0007, step 3).
-// Activity is checked before membership, so an exhausted link refuses a member too.
+// The active check comes before membership, so an exhausted link refuses a member too.
 func (l *InviteLinks) joinLocked(ctx context.Context, tx GroupTx, groupID, linkID, callerID string) error {
 	link, found, err := tx.LinkByID(ctx, groupID, linkID)
 	if err != nil {

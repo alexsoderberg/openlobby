@@ -18,6 +18,15 @@ var ErrGameNotFound = errors.New("game not found")
 // ErrGameTaken means another game already has the name, ignoring case (ADR 0010).
 var ErrGameTaken = errors.New("game taken")
 
+// ErrModeTaken means another mode of the game already has the name, ignoring case (ADR 0017).
+var ErrModeTaken = errors.New("mode taken")
+
+// ErrActivityTaken means another activity of the mode already has the name, ignoring case (ADR 0017).
+var ErrActivityTaken = errors.New("activity taken")
+
+// ErrGameRoleTaken means another game role of the same owner already has the name, ignoring case (ADR 0017).
+var ErrGameRoleTaken = errors.New("game role taken")
+
 // Games holds the use cases about the game list (ADR 0010). The transport layer gives each one the verified caller.
 type Games struct {
 	reader  GroupReader
@@ -44,13 +53,13 @@ func (g *Games) ListGames(ctx context.Context, actor domain.Actor) ([]domain.Gam
 	return games, nil
 }
 
-// CreateGame adds a game to the list. The admin check comes first and the name, default max and genre are checked before
-// any write (ADR 0010).
-func (g *Games) CreateGame(ctx context.Context, actor domain.Actor, rawName string, defaultMaxPlayers *int, genre *domain.Genre) (domain.Game, error) {
+// CreateGame adds a game to the list. The admin check comes first and the name, default max, genre, game roles and modes
+// are checked before any write (ADR 0010, ADR 0017).
+func (g *Games) CreateGame(ctx context.Context, actor domain.Actor, rawName string, defaultMaxPlayers *int, genre *domain.Genre, gameRoles []domain.GameRole, modes []domain.GameMode) (domain.Game, error) {
 	if err := requireSystemAdmin(actor); err != nil {
 		return domain.Game{}, fmt.Errorf("create game: %w", err)
 	}
-	game, err := domain.NewGame("", rawName, defaultMaxPlayers, genre)
+	game, err := domain.NewGame("", rawName, defaultMaxPlayers, genre, gameRoles, modes)
 	if err != nil {
 		return domain.Game{}, fmt.Errorf("create game: %w", err)
 	}
@@ -62,20 +71,23 @@ func (g *Games) CreateGame(ctx context.Context, actor domain.Actor, rawName stri
 	return created, nil
 }
 
-// ReplaceGame changes the name, default max and genre of a game; a nil genre clears it. The ID never changes, and lobbies keep their own values (ADR 0010).
-func (g *Games) ReplaceGame(ctx context.Context, actor domain.Actor, gameID, rawName string, defaultMaxPlayers *int, genre *domain.Genre) (domain.Game, error) {
+// ReplaceGame changes the name, default max and genre of a game; a nil genre clears it. Nil game roles or modes leave the
+// stored ones unchanged (ADR 0017 section 6). The ID never changes, and lobbies keep their own values (ADR 0010).
+// It returns the game as stored.
+func (g *Games) ReplaceGame(ctx context.Context, actor domain.Actor, gameID, rawName string, defaultMaxPlayers *int, genre *domain.Genre, gameRoles []domain.GameRole, modes []domain.GameMode) (domain.Game, error) {
 	if err := requireSystemAdmin(actor); err != nil {
 		return domain.Game{}, fmt.Errorf("replace game: %w", err)
 	}
-	game, err := domain.NewGame(gameID, rawName, defaultMaxPlayers, genre)
+	game, err := domain.NewGame(gameID, rawName, defaultMaxPlayers, genre, gameRoles, modes)
 	if err != nil {
 		return domain.Game{}, fmt.Errorf("replace game: %w", err)
 	}
-	if err := g.editor.Replace(ctx, game); err != nil {
+	stored, err := g.editor.Replace(ctx, game)
+	if err != nil {
 		return domain.Game{}, fmt.Errorf("replace game: %w", err)
 	}
 	g.logChange(ctx, "replace", actor, gameID)
-	return game, nil
+	return stored, nil
 }
 
 // DeleteGame removes a game from the list. Lobbies keep their own copy of the game name and max players, so nothing else

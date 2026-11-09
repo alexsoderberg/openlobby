@@ -15,10 +15,10 @@ import (
 
 // The starting games of ADR 0010, with their fixed IDs.
 var startingGames = []domain.Game{
-	{ID: "ce3ff9c1-dabb-4270-b5e0-7b34de37410b", Name: "Counter-Strike 2", DefaultMaxPlayers: intPtr(5)},
-	{ID: "21d79e45-fc60-49b3-aa95-b44fa46a75b5", Name: "League of Legends", DefaultMaxPlayers: intPtr(5)},
-	{ID: "7e9a4d35-1616-4f25-9828-fc6e2383b07b", Name: "Overwatch", DefaultMaxPlayers: intPtr(5)},
-	{ID: "bd8fae98-29a7-4b2c-8b49-384ee7a75ff7", Name: "World of Warcraft", DefaultMaxPlayers: intPtr(5)},
+	{ID: "ce3ff9c1-dabb-4270-b5e0-7b34de37410b", Name: "Counter-Strike 2", DefaultMaxPlayers: intPtr(5), GameRoles: []domain.GameRole{}, Modes: []domain.GameMode{}},
+	{ID: "21d79e45-fc60-49b3-aa95-b44fa46a75b5", Name: "League of Legends", DefaultMaxPlayers: intPtr(5), GameRoles: []domain.GameRole{}, Modes: []domain.GameMode{}},
+	{ID: "7e9a4d35-1616-4f25-9828-fc6e2383b07b", Name: "Overwatch", DefaultMaxPlayers: intPtr(5), GameRoles: []domain.GameRole{}, Modes: []domain.GameMode{}},
+	{ID: "bd8fae98-29a7-4b2c-8b49-384ee7a75ff7", Name: "World of Warcraft", DefaultMaxPlayers: intPtr(5), GameRoles: []domain.GameRole{}, Modes: []domain.GameMode{}},
 }
 
 func intPtr(value int) *int { return &value }

@@ -28,6 +28,18 @@ var ErrInvalidCapacity = errors.New("invalid capacity")
 // ErrInvalidGenre means the genre is not in the fixed list (REQ-0014, ADR 0016).
 var ErrInvalidGenre = errors.New("invalid genre")
 
+// ErrInvalidMode means a mode name is empty after trim or longer than maxNameLength (ADR 0017).
+var ErrInvalidMode = errors.New("invalid mode")
+
+// ErrInvalidActivity means an activity name is empty after trim or longer than maxNameLength (ADR 0017).
+var ErrInvalidActivity = errors.New("invalid activity")
+
+// ErrInvalidGameRole means a game role name is empty after trim or longer than maxGameRoleNameLength (ADR 0017).
+var ErrInvalidGameRole = errors.New("invalid game role")
+
+// ErrInvalidID means an ID in a game list write is repeated or is not a current ID of the same owner (ADR 0017 section 6).
+var ErrInvalidID = errors.New("invalid id")
+
 // ErrInvalidMaxUses means the requested max uses is outside 1 to InviteLinkMaxUsesLimit (ADR 0007).
 var ErrInvalidMaxUses = errors.New("invalid max uses")
 
@@ -92,12 +104,15 @@ func IsGenre(value string) bool {
 }
 
 // Game is an entry of the game list (ADR 0010). Lobbies refer to it by ID, so a rename keeps its identity. A nil
-// DefaultMaxPlayers means unlimited and a nil Genre means no genre.
+// DefaultMaxPlayers means unlimited and a nil Genre means no genre. In a write, a nil GameRoles or Modes means "leave the
+// stored entries unchanged" and an empty one means "remove them" (ADR 0017 section 6).
 type Game struct {
 	ID                string
 	Name              string
 	DefaultMaxPlayers *int
 	Genre             *Genre
+	GameRoles         []GameRole
+	Modes             []GameMode
 }
 
 // Actor is the verified caller of a request (ADR 0011). Only the transport layer builds it, from the gateway's headers.
@@ -115,18 +130,18 @@ type Member struct {
 
 // NewGroupName trims the name and checks its length. It returns the trimmed name.
 func NewGroupName(raw string) (string, error) {
-	name, ok := trimName(raw)
+	name, ok := trimName(raw, maxNameLength)
 	if !ok {
 		return "", ErrInvalidGroupName
 	}
 	return name, nil
 }
 
-// trimName trims a name and reports whether it is 1 to maxNameLength code points.
-func trimName(raw string) (string, bool) {
+// trimName trims a name and reports whether it is 1 to maxLength code points.
+func trimName(raw string, maxLength int) (string, bool) {
 	name := strings.TrimSpace(raw)
 	length := utf8.RuneCountInString(name)
-	return name, length >= 1 && length <= maxNameLength
+	return name, length >= 1 && length <= maxLength
 }
 
 // validCapacity reports whether max players is omitted or from 1 to maxPlayersLimit.
@@ -134,10 +149,11 @@ func validCapacity(maxPlayers *int) bool {
 	return maxPlayers == nil || (*maxPlayers >= 1 && *maxPlayers <= maxPlayersLimit)
 }
 
-// NewGame trims and checks a game's name, default max players and genre (ADR 0010, ADR 0016). The ID is kept as given; it is empty
-// for a new game until the database generates it.
-func NewGame(id, rawName string, defaultMaxPlayers *int, genre *Genre) (Game, error) {
-	name, ok := trimName(rawName)
+// NewGame trims and checks a game's name, default max players, genre, game roles and modes (ADR 0010, 0016, 0017). The ID
+// is kept as given; it is empty for a new game until the database generates it. The default max is finished later by
+// EffectiveDefaultMax, because it depends on the roles and modes the game will have.
+func NewGame(id, rawName string, defaultMaxPlayers *int, genre *Genre, gameRoles []GameRole, modes []GameMode) (Game, error) {
+	name, ok := trimName(rawName, maxNameLength)
 	if !ok || strings.EqualFold(name, reservedGameName) {
 		return Game{}, ErrInvalidGame
 	}
@@ -147,7 +163,15 @@ func NewGame(id, rawName string, defaultMaxPlayers *int, genre *Genre) (Game, er
 	if genre != nil && !IsGenre(string(*genre)) {
 		return Game{}, ErrInvalidGenre
 	}
-	return Game{ID: id, Name: name, DefaultMaxPlayers: defaultMaxPlayers, Genre: genre}, nil
+	roles, _, err := newGameRoles(gameRoles)
+	if err != nil {
+		return Game{}, err
+	}
+	checkedModes, err := newModes(modes)
+	if err != nil {
+		return Game{}, err
+	}
+	return Game{ID: id, Name: name, DefaultMaxPlayers: defaultMaxPlayers, Genre: genre, GameRoles: roles, Modes: checkedModes}, nil
 }
 
 // InviteLinkMaxUses is how many joins an invite link allows, always from 1 to InviteLinkMaxUsesLimit.
