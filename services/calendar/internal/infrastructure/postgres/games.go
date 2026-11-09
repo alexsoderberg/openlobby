@@ -123,9 +123,13 @@ func (r gameRepo) ListForGroup(ctx context.Context, groupID string) ([]applicati
 }
 
 // Find returns the game with its game roles and modes, or ErrGameNotFound when no game has the ID, also when it is not a
-// uuid (ADR 0010).
+// uuid (ADR 0010). The four reads are one snapshot, so a create never sees half of a concurrent admin write.
 func (r gameRepo) Find(ctx context.Context, id string) (domain.Game, error) {
-	game, err := loadGame(ctx, r.s.db, selectGameSQL, id)
+	var game domain.Game
+	err := r.s.inSnapshot(ctx, func(tx *sql.Tx) (err error) {
+		game, err = loadGame(ctx, tx, selectGameSQL, id)
+		return err
+	})
 	if err != nil {
 		return domain.Game{}, gameWriteError(err)
 	}
@@ -210,8 +214,8 @@ func loadGame(ctx context.Context, q queryer, query, id string) (domain.Game, er
 }
 
 // attachTree fills GameRoles and Modes (with their roles and activities) of the games, in the order entered. The lists
-// are never nil. It reads the three tables whole, because the game list is short; the reads are not one snapshot, and an
-// entry whose game is gone is ignored.
+// are never nil. It reads the three tables whole, because the game list is short. The reads are one snapshot only when q is
+// a snapshot transaction (Find); an entry whose game is gone is ignored.
 func attachTree(ctx context.Context, q queryer, games []*domain.Game) error {
 	rolesByOwner, err := rolesByOwner(ctx, q)
 	if err != nil {

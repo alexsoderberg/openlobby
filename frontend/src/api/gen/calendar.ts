@@ -212,7 +212,12 @@ export interface paths {
          *     - `endsAt` is after `startsAt`. Otherwise `lobby_end_not_after_start`.
          *     - The lobby is shorter than 24 hours. Exactly 24 hours is rejected. Otherwise `lobby_too_long`.
          *     - Exactly one of `gameId` and `customGameName` is given. `gameId` must be the ID of a game in the game list. An unknown value, including a value that is not in uuid form, gives `invalid_game`. `customGameName` is 1–50 characters after trim. Otherwise `invalid_game`.
-         *     - `maxPlayers` is omitted, `null` (both mean unlimited) or an integer from 1 to 2147483647. Otherwise `invalid_capacity`.
+         *     - `modeId` needs `gameId`. A mode that is unknown, not a mode of the chosen game, or given with `customGameName`, gives `invalid_mode`.
+         *     - `activityId` needs `modeId`. An activity that is unknown, not an activity of the chosen mode, or given without `modeId`, gives `invalid_activity`.
+         *     - Game roles. The owner of the roles is the mode if given, otherwise the game if it has no modes, otherwise there are none. `roleSlots` omitted means the owner's own slots. Each `gameRoleId` must be a role of the owner, with no duplicates, otherwise `invalid_game_role`; `roleSlots` for an owner without roles also gives `invalid_game_role`. Roles not listed count 0. Each `slots` is an integer from 0 to 2147483647 and the sum must be from 1 to 2147483647, otherwise `invalid_capacity`. Roles with 0 slots are not stored. With roles, `maxPlayers` must be omitted or `null` (the sum is used), otherwise `invalid_capacity`.
+         *     - A mode without roles needs `maxPlayers` from 1 to 2147483647, otherwise `invalid_capacity`.
+         *     - Otherwise `maxPlayers` is omitted, `null` (both mean unlimited) or an integer from 1 to 2147483647. Otherwise `invalid_capacity`.
+         *     - The creator's seat: for a lobby with game roles exactly one of `gameRoleId` (a role of the lobby) and `flex: true`; for a lobby without roles neither. `flex: false` counts as not given. Otherwise `invalid_game_role`.
          *     A clock time for the end that is before the start time (past midnight) is interpreted in the frontend, not here. The server only sees the instants.
          */
         post: operations["createLobby"];
@@ -258,7 +263,8 @@ export interface paths {
         get?: never;
         /**
          * Join lobby
-         * @description Members only. Checks after the group's lock, in this order: (1) the lobby is missing → `lobby_not_found`; (2) its end time has passed → `lobby_has_ended`, also for a caller who is already a player; (3) the caller is already a player → 204, nothing changes, even when the lobby is full; (4) all spots are taken → `lobby_full`. Otherwise the caller is added. Joining works while the lobby is ongoing, as long as its end time has not passed (REQ-0005).
+         * @description Members only. Checks after the group's lock, in this order: (1) the lobby is missing → `lobby_not_found`; (2) its end time has passed → `lobby_has_ended`, also for a caller who is already a player; (3) the seat does not fit the lobby → `invalid_game_role`; (4) the caller is already a player with the same seat → 204, nothing changes, even when the lobby is full; (5) a caller who is not yet a player: all spots are taken → `lobby_full`, then a chosen game role without a free slot → `game_role_full` (flex only needs a free spot); (6) a caller who is a player with another seat: a chosen game role without a free slot, not counting the caller → `game_role_full`; moving to flex is always allowed and `lobby_full` is not checked. Otherwise the caller is added or moves to the new seat. Joining works while the lobby is ongoing, as long as its end time has not passed (REQ-0005).
+         *     The body is optional. The seat is `gameRoleId` or `flex: true`: a lobby with game roles needs exactly one of them, a lobby without roles needs neither. A call without a body works for a lobby without roles.
          */
         put: operations["joinLobby"];
         post?: never;
@@ -366,7 +372,7 @@ export interface components {
              * @description Machine-readable error code. The text for the user belongs to the frontend. not_found and method_not_allowed are returned by the gateway only.
              * @enum {string}
              */
-            code: "unauthenticated" | "service_unavailable" | "invalid_request" | "not_allowed" | "group_not_found" | "member_not_found" | "own_upcoming_lobbies_exist" | "invalid_group_name" | "invite_invalid" | "invalid_max_uses" | "lobby_not_found" | "lobby_in_past" | "lobby_end_not_after_start" | "lobby_too_long" | "lobby_has_ended" | "lobby_full" | "invalid_game" | "invalid_capacity" | "invalid_genre" | "invalid_mode" | "invalid_activity" | "invalid_game_role" | "game_taken" | "mode_taken" | "activity_taken" | "game_role_taken" | "game_not_found" | "internal_error" | "not_found" | "method_not_allowed";
+            code: "unauthenticated" | "service_unavailable" | "invalid_request" | "not_allowed" | "group_not_found" | "member_not_found" | "own_upcoming_lobbies_exist" | "invalid_group_name" | "invite_invalid" | "invalid_max_uses" | "lobby_not_found" | "lobby_in_past" | "lobby_end_not_after_start" | "lobby_too_long" | "lobby_has_ended" | "lobby_full" | "invalid_game" | "invalid_capacity" | "invalid_genre" | "invalid_mode" | "invalid_activity" | "invalid_game_role" | "game_role_full" | "game_taken" | "mode_taken" | "activity_taken" | "game_role_taken" | "game_not_found" | "internal_error" | "not_found" | "method_not_allowed";
             /** @description Same value as `X-Request-Id` in the response. Used to match logs. */
             requestId: string;
         };
@@ -442,6 +448,11 @@ export interface components {
         Lobby: {
             /** Format: uuid */
             id: string;
+            /**
+             * Format: uuid
+             * @description ID of the lobby's game in the game list, a copy kept in the lobby. `null` for a custom name ("Other"). Not in `required` so that existing fixtures stay valid, but the server always sends it (ADR 0017).
+             */
+            gameId?: string | null;
             gameName: components["schemas"]["GameName"];
             /** @description Genre of the lobby's game as it is in the game list now. `null` for a custom name ("Other"), a game without a genre, or a game that was removed. Not stored in the lobby, so a genre change shows at the next read. */
             gameGenre: (string & components["schemas"]["Genre"]) | null;
@@ -462,9 +473,55 @@ export interface components {
             playerCount: number;
             /** @description `true` when the caller is a player of the lobby (ADR 0014). Always `true` in the response of create. */
             joinedByMe: boolean;
+            /**
+             * Format: uuid
+             * @description ID of the lobby's game mode. `null` for a lobby without a mode. Not in `required` so that existing fixtures stay valid, but the server always sends it (ADR 0017).
+             */
+            modeId?: string | null;
+            /** @description Name of the mode as it was when the lobby got it (a copy). `null` when unset, like `modeId`. */
+            modeName?: string | null;
+            /**
+             * Format: uuid
+             * @description ID of the lobby's named activity. `null` for a lobby without one. Not in `required` so that existing fixtures stay valid, but the server always sends it (ADR 0017).
+             */
+            activityId?: string | null;
+            /** @description Name of the named activity as it was when the lobby got it (a copy). `null` when unset, like `activityId`. */
+            activityName?: string | null;
+            /** @description Number of players without a game role (flex). 0 for a lobby without game roles. Not in `required` so that existing fixtures stay valid, but the server always sends it (ADR 0017). */
+            flexCount?: number;
+            /** @description The lobby's game roles in the order of the game, with slots and players. Empty for a lobby without game roles. Not in `required` so that existing fixtures stay valid, but the server always sends it (ADR 0017). */
+            roleSlots?: components["schemas"]["RoleSlot"][];
+        };
+        RoleSlot: {
+            /** Format: uuid */
+            gameRoleId: string;
+            /** @description Game role name as it was when the lobby was created (a copy). */
+            name: string;
+            slots: number;
+            /** @description Number of players in the role. Shown as "Tank 0/1". */
+            playerCount: number;
+        };
+        RoleSlotInput: {
+            /** @description ID of a game role of the lobby's mode or game. An unknown or repeated value gives `invalid_game_role`. */
+            gameRoleId: string;
+            /** @description An integer from 0 to 2147483647, otherwise `invalid_capacity`. 0 leaves the role out of the lobby. */
+            slots: number;
+        };
+        JoinLobbyRequest: {
+            /** @description The game role to take, a role of the lobby. Any other value, also one that is not a uuid, gives `invalid_game_role`. */
+            gameRoleId?: string | null;
+            /** @description `true` to take a spot without a game role. `false` counts as not given. */
+            flex?: boolean | null;
+        };
+        LobbyPlayer: components["schemas"]["UserRef"] & {
+            /**
+             * Format: uuid
+             * @description The player's game role. `null` means flex. Not in `required` so that existing fixtures stay valid, but the server always sends it (ADR 0017).
+             */
+            gameRoleId?: string | null;
         };
         LobbyDetail: components["schemas"]["Lobby"] & {
-            players: components["schemas"]["UserRef"][];
+            players: components["schemas"]["LobbyPlayer"][];
         };
         CreateLobbyRequest: {
             /**
@@ -479,6 +536,16 @@ export interface components {
             endsAt: string;
             /** @description ID of a game in the game list. Exactly one of `gameId` and `customGameName` must be given. An unknown value, including one that is not a uuid, gives `invalid_game`. */
             gameId?: string | null;
+            /** @description ID of a mode of the chosen game. Needs `gameId`. An unknown value, a mode of another game, or a value with `customGameName` gives `invalid_mode`. */
+            modeId?: string | null;
+            /** @description ID of a named activity of the chosen mode. Needs `modeId`. Any other value gives `invalid_activity`. */
+            activityId?: string | null;
+            /** @description Slots per game role of the mode or game. Omitted or `null` uses the owner's own slots. Roles not listed count 0. */
+            roleSlots?: components["schemas"]["RoleSlotInput"][] | null;
+            /** @description The creator's game role, a role of the lobby. Any other value, also one that is not a uuid, gives `invalid_game_role`. */
+            gameRoleId?: string | null;
+            /** @description `true` for the creator to take a spot without a game role. `false` counts as not given. */
+            flex?: boolean | null;
             /** @description Free-text name for "Other", 1–50 characters after trim. Not added to the game list. */
             customGameName?: (string & components["schemas"]["GameName"]) | null;
             maxPlayers?: components["schemas"]["MaxPlayers"];
@@ -1127,7 +1194,7 @@ export interface operations {
             };
             /**
              * @description `invalid_request` (invalid JSON, a wrong JSON type, or a time that is missing or not RFC 3339; checked before membership), or, after membership,
-             *     `lobby_in_past`, `lobby_end_not_after_start`, `lobby_too_long`, `invalid_game`, `invalid_capacity`.
+             *     `lobby_in_past`, `lobby_end_not_after_start`, `lobby_too_long`, `invalid_game`, `invalid_mode`, `invalid_activity`, `invalid_game_role`, `invalid_capacity`.
              */
             400: {
                 headers: {
@@ -1253,14 +1320,27 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["JoinLobbyRequest"];
+            };
+        };
         responses: {
-            /** @description The caller is a player in the lobby. */
+            /** @description The caller is a player in the lobby with the chosen seat. */
             204: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description `invalid_request` (invalid JSON or a wrong JSON type; checked before membership) or, after membership, `invalid_game_role` (the seat does not fit the lobby, or `gameRoleId` is not a game role of it). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
             };
             401: components["responses"]["Unauthenticated"];
             /** @description `group_not_found` if the caller is not a member. `lobby_not_found` if the lobby is missing (e.g. deleted by its creator). */
@@ -1272,7 +1352,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description `lobby_has_ended` (also for a caller who is already a player; the client shows the lobby as ended) or `lobby_full`. */
+            /** @description `lobby_has_ended` (also for a caller who is already a player; the client shows the lobby as ended), `lobby_full` or `game_role_full`. */
             409: {
                 headers: {
                     [name: string]: unknown;

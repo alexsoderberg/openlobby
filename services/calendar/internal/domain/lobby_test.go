@@ -222,7 +222,7 @@ func TestCheckJoinAppliesTheContractOrder(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			add, err := tc.state.CheckJoin(lobbyNow)
+			add, _, err := tc.state.CheckJoin(lobbyNow, domain.Seat{})
 
 			if add != tc.wantAdd || !errors.Is(err, tc.want) {
 				t.Fatalf("add %v, error %v; want %v, %v", add, err, tc.wantAdd, tc.want)

@@ -288,6 +288,8 @@ export const en = {
     invalid_mode: "A mode name must be 1 to 50 characters.",
     invalid_activity: "An activity name must be 1 to 50 characters.",
     invalid_game_role: "A game role name must be 1 to 30 characters.",
+    game_role_full:
+      "This game role has no free slot. Choose another game role or flex.",
     game_taken: "A game with this name already exists.",
     mode_taken: "This game already has a mode with this name.",
     activity_taken: "This mode already has an activity with this name.",

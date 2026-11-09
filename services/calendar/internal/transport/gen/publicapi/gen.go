@@ -23,6 +23,7 @@ import (
 const (
 	ErrorBodyCodeActivityTaken           ErrorBodyCode = "activity_taken"
 	ErrorBodyCodeGameNotFound            ErrorBodyCode = "game_not_found"
+	ErrorBodyCodeGameRoleFull            ErrorBodyCode = "game_role_full"
 	ErrorBodyCodeGameRoleTaken           ErrorBodyCode = "game_role_taken"
 	ErrorBodyCodeGameTaken               ErrorBodyCode = "game_taken"
 	ErrorBodyCodeGroupNotFound           ErrorBodyCode = "group_not_found"
@@ -59,6 +60,8 @@ func (e ErrorBodyCode) Valid() bool {
 	case ErrorBodyCodeActivityTaken:
 		return true
 	case ErrorBodyCodeGameNotFound:
+		return true
+	case ErrorBodyCodeGameRoleFull:
 		return true
 	case ErrorBodyCodeGameRoleTaken:
 		return true
@@ -224,17 +227,32 @@ type CreateInviteLinkRequest struct {
 
 // CreateLobbyRequest defines model for CreateLobbyRequest.
 type CreateLobbyRequest struct {
+	// ActivityId ID of a named activity of the chosen mode. Needs `modeId`. Any other value gives `invalid_activity`.
+	ActivityId *string `json:"activityId,omitempty"`
+
 	// CustomGameName Free-text name for "Other", 1–50 characters after trim. Not added to the game list.
 	CustomGameName *GameName `json:"customGameName,omitempty"`
 
 	// EndsAt End time in UTC, RFC 3339.
 	EndsAt time.Time `json:"endsAt"`
 
+	// Flex `true` for the creator to take a spot without a game role. `false` counts as not given.
+	Flex *bool `json:"flex,omitempty"`
+
 	// GameId ID of a game in the game list. Exactly one of `gameId` and `customGameName` must be given. An unknown value, including one that is not a uuid, gives `invalid_game`.
 	GameId *string `json:"gameId,omitempty"`
 
+	// GameRoleId The creator's game role, a role of the lobby. Any other value, also one that is not a uuid, gives `invalid_game_role`.
+	GameRoleId *string `json:"gameRoleId,omitempty"`
+
 	// MaxPlayers Max players, an integer from 1 to 2147483647. `null` or omitted means unlimited. Set at creation and not changed.
 	MaxPlayers *MaxPlayers `json:"maxPlayers,omitempty"`
+
+	// ModeId ID of a mode of the chosen game. Needs `gameId`. An unknown value, a mode of another game, or a value with `customGameName` gives `invalid_mode`.
+	ModeId *string `json:"modeId,omitempty"`
+
+	// RoleSlots Slots per game role of the mode or game. Omitted or `null` uses the owner's own slots. Roles not listed count 0.
+	RoleSlots *[]RoleSlotInput `json:"roleSlots,omitempty"`
 
 	// StartsAt Start time in UTC, RFC 3339.
 	StartsAt time.Time `json:"startsAt"`
@@ -398,15 +416,35 @@ type InviteLink struct {
 // InviteMaxUses Max uses for a link. Set at creation and not changed.
 type InviteMaxUses = int
 
+// JoinLobbyRequest defines model for JoinLobbyRequest.
+type JoinLobbyRequest struct {
+	// Flex `true` to take a spot without a game role. `false` counts as not given.
+	Flex *bool `json:"flex,omitempty"`
+
+	// GameRoleId The game role to take, a role of the lobby. Any other value, also one that is not a uuid, gives `invalid_game_role`.
+	GameRoleId *string `json:"gameRoleId,omitempty"`
+}
+
 // Lobby defines model for Lobby.
 type Lobby struct {
+	// ActivityId ID of the lobby's named activity. `null` for a lobby without one. Not in `required` so that existing fixtures stay valid, but the server always sends it (ADR 0017).
+	ActivityId *openapi_types.UUID `json:"activityId"`
+
+	// ActivityName Name of the named activity as it was when the lobby got it (a copy). `null` when unset, like `activityId`.
+	ActivityName    *string            `json:"activityName"`
 	CreatedByUserId openapi_types.UUID `json:"createdByUserId"`
 
 	// EndsAt End time in UTC. May be after midnight. The frontend shows the end date when it differs from the start date.
 	EndsAt time.Time `json:"endsAt"`
 
+	// FlexCount Number of players without a game role (flex). 0 for a lobby without game roles. Not in `required` so that existing fixtures stay valid, but the server always sends it (ADR 0017).
+	FlexCount *int `json:"flexCount,omitempty"`
+
 	// GameGenre Genre of the lobby's game as it is in the game list now. `null` for a custom name ("Other"), a game without a genre, or a game that was removed. Not stored in the lobby, so a genre change shows at the next read.
 	GameGenre *Genre `json:"gameGenre"`
+
+	// GameId ID of the lobby's game in the game list, a copy kept in the lobby. `null` for a custom name ("Other"). Not in `required` so that existing fixtures stay valid, but the server always sends it (ADR 0017).
+	GameId *openapi_types.UUID `json:"gameId"`
 
 	// GameName Game name, 1–50 characters after trim.
 	GameName GameName           `json:"gameName"`
@@ -418,8 +456,17 @@ type Lobby struct {
 	// MaxPlayers Max players, an integer from 1 to 2147483647. `null` or omitted means unlimited. Set at creation and not changed.
 	MaxPlayers *MaxPlayers `json:"maxPlayers"`
 
+	// ModeId ID of the lobby's game mode. `null` for a lobby without a mode. Not in `required` so that existing fixtures stay valid, but the server always sends it (ADR 0017).
+	ModeId *openapi_types.UUID `json:"modeId"`
+
+	// ModeName Name of the mode as it was when the lobby got it (a copy). `null` when unset, like `modeId`.
+	ModeName *string `json:"modeName"`
+
 	// PlayerCount Number of players. Shown as "X/Y players" when `maxPlayers` is set, otherwise "X players".
 	PlayerCount int `json:"playerCount"`
+
+	// RoleSlots The lobby's game roles in the order of the game, with slots and players. Empty for a lobby without game roles. Not in `required` so that existing fixtures stay valid, but the server always sends it (ADR 0017).
+	RoleSlots *[]RoleSlot `json:"roleSlots,omitempty"`
 
 	// StartsAt Start time in UTC.
 	StartsAt time.Time `json:"startsAt"`
@@ -427,13 +474,24 @@ type Lobby struct {
 
 // LobbyDetail defines model for LobbyDetail.
 type LobbyDetail struct {
+	// ActivityId ID of the lobby's named activity. `null` for a lobby without one. Not in `required` so that existing fixtures stay valid, but the server always sends it (ADR 0017).
+	ActivityId *openapi_types.UUID `json:"activityId"`
+
+	// ActivityName Name of the named activity as it was when the lobby got it (a copy). `null` when unset, like `activityId`.
+	ActivityName    *string            `json:"activityName"`
 	CreatedByUserId openapi_types.UUID `json:"createdByUserId"`
 
 	// EndsAt End time in UTC. May be after midnight. The frontend shows the end date when it differs from the start date.
 	EndsAt time.Time `json:"endsAt"`
 
+	// FlexCount Number of players without a game role (flex). 0 for a lobby without game roles. Not in `required` so that existing fixtures stay valid, but the server always sends it (ADR 0017).
+	FlexCount *int `json:"flexCount,omitempty"`
+
 	// GameGenre Genre of the lobby's game as it is in the game list now. `null` for a custom name ("Other"), a game without a genre, or a game that was removed. Not stored in the lobby, so a genre change shows at the next read.
 	GameGenre *Genre `json:"gameGenre"`
+
+	// GameId ID of the lobby's game in the game list, a copy kept in the lobby. `null` for a custom name ("Other"). Not in `required` so that existing fixtures stay valid, but the server always sends it (ADR 0017).
+	GameId *openapi_types.UUID `json:"gameId"`
 
 	// GameName Game name, 1–50 characters after trim.
 	GameName GameName           `json:"gameName"`
@@ -445,12 +503,30 @@ type LobbyDetail struct {
 	// MaxPlayers Max players, an integer from 1 to 2147483647. `null` or omitted means unlimited. Set at creation and not changed.
 	MaxPlayers *MaxPlayers `json:"maxPlayers"`
 
+	// ModeId ID of the lobby's game mode. `null` for a lobby without a mode. Not in `required` so that existing fixtures stay valid, but the server always sends it (ADR 0017).
+	ModeId *openapi_types.UUID `json:"modeId"`
+
+	// ModeName Name of the mode as it was when the lobby got it (a copy). `null` when unset, like `modeId`.
+	ModeName *string `json:"modeName"`
+
 	// PlayerCount Number of players. Shown as "X/Y players" when `maxPlayers` is set, otherwise "X players".
-	PlayerCount int       `json:"playerCount"`
-	Players     []UserRef `json:"players"`
+	PlayerCount int           `json:"playerCount"`
+	Players     []LobbyPlayer `json:"players"`
+
+	// RoleSlots The lobby's game roles in the order of the game, with slots and players. Empty for a lobby without game roles. Not in `required` so that existing fixtures stay valid, but the server always sends it (ADR 0017).
+	RoleSlots *[]RoleSlot `json:"roleSlots,omitempty"`
 
 	// StartsAt Start time in UTC.
 	StartsAt time.Time `json:"startsAt"`
+}
+
+// LobbyPlayer defines model for LobbyPlayer.
+type LobbyPlayer struct {
+	DisplayName string `json:"displayName"`
+
+	// GameRoleId The player's game role. `null` means flex. Not in `required` so that existing fixtures stay valid, but the server always sends it (ADR 0017).
+	GameRoleId *openapi_types.UUID `json:"gameRoleId"`
+	UserId     openapi_types.UUID  `json:"userId"`
 }
 
 // MaxPlayers Max players, an integer from 1 to 2147483647. `null` or omitted means unlimited. Set at creation and not changed.
@@ -482,6 +558,27 @@ type ReplaceGameRequest struct {
 
 	// Name Game name. Omitted or `null` gives `invalid_game`. The name `Other` (ignoring case, after trim) is reserved for the client's free-text choice and gives `invalid_game` (ADR 0010).
 	Name *GameName `json:"name,omitempty"`
+}
+
+// RoleSlot defines model for RoleSlot.
+type RoleSlot struct {
+	GameRoleId openapi_types.UUID `json:"gameRoleId"`
+
+	// Name Game role name as it was when the lobby was created (a copy).
+	Name string `json:"name"`
+
+	// PlayerCount Number of players in the role. Shown as "Tank 0/1".
+	PlayerCount int `json:"playerCount"`
+	Slots       int `json:"slots"`
+}
+
+// RoleSlotInput defines model for RoleSlotInput.
+type RoleSlotInput struct {
+	// GameRoleId ID of a game role of the lobby's mode or game. An unknown or repeated value gives `invalid_game_role`.
+	GameRoleId string `json:"gameRoleId"`
+
+	// Slots An integer from 0 to 2147483647, otherwise `invalid_capacity`. 0 leaves the role out of the lobby.
+	Slots int `json:"slots"`
 }
 
 // UserRef defines model for UserRef.
@@ -660,6 +757,9 @@ type CreateInviteLinkJSONRequestBody = CreateInviteLinkRequest
 
 // CreateLobbyJSONRequestBody defines body for CreateLobby for application/json ContentType.
 type CreateLobbyJSONRequestBody = CreateLobbyRequest
+
+// JoinLobbyJSONRequestBody defines body for JoinLobby for application/json ContentType.
+type JoinLobbyJSONRequestBody = JoinLobbyRequest
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
@@ -3439,6 +3539,7 @@ type JoinLobbyRequestObject struct {
 	GroupId GroupId `json:"groupId"`
 	LobbyId LobbyId `json:"lobbyId"`
 	Params  JoinLobbyParams
+	Body    *JoinLobbyJSONRequestBody
 }
 
 type JoinLobbyResponseObject interface {
@@ -3451,6 +3552,20 @@ type JoinLobby204Response struct {
 func (response JoinLobby204Response) VisitJoinLobbyResponse(w http.ResponseWriter) error {
 	w.WriteHeader(204)
 	return nil
+}
+
+type JoinLobby400JSONResponse ErrorResponse
+
+func (response JoinLobby400JSONResponse) VisitJoinLobbyResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type JoinLobby401JSONResponse struct{ UnauthenticatedJSONResponse }
@@ -4389,6 +4504,16 @@ func (sh *strictHandler) JoinLobby(w http.ResponseWriter, r *http.Request, group
 	request.GroupId = groupId
 	request.LobbyId = lobbyId
 	request.Params = params
+
+	var body JoinLobbyJSONRequestBody
+	if err := runtime.BindJSONBody(r, &body); err != nil {
+		if !errors.Is(err, io.EOF) {
+			sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+			return
+		}
+	} else {
+		request.Body = &body
+	}
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.JoinLobby(ctx, request.(JoinLobbyRequestObject))

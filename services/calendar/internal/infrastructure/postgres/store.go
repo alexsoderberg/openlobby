@@ -95,7 +95,17 @@ func isUnavailable(err error) bool {
 
 // inTx runs fn in one transaction. The transaction is committed when fn succeeds and rolled back when it fails.
 func (s *Store) inTx(ctx context.Context, fn func(tx *sql.Tx) error) error {
-	tx, err := s.db.BeginTx(ctx, nil)
+	return s.inTxWith(ctx, nil, fn)
+}
+
+// inSnapshot runs fn in one read-only transaction that sees one consistent state of the database, so reads of several
+// tables never show half of a concurrent write.
+func (s *Store) inSnapshot(ctx context.Context, fn func(tx *sql.Tx) error) error {
+	return s.inTxWith(ctx, &sql.TxOptions{Isolation: sql.LevelRepeatableRead, ReadOnly: true}, fn)
+}
+
+func (s *Store) inTxWith(ctx context.Context, options *sql.TxOptions, fn func(tx *sql.Tx) error) error {
+	tx, err := s.db.BeginTx(ctx, options)
 	if err != nil {
 		return err
 	}

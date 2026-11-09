@@ -44,17 +44,20 @@ func (l *Lobbies) Get(ctx context.Context, groupID, lobbyID, callerID string) (d
 	if err != nil {
 		return domain.Lobby{}, nil, fmt.Errorf("get lobby: %w", err)
 	}
-	ids, err := l.reader.PlayerIDs(ctx, lobby.ID)
+	players, err := l.reader.Players(ctx, lobby.ID)
 	if err != nil {
 		return domain.Lobby{}, nil, fmt.Errorf("get lobby players: %w", err)
+	}
+	ids := make([]string, len(players))
+	for i, player := range players {
+		ids[i] = player.UserID
 	}
 	names, err := l.names.DisplayNames(ctx, ids)
 	if err != nil {
 		return domain.Lobby{}, nil, fmt.Errorf("look up display names: %w", err)
 	}
-	players := make([]domain.Player, len(ids))
-	for i, id := range ids {
-		players[i] = domain.Player{UserID: id, DisplayName: names[id]}
+	for i := range players {
+		players[i].DisplayName = names[players[i].UserID]
 	}
 	return lobby, players, nil
 }
@@ -125,9 +128,10 @@ func (l *Lobbies) Delete(ctx context.Context, groupID, lobbyID, callerID string)
 	return nil
 }
 
-// Join makes a member a player of a lobby, under the group lock so that two joins cannot take the last spot together.
-// The checks are in domain.JoinState.CheckJoin; a lobby missing from this group is domain.ErrLobbyNotFound.
-func (l *Lobbies) Join(ctx context.Context, groupID, lobbyID, callerID string) error {
+// Join makes a member a player of a lobby in a seat, or moves a player to another seat. It runs under the group lock, and
+// the counts are read under it, so two joins cannot take the last spot or the last slot of a role together. The checks
+// are in domain.JoinState.CheckJoin; a lobby missing from this group is domain.ErrLobbyNotFound.
+func (l *Lobbies) Join(ctx context.Context, groupID, lobbyID, callerID string, seat domain.Seat) error {
 	err := l.repo.WithLockedGroup(ctx, groupID, func(tx LobbyTx) error {
 		if _, err := requireMember(ctx, tx, groupID, callerID); err != nil {
 			return err
@@ -140,11 +144,11 @@ func (l *Lobbies) Join(ctx context.Context, groupID, lobbyID, callerID string) e
 			return domain.ErrLobbyNotFound
 		}
 		now := l.clock.Now()
-		add, err := state.CheckJoin(now)
-		if err != nil || !add {
+		save, role, err := state.CheckJoin(now, seat)
+		if err != nil || !save {
 			return err
 		}
-		return tx.AddPlayer(ctx, lobbyID, callerID, now)
+		return tx.SavePlayer(ctx, lobbyID, callerID, role, now)
 	})
 	if err != nil {
 		return fmt.Errorf("join lobby: %w", err)

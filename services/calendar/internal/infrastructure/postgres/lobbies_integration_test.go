@@ -375,17 +375,21 @@ func TestLobbyIsScopedToTheGroupAndNotEnded(t *testing.T) {
 	}
 }
 
-func TestPlayerIDsAreSortedByJoinTimeThenUserID(t *testing.T) {
+func TestPlayersAreSortedByJoinTimeThenUserID(t *testing.T) {
 	store := migratedStore(t)
 	seedGroups(t, store)
 	lobby := insertLobby(t, store, newLobby(fridayID, alexID, nil, "Go"))
 	addPlayer(t, store, lobby.ID, otherID, joinedAt)
 	addPlayer(t, store, lobby.ID, nobodyID, joinedAt.Add(-time.Minute))
 
-	ids, err := store.Lobbies().PlayerIDs(context.Background(), lobby.ID)
+	players, err := store.Lobbies().Players(context.Background(), lobby.ID)
 
 	if err != nil {
 		t.Fatal(err)
+	}
+	var ids []string
+	for _, player := range players {
+		ids = append(ids, player.UserID)
 	}
 	want := []string{nobodyID, otherID, alexID} // otherID sorts before alexID
 	if !slices.Equal(ids, want) {
@@ -442,7 +446,7 @@ func addMember(t *testing.T, store *Store, groupID, userID string) {
 // joinAt joins through the application use case with the clock fixed at now.
 func joinAt(store *Store, groupID, lobbyID, userID string, now time.Time) error {
 	ctx := context.Background()
-	return application.NewLobbies(store.Lobbies(), store.Lobbies(), nil, nil, fixedNow{now}).Join(ctx, groupID, lobbyID, userID)
+	return application.NewLobbies(store.Lobbies(), store.Lobbies(), nil, nil, fixedNow{now}).Join(ctx, groupID, lobbyID, userID, domain.Seat{})
 }
 
 type fixedNow struct{ at time.Time }
@@ -458,7 +462,7 @@ func TestJoinAndLeaveUpdateThePlayers(t *testing.T) {
 	ctx := context.Background()
 
 	for range 2 {
-		if err := lobbies.Join(ctx, fridayID, lobby.ID, otherID); err != nil {
+		if err := lobbies.Join(ctx, fridayID, lobby.ID, otherID, domain.Seat{}); err != nil {
 			t.Fatal(err)
 		}
 	}
