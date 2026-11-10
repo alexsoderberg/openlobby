@@ -30,11 +30,11 @@ Dashboard (F-028):
 - Given that a lobby has ended or been deleted, when the dashboard opens, then it is not shown (REQ-0004 rules).
 - Given that any request for the dashboard fails (the group list or the lobby list of any group), when the dashboard opens, then it shows one page-level error with a retry action, and no card, week or partial set of lobbies. No toast is shown for this case (ADR 0014, point 4).
 - Given that the page-level error is shown, when I press retry and the requests succeed, then the dashboard shows its normal content.
-- Given that the dashboard is open, when lobbies change, then the change is shown after reloading the page (REQ-0004: no real-time updates).
+- Given that the dashboard is open, when lobbies change, then the change is shown after reloading the page in the MVP (REQ-0004: no real-time updates). From REQ-0017 (Amendment 2026-11-10) it is shown without a reload.
 - Given that I am on the dashboard, when I look for another week or a month, then there is no navigation to another week and no month view. Week navigation stays on the group calendar (REQ-0004) (ASSUMPTION).
 
 App shell (presentation of F-001, F-002, F-004, F-005 and F-017; no new feature):
-- Given that I am logged in, when I see any page, then the Top bar shows the full Wordmark "OpenLobby", never as a Group icon, and my own avatar with my display name next to it. My avatar shows my initials in the same round form as a Group icon, because the MVP has no avatar images (F-029; the auth profile has no avatar field) (DECISION, user; ASSUMPTION for the display name, REQ-0001).
+- Given that I am logged in, when I see any page, then the Top bar shows the full Wordmark "OpenLobby", never as a Group icon, and my own avatar with my display name next to it. My avatar is my Discord picture when I have one, and otherwise my initials in the same round form as a Group icon (REQ-0016; DECISION, user; ASSUMPTION for the display name, REQ-0001).
 - Given that I am on a phone (narrower than 760 px), when I see the app, then the Tab bar shows three items in this order: Home, Groups and You. The Tab bar respects the bottom safe area of the device, and the active tab is marked (DECISION, user, 2026-11-04; replaces the four-item Tab bar, see Second amendment 2026-11-04). There is no Calendar tab (DECISION, user).
 - Given that I am on a phone and on the Group list page `/groups`, when I see the page, then a floating "+" (Create group button) is shown above the Tab bar at the bottom right, outside the Tab bar, clear of the device's safe area and not overlapping the Tab bar (DECISION, user, 2026-11-04). The "+" is shown only on `/groups` (DECISION, user, 2026-11-04; Third amendment, item 1).
 - Given that I select the Groups tab, when the group list opens at `/groups`, then it shows all groups I am a member of, and selecting one opens its group view (DECISION, user; ADR 0014, point 6).
@@ -66,10 +66,11 @@ Mobile first (cross-cutting, applies to all UI requirements):
 ## Out of scope
 - Lobbies of several groups together in a group view. Only the dashboard is cross-group.
 - Month view and week navigation on the dashboard.
-- Discord avatars (F-029) and game accent colors (F-030). Both are Proposed and not decided. The MVP shows initials instead (ASSUMPTION, user to overrule).
+- Discord avatars (F-029): see REQ-0016 (Decided 2026-11-10, after the MVP). The MVP showed initials only.
+- Game accent colors (F-030): Decided, backlog B1, after the MVP.
 - Creating a lobby from the "+", and a Calendar tab on the phone (DECISION, user).
 - Creating a lobby from a click on an empty time in "This week". The grid spans groups and the form needs one group, as with the Dashboard list (DECISION, product owner, 2026-11-04; Fifth amendment). Say out of scope; no criterion.
-- Real-time updates, notifications, search, customizing the dashboard.
+- Real-time updates in the MVP (Amendment 2026-11-10: REQ-0017 after the MVP), notifications, search, customizing the dashboard.
 - A native mobile app (vision.md).
 - A greeting such as "Good evening, <name>" and the date line above the dashboard heading. The name is already in the Top bar, and a time-of-day greeting needs its own rules and translations (DECISION, product owner).
 - A relative heading on Next up such as "Tonight 20:00" (or "Today" / "Tomorrow"). The card shows the start date and clock time (criterion above), which needs no relative-day rules or translations (DECISION, product owner).
@@ -183,6 +184,12 @@ Open questions:
 ## Open questions
 - ASSUMPTION: Group icons are generated from the group name's initials. Presentation only.
 - ASSUMPTION: Empty states use designed text, and loading uses placeholders instead of "Loading...". Exact copy is set by the UI expert. Failed loads on the dashboard use the page-level error with retry (ADR 0014, point 4), not toasts. Whether other actions use toasts is the UI expert's call.
+
+## Amendment 2026-11-10 (ideas: avatars and live updates)
+Status stays Implemented. Decided by the user on 2026-11-10. Pending implementation. Binding for the UI expert.
+1. Real-time updates: the dashboard shows lobby changes without a reload (REQ-0017). The out-of-scope line "Real-time updates" is now "Real-time updates in the MVP (REQ-0017 after the MVP)". Old wording: "Real-time updates, notifications, search, customizing the dashboard."
+2. Avatars: the Top bar and You page show my Discord picture when I have one, and initials otherwise (REQ-0016). Group icons stay generated initials. Old wording: "My avatar shows my initials ... because the MVP has no avatar images".
+3. The dashboard shows no Group feed. The Group feed is in the group view only (REQ-0018).
 
 ## Amendment 2026-11-08 (REQ-0015, game modes and open lobbies)
 Status stays Implemented. Decided by the user on 2026-11-08 (REQ-0015, F-033, F-034). Pending implementation. Binding for the UI expert. Build together with REQ-0011 and REQ-0015 (backlog A2 and A3).

@@ -66,6 +66,32 @@ Order decided by the user on 2026-11-07: genre themes (REQ-0014) come first, ahe
 
 Order decided by the user on 2026-11-08 (question 12): A2 (REQ-0011, game roles) and A3 (REQ-0015, modes, named activities and open lobbies) are delivered together, after A1 (REQ-0014). Reason: both change the same game form (F-025), the same lobby data and the role slots, so game roles are not built on the game and then moved to a mode. The open-lobby slice (F-034) is not built first on its own.
 
+Order decided by the user on 2026-11-10 ("the app feels too simple"): A4 to A7 follow A3.
+
+OPEN QUESTION (user): may A4 to A6 be moved ahead of A2 and A3, which are in progress?
+
+| Order | Requirement | Title | Priority | Depends on |
+|---|---|---|---|---|
+| A4 | REQ-0016 | Discord avatars for users (F-029) | Should | REQ-0001, REQ-0002, REQ-0004, REQ-0012 (amended by REQ-0016) |
+| A5 | REQ-0017 | Live lobby updates on open screens (F-035) | Should | REQ-0004, REQ-0005, REQ-0012 (amended by REQ-0017); needs an ADR for the transport |
+| A6 | REQ-0018 | Group feed of recent lobby events (F-036) | Should | REQ-0003, REQ-0004, REQ-0005; REQ-0017 for new entries shown live |
+| A7 | – (F-037, not yet a requirement) | Member availability and group heatmap ("When can everyone play?") | not yet prioritised | REQ-0002, REQ-0003 (lobby from a suggested slot) |
+
+A7 is not a requirement yet. Parked by the user on 2026-11-10 (F-037, Proposed): it is taken up after A4 and A5 are under way. It is written after the questions below are answered.
+
+Open questions for A7 (F-037), kept here so they are not lost:
+1. Are "usual times" a weekly pattern, dated slots, or both?
+2. Slot size: whole hours, half hours, or free time ranges?
+3. Time zones: members are in different zones. Is a slot stored in each member's local time (vision: each member sees local time), and how is the heatmap shown then?
+4. Visibility: can members see who is free at a slot, or only a count per slot?
+5. Per group, or one availability for all groups?
+6. What is "best time"? Top slots, a minimum number of members, or a colour scale?
+7. Should a slot need a minimum number of free members before a suggestion is shown?
+8. Should availability expire, or be asked again after a time?
+9. Leaving a group removes that member's availability (draft: yes)?
+
+Ideas assessed on 2026-11-10 without a new requirement: "Play now" ping and Discord reminders are EXTEND F-015 (F-015 stays Proposed, not ordered). Group statistics are REJECTED. Game presentation: DUPLICATE OF F-030 (B1). Recurring lobbies: DUPLICATE OF F-014 (Proposed).
+
 ## Could, after the MVP
 
 Ordered after the Should items, because priority comes first. Not yet a requirement: the requirement is written after the MVP, as F-030 (Decided) with the same scope as before.
