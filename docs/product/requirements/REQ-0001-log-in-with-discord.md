@@ -25,7 +25,7 @@ Criteria 2, 3, 4 and 7 are verified by automated tests and the stack smoke test,
 ## Out of scope
 - Other login methods (email, password, other providers).
 - Sync of Discord servers, roles or friend lists.
-- Avatar images and profile editing.
+- Profile editing.
 
 ## Related features
 None. This is the foundation for all other features; no other feature handles login.
@@ -39,3 +39,7 @@ Replaces the criterion "Given that I click 'Log in with Discord' and approve in 
 - Given that I click "Log in with Discord" and approve in Discord, when I return to the app, then I am logged in and land on the Dashboard at `/`. My groups are reached through the Group list at `/groups` and the group navigation. The Dashboard is empty if I am not in any group (REQ-0012; ADR 0014, point 6).
 
 The amendment is implemented with REQ-0012. Until then the login criterion above describes the behavior that is Implemented.
+
+## Amendment 2026-11-10
+Status stays Implemented. Decided by the user on 2026-11-10 (idea: Discord avatars). Pending implementation.
+- The out-of-scope line "Avatar images and profile editing." is now "Profile editing." Avatar images are in scope from REQ-0016: the Discord picture is taken at login, with the display name, and changes at the next login. Old wording: "Avatar images and profile editing."

@@ -36,7 +36,7 @@ Switching between list and calendar (F-017):
 - Given that I have selected a view, when I open the group's page again later, then the list view is shown again. The view choice is not saved between visits (DECISION).
 
 ## Out of scope
-- Real-time updates without reloading the page.
+- Real-time updates without reloading the page in the MVP (Amendment 2026-11-10: REQ-0017 after the MVP).
 - Month view, filtering by game or date, search.
 - History of past lobbies (F-020).
 - Showing lobbies from several groups together (except the dashboard, REQ-0012).
@@ -134,3 +134,9 @@ Status stays Implemented. Decided by the user on 2026-11-08 (REQ-0015, F-033, F-
 - Given that a lobby is shown, when I change nothing, then no control to change its game, mode or activity is shown in the list or the calendar. These are changed on the lobby page (REQ-0015, "Setting or changing ... later"). ASSUMPTION for the UI expert to confirm.
 
 Related features (amendment 2026-11-08): F-033 and F-034 (REQ-0015) change the label and the open lobby case only. The list, calendar and detail rules are unchanged.
+
+## Amendment 2026-11-10 (live updates and group feed)
+Status stays Implemented. Decided by the user on 2026-11-10 (ideas: live updates, group feed). After the MVP, not yet built.
+- The rule "no real-time updates" of the MVP stays for the MVP. From REQ-0017 the lobbies on the group view update without a reload. The criterion "when I reload the group's page, then the change is shown" stays as the fallback when the connection is down.
+- The group view shows the Group feed of REQ-0018 next to the lobbies and members. It is not a view switch and does not change the List / Calendar switch of this requirement.
+- Out of scope in the MVP: notifications outside the app (F-015).
