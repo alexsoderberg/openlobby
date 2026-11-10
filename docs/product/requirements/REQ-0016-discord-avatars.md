@@ -16,7 +16,8 @@ As a member, I want to see the Discord avatar of the people in my groups and lob
 - Given that my Discord account has no profile picture, when my avatar is shown, then my initials are shown in the same round form as today (REQ-0012).
 - Given that I log in and my Discord picture has changed since my last login, when I log in, then the new picture is shown. Before my next login the old picture stays, the same rule as for the display name (REQ-0001).
 - Given that I have removed my Discord picture, when I log in again, then my initials are shown (ASSUMPTION: the same next-login rule as for a changed picture).
-- Given that a feed line (REQ-0018) names a member who has left the group, when the line is shown, then the picture shown is the last one known for that member (ASSUMPTION).
+- Given that a feed line (REQ-0018) names a member who has left the group, when the line is shown, then the picture is shown only if I still share a group with that member (the rule below); otherwise their initials are shown (DECISION, user, 2026-11-10: consequence of the sharing rule; replaces the earlier ASSUMPTION of the last known picture).
+- Given that a Discord picture is animated, when it is shown, then only its first frame is shown, as a still image (DECISION, user, 2026-11-10).
 - Given that I am a member of a group, when I open its member list, then each member's avatar, or their initials if they have no picture, is shown next to their display name.
 - Given that I open a lobby, when its player list is shown, then each player's avatar, or their initials, is shown next to their name, and the same for the creator.
 - Given that a lobby list or week view shows the lobby's creator (REQ-0004), when the creator is shown, then their avatar, or their initials, is shown next to their name.
@@ -26,6 +27,7 @@ As a member, I want to see the Discord avatar of the people in my groups and lob
 - Given that a picture is loading, when the page is shown, then the space for the avatar keeps the size of the initials circle, so the layout does not move when the picture appears.
 - Given that a screen reader reads a page with avatars, when it reads a person, then it announces the name once; the avatar is not announced in addition (ASSUMPTION: the avatar is decorative beside the name).
 - Given that I am not a member of a group, when I try to see its members or lobbies, then no avatar of its members is shown, because no names are shown either (REQ-0002, REQ-0004).
+- Given that I have left a group or was never in it, when I look at any place with its members, then no picture of a person is shown or made available to me unless I share a group with that person now (DECISION, user, 2026-11-10). A picture is shown and delivered only to people who share a group with its owner now.
 - Given that a group is shown, when I see its icon, then the icon stays the generated initials of the group name (REQ-0012). Groups get no picture.
 
 ## Out of scope
@@ -42,4 +44,6 @@ F-029 (this requirement). F-001 and REQ-0001 (the login is the source of the pic
 - ASSUMPTION: the picture is taken at login together with the display name (REQ-0001) and changes only at the next login.
 - DECISION (user, 2026-11-10): no opt-out. The avatar is shown wherever the display name is shown, with no setting to hide it. The Next up card is the only exception, because it shows no names (REQ-0012).
 - DECISION (user, 2026-11-10): a Group feed line shows the avatar of the person it names (see the criterion above).
+- DECISION (user, 2026-11-10): a picture is only shown to, and only available to, people who share a group with its owner now. A former member no longer gets the pictures of that group's members. This confirms the non-member criterion above.
+- DECISION (user, 2026-11-10): animated Discord pictures are shown as a still image (the first frame).
 - For the architect: where the picture reference is stored (the auth profile has no avatar field today, `api/auth/openapi.yaml`), how it reaches the calendar views (member and player names), and how the image is delivered. Loading the image directly from Discord reveals the viewer's IP address to Discord, and the content security policy must allow it. The delivery route is the architect's decision.

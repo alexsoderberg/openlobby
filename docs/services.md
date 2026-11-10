@@ -22,48 +22,50 @@ gateway ──────────────► frontend      (/ and all n
 certbot (sidecar)  renews certificates into a volume that edge reads (ADR 0009)
 ```
 
-Each arrow is a shared Compose network; no other pair of containers shares one (ADR 0008 review 5). `auth` also has an egress network for Discord, and `postgres` is reached only by `auth`, `calendar` and their migration jobs.
+Each arrow is a shared Compose network; no other pair of containers shares one (ADR 0008 review 5). `auth` also has an egress network for Discord (login, and the picture taken at login, ADR 0018), and `postgres` is reached only by `auth`, `calendar` and their migration jobs.
 
-All services use synchronous HTTP/JSON. No service reads another service's database. No service is exposed publicly except `edge`, which only forwards to `gateway`.
+All services use synchronous HTTP/JSON. The exceptions to JSON responses are the live updates stream, a server-sent events connection from `calendar` through `gateway` to the browser that carries only a change signal (ADR 0019), and the picture of a member (ADR 0018). No service reads another service's database. No service is exposed publicly except `edge`, which only forwards to `gateway`.
 
 ## Services
 
 ### edge (Nginx, no Go service)
-- **Responsibility:** public entry point. TLS, HTTP→HTTPS redirect, HSTS, `Referrer-Policy`, forwarded headers to `gateway`, and rate limiting (`limit_req`) of `/api/auth/login` and `/api/auth/callback` (ADR 0009, amendment on rate limiting).
+- **Responsibility:** public entry point. TLS, HTTP→HTTPS redirect, HSTS, `Referrer-Policy`, forwarded headers to `gateway`, unbuffered forwarding of `/api/live-updates` (ADR 0019), and rate limiting (`limit_req`) of `/api/auth/login` and `/api/auth/callback` (ADR 0009, amendment on rate limiting).
 - **Owns data:** nothing. Certificates and keys live in the volume `certs` and are never in the repository.
 - **Logs:** access log without query string and with the invite token masked (`log_format` from `$uri`, ADR 0009 review 4); error log level `emerg`; no response temporary files (ADR 0009 review 5).
 - **Dependencies:** `gateway`. Shares volumes with `certbot`.
 - **Realizes:** HTTPS for all traffic (REQ-0001) and the prerequisite for the `Secure` cookie.
-- **Decisions:** ADR 0009.
+- **Decisions:** ADR 0009, 0019.
 
 ### gateway
 - **Responsibility:** routing (route table with path and method per route), session validation, sets `X-User-Id` and `X-User-System-Admin` from the session and removes the client's own `X-User-*`, forwards the `Cookie` header to `auth` only, correlation ID, answers `404 not_found` and `405 method_not_allowed`, blocks `/internal/*`, answers `503 service_unavailable` or `500 internal_error` when an upstream fails (a redirect on the two `GET` login routes, ADR 0002 review 5; a wrong method on them still gives JSON 405, review 6), access log.
 - **Owns data:** nothing.
 - **Dependencies:** `auth` (session validation), `frontend` and `calendar` (routing).
-- **Realizes:** F-001 (the session part of login), and the prerequisite for F-002–F-005, F-010, F-013, F-017, F-018, F-024 and F-028.
-- **Decisions:** ADR 0002, 0011.
+- **Realizes:** F-001 (the session part of login), and the prerequisite for F-002–F-005, F-010, F-013, F-017, F-018, F-024, F-028, F-029, F-035 and F-036. The routes for avatars, the group feed and live updates (ADR 0018, 0019, 0020).
+- **Decisions:** ADR 0002, 0011, 0018, 0019, 0020.
 
 ### auth
 - **Responsibility:** login with Discord, user accounts, sessions, logout, display names, and the system admin role (determined by configuration, `SYSTEM_ADMINS`). The provider name is not in any public path (ADR 0005).
-- **Owns data (database `auth`):** `users`, `sessions` (deleted at logout or after expiry), `login_attempts` (hash of `state`, PKCE verifier, `returnTo`; deleted when used or after expiry). ADR 0005 review 5, ADR 0006.
+- **Owns data (database `auth`):** `users`, `user_avatars` (the Discord picture taken at login, ADR 0018), `sessions` (deleted at logout or after expiry), `login_attempts` (hash of `state`, PKCE verifier, `returnTo`; deleted when used or after expiry). ADR 0005 review 5, ADR 0006.
 - **Cookies:** `ol_session` (the session) and `ol_login` (binds a login attempt to the browser, path `/api/auth/callback`, 10 minutes).
-- **Dependencies:** Discord OAuth2 (external, behind the port `IdentityProvider`, `golang.org/x/oauth2` in the adapter), PostgreSQL.
-- **Realizes:** F-001 (REQ-0001), and the role for F-024 (system admin, REQ-0010). The display name and system admin flag for the dashboard (F-028, REQ-0012).
-- **Decisions:** ADR 0003, 0005, 0011.
+- **Dependencies:** Discord OAuth2 (external, behind the port `IdentityProvider`, `golang.org/x/oauth2` in the adapter), Discord's image CDN (external, behind the port `AvatarSource`, at login only, ADR 0018), PostgreSQL.
+- **Realizes:** F-001 (REQ-0001), F-029 (REQ-0016: the picture at login and its internal read for `calendar`, ADR 0018), and the role for F-024 (system admin, REQ-0010). The display name and system admin flag for the dashboard (F-028, REQ-0012).
+- **Decisions:** ADR 0003, 0005, 0011, 0018.
 
 ### calendar
 - **Responsibility:** groups, membership and roles (one or more admins, at least one as long as the group has members), invite links expiring after 10 minutes, max uses per link (1–10, default 1), lobbies with game and max players, players joining and leaving lobbies, and the game list (F-024). The game list is managed by the system admin. Members see it ordered by use in their group. Authorization is checked here.
-- **Owns data (database `calendar`):** `groups`, `group_members` (with `role` and `joined_at`), `invite_links` (with `expires_at`, `max_uses`, `use_count`), `lobbies` (with `game_id`, `game_name` and `max_players`), `lobby_players`, `games` (the game list with uuid IDs and the optional `genre`, ADR 0010, ADR 0016). Added by ADR 0017 migrations 0006 and 0007 (the game list tables are used by the game list endpoints; the lobby changes are used by create lobby, join and the lobby reads): `game_modes`, `game_roles` (on a game or a mode) and `activities` in the game list; `lobby_role_slots`; on `lobbies` a nullable `game_name` (no game), `game_mode_id`, `mode_name`, `activity_id` and `activity_name`; on `lobby_players` a nullable `game_role_id` (null means flex).
-- **Dependencies:** `auth` (display names via internal `POST /internal/users/lookup`, from REQ-0002; no call and no Compose dependency before, ADR 0008 amendment REQ-0001 calendar), PostgreSQL.
+- **Owns data (database `calendar`):** `groups`, `group_events` (the group feed, user IDs only, ADR 0020), `group_members` (with `role` and `joined_at`), `invite_links` (with `expires_at`, `max_uses`, `use_count`), `lobbies` (with `game_id`, `game_name` and `max_players`), `lobby_players`, `games` (the game list with uuid IDs and the optional `genre`, ADR 0010, ADR 0016). Added by ADR 0017 migrations 0006 and 0007 (the game list tables are used by the game list endpoints; the lobby changes are used by create lobby, join and the lobby reads): `game_modes`, `game_roles` (on a game or a mode) and `activities` in the game list; `lobby_role_slots`; on `lobbies` a nullable `game_name` (no game), `game_mode_id`, `mode_name`, `activity_id` and `activity_name`; on `lobby_players` a nullable `game_role_id` (null means flex).
+- **Dependencies:** `auth` (display names via internal `POST /internal/users/lookup`, from REQ-0002, with the `hasAvatar` flag of ADR 0018; no call and no Compose dependency before, ADR 0008 amendment REQ-0001 calendar), PostgreSQL.
 - **Realizes:** F-002 (REQ-0002), F-003 (REQ-0003, REQ-0009), F-004 and F-017 (REQ-0004), F-005 (REQ-0005), F-018 (REQ-0005, REQ-0009), F-024 (REQ-0009, management by system admin), F-010 (REQ-0006), F-013 (REQ-0007), F-028 (REQ-0012, data only: the group list, each group's upcoming lobbies and `joinedByMe` on each lobby, ADR 0014), F-032 (REQ-0014, data only: `games.genre` and `gameGenre` on lobbies, read live through a join on `games`, ADR 0016). Planned, ADR 0017: F-027 (REQ-0011), F-033 and F-034 (REQ-0015), game modes, game roles, named activities and open lobbies.
-- **Decisions:** ADR 0004, 0006, 0007, 0010, 0011, 0016, 0017.
+- **Dependencies (proposed):** `auth` also for the picture of a member, read internally (`GET /internal/users/{userId}/avatar`). Calendar serves the picture only after a shared-group check on its own `group_members` (ADR 0018).
+- **Realizes (proposed):** F-029 (`hasAvatar` and `GET /api/users/{userId}/avatar` with the shared-group check, ADR 0018), F-035 (live updates signal, ADR 0019), F-036 (group feed, ADR 0020).
+- **Decisions:** ADR 0004, 0006, 0007, 0010, 0011, 0016, 0017, 0018, 0019, 0020.
 
 ### frontend
-- **Responsibility:** React + TypeScript (Vite). The user interface, the app shell and dashboard ("Next up", "This week" computed from `calendar` and `auth` data, ADR 0014), local time, filtering of the week view, interpretation of an end time as the next day, game selection from `GET /api/groups/{groupId}/games` with the max prefilled from `defaultMaxPlayers`, player count display ("X/Y players" or "X players"), expiry time and uses of links, error messages based on error codes, 404 page for `invite_invalid`, the genre themes of lobby views and the landing hero (`frontend/src/genres`, ADR 0016), and the page `/systemadmin/games` for the system admin (shown when `isSystemAdmin` is true).
+- **Responsibility:** React + TypeScript (Vite). The user interface, the live updates module (EventSource, paused notice, reload on signal, ADR 0019), `PersonAvatar` (ADR 0018), the group feed section (ADR 0020), the app shell and dashboard ("Next up", "This week" computed from `calendar` and `auth` data, ADR 0014), local time, filtering of the week view, interpretation of an end time as the next day, game selection from `GET /api/groups/{groupId}/games` with the max prefilled from `defaultMaxPlayers`, player count display ("X/Y players" or "X players"), expiry time and uses of links, error messages based on error codes, 404 page for `invite_invalid`, the genre themes of lobby views and the landing hero (`frontend/src/genres`, ADR 0016), and the page `/systemadmin/games` for the system admin (shown when `isSystemAdmin` is true).
 - **Owns data:** nothing. Runs in its own container with static files (Nginx). No access log, error log level `emerg` (ADR 0008 and ADR 0009 review 5).
 - **Dependencies:** `gateway` (all API calls).
-- **Realizes:** the user interface for F-001–F-005, F-010, F-013, F-017, F-018, F-024 and F-028.
-- **Decisions:** ADR 0008 (static web server), 0001, 0011, 0013 (texts and formatting), 0014 (dashboard).
+- **Realizes:** the user interface for F-001–F-005, F-010, F-013, F-017, F-018, F-024, F-028, F-029, F-035 and F-036.
+- **Decisions:** ADR 0008 (static web server), 0001, 0011, 0013 (texts and formatting), 0014 (dashboard), 0018 (`PersonAvatar`), 0019 (live updates), 0020 (group feed).
 
 ### Shared
 - **Databases:** one PostgreSQL 17 instance (ADR 0008), one database per service (`auth`, `calendar`), with two roles each: `<service>` (DML) and `<service>_migrate` (DDL, only the migration job). ADR 0006, 0008, 0012.
@@ -85,7 +87,7 @@ Public endpoints (via `gateway`, which receives traffic from `edge`):
 | GET | `/api/auth/login` | auth | no | REQ-0001 (`?returnTo=`, 302 to Discord, sets `ol_login`, ADR 0005) |
 | GET | `/api/auth/callback` | auth | no | REQ-0001 (302 always. Needs `ol_login` equal to `state`, always clears `ol_login`. All errors except denied login redirect to `/?loginError=login_failed`, ADR 0005) |
 | POST | `/api/auth/logout` | auth | no | REQ-0001 (204, idempotent, deletes the session) |
-| GET | `/api/auth/me` | auth | yes | REQ-0001 (response `{userId, displayName, isSystemAdmin}`, ADR 0001, 0003, 0011) |
+| GET | `/api/auth/me` | auth | yes | REQ-0001 (response `{userId, displayName, isSystemAdmin, hasAvatar}`, ADR 0001, 0003, 0011, 0018) |
 | POST | `/api/groups` | calendar | yes | REQ-0002 (creates the admin membership, no link. 400 `invalid_group_name` or `invalid_request`) |
 | GET | `/api/groups` | calendar | yes | REQ-0002 (groups where the caller is a member, no order required) |
 | GET | `/api/groups/{groupId}` | calendar | yes, member | REQ-0002 |
@@ -110,6 +112,9 @@ Public endpoints (via `gateway`, which receives traffic from `edge`):
 | PUT | `/api/groups/{groupId}/lobbies/{lobbyId}/mode` | calendar | yes, player | ADR 0017 (REQ-0015). Body `{modeId, currentModeId}`, 200 `Lobby` without player names; no auth call (Amendment 2026-11-09). One transaction under the group lock, everything read after the lock. Order: `invalid_request`, `group_not_found`, `lobby_not_found`, `lobby_has_ended`, `not_allowed`, `invalid_mode`, `lobby_changed` (stale `currentModeId`), `lobby_has_more_players`. The same mode changes nothing. A change replaces max players and role slots, clears the activity and makes every player flex |
 | PUT | `/api/groups/{groupId}/lobbies/{lobbyId}/activity` | calendar | yes, player | ADR 0017 (REQ-0015). Body `{activityId}`, 200 `Lobby` without player names; no auth call. Order: `invalid_request`, `group_not_found`, `lobby_not_found`, `lobby_has_ended`, `not_allowed`, `invalid_activity` (not of the lobby's mode, or no mode) |
 | DELETE | `/api/groups/{groupId}/lobbies/{lobbyId}/activity` | calendar | yes, player | ADR 0017 (REQ-0015). Clears the activity, keeps the mode. Idempotent, 200 `Lobby` without player names; no auth call. Same checks as the PUT, without the value |
+| GET | `/api/users/{userId}/avatar` | calendar | yes | ADR 0018 (REQ-0016. The caller's own picture, or the picture of a user who shares a group with the caller. 200 `image/png`, quoted `ETag`, 304 on `If-None-Match`, `nosniff`. No picture, no shared group or `userId` of invalid form: 404 `avatar_not_found`) |
+| GET | `/api/groups/{groupId}/feed` | calendar | yes, member | ADR 0020 (REQ-0018. Array of `FeedEvent`, newest first, last 7 days, at most 20. Non-member `group_not_found`) |
+| GET | `/api/live-updates` | calendar | yes | ADR 0019 (REQ-0017. `text/event-stream`: event `groupChanged`, data = group ID. No lobby data. Ends after 10 minutes, the browser reconnects) |
 | PUT | `/api/groups/{groupId}/lobbies/{lobbyId}/game` | calendar | yes, player | planned, ADR 0017 (REQ-0015). Body `{gameId}`; only for a lobby without a game (`lobby_game_set` otherwise) |
 
 Internal endpoints (not public, blocked by `gateway`, reachable only on the internal network `services`, ADR 0008):
@@ -117,7 +122,8 @@ Internal endpoints (not public, blocked by `gateway`, reachable only on the inte
 | Method | Path | Caller | Service |
 |---|---|---|---|
 | POST | `/internal/sessions/validate` | gateway | auth (response `{userId, isSystemAdmin}`; empty token gives 401) |
-| POST | `/internal/users/lookup` | calendar | auth (at most 100 IDs per call, more gives 400 `invalid_request`, ADR 0003) |
+| POST | `/internal/users/lookup` | calendar | auth (at most 100 IDs per call, more gives 400 `invalid_request`, ADR 0003; returns the name and `hasAvatar`, ADR 0018) |
+| GET | `/internal/users/{userId}/avatar` | calendar | auth (the picture bytes, quoted ETag, 304, 404; no membership check, ADR 0018) |
 
 Headers from the gateway to `calendar` (ADR 0002, 0011): `X-User-Id` (uuid) and `X-User-System-Admin` (`true` or `false`). The gateway removes the client's `X-User-*` on all routes. The session cookie is not forwarded to `calendar`.
 
@@ -142,6 +148,7 @@ The source is `enum` in `api/` (`auth/openapi.yaml` and `calendar/openapi.yaml` 
 | `not_allowed` | 403 | The caller lacks permission (non-admin, non-creator, non-system-admin) |
 | `group_not_found` | 404 | The group is missing, the caller is not a member, or `groupId` has an invalid form |
 | `member_not_found` | 404 | The user is not a member of the group, or `userId` has an invalid form |
+| `avatar_not_found` | 404 | calendar (ADR 0018): the user has no picture, the caller shares no group with the user, or `userId` has an invalid form |
 | `lobby_not_found` | 404 | The lobby is missing, the end time has passed on GET, or `lobbyId` has an invalid form |
 | `invite_invalid` | 404 | The link is unknown, revoked, expired or used up, or the token or `linkId` has an invalid form |
 | `game_not_found` | 404 | The game is missing (PUT, DELETE), or `gameId` in the path has an invalid form |
@@ -173,6 +180,15 @@ The source is `enum` in `api/` (`auth/openapi.yaml` and `calendar/openapi.yaml` 
 | `internal_error` | 500 | Unexpected error. No details to the client. Documented on every operation |
 
 ## Open questions and risks
+
+Proposed, ADR 0018 to 0020. Decided by the user on 2026-11-10:
+- A picture is served only to the owner and to members who share a group with the owner (ADR 0018).
+- Animated Discord pictures are shown as their first frame (ADR 0018).
+- A feed line shows the current name of the person (ADR 0020, point 6).
+- A feed line shows the lobby's start time (ADR 0020, point 5).
+- The feed starts empty at release, without events for existing lobbies (ADR 0020).
+
+Open, for the user: a lobby link in a feed event (ADR 0020, open questions).
 
 Confirmed by the user (closed, see ADR 0004, 0006, 0007, 0010, 0011):
 - **Exactly 24 hours is rejected** (`lobby_too_long`), as REQ-0003 states. An end with the same clock time as the start gives `lobby_end_not_after_start` (REQ-0003, ADR 0004 rule 6).
