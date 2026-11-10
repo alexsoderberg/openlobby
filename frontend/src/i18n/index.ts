@@ -25,6 +25,14 @@ export function toUserMessage(code: string): string {
   return Object.hasOwn(errors, code) ? errors[code] : en.genericError;
 }
 
+/** Like toUserMessage, with the lobby forms' own wording for the codes that the admin form words differently. */
+export function toLobbyMessage(code: string): string {
+  const lobbyErrors: Record<string, string> = en.lobbyErrors;
+  return Object.hasOwn(lobbyErrors, code)
+    ? lobbyErrors[code]
+    : toUserMessage(code);
+}
+
 export function isLoginErrorCode(value: string): value is LoginErrorCode {
   return Object.hasOwn(en.loginErrors, value);
 }

@@ -1,3 +1,4 @@
+import type { LobbyDetail } from "../../api";
 import { useMessages } from "../../i18n";
 import { ErrorAlert, Panel } from "../../ui";
 import { LobbyDetails } from "./LobbyDetails";
@@ -42,6 +43,7 @@ export function LobbyDetailPage({
           lobby={state.lobby}
           groupId={groupId}
           isCreator={state.lobby.createdByUserId === userId}
+          seat={seatOf(state.lobby, userId)}
           onDeleted={onDeleted}
           onMembershipChanged={refresh}
           onUnauthenticated={onUnauthenticated}
@@ -49,6 +51,12 @@ export function LobbyDetailPage({
       )}
     </>
   );
+}
+
+/** The viewer's game role ID, `null` for flex, or undefined when the viewer is no player. */
+function seatOf({ players }: LobbyDetail, userId: string) {
+  const me = players.find((player) => player.userId === userId);
+  return me && (me.gameRoleId ?? null);
 }
 
 function LobbyNotFound() {

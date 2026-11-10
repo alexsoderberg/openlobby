@@ -5,7 +5,7 @@ import { OTHER_GAME } from "./lobbyInput";
 
 type FieldError = (name: string) => string | undefined;
 
-/** The game choice, the free-text name for "Other", and max players. */
+/** The game choice and the free-text name for "Other". */
 export function LobbyGameFields({
   id,
   games,
@@ -19,7 +19,6 @@ export function LobbyGameFields({
   onGameChange: (value: string) => void;
   errorFor: FieldError;
 }) {
-  const suggested = games.find((game) => game.id === gameValue);
   return (
     <>
       <GameSelect
@@ -32,12 +31,6 @@ export function LobbyGameFields({
       {gameValue === OTHER_GAME && (
         <CustomGameField id={id} errorId={errorFor("customGameName")} />
       )}
-      <MaxPlayersField
-        key={gameValue}
-        id={id}
-        suggested={suggested?.defaultMaxPlayers}
-        errorId={errorFor("maxPlayers")}
-      />
     </>
   );
 }
@@ -90,35 +83,6 @@ function CustomGameField({ id, errorId }: { id: string; errorId?: string }) {
         name="customGameName"
         type="text"
         autoComplete="off"
-      />
-    </LobbyField>
-  );
-}
-
-/** A game's default is only a suggestion. The owner keys this field by game, so a new game replaces what was typed. */
-function MaxPlayersField({
-  id,
-  suggested,
-  errorId,
-}: {
-  id: string;
-  suggested?: number | null;
-  errorId?: string;
-}) {
-  const m = useMessages();
-  return (
-    <LobbyField
-      id={`${id}-max`}
-      label={m.lobbyMaxPlayersLabel}
-      hint={m.lobbyMaxPlayersHint}
-    >
-      <input
-        {...fieldProps(`${id}-max`, true, errorId)}
-        name="maxPlayers"
-        type="text"
-        inputMode="numeric"
-        autoComplete="off"
-        defaultValue={suggested ?? ""}
       />
     </LobbyField>
   );

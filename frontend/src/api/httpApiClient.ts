@@ -124,10 +124,11 @@ export function createHttpApiClient(
         }),
       );
     },
-    joinLobby: async (groupId, lobbyId) => {
+    joinLobby: async (groupId, lobbyId, seat) => {
       await receive(
         http.PUT("/api/groups/{groupId}/lobbies/{lobbyId}/players/me", {
           params: { path: { groupId, lobbyId } },
+          body: seat,
         }),
       );
     },

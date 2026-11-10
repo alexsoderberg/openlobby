@@ -225,6 +225,21 @@ describe("createHttpApiClient", () => {
     },
   );
 
+  it("joinLobby sends the seat as the body, and no body without a seat", async () => {
+    const sent: string[] = [];
+    const fetchImpl = vi.fn<typeof fetch>(async (input) => {
+      sent.push(await new Request(input).text());
+      return new Response(null, { status: 204 });
+    });
+    const api = createHttpApiClient(fetchImpl, BASE_URL);
+
+    await api.joinLobby("g1", "l1", { gameRoleId: "r1" });
+    await api.joinLobby("g1", "l1", { flex: true });
+    await api.joinLobby("g1", "l1");
+
+    expect(sent).toEqual(['{"gameRoleId":"r1"}', '{"flex":true}', ""]);
+  });
+
   it("makeGroupAdmin sends PUT /api/groups/g1/admins/u1 and resolves on 204", async () => {
     const sent: Request[] = [];
     const fetchImpl = vi.fn<typeof fetch>(async (input) => {
