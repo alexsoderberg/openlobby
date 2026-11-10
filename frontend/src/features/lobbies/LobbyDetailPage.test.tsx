@@ -59,6 +59,100 @@ function renderDetail(
   return { client, onDeleted };
 }
 
+describe("lobby label, role slots and seats", () => {
+  const withRoles: LobbyDetail = {
+    ...lobby,
+    modeName: "Competitive",
+    activityName: "Control",
+    flexCount: 1,
+    roleSlots: [
+      { gameRoleId: "r1", name: "Tank", slots: 1, playerCount: 1 },
+      { gameRoleId: "r2", name: "Healer", slots: 1, playerCount: 0 },
+    ],
+    players: [
+      { userId: testUser.userId, displayName: "Maja Lind", gameRoleId: "r1" },
+      { userId: "u2", displayName: "Kim Berg", gameRoleId: null },
+    ],
+  };
+
+  it("shows the label, the role slots, flex and each player's seat", async () => {
+    renderDetail({ getLobby: () => Promise.resolve(withRoles) });
+
+    expect(
+      await screen.findByRole("heading", {
+        name: "Catan › Competitive › Control",
+      }),
+    ).toBeTruthy();
+    const slots = screen.getByRole("list", { name: en.lobbyRoleSlotsLabel });
+    expect(slots.textContent).toBe("Tank 1/1, fullHealer 0/1Flex 1");
+  });
+
+  it("lists the players under their game role, flex last", async () => {
+    renderDetail({ getLobby: () => Promise.resolve(withRoles) });
+
+    await screen.findByRole("heading", { level: 1 });
+    expect(
+      screen.getAllByRole("heading", { level: 3 }).map((h) => h.textContent),
+    ).toEqual(["Tank", "Flex"]);
+    expect(
+      within(screen.getByRole("region", { name: "Tank" })).getByText(
+        "Maja Lind",
+      ),
+    ).toBeTruthy();
+    expect(
+      within(screen.getByRole("region", { name: "Flex" })).getByText(
+        "Kim Berg",
+      ),
+    ).toBeTruthy();
+  });
+
+  it("still lists a player whose game role is unknown or missing", async () => {
+    renderDetail({
+      getLobby: () =>
+        Promise.resolve({
+          ...withRoles,
+          players: [
+            ...withRoles.players,
+            { userId: "u3", displayName: "Alva Ek", gameRoleId: "gone" },
+            { userId: "u4", displayName: "Noa Sund" },
+          ],
+        }),
+    });
+
+    await screen.findByRole("heading", { level: 1 });
+    expect(screen.getByText("Alva Ek")).toBeTruthy();
+    expect(
+      within(screen.getByRole("region", { name: "Flex" })).getByText(
+        "Noa Sund",
+      ),
+    ).toBeTruthy();
+  });
+
+  it("names a lobby with a mode and an activity in the delete heading", async () => {
+    renderDetail({ getLobby: () => Promise.resolve(withRoles) });
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: en.lobbyDelete }),
+    );
+
+    expect(
+      await screen.findByRole("heading", {
+        name: en.lobbyDeleteHeading("Catan › Competitive › Control"),
+      }),
+    ).toBeTruthy();
+  });
+
+  it("looks as before for a lobby without role slots", async () => {
+    renderDetail();
+
+    await screen.findByRole("heading", { name: "Catan" });
+    expect(
+      screen.queryByRole("list", { name: en.lobbyRoleSlotsLabel }),
+    ).toBeNull();
+    expect(screen.queryByRole("heading", { level: 3 })).toBeNull();
+  });
+});
+
 describe("lobby theme", () => {
   it("shows the genre name beside the game name", async () => {
     renderDetail({

@@ -518,6 +518,19 @@ a {
   );
 }
 
+.role-slots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.list-row .role-slots .badge {
+  margin-left: 0;
+}
+
 .badge {
   display: inline-block;
   padding: 0 var(--space-2);
@@ -999,7 +1012,24 @@ a {
 }
 
 .time-block__game {
+  display: flex;
   font-weight: 600;
+}
+
+/* The game name always shows in full, wrapping if it must; only the mode and activity are shortened
+   (REQ-0015). In the smallest block a wrapped name hides the marker and time below it (see TimeBlock). */
+.time-block__game > :first-child {
+  flex: none;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.time-block__detail {
+  margin-inline-start: 0.25em;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* The link covers the whole .time-block (its containing block, at least --size-tap tall), not the smaller

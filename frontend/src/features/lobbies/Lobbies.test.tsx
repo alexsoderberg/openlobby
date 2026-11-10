@@ -205,6 +205,42 @@ const blockStyle = (element: HTMLElement) => {
 };
 const listButton = () => screen.getByRole("button", { name: en.lobbyViewList });
 
+describe("label and role slots", () => {
+  const overwatch = lobby({
+    id: "l9",
+    gameName: "Overwatch 2",
+    modeName: "Competitive",
+    activityName: "Control",
+    flexCount: 0,
+    roleSlots: [{ gameRoleId: "r1", name: "Tank", slots: 1, playerCount: 0 }],
+  });
+  const full = "Overwatch 2 › Competitive › Control";
+
+  it("shows the label and role slots in the list", async () => {
+    renderLobbies({
+      listUpcomingLobbies: () => Promise.resolve([overwatch, catan]),
+    });
+
+    expect(await screen.findByRole("link", { name: full })).toBeTruthy();
+    const slots = screen.getAllByRole("list", { name: en.lobbyRoleSlotsLabel });
+    expect(slots).toHaveLength(1);
+    expect(slots[0].textContent).toBe("Tank 0/1");
+  });
+
+  it("shows the game name in full in the week view block and lets only the mode and activity shorten", async () => {
+    renderLobbies({ listUpcomingLobbies: () => Promise.resolve([overwatch]) });
+    await screen.findByRole("link", { name: full });
+    fireEvent.click(calendarButton());
+
+    const link = screen.getByRole("link", { name: full });
+    expect(link.className).toContain("time-block__game");
+    expect(within(link).getByText("Overwatch 2")).toBeTruthy();
+    expect(within(link).getByText("› Competitive › Control").className).toBe(
+      "time-block__detail",
+    );
+  });
+});
+
 describe("calendar view", () => {
   it("starts in the list view", async () => {
     renderLobbies(withLobbies(catan));

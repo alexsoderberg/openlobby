@@ -3,10 +3,10 @@ import { useMessages } from "../../i18n";
 import { ConfirmDialog } from "../../ui";
 
 export function DeleteLobbyDialog({
-  gameName,
+  label,
   ...rest
 }: {
-  gameName: string;
+  label: string;
   busy: boolean;
   onConfirm: () => ChangeResult;
   onClose: () => void;
@@ -14,7 +14,7 @@ export function DeleteLobbyDialog({
   const m = useMessages();
   return (
     <ConfirmDialog
-      heading={m.lobbyDeleteHeading(gameName)}
+      heading={m.lobbyDeleteHeading(label)}
       body={m.lobbyDeleteConfirm}
       submitLabel={m.lobbyDeleteSubmit}
       keepLabel={m.lobbyDeleteKeep}

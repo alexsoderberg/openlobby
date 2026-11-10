@@ -186,6 +186,25 @@ describe("Next up", () => {
   });
 });
 
+describe("label and role slots", () => {
+  const overwatch = lobby("l1", "Overwatch 2", at(4, 20), at(4, 22), {
+    modeName: "Competitive",
+    flexCount: 1,
+    roleSlots: [{ gameRoleId: "r1", name: "Tank", slots: 1, playerCount: 0 }],
+  });
+
+  it("shows the label and role slots on Next up", async () => {
+    renderDashboard({ g1: [overwatch], g2: [] });
+
+    const card = await nextUpCard();
+    expect(
+      card.getByRole("link", { name: "Overwatch 2 › Competitive" }),
+    ).toBeTruthy();
+    expect(card.getByText("Tank 0/1")).toBeTruthy();
+    expect(card.getByText("Flex 1")).toBeTruthy();
+  });
+});
+
 describe("This week", () => {
   it("places each lobby in the column of its day with game, time, group and spots, as a link to its lobby", async () => {
     renderDashboard({

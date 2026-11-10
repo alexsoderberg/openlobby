@@ -170,6 +170,25 @@ describe("Day list", () => {
     );
   });
 
+  it("uses the label as the row link and shows role slots and flex", () => {
+    renderWeek([
+      {
+        ...lobby("l9", "Overwatch 2", at(5, 20), at(5, 22)),
+        modeName: "Competitive",
+        flexCount: 1,
+        roleSlots: [
+          { gameRoleId: "r1", name: "Tank", slots: 1, playerCount: 0 },
+        ],
+      },
+    ]);
+
+    const row = screen
+      .getByRole("link", { name: "Overwatch 2 › Competitive" })
+      .closest("li")!;
+    expect(within(row).getByText("Tank 0/1")).toBeTruthy();
+    expect(within(row).getByText("Flex 1")).toBeTruthy();
+  });
+
   it("says so when nothing is booked this week", () => {
     renderWeek([]);
     expect(screen.getByText(t.nothingBookedWeek)).toBeTruthy();

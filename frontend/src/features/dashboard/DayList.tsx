@@ -1,6 +1,7 @@
 import type { WeekDay } from "../../calendar";
 import { GenreFrame, GenreName } from "../../genres";
 import { formatTimeRange, formatWeekday, useMessages } from "../../i18n";
+import { lobbyLabel, RoleSlots } from "../../lobby";
 import { lobbyPath } from "../lobbies";
 import type { DashboardLobby } from "./dashboardLobby";
 
@@ -44,7 +45,7 @@ export function DayList({ days }: { days: WeekDay<DashboardLobby>[] }) {
                   className="lobby-row__game"
                   href={lobbyPath(lobby.groupId, lobby.id)}
                 >
-                  {lobby.gameName}
+                  {lobbyLabel(lobby, m)}
                 </a>
                 <GenreName genre={lobby.gameGenre} />
                 <span>{formatTimeRange(lobby.startsAt, lobby.endsAt)}</span>
@@ -52,6 +53,7 @@ export function DayList({ days }: { days: WeekDay<DashboardLobby>[] }) {
                 <span className="badge">
                   {m.lobbyPlayers(lobby.playerCount, lobby.maxPlayers)}
                 </span>
+                <RoleSlots lobby={lobby} />
               </GenreFrame>
             ))}
           </ul>

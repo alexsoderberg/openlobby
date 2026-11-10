@@ -202,6 +202,15 @@ export const en = {
   lobbyViewCalendar: "Calendar",
   lobbyPlayers: (count: number, max: number | null) =>
     max === null ? `${count} players` : `${count}/${max} players`,
+  lobbyLabelSeparator: " › ",
+  lobbyRoleSlotsLabel: "Game roles",
+  lobbyRoleSlot: (name: string, count: number, slots: number) =>
+    `${name} ${count}/${slots}`,
+  lobbyRoleSlotFull: (name: string, count: number, slots: number) =>
+    `${name} ${count}/${slots}, full`,
+  // The group heading is the bare word; the list shows "Flex N".
+  lobbyFlex: (count?: number) =>
+    count === undefined ? "Flex" : `Flex ${count}`,
   lobbyCreatedBy: (name: string) => `Created by ${name}`,
   lobbyUnknownCreator: "Unknown member",
   calendarWeekHeading: (range: string) => `Week ${range}`,
@@ -245,7 +254,7 @@ export const en = {
   lobbyEnded: "Ended",
   lobbyGone: "The lobby no longer exists",
   lobbyDelete: "Delete lobby",
-  lobbyDeleteHeading: (game: string) => `Delete the ${game} lobby?`,
+  lobbyDeleteHeading: (label: string) => `Delete the ${label} lobby?`,
   lobbyDeleteConfirm: "The lobby disappears for everyone in the group.",
   lobbyDeleteSubmit: "Yes, delete lobby",
   lobbyDeleteKeep: "Keep lobby",
