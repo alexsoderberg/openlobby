@@ -4,6 +4,10 @@ import { OTHER_GAME, parseLobbyInput, type LobbyFields } from "./lobbyInput";
 const now = new Date(2026, 10, 4, 12, 0);
 const valid: LobbyFields = {
   game: "game-1",
+  mode: "",
+  activity: "",
+  slots: [],
+  seat: "",
   customGameName: "",
   maxPlayers: "4",
   date: "2026-11-05",
@@ -72,4 +76,58 @@ describe("parseLobbyInput", () => {
       code: "lobby_end_not_after_start",
     });
   });
+});
+
+describe("parseLobbyInput with mode and game roles", () => {
+  const slots = [
+    { gameRoleId: "r1", text: "1" },
+    { gameRoleId: "r2", text: " 0 " },
+  ];
+
+  it("sends the mode and activity only when chosen", () => {
+    expect(parse({ mode: "m1", activity: "a1" })).toMatchObject({
+      ok: true,
+      input: { modeId: "m1", activityId: "a1" },
+    });
+    const plain = parse({});
+    expect(plain.ok && "modeId" in plain.input).toBe(false);
+  });
+
+  it("sends the slots and the seat instead of max players", () => {
+    const result = parse({ slots, seat: "r1", maxPlayers: "" });
+    expect(result).toMatchObject({
+      ok: true,
+      input: {
+        roleSlots: [
+          { gameRoleId: "r1", slots: 1 },
+          { gameRoleId: "r2", slots: 0 },
+        ],
+        gameRoleId: "r1",
+      },
+    });
+    expect(result.ok && "maxPlayers" in result.input).toBe(false);
+  });
+
+  it("sends flex as the seat", () => {
+    expect(parse({ slots, seat: "flex" })).toMatchObject({
+      ok: true,
+      input: { flex: true },
+    });
+  });
+
+  it("denies a missing seat with its own code", () => {
+    expect(parse({ slots, seat: "" })).toEqual({
+      ok: false,
+      code: "lobby_seat_missing",
+    });
+  });
+
+  it.each(["", "-1", "1.5", "x", "2147483648"])(
+    "denies the slot %j with invalid_capacity",
+    (text) => {
+      expect(
+        parse({ slots: [{ gameRoleId: "r1", text }], seat: "r1" }),
+      ).toEqual({ ok: false, code: "invalid_capacity" });
+    },
+  );
 });

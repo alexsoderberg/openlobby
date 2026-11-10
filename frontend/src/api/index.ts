@@ -6,6 +6,8 @@ export type {
   Game,
   Genre,
   GameInput,
+  GameMode,
+  GameRole,
   GameModeInput,
   GameRoleInput,
   Group,
@@ -14,6 +16,7 @@ export type {
   InviteLink,
   Lobby,
   LobbyDetail,
+  Seat,
 } from "./client";
 export {
   ACTIVITY_NAME_MAX_LENGTH,

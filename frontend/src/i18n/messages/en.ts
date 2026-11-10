@@ -1,4 +1,5 @@
 import {
+  DEFAULT_MAX_PLAYERS_LIMIT,
   GAME_NAME_MAX_LENGTH,
   GROUP_NAME_MAX_LENGTH,
   INVITE_MAX_USES_LIMIT,
@@ -231,6 +232,27 @@ export const en = {
   lobbyGameOther: RESERVED_GAME_NAME,
   lobbyCustomGameLabel: "Name of the game",
   lobbyCustomGameHint: `1 to ${GAME_NAME_MAX_LENGTH} characters.`,
+  lobbyModeLabel: "Game mode",
+  lobbyModeNone: "No mode",
+  lobbyActivityLabel: "Activity",
+  lobbyActivityNone: "No activity",
+  lobbyModeMaxPlayersHint:
+    "Filled in from the mode. Change it if the group plays with another number.",
+  lobbyRolesLegend: "Game roles",
+  lobbyRolesHint:
+    "Slots per game role. Enter 0 to leave a game role out of this lobby.",
+  lobbySlotsLabel: (name: string) => `${name}, slots`,
+  lobbyRolesTotal: (total: number) => `Max players: ${total}`,
+  lobbySeatLegend: "Your seat",
+  lobbySeatCreateHint: "You are the first player and take this seat.",
+  lobbySeatFlex: "Flex (any game role)",
+  lobbySeatMissing: "Choose a game role or flex.",
+  lobbySeatJoin: "Join with this seat",
+  lobbySeatChange: "Change seat",
+  lobbySeatSave: "Save seat",
+  lobbyModeMaxPlayersInvalid: `A mode needs a number of players from 1 to ${DEFAULT_MAX_PLAYERS_LIMIT}.`,
+  lobbySlotsInvalid:
+    "Each slot must be a whole number, 0 or more, and the slots must add up to at least 1.",
   lobbyMaxPlayersLabel: "Max players",
   lobbyMaxPlayersHint:
     "Filled in from the game. Change it, or leave it empty for no limit.",
@@ -301,6 +323,14 @@ export const en = {
 
   notFoundHeading: "Page not found",
   notFoundText: "The address does not point to a page in OpenLobby.",
+
+  // Lobby forms phrase these for people who create and join lobbies. The admin form uses `errors`.
+  lobbyErrors: {
+    invalid_mode: "Choose a mode of this game, or no mode.",
+    invalid_activity: "Choose an activity of this mode, or no activity.",
+    invalid_game_role:
+      "This seat is not available in this lobby. Choose one of its game roles, or flex.",
+  },
 
   genericError: "Something went wrong. Try again in a moment.",
 

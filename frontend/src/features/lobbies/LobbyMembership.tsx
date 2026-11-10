@@ -1,28 +1,17 @@
-import { useState } from "react";
-import { useApi, type Lobby } from "../../api";
-import { toUserMessage, useMessages } from "../../i18n";
+import { toLobbyMessage, useMessages } from "../../i18n";
 import { Alert } from "../../ui";
-import { LOBBY_FULL, LOBBY_HAS_ENDED, LOBBY_NOT_FOUND } from "./lobbyErrors";
-import { useChangeAction } from "../../hooks";
-
-type Membership = Pick<Lobby, "id" | "joinedByMe" | "endsAt">;
+import { LOBBY_HAS_ENDED, LOBBY_NOT_FOUND } from "./lobbyErrors";
+import { SeatForm } from "./SeatForm";
+import { useLobbyMembership, type Membership } from "./useLobbyMembership";
 
 function hasEnded({ endsAt }: Membership): boolean {
   return Date.parse(endsAt) <= Date.now();
 }
 
-function startFrom({ id, joinedByMe }: Membership) {
-  return {
-    id,
-    joinedByMe,
-    joined: joinedByMe,
-    errorCode: undefined as string | undefined,
-  };
-}
-
 /**
  * "Join lobby" or "Leave lobby" for the viewer. A player can always leave; joining is offered until the
- * lobby has ended; a full lobby answers with the full message. `onChanged` loads the lobby again.
+ * lobby has ended; a full lobby answers with the full message. A lobby with game roles asks for a seat
+ * first, and a player who knows their seat can change it. `onChanged` loads the lobby again.
  */
 export function LobbyMembership({
   groupId,
@@ -30,6 +19,7 @@ export function LobbyMembership({
   onChanged,
   onUnauthenticated,
   showEnded = false,
+  seat,
 }: {
   groupId: string;
   lobby: Membership;
@@ -40,37 +30,22 @@ export function LobbyMembership({
    * shows the state; a lobby_has_ended answer shows "Ended" everywhere.
    */
   showEnded?: boolean;
+  /** The viewer's seat if known: a game role ID, or `null` for flex. Without it a player cannot change seat. */
+  seat?: string | null;
 }) {
   const m = useMessages();
-  const api = useApi();
-  const { busy, run } = useChangeAction(onUnauthenticated);
-  // The answer sets `joined` at once and the reloaded lobby confirms it later, so the old button never
-  // shows again in between. A different lobby or a changed `joinedByMe` starts over from the prop.
-  const [shown, setShown] = useState(() => startFrom(lobby));
-  if (shown.id !== lobby.id || shown.joinedByMe !== lobby.joinedByMe)
-    setShown(startFrom(lobby));
-  const { joined: leaving, errorCode } = shown;
-
-  async function toggle() {
-    const { id } = lobby;
-    const code = await run(() =>
-      leaving ? api.leaveLobby(groupId, id) : api.joinLobby(groupId, id),
-    );
-    // An answer for a lobby that is no longer shown must not land on the new one.
-    setShown((now) =>
-      now.id !== id
-        ? now
-        : { ...now, errorCode: code, joined: code ? now.joined : !leaving },
-    );
-    // A gone lobby disappears from the view on leaving; a full one shows its real state. An ended one
-    // shows "Ended" without a reload, because a reload drops it (lobby page: not found; card: not upcoming).
-    if (
-      code === undefined ||
-      code === LOBBY_FULL ||
-      (code === LOBBY_NOT_FOUND && leaving)
-    )
-      onChanged();
-  }
+  const {
+    leaving,
+    errorCode,
+    busy,
+    choosing,
+    closeSeats,
+    openSeats,
+    opener,
+    join,
+    leave,
+  } = useLobbyMembership(groupId, lobby, onChanged, onUnauthenticated);
+  const hasSeats = (lobby.roleSlots?.length ?? 0) > 0;
 
   const ended = errorCode === LOBBY_HAS_ENDED || hasEnded(lobby);
   if (!leaving && ended)
@@ -80,16 +55,41 @@ export function LobbyMembership({
   const failure =
     errorCode === LOBBY_NOT_FOUND
       ? m.lobbyGone
-      : toUserMessage(errorCode ?? "");
+      : toLobbyMessage(errorCode ?? "");
+
+  if (choosing && lobby.roleSlots)
+    return (
+      <SeatForm
+        roleSlots={lobby.roleSlots}
+        seat={leaving ? seat : undefined}
+        submitLabel={leaving ? m.lobbySeatSave : m.lobbySeatJoin}
+        busy={busy}
+        error={errorCode === undefined ? undefined : failure}
+        onSubmit={join}
+        onCancel={closeSeats}
+      />
+    );
 
   return (
     <>
       {errorCode !== undefined && <Alert>{failure}</Alert>}
+      {leaving && hasSeats && seat !== undefined && (
+        <button
+          ref={opener}
+          type="button"
+          className="button button--secondary"
+          disabled={busy}
+          onClick={openSeats}
+        >
+          {m.lobbySeatChange}
+        </button>
+      )}
       <button
+        ref={leaving ? undefined : opener}
         type="button"
         className={leaving ? "button button--secondary" : "button"}
         disabled={busy}
-        onClick={toggle}
+        onClick={leaving ? leave : hasSeats ? openSeats : () => join()}
       >
         {leaving ? m.lobbyLeave : m.lobbyJoin}
       </button>

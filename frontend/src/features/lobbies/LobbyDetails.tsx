@@ -13,6 +13,8 @@ type Props = Callbacks & {
   lobby: LobbyDetail;
   groupId: string;
   isCreator: boolean;
+  /** The viewer's seat if they are a player: a game role ID, or `null` for flex. */
+  seat?: string | null;
   onMembershipChanged: () => void;
 };
 
@@ -21,6 +23,7 @@ export function LobbyDetails({
   lobby,
   groupId,
   isCreator,
+  seat,
   onMembershipChanged,
   ...callbacks
 }: Props) {
@@ -49,6 +52,7 @@ export function LobbyDetails({
               lobby={lobby}
               onChanged={onMembershipChanged}
               showEnded
+              seat={seat}
               onUnauthenticated={callbacks.onUnauthenticated}
             />
             {isCreator && (

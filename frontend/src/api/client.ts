@@ -12,6 +12,11 @@ export type Lobby = calendarComponents["schemas"]["Lobby"];
 export type LobbyDetail = calendarComponents["schemas"]["LobbyDetail"];
 export type CreateLobbyInput =
   calendarComponents["schemas"]["CreateLobbyRequest"];
+/** A game role and a mode as the game list sends them. */
+export type GameRole = calendarComponents["schemas"]["GameRole"];
+export type GameMode = calendarComponents["schemas"]["GameMode"];
+/** What a player chooses when joining a lobby with game roles: `{gameRoleId}` or `{flex: true}`. */
+export type Seat = calendarComponents["schemas"]["JoinLobbyRequest"];
 export type GameRoleInput = calendarComponents["schemas"]["GameRoleInput"];
 export type GameModeInput = calendarComponents["schemas"]["GameModeInput"];
 /** What the system admin sets on a game: the game without its generated ID, with its modes and game roles as entered. */
@@ -72,8 +77,11 @@ export interface ApiClient {
   getLobby(groupId: string, lobbyId: string): Promise<LobbyDetail>;
   createLobby(groupId: string, input: CreateLobbyInput): Promise<Lobby>;
   deleteLobby(groupId: string, lobbyId: string): Promise<void>;
-  /** Joins as a player. Already a player is a success. */
-  joinLobby(groupId: string, lobbyId: string): Promise<void>;
+  /**
+   * Joins as a player, or changes the seat of a player. The seat is required when the lobby has game
+   * roles. Already a player with the same seat is a success.
+   */
+  joinLobby(groupId: string, lobbyId: string, seat?: Seat): Promise<void>;
   /** Leaves as a player. Not a player is a success, also after the end time. */
   leaveLobby(groupId: string, lobbyId: string): Promise<void>;
   /** Leaves the group. Refused with `own_upcoming_lobbies_exist` while the caller has upcoming lobbies. */
