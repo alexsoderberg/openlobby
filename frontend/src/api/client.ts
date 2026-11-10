@@ -12,8 +12,14 @@ export type Lobby = calendarComponents["schemas"]["Lobby"];
 export type LobbyDetail = calendarComponents["schemas"]["LobbyDetail"];
 export type CreateLobbyInput =
   calendarComponents["schemas"]["CreateLobbyRequest"];
-/** What the system admin sets on a game: the game without its generated ID. */
-export type GameInput = Omit<Game, "id">;
+export type GameRoleInput = calendarComponents["schemas"]["GameRoleInput"];
+export type GameModeInput = calendarComponents["schemas"]["GameModeInput"];
+/** What the system admin sets on a game: the game without its generated ID, with its modes and game roles as entered. */
+export type GameInput = Omit<Game, "id" | "gameRoles" | "modes"> &
+  Pick<
+    calendarComponents["schemas"]["ReplaceGameRequest"],
+    "gameRoles" | "modes"
+  >;
 export type ApiErrorCode =
   | authComponents["schemas"]["ErrorBody"]["code"]
   | calendarComponents["schemas"]["ErrorBody"]["code"];
@@ -22,6 +28,11 @@ export type ApiErrorCode =
 export const GROUP_NAME_MAX_LENGTH = 50;
 /** Contract rule: a game name is 1–50 characters after trim. */
 export const GAME_NAME_MAX_LENGTH = 50;
+/** Contract rule: a mode or activity name is 1–50 characters after trim. */
+export const MODE_NAME_MAX_LENGTH = 50;
+export const ACTIVITY_NAME_MAX_LENGTH = 50;
+/** Contract rule: a game role name is 1–30 characters after trim. */
+export const GAME_ROLE_NAME_MAX_LENGTH = 30;
 /** Contract rule: a default max is an integer from DEFAULT_MAX_PLAYERS_MIN to this value (a 32-bit signed integer). */
 export const DEFAULT_MAX_PLAYERS_LIMIT = 2147483647;
 export const DEFAULT_MAX_PLAYERS_MIN = 1;

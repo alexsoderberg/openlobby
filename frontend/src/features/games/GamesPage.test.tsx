@@ -122,6 +122,44 @@ describe("game list", () => {
   });
 });
 
+describe("modes in the list", () => {
+  const mode = (id: string) => ({
+    id,
+    name: id,
+    maxPlayers: 2,
+    gameRoles: [],
+    activities: [],
+  });
+
+  it("shows the number of modes instead of the max, and the max for a game without modes", async () => {
+    renderPage(
+      adminClient({
+        listGames: () =>
+          Promise.resolve([
+            { ...catan, modes: [mode("m1")] },
+            { ...chess, name: "Duelists", modes: [mode("m2"), mode("m3")] },
+            {
+              ...chess,
+              id: "g3",
+              name: "Plain",
+              defaultMaxPlayers: 6,
+              modes: [],
+            },
+          ]),
+      }),
+    );
+
+    const rows = await screen.findAllByRole("listitem");
+    expect(rows.map((row) => row.textContent)).toEqual([
+      `Catan${en.gameModeCount(1)}${en.gameEdit}${en.gameRemove}`,
+      `Duelists${en.gameModeCount(2)}${en.gameEdit}${en.gameRemove}`,
+      `Plain${en.gameMaxPlayers(6)}${en.gameEdit}${en.gameRemove}`,
+    ]);
+    expect(en.gameModeCount(1)).toBe("1 mode");
+    expect(en.gameModeCount(2)).toBe("2 modes");
+  });
+});
+
 describe("add", () => {
   it("sends name and max, refreshes the list, resets the form and focuses the status", async () => {
     const client = adminClient();
@@ -136,6 +174,8 @@ describe("add", () => {
         name: "Azul",
         defaultMaxPlayers: 2,
         genre: null,
+        gameRoles: [],
+        modes: [],
       }),
     );
     const status = await screen.findByText(en.gameAdded);
@@ -155,6 +195,8 @@ describe("add", () => {
         name: "Azul",
         defaultMaxPlayers: null,
         genre: null,
+        gameRoles: [],
+        modes: [],
       }),
     );
   });
@@ -247,6 +289,8 @@ describe("genre", () => {
         name: "Azul",
         defaultMaxPlayers: 2,
         genre: "party",
+        gameRoles: [],
+        modes: [],
       }),
     );
   });
@@ -283,6 +327,8 @@ describe("genre", () => {
         name: "Catan",
         defaultMaxPlayers: 4,
         genre: "rpg",
+        gameRoles: [],
+        modes: [],
       }),
     );
   });
@@ -365,6 +411,8 @@ describe("change", () => {
         name: "Catan 5th",
         defaultMaxPlayers: null,
         genre: null,
+        gameRoles: [],
+        modes: [],
       }),
     );
     const status = await screen.findByText(en.gameChanged);

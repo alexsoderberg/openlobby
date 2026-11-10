@@ -2,12 +2,16 @@ import {
   DEFAULT_MAX_PLAYERS_LIMIT,
   DEFAULT_MAX_PLAYERS_MIN,
   GAME_NAME_MAX_LENGTH,
+  type ApiErrorCode,
 } from "./client";
 
 /** Contract error codes that both the game and the lobby flows branch on. */
 export const INVALID_GAME = "invalid_game";
 export const INVALID_CAPACITY = "invalid_capacity";
 export const INVALID_GENRE = "invalid_genre";
+export const INVALID_MODE = "invalid_mode" satisfies ApiErrorCode;
+export const INVALID_ACTIVITY = "invalid_activity" satisfies ApiErrorCode;
+export const INVALID_GAME_ROLE = "invalid_game_role" satisfies ApiErrorCode;
 
 /** What a change resolves to: the error code of a failure, or undefined on success. */
 export type ChangeResult = Promise<string | undefined>;
@@ -20,10 +24,14 @@ export function trimLikeServer(text: string): string {
   return text.replace(SERVER_TRIM, "");
 }
 
-/** A game name is 1 to GAME_NAME_MAX_LENGTH characters. Expects a name that is already trimmed. */
-export function isGameNameLength(name: string): boolean {
+/** A name is 1 to `max` characters. Expects a name that is already trimmed. */
+export function isNameLength(name: string, max: number): boolean {
   const length = [...name].length;
-  return length >= 1 && length <= GAME_NAME_MAX_LENGTH;
+  return length >= 1 && length <= max;
+}
+
+export function isGameNameLength(name: string): boolean {
+  return isNameLength(name, GAME_NAME_MAX_LENGTH);
 }
 
 /** A max players text: `null` when empty (unlimited), the number when valid, `undefined` when not valid. */
