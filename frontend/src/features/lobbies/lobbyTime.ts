@@ -62,3 +62,8 @@ export function localClockText(moment: Date): string {
 export function localDateText(date: Date): string {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
+
+/** Whether the end time has passed. */
+export function hasEnded({ endsAt }: { endsAt: string }): boolean {
+  return Date.parse(endsAt) <= Date.now();
+}

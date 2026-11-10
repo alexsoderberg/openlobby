@@ -132,6 +132,29 @@ export function createHttpApiClient(
         }),
       );
     },
+    setLobbyMode: async (groupId, lobbyId, modeId, currentModeId) => {
+      await receive(
+        http.PUT("/api/groups/{groupId}/lobbies/{lobbyId}/mode", {
+          params: { path: { groupId, lobbyId } },
+          body: { modeId, currentModeId },
+        }),
+      );
+    },
+    setLobbyActivity: async (groupId, lobbyId, activityId) => {
+      await receive(
+        http.PUT("/api/groups/{groupId}/lobbies/{lobbyId}/activity", {
+          params: { path: { groupId, lobbyId } },
+          body: { activityId },
+        }),
+      );
+    },
+    clearLobbyActivity: async (groupId, lobbyId) => {
+      await receive(
+        http.DELETE("/api/groups/{groupId}/lobbies/{lobbyId}/activity", {
+          params: { path: { groupId, lobbyId } },
+        }),
+      );
+    },
     leaveLobby: async (groupId, lobbyId) => {
       await receive(
         http.DELETE("/api/groups/{groupId}/lobbies/{lobbyId}/players/me", {

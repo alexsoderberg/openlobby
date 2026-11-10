@@ -153,6 +153,60 @@ describe("lobby label, role slots and seats", () => {
   });
 });
 
+describe("changing the mode on the page", () => {
+  it("confirms a mode change, loads the lobby again and shows the new label", async () => {
+    const mode = (id: string, name: string) => ({
+      id,
+      name,
+      maxPlayers: 4,
+      gameRoles: [],
+      activities: [],
+    });
+    const withMode = (id: string, name: string): LobbyDetail => ({
+      ...lobby,
+      gameId: "game1",
+      modeId: id,
+      modeName: name,
+    });
+    const getLobby = vi
+      .fn<ApiClient["getLobby"]>()
+      .mockResolvedValueOnce(withMode("m1", "Casual"))
+      .mockResolvedValue(withMode("m2", "Ranked"));
+    const { client } = renderDetail({
+      getLobby,
+      listGroupGames: vi.fn(() =>
+        Promise.resolve([
+          {
+            id: "game1",
+            name: "Catan",
+            defaultMaxPlayers: null,
+            genre: null,
+            modes: [mode("m1", "Casual"), mode("m2", "Ranked")],
+          },
+        ]),
+      ),
+    });
+
+    fireEvent.change(
+      await screen.findByRole("combobox", { name: en.lobbyModeLabel }),
+      { target: { value: "m2" } },
+    );
+    fireEvent.click(
+      within(await screen.findByRole("dialog")).getByRole("button", {
+        name: en.lobbyModeChangeSubmit,
+      }),
+    );
+
+    expect(
+      await screen.findByRole("heading", {
+        name: `Catan${en.lobbyLabelSeparator}Ranked`,
+      }),
+    ).toBeTruthy();
+    expect(client.setLobbyMode).toHaveBeenCalledWith("g1", "l1", "m2", "m1");
+    expect(getLobby).toHaveBeenCalledTimes(2);
+  });
+});
+
 describe("lobby theme", () => {
   it("shows the genre name beside the game name", async () => {
     renderDetail({

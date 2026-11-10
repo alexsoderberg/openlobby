@@ -82,6 +82,24 @@ export interface ApiClient {
    * roles. Already a player with the same seat is a success.
    */
   joinLobby(groupId: string, lobbyId: string, seat?: Seat): Promise<void>;
+  /**
+   * Changes the mode of a lobby. `currentModeId` is the mode the caller saw (`null` for none), so a stale view is
+   * refused with `lobby_changed`. The answer has no player names, so callers load the lobby again.
+   */
+  setLobbyMode(
+    groupId: string,
+    lobbyId: string,
+    modeId: string,
+    currentModeId: string | null,
+  ): Promise<void>;
+  /** Sets the activity of the lobby's mode. The answer has no player names, so callers load the lobby again. */
+  setLobbyActivity(
+    groupId: string,
+    lobbyId: string,
+    activityId: string,
+  ): Promise<void>;
+  /** Clears the activity and keeps the mode. Idempotent. */
+  clearLobbyActivity(groupId: string, lobbyId: string): Promise<void>;
   /** Leaves as a player. Not a player is a success, also after the end time. */
   leaveLobby(groupId: string, lobbyId: string): Promise<void>;
   /** Leaves the group. Refused with `own_upcoming_lobbies_exist` while the caller has upcoming lobbies. */

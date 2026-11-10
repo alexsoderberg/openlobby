@@ -1,12 +1,9 @@
 import { toLobbyMessage, useMessages } from "../../i18n";
 import { Alert } from "../../ui";
 import { LOBBY_HAS_ENDED, LOBBY_NOT_FOUND } from "./lobbyErrors";
+import { hasEnded } from "./lobbyTime";
 import { SeatForm } from "./SeatForm";
 import { useLobbyMembership, type Membership } from "./useLobbyMembership";
-
-function hasEnded({ endsAt }: Membership): boolean {
-  return Date.parse(endsAt) <= Date.now();
-}
 
 /**
  * "Join lobby" or "Leave lobby" for the viewer. A player can always leave; joining is offered until the

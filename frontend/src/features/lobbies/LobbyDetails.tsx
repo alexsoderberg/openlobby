@@ -6,6 +6,7 @@ import { lobbyLabel, RoleSlots } from "../../lobby";
 import { Panel } from "../../ui";
 import { DeleteLobbyDialog } from "./DeleteLobbyDialog";
 import { LobbyMembership } from "./LobbyMembership";
+import { LobbySettings } from "./LobbySettings";
 import { useChangeAction } from "../../hooks";
 
 type Callbacks = { onDeleted: () => void; onUnauthenticated: () => void };
@@ -46,6 +47,12 @@ export function LobbyDetails({
           <RoleSlots lobby={lobby} />
           <h2>{m.lobbyPlayersHeading}</h2>
           <PlayerList lobby={lobby} />
+          <LobbySettings
+            groupId={groupId}
+            lobby={lobby}
+            onChanged={onMembershipChanged}
+            onUnauthenticated={callbacks.onUnauthenticated}
+          />
           <div className="form-actions">
             <LobbyMembership
               groupId={groupId}
