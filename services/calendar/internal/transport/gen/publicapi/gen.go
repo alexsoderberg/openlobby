@@ -38,9 +38,11 @@ const (
 	ErrorBodyCodeInvalidMode             ErrorBodyCode = "invalid_mode"
 	ErrorBodyCodeInvalidRequest          ErrorBodyCode = "invalid_request"
 	ErrorBodyCodeInviteInvalid           ErrorBodyCode = "invite_invalid"
+	ErrorBodyCodeLobbyChanged            ErrorBodyCode = "lobby_changed"
 	ErrorBodyCodeLobbyEndNotAfterStart   ErrorBodyCode = "lobby_end_not_after_start"
 	ErrorBodyCodeLobbyFull               ErrorBodyCode = "lobby_full"
 	ErrorBodyCodeLobbyHasEnded           ErrorBodyCode = "lobby_has_ended"
+	ErrorBodyCodeLobbyHasMorePlayers     ErrorBodyCode = "lobby_has_more_players"
 	ErrorBodyCodeLobbyInPast             ErrorBodyCode = "lobby_in_past"
 	ErrorBodyCodeLobbyNotFound           ErrorBodyCode = "lobby_not_found"
 	ErrorBodyCodeLobbyTooLong            ErrorBodyCode = "lobby_too_long"
@@ -91,11 +93,15 @@ func (e ErrorBodyCode) Valid() bool {
 		return true
 	case ErrorBodyCodeInviteInvalid:
 		return true
+	case ErrorBodyCodeLobbyChanged:
+		return true
 	case ErrorBodyCodeLobbyEndNotAfterStart:
 		return true
 	case ErrorBodyCodeLobbyFull:
 		return true
 	case ErrorBodyCodeLobbyHasEnded:
+		return true
+	case ErrorBodyCodeLobbyHasMorePlayers:
 		return true
 	case ErrorBodyCodeLobbyInPast:
 		return true
@@ -581,6 +587,21 @@ type RoleSlotInput struct {
 	Slots int `json:"slots"`
 }
 
+// SetLobbyActivityRequest defines model for SetLobbyActivityRequest.
+type SetLobbyActivityRequest struct {
+	// ActivityId The activity to set. It must be an activity of the lobby's mode, otherwise `invalid_activity`.
+	ActivityId openapi_types.UUID `json:"activityId"`
+}
+
+// SetLobbyModeRequest defines model for SetLobbyModeRequest.
+type SetLobbyModeRequest struct {
+	// CurrentModeId The mode the caller saw, `null` for none. If the lobby's mode is another one, because another change was saved first, the answer is `lobby_changed`.
+	CurrentModeId *openapi_types.UUID `json:"currentModeId"`
+
+	// ModeId The mode to set. It must be a mode of the lobby's game, otherwise `invalid_mode`.
+	ModeId openapi_types.UUID `json:"modeId"`
+}
+
 // UserRef defines model for UserRef.
 type UserRef struct {
 	DisplayName string             `json:"displayName"`
@@ -713,6 +734,24 @@ type GetLobbyParams struct {
 	XRequestId *RequestIdHeader `json:"X-Request-Id,omitempty"`
 }
 
+// ClearLobbyActivityParams defines parameters for ClearLobbyActivity.
+type ClearLobbyActivityParams struct {
+	// XRequestId Correlation ID (ADR 0001). A valid value is kept and passed on. A missing or invalid value is replaced by a new one. The response always contains `X-Request-Id`.
+	XRequestId *RequestIdHeader `json:"X-Request-Id,omitempty"`
+}
+
+// SetLobbyActivityParams defines parameters for SetLobbyActivity.
+type SetLobbyActivityParams struct {
+	// XRequestId Correlation ID (ADR 0001). A valid value is kept and passed on. A missing or invalid value is replaced by a new one. The response always contains `X-Request-Id`.
+	XRequestId *RequestIdHeader `json:"X-Request-Id,omitempty"`
+}
+
+// SetLobbyModeParams defines parameters for SetLobbyMode.
+type SetLobbyModeParams struct {
+	// XRequestId Correlation ID (ADR 0001). A valid value is kept and passed on. A missing or invalid value is replaced by a new one. The response always contains `X-Request-Id`.
+	XRequestId *RequestIdHeader `json:"X-Request-Id,omitempty"`
+}
+
 // LeaveLobbyParams defines parameters for LeaveLobby.
 type LeaveLobbyParams struct {
 	// XRequestId Correlation ID (ADR 0001). A valid value is kept and passed on. A missing or invalid value is replaced by a new one. The response always contains `X-Request-Id`.
@@ -757,6 +796,12 @@ type CreateInviteLinkJSONRequestBody = CreateInviteLinkRequest
 
 // CreateLobbyJSONRequestBody defines body for CreateLobby for application/json ContentType.
 type CreateLobbyJSONRequestBody = CreateLobbyRequest
+
+// SetLobbyActivityJSONRequestBody defines body for SetLobbyActivity for application/json ContentType.
+type SetLobbyActivityJSONRequestBody = SetLobbyActivityRequest
+
+// SetLobbyModeJSONRequestBody defines body for SetLobbyMode for application/json ContentType.
+type SetLobbyModeJSONRequestBody = SetLobbyModeRequest
 
 // JoinLobbyJSONRequestBody defines body for JoinLobby for application/json ContentType.
 type JoinLobbyJSONRequestBody = JoinLobbyRequest
@@ -811,6 +856,15 @@ type ServerInterface interface {
 	// GetLobby Get lobby with players
 	// (GET /api/groups/{groupId}/lobbies/{lobbyId})
 	GetLobby(w http.ResponseWriter, r *http.Request, groupId GroupId, lobbyId LobbyId, params GetLobbyParams)
+	// ClearLobbyActivity Clear the named activity of a lobby
+	// (DELETE /api/groups/{groupId}/lobbies/{lobbyId}/activity)
+	ClearLobbyActivity(w http.ResponseWriter, r *http.Request, groupId GroupId, lobbyId LobbyId, params ClearLobbyActivityParams)
+	// SetLobbyActivity Set the named activity of a lobby
+	// (PUT /api/groups/{groupId}/lobbies/{lobbyId}/activity)
+	SetLobbyActivity(w http.ResponseWriter, r *http.Request, groupId GroupId, lobbyId LobbyId, params SetLobbyActivityParams)
+	// SetLobbyMode Change the mode of a lobby
+	// (PUT /api/groups/{groupId}/lobbies/{lobbyId}/mode)
+	SetLobbyMode(w http.ResponseWriter, r *http.Request, groupId GroupId, lobbyId LobbyId, params SetLobbyModeParams)
 	// LeaveLobby Leave lobby
 	// (DELETE /api/groups/{groupId}/lobbies/{lobbyId}/players/me)
 	LeaveLobby(w http.ResponseWriter, r *http.Request, groupId GroupId, lobbyId LobbyId, params LeaveLobbyParams)
@@ -1637,6 +1691,183 @@ func (siw *ServerInterfaceWrapper) GetLobby(w http.ResponseWriter, r *http.Reque
 	handler.ServeHTTP(w, r)
 }
 
+// ClearLobbyActivity operation middleware
+func (siw *ServerInterfaceWrapper) ClearLobbyActivity(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "groupId" -------------
+	var groupId GroupId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "groupId", r.PathValue("groupId"), &groupId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "groupId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "lobbyId" -------------
+	var lobbyId LobbyId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "lobbyId", r.PathValue("lobbyId"), &lobbyId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "lobbyId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ClearLobbyActivityParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "X-Request-Id" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-Request-Id")]; found {
+		var XRequestId RequestIdHeader
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Request-Id", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-Request-Id", valueList[0], &XRequestId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Request-Id", Err: err})
+			return
+		}
+
+		params.XRequestId = &XRequestId
+
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ClearLobbyActivity(w, r, groupId, lobbyId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SetLobbyActivity operation middleware
+func (siw *ServerInterfaceWrapper) SetLobbyActivity(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "groupId" -------------
+	var groupId GroupId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "groupId", r.PathValue("groupId"), &groupId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "groupId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "lobbyId" -------------
+	var lobbyId LobbyId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "lobbyId", r.PathValue("lobbyId"), &lobbyId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "lobbyId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params SetLobbyActivityParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "X-Request-Id" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-Request-Id")]; found {
+		var XRequestId RequestIdHeader
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Request-Id", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-Request-Id", valueList[0], &XRequestId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Request-Id", Err: err})
+			return
+		}
+
+		params.XRequestId = &XRequestId
+
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SetLobbyActivity(w, r, groupId, lobbyId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SetLobbyMode operation middleware
+func (siw *ServerInterfaceWrapper) SetLobbyMode(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "groupId" -------------
+	var groupId GroupId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "groupId", r.PathValue("groupId"), &groupId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "groupId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "lobbyId" -------------
+	var lobbyId LobbyId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "lobbyId", r.PathValue("lobbyId"), &lobbyId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "lobbyId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params SetLobbyModeParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "X-Request-Id" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-Request-Id")]; found {
+		var XRequestId RequestIdHeader
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Request-Id", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-Request-Id", valueList[0], &XRequestId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Request-Id", Err: err})
+			return
+		}
+
+		params.XRequestId = &XRequestId
+
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SetLobbyMode(w, r, groupId, lobbyId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // LeaveLobby operation middleware
 func (siw *ServerInterfaceWrapper) LeaveLobby(w http.ResponseWriter, r *http.Request) {
 
@@ -2039,6 +2270,9 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/groups/{groupId}/lobbies", wrapper.CreateLobby)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/groups/{groupId}/lobbies/{lobbyId}", wrapper.DeleteLobby)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/groups/{groupId}/lobbies/{lobbyId}", wrapper.GetLobby)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/api/groups/{groupId}/lobbies/{lobbyId}/mode", wrapper.SetLobbyMode)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/groups/{groupId}/lobbies/{lobbyId}/activity", wrapper.ClearLobbyActivity)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/api/groups/{groupId}/lobbies/{lobbyId}/activity", wrapper.SetLobbyActivity)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/groups/{groupId}/lobbies/{lobbyId}/players/me", wrapper.LeaveLobby)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/api/groups/{groupId}/lobbies/{lobbyId}/players/me", wrapper.JoinLobby)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/groups/{groupId}/games", wrapper.ListGroupGames)
@@ -3461,6 +3695,360 @@ func (response GetLobby503JSONResponse) VisitGetLobbyResponse(w http.ResponseWri
 	return err
 }
 
+type ClearLobbyActivityRequestObject struct {
+	GroupId GroupId `json:"groupId"`
+	LobbyId LobbyId `json:"lobbyId"`
+	Params  ClearLobbyActivityParams
+}
+
+type ClearLobbyActivityResponseObject interface {
+	VisitClearLobbyActivityResponse(w http.ResponseWriter) error
+}
+
+type ClearLobbyActivity200JSONResponse Lobby
+
+func (response ClearLobbyActivity200JSONResponse) VisitClearLobbyActivityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ClearLobbyActivity401JSONResponse struct{ UnauthenticatedJSONResponse }
+
+func (response ClearLobbyActivity401JSONResponse) VisitClearLobbyActivityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ClearLobbyActivity403JSONResponse ErrorResponse
+
+func (response ClearLobbyActivity403JSONResponse) VisitClearLobbyActivityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ClearLobbyActivity404JSONResponse ErrorResponse
+
+func (response ClearLobbyActivity404JSONResponse) VisitClearLobbyActivityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ClearLobbyActivity409JSONResponse ErrorResponse
+
+func (response ClearLobbyActivity409JSONResponse) VisitClearLobbyActivityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ClearLobbyActivity500JSONResponse struct{ InternalErrorJSONResponse }
+
+func (response ClearLobbyActivity500JSONResponse) VisitClearLobbyActivityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ClearLobbyActivity503JSONResponse struct{ ServiceUnavailableJSONResponse }
+
+func (response ClearLobbyActivity503JSONResponse) VisitClearLobbyActivityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetLobbyActivityRequestObject struct {
+	GroupId GroupId `json:"groupId"`
+	LobbyId LobbyId `json:"lobbyId"`
+	Params  SetLobbyActivityParams
+	Body    *SetLobbyActivityJSONRequestBody
+}
+
+type SetLobbyActivityResponseObject interface {
+	VisitSetLobbyActivityResponse(w http.ResponseWriter) error
+}
+
+type SetLobbyActivity200JSONResponse Lobby
+
+func (response SetLobbyActivity200JSONResponse) VisitSetLobbyActivityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetLobbyActivity400JSONResponse ErrorResponse
+
+func (response SetLobbyActivity400JSONResponse) VisitSetLobbyActivityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetLobbyActivity401JSONResponse struct{ UnauthenticatedJSONResponse }
+
+func (response SetLobbyActivity401JSONResponse) VisitSetLobbyActivityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetLobbyActivity403JSONResponse ErrorResponse
+
+func (response SetLobbyActivity403JSONResponse) VisitSetLobbyActivityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetLobbyActivity404JSONResponse ErrorResponse
+
+func (response SetLobbyActivity404JSONResponse) VisitSetLobbyActivityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetLobbyActivity409JSONResponse ErrorResponse
+
+func (response SetLobbyActivity409JSONResponse) VisitSetLobbyActivityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetLobbyActivity500JSONResponse struct{ InternalErrorJSONResponse }
+
+func (response SetLobbyActivity500JSONResponse) VisitSetLobbyActivityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetLobbyActivity503JSONResponse struct{ ServiceUnavailableJSONResponse }
+
+func (response SetLobbyActivity503JSONResponse) VisitSetLobbyActivityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetLobbyModeRequestObject struct {
+	GroupId GroupId `json:"groupId"`
+	LobbyId LobbyId `json:"lobbyId"`
+	Params  SetLobbyModeParams
+	Body    *SetLobbyModeJSONRequestBody
+}
+
+type SetLobbyModeResponseObject interface {
+	VisitSetLobbyModeResponse(w http.ResponseWriter) error
+}
+
+type SetLobbyMode200JSONResponse Lobby
+
+func (response SetLobbyMode200JSONResponse) VisitSetLobbyModeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetLobbyMode400JSONResponse ErrorResponse
+
+func (response SetLobbyMode400JSONResponse) VisitSetLobbyModeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetLobbyMode401JSONResponse struct{ UnauthenticatedJSONResponse }
+
+func (response SetLobbyMode401JSONResponse) VisitSetLobbyModeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetLobbyMode403JSONResponse ErrorResponse
+
+func (response SetLobbyMode403JSONResponse) VisitSetLobbyModeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetLobbyMode404JSONResponse ErrorResponse
+
+func (response SetLobbyMode404JSONResponse) VisitSetLobbyModeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetLobbyMode409JSONResponse ErrorResponse
+
+func (response SetLobbyMode409JSONResponse) VisitSetLobbyModeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetLobbyMode500JSONResponse struct{ InternalErrorJSONResponse }
+
+func (response SetLobbyMode500JSONResponse) VisitSetLobbyModeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetLobbyMode503JSONResponse struct{ ServiceUnavailableJSONResponse }
+
+func (response SetLobbyMode503JSONResponse) VisitSetLobbyModeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type LeaveLobbyRequestObject struct {
 	GroupId GroupId `json:"groupId"`
 	LobbyId LobbyId `json:"lobbyId"`
@@ -3943,6 +4531,15 @@ type StrictServerInterface interface {
 	// GetLobby Get lobby with players
 	// (GET /api/groups/{groupId}/lobbies/{lobbyId})
 	GetLobby(ctx context.Context, request GetLobbyRequestObject) (GetLobbyResponseObject, error)
+	// ClearLobbyActivity Clear the named activity of a lobby
+	// (DELETE /api/groups/{groupId}/lobbies/{lobbyId}/activity)
+	ClearLobbyActivity(ctx context.Context, request ClearLobbyActivityRequestObject) (ClearLobbyActivityResponseObject, error)
+	// SetLobbyActivity Set the named activity of a lobby
+	// (PUT /api/groups/{groupId}/lobbies/{lobbyId}/activity)
+	SetLobbyActivity(ctx context.Context, request SetLobbyActivityRequestObject) (SetLobbyActivityResponseObject, error)
+	// SetLobbyMode Change the mode of a lobby
+	// (PUT /api/groups/{groupId}/lobbies/{lobbyId}/mode)
+	SetLobbyMode(ctx context.Context, request SetLobbyModeRequestObject) (SetLobbyModeResponseObject, error)
 	// LeaveLobby Leave lobby
 	// (DELETE /api/groups/{groupId}/lobbies/{lobbyId}/players/me)
 	LeaveLobby(ctx context.Context, request LeaveLobbyRequestObject) (LeaveLobbyResponseObject, error)
@@ -4462,6 +5059,104 @@ func (sh *strictHandler) GetLobby(w http.ResponseWriter, r *http.Request, groupI
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetLobbyResponseObject); ok {
 		if err := validResponse.VisitGetLobbyResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ClearLobbyActivity operation middleware
+func (sh *strictHandler) ClearLobbyActivity(w http.ResponseWriter, r *http.Request, groupId GroupId, lobbyId LobbyId, params ClearLobbyActivityParams) {
+	var request ClearLobbyActivityRequestObject
+
+	request.GroupId = groupId
+	request.LobbyId = lobbyId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ClearLobbyActivity(ctx, request.(ClearLobbyActivityRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ClearLobbyActivity")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ClearLobbyActivityResponseObject); ok {
+		if err := validResponse.VisitClearLobbyActivityResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SetLobbyActivity operation middleware
+func (sh *strictHandler) SetLobbyActivity(w http.ResponseWriter, r *http.Request, groupId GroupId, lobbyId LobbyId, params SetLobbyActivityParams) {
+	var request SetLobbyActivityRequestObject
+
+	request.GroupId = groupId
+	request.LobbyId = lobbyId
+	request.Params = params
+
+	var body SetLobbyActivityJSONRequestBody
+	if err := runtime.BindJSONBody(r, &body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SetLobbyActivity(ctx, request.(SetLobbyActivityRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SetLobbyActivity")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SetLobbyActivityResponseObject); ok {
+		if err := validResponse.VisitSetLobbyActivityResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SetLobbyMode operation middleware
+func (sh *strictHandler) SetLobbyMode(w http.ResponseWriter, r *http.Request, groupId GroupId, lobbyId LobbyId, params SetLobbyModeParams) {
+	var request SetLobbyModeRequestObject
+
+	request.GroupId = groupId
+	request.LobbyId = lobbyId
+	request.Params = params
+
+	var body SetLobbyModeJSONRequestBody
+	if err := runtime.BindJSONBody(r, &body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SetLobbyMode(ctx, request.(SetLobbyModeRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SetLobbyMode")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SetLobbyModeResponseObject); ok {
+		if err := validResponse.VisitSetLobbyModeResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

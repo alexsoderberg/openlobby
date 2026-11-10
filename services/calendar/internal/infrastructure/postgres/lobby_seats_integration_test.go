@@ -114,7 +114,7 @@ func TestReadersReturnRoleSlotsWithPlayerCountsAndFlex(t *testing.T) {
 	ctx := context.Background()
 
 	listed, err := store.Lobbies().Upcoming(ctx, fridayID, alexID, joinedAt)
-	single, singleErr := store.Lobbies().Lobby(ctx, fridayID, lobby.ID, alexID, joinedAt)
+	single, _, singleErr := store.Lobbies().Lobby(ctx, fridayID, lobby.ID, alexID, joinedAt)
 
 	if err != nil || singleErr != nil || len(listed) != 2 {
 		t.Fatalf("list %d lobbies, errors %v, %v; want 2", len(listed), err, singleErr)
@@ -138,7 +138,7 @@ func TestJoinWithARoleWithFlexAndChangeOfSeat(t *testing.T) {
 	game, lobby := raidLobby(t, store, 1, 2, healerSeat)
 	tank, healer := game.Modes[1].GameRoles[0].ID, game.Modes[1].GameRoles[1].ID
 	seatOf := func(user string) *string {
-		players, err := store.Lobbies().Players(context.Background(), lobby.ID)
+		_, players, err := store.Lobbies().Lobby(context.Background(), fridayID, lobby.ID, alexID, joinedAt)
 		if err != nil {
 			t.Fatal(err)
 		}

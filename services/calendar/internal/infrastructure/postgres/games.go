@@ -27,9 +27,12 @@ const listGroupGamesSQL = `SELECT g.id, g.name, g.default_max_players, g.genre, 
 // One query per table for the whole game list, not one per game (ADR 0017 Consequences). The owner of a role is its mode
 // or, for a role of the game itself, the game.
 const (
-	listGameRolesSQL  = `SELECT id, COALESCE(game_mode_id, game_id), name, slots FROM game_roles ORDER BY sort_order, id`
-	listGameModesSQL  = `SELECT id, game_id, name, max_players FROM game_modes ORDER BY sort_order, id`
-	listActivitiesSQL = `SELECT id, game_mode_id, name FROM activities ORDER BY sort_order, id`
+	selectGameRolesSQL = `SELECT id, COALESCE(game_mode_id, game_id), name, slots FROM game_roles`
+	gameRoleOrderSQL   = ` ORDER BY sort_order, id`
+	listGameRolesSQL   = selectGameRolesSQL + gameRoleOrderSQL
+	selectModeRolesSQL = selectGameRolesSQL + ` WHERE game_mode_id = $1` + gameRoleOrderSQL
+	listGameModesSQL   = `SELECT id, game_id, name, max_players FROM game_modes ORDER BY sort_order, id`
+	listActivitiesSQL  = `SELECT id, game_mode_id, name FROM activities ORDER BY sort_order, id`
 )
 
 const insertGameSQL = `INSERT INTO games (name, default_max_players, genre) VALUES ($1, $2, $3) RETURNING id`
@@ -217,7 +220,7 @@ func loadGame(ctx context.Context, q queryer, query, id string) (domain.Game, er
 // are never nil. It reads the three tables whole, because the game list is short. The reads are one snapshot only when q is
 // a snapshot transaction (Find); an entry whose game is gone is ignored.
 func attachTree(ctx context.Context, q queryer, games []*domain.Game) error {
-	rolesByOwner, err := rolesByOwner(ctx, q)
+	rolesByOwner, err := rolesByOwner(ctx, q, listGameRolesSQL)
 	if err != nil {
 		return err
 	}
@@ -236,8 +239,8 @@ func attachTree(ctx context.Context, q queryer, games []*domain.Game) error {
 	return nil
 }
 
-// rolesByOwner groups every game role by its owner: the mode, or the game for a role of the game itself.
-func rolesByOwner(ctx context.Context, q queryer) (map[string][]domain.GameRole, error) {
+// rolesByOwner groups the game roles of the query by their owner: the mode, or the game for a role of the game itself.
+func rolesByOwner(ctx context.Context, q queryer, query string, args ...any) (map[string][]domain.GameRole, error) {
 	roles := map[string][]domain.GameRole{}
 	err := eachRow(ctx, q, func(rows *sql.Rows) error {
 		var owner string
@@ -245,7 +248,7 @@ func rolesByOwner(ctx context.Context, q queryer) (map[string][]domain.GameRole,
 		err := rows.Scan(&role.ID, &owner, &role.Name, &role.Slots)
 		roles[owner] = append(roles[owner], role)
 		return err
-	}, listGameRolesSQL)
+	}, query, args...)
 	return roles, err
 }
 

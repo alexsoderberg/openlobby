@@ -87,6 +87,65 @@ func (t memoryLobbyTx) RemovePlayer(_ context.Context, lobbyID, userID string) e
 	return nil
 }
 
+func (t memoryLobbyTx) LobbyFacts(_ context.Context, groupID, lobbyID, userID string) (domain.LobbyFacts, bool, error) {
+	lobby, ok := t.store.lobbies[lobbyID]
+	if !ok || lobby.GroupID != groupID {
+		return domain.LobbyFacts{}, false, nil
+	}
+	return domain.LobbyFacts{EndsAt: lobby.EndsAt, GameID: lobby.GameID, ModeID: lobby.ModeID, PlayerCount: lobby.PlayerCount,
+		IsPlayer: t.store.joined[lobbyID+"/"+userID]}, true, nil
+}
+
+func (t memoryLobbyTx) ModeOfGame(_ context.Context, gameID, modeID string) (domain.GameMode, bool, error) {
+	for _, game := range t.store.games {
+		for _, mode := range game.Modes {
+			if game.ID == gameID && mode.ID == modeID {
+				return mode, true, nil
+			}
+		}
+	}
+	return domain.GameMode{}, false, nil
+}
+
+func (t memoryLobbyTx) ActivityOfMode(_ context.Context, modeID, activityID string) (domain.Activity, bool, error) {
+	for _, game := range t.store.games {
+		for _, mode := range game.Modes {
+			for _, activity := range mode.Activities {
+				if mode.ID == modeID && activity.ID == activityID {
+					return activity, true, nil
+				}
+			}
+		}
+	}
+	return domain.Activity{}, false, nil
+}
+
+func (t memoryLobbyTx) SetLobbyMode(_ context.Context, lobbyID string, change domain.ModeChange) error {
+	lobby := t.store.lobbies[lobbyID]
+	lobby.ModeID, lobby.ModeName, lobby.MaxPlayers = &change.Mode.ID, &change.Mode.Name, &change.MaxPlayers
+	lobby.ActivityID, lobby.ActivityName, lobby.RoleSlots = nil, nil, change.Slots
+	t.store.lobbies[lobbyID] = lobby
+	return nil
+}
+
+func (t memoryLobbyTx) SetLobbyActivity(_ context.Context, lobbyID string, activity *domain.Activity) error {
+	lobby := t.store.lobbies[lobbyID]
+	lobby.ActivityID, lobby.ActivityName = nil, nil
+	if activity != nil {
+		lobby.ActivityID, lobby.ActivityName = &activity.ID, &activity.Name
+	}
+	t.store.lobbies[lobbyID] = lobby
+	return nil
+}
+
+func (t memoryLobbyTx) ReadLobby(_ context.Context, groupID, lobbyID, _ string) (domain.Lobby, error) {
+	lobby, ok := t.store.lobbies[lobbyID]
+	if !ok || lobby.GroupID != groupID {
+		return domain.Lobby{}, domain.ErrLobbyNotFound
+	}
+	return lobby, nil
+}
+
 func (t memoryLobbyTx) DeleteLobby(_ context.Context, _, lobbyID string) error {
 	delete(t.store.lobbies, lobbyID)
 	return nil
@@ -107,17 +166,13 @@ func (m *memoryGroups) Upcoming(_ context.Context, groupID, callerID string, at 
 	return upcoming, m.err
 }
 
-func (m *memoryGroups) Lobby(_ context.Context, groupID, lobbyID, callerID string, at time.Time) (domain.Lobby, error) {
+// Lobby gives Other as flex and Alex in the Tank role as players.
+func (m *memoryGroups) Lobby(_ context.Context, groupID, lobbyID, callerID string, at time.Time) (domain.Lobby, []domain.Player, error) {
 	lobby, ok := m.lobbies[lobbyID]
 	if !ok || lobby.GroupID != groupID || !lobby.EndsAt.After(at) {
-		return domain.Lobby{}, domain.ErrLobbyNotFound
+		return domain.Lobby{}, nil, domain.ErrLobbyNotFound
 	}
-	return lobby, m.err
-}
-
-// Players gives Other as flex and Alex in the Tank role.
-func (m *memoryGroups) Players(_ context.Context, _ string) ([]domain.Player, error) {
-	return []domain.Player{{UserID: otherID}, {UserID: alexID, GameRoleID: intpStr(tankRoleID)}}, m.err
+	return lobby, []domain.Player{{UserID: otherID}, {UserID: alexID, GameRoleID: intpStr(tankRoleID)}}, m.err
 }
 
 func (m *memoryGroups) Find(_ context.Context, id string) (domain.Game, error) {

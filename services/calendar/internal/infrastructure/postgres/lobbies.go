@@ -23,9 +23,19 @@ const (
 		(SELECT p.game_role_id FROM lobby_players p WHERE p.lobby_id = l.id AND p.user_id = $3),
 		EXISTS (SELECT 1 FROM lobby_players p WHERE p.lobby_id = l.id AND p.user_id = $3)
 		FROM lobbies l WHERE l.id = $1 AND l.group_id = $2`
-	deleteLobbyPlayerSQL = `DELETE FROM lobby_players WHERE lobby_id = $1 AND user_id = $2`
-	selectCreatorSQL     = `SELECT created_by_user_id FROM lobbies WHERE id = $1 AND group_id = $2`
-	deleteLobbySQL       = `DELETE FROM lobbies WHERE id = $1 AND group_id = $2`
+	selectLobbyFactsSQL = `SELECT l.ends_at, l.game_id, l.game_mode_id,
+		(SELECT count(*) FROM lobby_players p WHERE p.lobby_id = l.id),
+		EXISTS (SELECT 1 FROM lobby_players p WHERE p.lobby_id = l.id AND p.user_id = $3)
+		FROM lobbies l WHERE l.id = $1 AND l.group_id = $2`
+	selectModeOfGameSQL     = `SELECT id, name, max_players FROM game_modes WHERE id = $1 AND game_id = $2`
+	selectActivityOfModeSQL = `SELECT id, name FROM activities WHERE id = $1 AND game_mode_id = $2`
+	// The activity belongs to the old mode, so a mode change clears it.
+	updateLobbyModeSQL      = `UPDATE lobbies SET game_mode_id = $2, mode_name = $3, max_players = $4, activity_id = NULL, activity_name = NULL WHERE id = $1`
+	deleteLobbyRoleSlotsSQL = `DELETE FROM lobby_role_slots WHERE lobby_id = $1`
+	updateLobbyActivitySQL  = `UPDATE lobbies SET activity_id = $2, activity_name = $3 WHERE id = $1`
+	deleteLobbyPlayerSQL    = `DELETE FROM lobby_players WHERE lobby_id = $1 AND user_id = $2`
+	selectCreatorSQL        = `SELECT created_by_user_id FROM lobbies WHERE id = $1 AND group_id = $2`
+	deleteLobbySQL          = `DELETE FROM lobbies WHERE id = $1 AND group_id = $2`
 
 	// The genre is joined from games by id; a removed game or a custom name has no row, so it is NULL (ADR 0016). The player count and the caller check are subqueries on the primary key (lobby_id, user_id); lobbies_group_id_game_id_idx serves group_id.
 	selectLobbiesSQL = `SELECT l.id, l.created_by_user_id, l.game_id, l.game_name, g.genre, l.max_players, l.starts_at, l.ends_at, l.created_at,
@@ -115,20 +125,33 @@ func (r lobbyRepo) Membership(ctx context.Context, groupID, userID string) (doma
 	return member, found, translate(err)
 }
 
-// Upcoming returns the lobbies of the group that end after now: one query for the lobbies and one for all their role slots.
+// Upcoming returns the lobbies of the group that end after now: one query for the lobbies and one for all their role
+// slots. Both are read in one snapshot, so a mode change never shows a new limit with the old slots.
 func (r lobbyRepo) Upcoming(ctx context.Context, groupID, callerID string, now time.Time) ([]domain.Lobby, error) {
 	var lobbies []domain.Lobby
-	err := eachRow(ctx, r.s.db, func(rows *sql.Rows) error {
+	err := r.s.inSnapshot(ctx, func(tx *sql.Tx) (err error) {
+		lobbies, err = loadUpcoming(ctx, tx, groupID, callerID, now)
+		return err
+	})
+	if err != nil {
+		return nil, translate(err)
+	}
+	return lobbies, nil
+}
+
+func loadUpcoming(ctx context.Context, q queryer, groupID, callerID string, now time.Time) ([]domain.Lobby, error) {
+	var lobbies []domain.Lobby
+	err := eachRow(ctx, q, func(rows *sql.Rows) error {
 		lobby, err := scanLobby(rows, groupID)
 		lobbies = append(lobbies, lobby)
 		return err
 	}, listUpcomingSQL, groupID, now, callerID)
 	if err != nil {
-		return nil, translate(err)
+		return nil, err
 	}
-	slots, err := roleSlotsByLobby(ctx, r.s.db, upcomingRoleSlotsSQL, groupID, now)
+	slots, err := roleSlotsByLobby(ctx, q, upcomingRoleSlotsSQL, groupID, now)
 	if err != nil {
-		return nil, translate(err)
+		return nil, err
 	}
 	for i := range lobbies {
 		lobbies[i] = lobbies[i].WithRoleSlots(slots[lobbies[i].ID])
@@ -136,32 +159,42 @@ func (r lobbyRepo) Upcoming(ctx context.Context, groupID, callerID string, now t
 	return lobbies, nil
 }
 
-// Lobby returns the upcoming lobby of this group, or domain.ErrLobbyNotFound.
-func (r lobbyRepo) Lobby(ctx context.Context, groupID, lobbyID, callerID string, now time.Time) (domain.Lobby, error) {
-	lobby, err := scanLobby(r.s.db.QueryRowContext(ctx, selectLobbySQL, groupID, now, callerID, lobbyID), groupID)
-	switch {
-	case errors.Is(err, sql.ErrNoRows):
-		return domain.Lobby{}, domain.ErrLobbyNotFound
-	case err != nil:
-		return domain.Lobby{}, translate(err)
-	}
-	slots, err := roleSlotsByLobby(ctx, r.s.db, lobbyRoleSlotsSQL, lobby.ID)
+// Lobby returns the upcoming lobby of this group with its players, or domain.ErrLobbyNotFound. The lobby, its role
+// slots and its players are one snapshot, so the players' game roles always match the slots.
+func (r lobbyRepo) Lobby(ctx context.Context, groupID, lobbyID, callerID string, now time.Time) (domain.Lobby, []domain.Player, error) {
+	var lobby domain.Lobby
+	var players []domain.Player
+	err := r.s.inSnapshot(ctx, func(tx *sql.Tx) (err error) {
+		if lobby, err = loadLobby(ctx, tx, groupID, lobbyID, callerID, now); err != nil {
+			return err
+		}
+		return eachRow(ctx, tx, func(rows *sql.Rows) error {
+			var player domain.Player
+			err := rows.Scan(&player.UserID, &player.GameRoleID)
+			players = append(players, player)
+			return err
+		}, selectPlayersSQL, lobby.ID)
+	})
 	if err != nil {
-		return domain.Lobby{}, translate(err)
+		return domain.Lobby{}, nil, translate(err)
 	}
-	return lobby.WithRoleSlots(slots[lobby.ID]), nil
+	return lobby, players, nil
 }
 
-// Players returns the lobby's players with their game roles, in join order.
-func (r lobbyRepo) Players(ctx context.Context, lobbyID string) ([]domain.Player, error) {
-	var players []domain.Player
-	err := eachRow(ctx, r.s.db, func(rows *sql.Rows) error {
-		var player domain.Player
-		err := rows.Scan(&player.UserID, &player.GameRoleID)
-		players = append(players, player)
-		return err
-	}, selectPlayersSQL, lobbyID)
-	return players, translate(err)
+// loadLobby reads the lobby that ends after now with its role slots, or returns domain.ErrLobbyNotFound.
+func loadLobby(ctx context.Context, q queryer, groupID, lobbyID, callerID string, now time.Time) (domain.Lobby, error) {
+	lobby, err := scanLobby(q.QueryRowContext(ctx, selectLobbySQL, groupID, now, callerID, lobbyID), groupID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return domain.Lobby{}, domain.ErrLobbyNotFound
+	}
+	if err != nil {
+		return domain.Lobby{}, err
+	}
+	slots, err := roleSlotsByLobby(ctx, q, lobbyRoleSlotsSQL, lobby.ID)
+	if err != nil {
+		return domain.Lobby{}, err
+	}
+	return lobby.WithRoleSlots(slots[lobby.ID]), nil
 }
 
 // roleSlotsByLobby reads role slots in the order of the query and groups them by lobby.
@@ -213,4 +246,82 @@ func (t lobbyTx) SavePlayer(ctx context.Context, lobbyID, userID string, gameRol
 func (t lobbyTx) RemovePlayer(ctx context.Context, lobbyID, userID string) error {
 	_, err := t.tx.ExecContext(ctx, deleteLobbyPlayerSQL, lobbyID, userID)
 	return err
+}
+
+// LobbyFacts reads the lobby, the player count and the caller's player row under the group lock.
+func (t lobbyTx) LobbyFacts(ctx context.Context, groupID, lobbyID, userID string) (domain.LobbyFacts, bool, error) {
+	var facts domain.LobbyFacts
+	err := t.tx.QueryRowContext(ctx, selectLobbyFactsSQL, lobbyID, groupID, userID).
+		Scan(&facts.EndsAt, &facts.GameID, &facts.ModeID, &facts.PlayerCount, &facts.IsPlayer)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return domain.LobbyFacts{}, false, nil
+	case err != nil:
+		return domain.LobbyFacts{}, false, err
+	}
+	return facts, true, nil
+}
+
+// ModeOfGame reads the mode of the game with its game roles in the caller's transaction.
+func (t lobbyTx) ModeOfGame(ctx context.Context, gameID, modeID string) (domain.GameMode, bool, error) {
+	var mode domain.GameMode
+	err := t.tx.QueryRowContext(ctx, selectModeOfGameSQL, modeID, gameID).Scan(&mode.ID, &mode.Name, &mode.MaxPlayers)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return domain.GameMode{}, false, nil
+	case err != nil:
+		return domain.GameMode{}, false, err
+	}
+	roles, err := rolesByOwner(ctx, t.tx, selectModeRolesSQL, modeID)
+	if err != nil {
+		return domain.GameMode{}, false, err
+	}
+	mode.GameRoles = roles[modeID]
+	return mode, true, nil
+}
+
+// ActivityOfMode reads the activity of the mode in the caller's transaction.
+func (t lobbyTx) ActivityOfMode(ctx context.Context, modeID, activityID string) (domain.Activity, bool, error) {
+	var activity domain.Activity
+	err := t.tx.QueryRowContext(ctx, selectActivityOfModeSQL, activityID, modeID).Scan(&activity.ID, &activity.Name)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return domain.Activity{}, false, nil
+	case err != nil:
+		return domain.Activity{}, false, err
+	}
+	return activity, true, nil
+}
+
+// SetLobbyMode writes the mode change. Removing the old role slots sets the players' game roles to NULL by the foreign key
+// (ADR 0017 section 1), so every player is flex; the new slots start empty.
+func (t lobbyTx) SetLobbyMode(ctx context.Context, lobbyID string, change domain.ModeChange) error {
+	if _, err := t.tx.ExecContext(ctx, updateLobbyModeSQL, lobbyID, change.Mode.ID, change.Mode.Name, change.MaxPlayers); err != nil {
+		return err
+	}
+	if _, err := t.tx.ExecContext(ctx, deleteLobbyRoleSlotsSQL, lobbyID); err != nil {
+		return err
+	}
+	for order, slot := range change.Slots {
+		if _, err := t.tx.ExecContext(ctx, insertRoleSlotSQL, lobbyID, slot.GameRoleID, slot.Name, slot.Slots, order); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// SetLobbyActivity sets the activity, or clears both columns when it is nil.
+func (t lobbyTx) SetLobbyActivity(ctx context.Context, lobbyID string, activity *domain.Activity) error {
+	var id, name *string
+	if activity != nil {
+		id, name = &activity.ID, &activity.Name
+	}
+	_, err := t.tx.ExecContext(ctx, updateLobbyActivitySQL, lobbyID, id, name)
+	return err
+}
+
+// ReadLobby reads the lobby with its role slots in the caller transaction, after a write. The zero time as "now" lets a
+// lobby that has just ended be read: the answer to a saved change must not depend on the clock.
+func (t lobbyTx) ReadLobby(ctx context.Context, groupID, lobbyID, callerID string) (domain.Lobby, error) {
+	return loadLobby(ctx, t.tx, groupID, lobbyID, callerID, time.Time{})
 }

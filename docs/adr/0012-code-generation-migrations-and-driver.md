@@ -350,3 +350,8 @@ Follow-up:
 - DevOps: replace the content of `.golangci.yml` with the block above. Verify once on Linux with a throwaway file outside the repository: an import of a `gen` package from `domain` is reported, and the same import from `transport` is not. Check that no other `revive` finding appears.
 - Backend: no code change is needed for this rule. Existing imports already follow it (`auth`'s `transport_test.go` and `application/auth_test.go` import `applicationtest` from tests only; the generated packages are imported from `transport` and `infrastructure`).
 - Reviewer: applies the rule as written above.
+
+Amendment 2026-11-10 (contract test dependency). Extends "New dependencies" in Consequences.
+- **`github.com/getkin/kin-openapi` v0.142.0 may be imported by `_test.go` files of `services/calendar`**, to load `api/calendar/openapi.yaml` in contract tests. Today it is used by `internal/transport/lobby_settings_keys_test.go`, which checks the transport's `requiredBodyKeys` against the contract's `required` and `nullable` fields.
+- It is a test-only dependency, the same kind as Redocly: no non-test file may import it, so it is not in the service binary and needs no port or adapter. Reviewer check: `go list -deps ./cmd/calendar` must not list it. Until a depguard rule exists, the reviewer checks this by hand.
+- Reason: the module is already in the graph through `oapi-codegen`, the test needs no new code to parse YAML, and an OpenAPI parser follows the standard. Any other use (production code, another service, or a test of a different kind) needs a new amendment.

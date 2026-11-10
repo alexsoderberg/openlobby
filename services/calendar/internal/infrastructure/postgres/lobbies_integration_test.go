@@ -348,7 +348,7 @@ func TestLobbyIsScopedToTheGroupAndNotEnded(t *testing.T) {
 	lobby := insertLobby(t, store, newLobby(fridayID, alexID, nil, "Go"))
 	ctx := context.Background()
 
-	got, err := store.Lobbies().Lobby(ctx, fridayID, lobby.ID, alexID, lobby.StartsAt)
+	got, _, err := store.Lobbies().Lobby(ctx, fridayID, lobby.ID, alexID, lobby.StartsAt)
 	if err != nil || got.ID != lobby.ID || got.PlayerCount != 1 || got.GroupID != fridayID {
 		t.Fatalf("lobby %+v, error %v; want the lobby with one player", got, err)
 	}
@@ -361,7 +361,7 @@ func TestLobbyIsScopedToTheGroupAndNotEnded(t *testing.T) {
 		"unknown":     {fridayID, nobodyID, lobby.StartsAt},
 		"not a uuid":  {fridayID, "not-a-uuid", lobby.StartsAt},
 	} {
-		_, err := store.Lobbies().Lobby(ctx, tc.groupID, tc.lobbyID, alexID, tc.at)
+		_, _, err := store.Lobbies().Lobby(ctx, tc.groupID, tc.lobbyID, alexID, tc.at)
 		if name == "not a uuid" {
 			// The router answers a malformed ID before the use case runs; the adapter must not report it as found.
 			if err == nil {
@@ -382,7 +382,7 @@ func TestPlayersAreSortedByJoinTimeThenUserID(t *testing.T) {
 	addPlayer(t, store, lobby.ID, otherID, joinedAt)
 	addPlayer(t, store, lobby.ID, nobodyID, joinedAt.Add(-time.Minute))
 
-	players, err := store.Lobbies().Players(context.Background(), lobby.ID)
+	_, players, err := store.Lobbies().Lobby(context.Background(), fridayID, lobby.ID, alexID, joinedAt)
 
 	if err != nil {
 		t.Fatal(err)
@@ -430,7 +430,7 @@ func TestLobbiesTellWhetherTheCallerIsAPlayer(t *testing.T) {
 	if want := map[string]bool{mine.ID: true, joined.ID: true, notMine.ID: false}; !maps.Equal(got, want) {
 		t.Fatalf("list joinedByMe %v, want %v", got, want)
 	}
-	one, err := store.Lobbies().Lobby(ctx, fridayID, notMine.ID, alexID, joinedAt)
+	one, _, err := store.Lobbies().Lobby(ctx, fridayID, notMine.ID, alexID, joinedAt)
 	if err != nil || one.JoinedByMe {
 		t.Fatalf("lobby %+v, error %v; want joinedByMe false", one, err)
 	}

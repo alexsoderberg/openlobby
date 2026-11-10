@@ -133,10 +133,9 @@ type LobbyReader interface {
 	// Upcoming returns the group's upcoming lobbies with their player counts, role slots and whether the caller is a
 	// player, sorted by start time, then ID. The role slots of all lobbies are read in one query.
 	Upcoming(ctx context.Context, groupID, callerID string, now time.Time) ([]domain.Lobby, error)
-	// Lobby returns the upcoming lobby of this group, or domain.ErrLobbyNotFound.
-	Lobby(ctx context.Context, groupID, lobbyID, callerID string, now time.Time) (domain.Lobby, error)
-	// Players returns the lobby's players with their game roles, without display names, sorted by join time, then user ID.
-	Players(ctx context.Context, lobbyID string) ([]domain.Player, error)
+	// Lobby returns the upcoming lobby of this group with its players, or domain.ErrLobbyNotFound. The players have their
+	// game roles, no display names, and are sorted by join time, then user ID. Both are read in one snapshot.
+	Lobby(ctx context.Context, groupID, lobbyID, callerID string, now time.Time) (domain.Lobby, []domain.Player, error)
 }
 
 // LobbyTx holds the operations that run under the group lock. Each one is scoped to the group (ADR 0006 rule 12).
@@ -157,6 +156,21 @@ type LobbyTx interface {
 	RemovePlayer(ctx context.Context, lobbyID, userID string) error
 	// DeleteLobby removes the lobby of this group with its players.
 	DeleteLobby(ctx context.Context, groupID, lobbyID string) error
+	// LobbyFacts returns the lobby's end, game, mode, player count and whether the user is a player, and false when the
+	// lobby is not in this group.
+	LobbyFacts(ctx context.Context, groupID, lobbyID, userID string) (domain.LobbyFacts, bool, error)
+	// ModeOfGame returns the mode with its game roles, and false when the game has no mode with the ID.
+	ModeOfGame(ctx context.Context, gameID, modeID string) (domain.GameMode, bool, error)
+	// ActivityOfMode returns the activity, and false when the mode has no activity with the ID.
+	ActivityOfMode(ctx context.Context, modeID, activityID string) (domain.Activity, bool, error)
+	// SetLobbyMode writes the mode change: the mode, its name and limit, no activity, and the mode's roles as the lobby's
+	// role slots. The players' game roles are cleared by the database when the old slots are removed.
+	SetLobbyMode(ctx context.Context, lobbyID string, change domain.ModeChange) error
+	// ReadLobby returns the lobby of this group with its role slots and whether the user is a player, also when it has
+	// ended. It is read after a write, in the same transaction.
+	ReadLobby(ctx context.Context, groupID, lobbyID, userID string) (domain.Lobby, error)
+	// SetLobbyActivity sets the lobby's activity, or clears it when activity is nil.
+	SetLobbyActivity(ctx context.Context, lobbyID string, activity *domain.Activity) error
 }
 
 // MembershipLocker runs a membership change under the group's row lock (ADR 0006). It returns domain.ErrGroupNotFound
