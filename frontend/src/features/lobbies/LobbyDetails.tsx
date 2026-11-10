@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useApi, type LobbyDetail } from "../../api";
 import { GenreFrame, GenreName } from "../../genres";
 import { formatDateTimeRange, useMessages } from "../../i18n";
+import { lobbyLabel, RoleSlots } from "../../lobby";
 import { Panel } from "../../ui";
 import { DeleteLobbyDialog } from "./DeleteLobbyDialog";
 import { LobbyMembership } from "./LobbyMembership";
@@ -32,15 +33,16 @@ export function LobbyDetails({
         className="lobby-head"
         motif
       >
-        <h1>{lobby.gameName}</h1>
+        <h1>{lobbyLabel(lobby, m)}</h1>
         <GenreName genre={lobby.gameGenre} />
       </GenreFrame>
       <div className="panel-group">
         <Panel>
           <p>{formatDateTimeRange(lobby.startsAt, lobby.endsAt)}</p>
           <p>{m.lobbyPlayers(lobby.playerCount, lobby.maxPlayers)}</p>
+          <RoleSlots lobby={lobby} />
           <h2>{m.lobbyPlayersHeading}</h2>
-          <PlayerList players={lobby.players} />
+          <PlayerList lobby={lobby} />
           <div className="form-actions">
             <LobbyMembership
               groupId={groupId}
@@ -59,9 +61,42 @@ export function LobbyDetails({
   );
 }
 
-function PlayerList({ players }: { players: LobbyDetail["players"] }) {
+function PlayerList({ lobby }: { lobby: LobbyDetail }) {
   const m = useMessages();
+  const { players, roleSlots = [] } = lobby;
   if (players.length === 0) return <p>{m.lobbyNoPlayers}</p>;
+  if (roleSlots.length === 0) return <PlayerRows players={players} />;
+  const known = new Set(roleSlots.map((slot) => slot.gameRoleId));
+  // A player whose game role the lobby no longer lists still counts in playerCount, so keep them visible.
+  const unknown = players.filter(
+    (p) => p.gameRoleId != null && !known.has(p.gameRoleId),
+  );
+  const groups = [
+    ...roleSlots.map((slot) => ({
+      key: slot.gameRoleId,
+      name: slot.name,
+      players: players.filter((p) => p.gameRoleId === slot.gameRoleId),
+    })),
+    {
+      key: "flex",
+      name: m.lobbyFlex(),
+      players: players.filter((p) => p.gameRoleId == null),
+    },
+  ].filter((group) => group.players.length > 0);
+  return (
+    <>
+      {groups.map((group) => (
+        <section key={group.key} aria-label={group.name}>
+          <h3>{group.name}</h3>
+          <PlayerRows players={group.players} />
+        </section>
+      ))}
+      {unknown.length > 0 && <PlayerRows players={unknown} />}
+    </>
+  );
+}
+
+function PlayerRows({ players }: { players: LobbyDetail["players"] }) {
   return (
     <ul className="row-list" role="list">
       {players.map((player) => (
@@ -103,7 +138,7 @@ function DeleteLobby({
       </button>
       {confirming && (
         <DeleteLobbyDialog
-          gameName={lobby.gameName}
+          label={lobbyLabel(lobby, m)}
           busy={busy}
           onConfirm={remove}
           onClose={() => setConfirming(false)}

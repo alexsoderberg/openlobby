@@ -1,5 +1,6 @@
 import { GenreFrame, GenreName } from "../../genres";
 import { formatDateTime, useMessages } from "../../i18n";
+import { lobbyLabel, RoleSlots } from "../../lobby";
 import { Meter } from "../../ui";
 import { LobbyMembership, lobbyPath } from "../lobbies";
 import { timingText } from "./countdown";
@@ -23,7 +24,9 @@ export function NextUpCard({
       <div>
         <p className="next-up__timing">{timingText(m.dashboard, lobby, now)}</p>
         <h3 className="next-up__game">
-          <a href={lobbyPath(lobby.groupId, lobby.id)}>{lobby.gameName}</a>
+          <a href={lobbyPath(lobby.groupId, lobby.id)}>
+            {lobbyLabel(lobby, m)}
+          </a>
         </h3>
         <GenreName genre={lobby.gameGenre} />
         <p className="next-up__meta">
@@ -34,6 +37,7 @@ export function NextUpCard({
         <p className="next-up__figure">
           {m.lobbyPlayers(lobby.playerCount, lobby.maxPlayers)}
         </p>
+        <RoleSlots lobby={lobby} />
         {lobby.maxPlayers !== null && (
           <Meter
             value={Math.min(lobby.playerCount, lobby.maxPlayers)}
