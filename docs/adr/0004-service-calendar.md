@@ -212,3 +212,5 @@ Amendment 2026-11-03 (S2d: revoke). Names the `GroupTx` methods as built. Where 
 Amendment 2026-11-04 (REQ-0003 review: capacity bound). Overrides the `maxPlayers` bullet of rule 6 where they differ. The other text of rule 6 stands.
 - **`maxPlayers` (rule 6):** `null` (unlimited) or an integer from 1 to 2147483647 → otherwise `invalid_capacity`. The upper bound is the technical limit of the PostgreSQL `integer` column `lobbies.max_players` (ADR 0010 amendment 2026-11-04). The check uses the same helper `validCapacity` as `NewGame`, so the rule is in one place.
 - **Integers beyond int64:** the body decoder rejects them as `invalid_request`, not `invalid_capacity` (ADR 0010 amendment 2026-11-04, follow-up).
+
+Amendment 2026-11-10 (proposed, ADR 0019, 0020; applies when accepted): every successful lobby write (create, delete, join, leave, mode, named activity, game) does two things after its transaction commits: it sends a group change signal to the live updates (ADR 0019). Inside the same transaction, the write records its feed events (ADR 0020, point 2); deleting a lobby records no event. A denied or failed write records nothing and sends no signal.

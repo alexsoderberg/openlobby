@@ -68,7 +68,7 @@ Order decided by the user on 2026-11-08 (question 12): A2 (REQ-0011, game roles)
 
 Order decided by the user on 2026-11-10 ("the app feels too simple"): A4 to A7 follow A3.
 
-OPEN QUESTION (user): may A4 to A6 be moved ahead of A2 and A3, which are in progress?
+DECISION (user, 2026-11-10): no, A4 to A6 are not moved ahead of A2 and A3, which are in progress. ADR 0017 is finished first (PR5b, PR5c, PR6), then A4 to A6. The architect designs them in parallel: ADR 0018 (A4, F-029), ADR 0019 (A5, F-035) and ADR 0020 (A6, F-036, with ADR 0019), all Proposed.
 
 | Order | Requirement | Title | Priority | Depends on |
 |---|---|---|---|---|
