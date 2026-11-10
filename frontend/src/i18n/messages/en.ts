@@ -290,6 +290,10 @@ export const en = {
     invalid_game_role: "A game role name must be 1 to 30 characters.",
     game_role_full:
       "This game role has no free slot. Choose another game role or flex.",
+    lobby_changed:
+      "The lobby was changed by someone else. Reload it and try again.",
+    lobby_has_more_players:
+      "This mode allows fewer players than are in the lobby.",
     game_taken: "A game with this name already exists.",
     mode_taken: "This game already has a mode with this name.",
     activity_taken: "This mode already has an activity with this name.",

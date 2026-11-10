@@ -378,7 +378,7 @@ func (s JoinState) CheckJoin(now time.Time, seat Seat) (save bool, role *string,
 	switch {
 	case err != nil:
 		return false, nil, err
-	case s.IsPlayer && sameRole(role, s.CurrentRole):
+	case s.IsPlayer && sameID(role, s.CurrentRole):
 		return false, nil, nil
 	case !s.IsPlayer && s.MaxPlayers != nil && s.PlayerCount >= *s.MaxPlayers:
 		return false, nil, ErrLobbyFull
@@ -399,6 +399,6 @@ func (s JoinState) roleIsFull(roleID string) bool {
 	return false
 }
 
-func sameRole(a, b *string) bool {
+func sameID(a, b *string) bool {
 	return (a == nil && b == nil) || (a != nil && b != nil && *a == *b)
 }

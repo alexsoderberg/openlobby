@@ -540,6 +540,170 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
+  /api/groups/{groupId}/lobbies/{lobbyId}/mode:
+    put:
+      operationId: setLobbyMode
+      tags: [Lobbies]
+      summary: Change the mode of a lobby
+      description: |
+        Only a player of the lobby may change it. Runs in one transaction under the group's lock, and every value and state below is read after the lock.
+        Order: the form of the path and the body (`invalid_request`; an invalid uuid in the path gives its not-found code, from left to right), membership (`group_not_found`),
+        the lobby exists in this group (`lobby_not_found`), its end time has not passed (`lobby_has_ended`), the caller is a player (`not_allowed`),
+        the mode (`invalid_mode`: unknown, a mode of another game, or a lobby with no game), then the state: `currentModeId` is the lobby's current mode (`lobby_changed`),
+        and the new limit (the sum of the mode's role slots, or its max players) is not below the number of players (`lobby_has_more_players`).
+        If `modeId` is the lobby's current mode nothing changes and the answer is 200.
+        Otherwise the mode, its name and the max players are set from the mode, the activity is cleared, and the lobby's role slots are replaced by the mode's game roles.
+        Every player becomes flex. The number of players does not change.
+      parameters:
+        - $ref: '#/components/parameters/RequestIdHeader'
+        - $ref: '#/components/parameters/GroupId'
+        - $ref: '#/components/parameters/LobbyId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetLobbyModeRequest'
+      responses:
+        '200':
+          description: The lobby as saved, without player names. The players are loaded with `GET /api/groups/{groupId}/lobbies/{lobbyId}`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Lobby'
+        '400':
+          description: "`invalid_request` (invalid JSON, a wrong JSON type or a missing `modeId` or `currentModeId`; checked before membership) or, after the lobby checks, `invalid_mode`."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: "`not_allowed`: the caller is not a player of the lobby."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: "`group_not_found` if the caller is not a member. `lobby_not_found` if the lobby is missing."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: "`lobby_has_ended`, `lobby_changed` (`currentModeId` is not the lobby's current mode) or `lobby_has_more_players` (the new limit is below the number of players)."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/groups/{groupId}/lobbies/{lobbyId}/activity:
+    put:
+      operationId: setLobbyActivity
+      tags: [Lobbies]
+      summary: Set the named activity of a lobby
+      description: |
+        Only a player of the lobby may change it. Runs in one transaction under the group's lock, and every value is read after the lock.
+        Order: the form of the path and the body (`invalid_request`; an invalid uuid in the path gives its not-found code, from left to right), membership (`group_not_found`),
+        the lobby exists in this group (`lobby_not_found`), its end time has not passed (`lobby_has_ended`), the caller is a player (`not_allowed`),
+        the activity (`invalid_activity`: unknown, not an activity of the lobby's mode, or a lobby with no mode).
+        The players and the limit do not change.
+      parameters:
+        - $ref: '#/components/parameters/RequestIdHeader'
+        - $ref: '#/components/parameters/GroupId'
+        - $ref: '#/components/parameters/LobbyId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetLobbyActivityRequest'
+      responses:
+        '200':
+          description: The lobby as saved, without player names. The players are loaded with `GET /api/groups/{groupId}/lobbies/{lobbyId}`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Lobby'
+        '400':
+          description: "`invalid_request` (invalid JSON, a wrong JSON type or a missing `activityId`; checked before membership) or, after the lobby checks, `invalid_activity`."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: "`not_allowed`: the caller is not a player of the lobby."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: "`group_not_found` if the caller is not a member. `lobby_not_found` if the lobby is missing."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: "`lobby_has_ended`."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    delete:
+      operationId: clearLobbyActivity
+      tags: [Lobbies]
+      summary: Clear the named activity of a lobby
+      description: |
+        Only a player of the lobby may change it. Keeps the mode. Idempotent: a lobby without an activity answers 200 as well.
+        Order: an invalid uuid in the path, from left to right (`groupId` gives `group_not_found`, `lobbyId` gives `lobby_not_found`), membership (`group_not_found`),
+        the lobby exists in this group (`lobby_not_found`), its end time has not passed (`lobby_has_ended`), the caller is a player (`not_allowed`).
+      parameters:
+        - $ref: '#/components/parameters/RequestIdHeader'
+        - $ref: '#/components/parameters/GroupId'
+        - $ref: '#/components/parameters/LobbyId'
+      responses:
+        '200':
+          description: The lobby as saved, without player names. The players are loaded with `GET /api/groups/{groupId}/lobbies/{lobbyId}`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Lobby'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: "`not_allowed`: the caller is not a player of the lobby."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: "`group_not_found` if the caller is not a member. `lobby_not_found` if the lobby is missing."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: "`lobby_has_ended`."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
   /api/groups/{groupId}/lobbies/{lobbyId}/players/me:
     put:
       operationId: joinLobby
@@ -949,6 +1113,8 @@ components:
             - invalid_activity
             - invalid_game_role
             - game_role_full
+            - lobby_changed
+            - lobby_has_more_players
             - game_taken
             - mode_taken
             - activity_taken
@@ -1225,6 +1391,29 @@ components:
               nullable: true
               x-omitempty: false
               description: The player's game role. `null` means flex. Not in `required` so that existing fixtures stay valid, but the server always sends it (ADR 0017).
+
+    SetLobbyModeRequest:
+      type: object
+      required: [modeId, currentModeId]
+      properties:
+        modeId:
+          type: string
+          format: uuid
+          description: The mode to set. It must be a mode of the lobby's game, otherwise `invalid_mode`.
+        currentModeId:
+          type: string
+          format: uuid
+          nullable: true
+          description: The mode the caller saw, `null` for none. If the lobby's mode is another one, because another change was saved first, the answer is `lobby_changed`.
+
+    SetLobbyActivityRequest:
+      type: object
+      required: [activityId]
+      properties:
+        activityId:
+          type: string
+          format: uuid
+          description: The activity to set. It must be an activity of the lobby's mode, otherwise `invalid_activity`.
 
     LobbyDetail:
       allOf:

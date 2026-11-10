@@ -81,7 +81,7 @@ func TestLobbyGameGenreFollowsTheGame(t *testing.T) {
 	custom := insertLobby(t, store, newLobby(fridayID, alexID, nil, "Go"))
 	genreOf := func(lobbyID string) *domain.Genre {
 		t.Helper()
-		lobby, err := store.Lobbies().Lobby(ctx, fridayID, lobbyID, alexID, joinedAt)
+		lobby, _, err := store.Lobbies().Lobby(ctx, fridayID, lobbyID, alexID, joinedAt)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -116,7 +116,7 @@ func TestLobbyGameGenreFollowsTheGame(t *testing.T) {
 	if genreOf(byGame.ID) != nil {
 		t.Fatal("lobby of a removed game has a genre")
 	}
-	if _, err := store.Lobbies().Lobby(ctx, fridayID, byGame.ID, alexID, joinedAt); errors.Is(err, domain.ErrLobbyNotFound) {
+	if _, _, err := store.Lobbies().Lobby(ctx, fridayID, byGame.ID, alexID, joinedAt); errors.Is(err, domain.ErrLobbyNotFound) {
 		t.Fatal("lobby of a removed game disappeared")
 	}
 }

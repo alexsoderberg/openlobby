@@ -138,7 +138,7 @@ Leaving (`DELETE .../players/me`) is unchanged.
 ASSUMPTION (REQ-0011, stands unless overruled): a player may change the seat while the lobby can still be joined (until its end time). Leaving always works.
 
 ### 10. Changing game, mode and activity after creation
-Four endpoints: `PUT .../lobbies/{lobbyId}/game`, `PUT .../lobbies/{lobbyId}/mode`, `PUT .../lobbies/{lobbyId}/activity`, `DELETE .../lobbies/{lobbyId}/activity`. All return `200 LobbyDetail`.
+Four endpoints: `PUT .../lobbies/{lobbyId}/game`, `PUT .../lobbies/{lobbyId}/mode`, `PUT .../lobbies/{lobbyId}/activity`, `DELETE .../lobbies/{lobbyId}/activity`. All return `200 Lobby` (Amendment 2026-11-09).
 
 Each endpoint runs in one transaction under the group lock (ADR 0006). Every value and every state that it checks is read inside that transaction, after the lock is taken, on the same connection. No mode, activity or limit is taken from a read made before the lock.
 
@@ -152,6 +152,8 @@ Inside the transaction the code reads: the lobby row (`game_id`, `game_name`, `g
 - `DELETE .../activity`. Clears `activity_id` and `activity_name` and keeps the mode. Idempotent (DECISION, user, 2026-11-08, question 5).
 
 Because each change reads the lobby's current mode under the lock, a concurrent mode change and activity change are always in one order: an activity set after a mode change is refused (`invalid_activity`), and an activity set before a mode change is cleared by it. The result never holds an activity of another mode.
+
+Amendment 2026-11-09 (answer without player names). The answer is `Lobby`, not `LobbyDetail`: it is the lobby row as saved, read under the lock, with its counts, role slots and `joinedByMe`, the same shape as the answer of create. No player names are looked up, neither under the lock nor after the commit. Reason: a name lookup in auth after the commit would answer 503 to a saved change, which the contract forbids (`ServiceUnavailable`, ADR 0001). A lookup before the lock would miss players who join between the lookup and the lock. The client loads the player list with `GET .../lobbies/{lobbyId}`, as it does after a join (204). A 204 answer was rejected: it would force a second call for every change, where the new values are needed. These endpoints are new in PR3b, so no client depends on `players` in their answer.
 
 ### 11. Concurrency
 - All lobby writes are under the group lock (ADR 0006): create, join, seat change, game, mode and activity changes, and leave. The leave takes the lock too.

@@ -40,13 +40,9 @@ func (l *Lobbies) Get(ctx context.Context, groupID, lobbyID, callerID string) (d
 	if _, err := requireMember(ctx, l.reader, groupID, callerID); err != nil {
 		return domain.Lobby{}, nil, fmt.Errorf("get lobby: %w", err)
 	}
-	lobby, err := l.reader.Lobby(ctx, groupID, lobbyID, callerID, l.clock.Now())
+	lobby, players, err := l.reader.Lobby(ctx, groupID, lobbyID, callerID, l.clock.Now())
 	if err != nil {
 		return domain.Lobby{}, nil, fmt.Errorf("get lobby: %w", err)
-	}
-	players, err := l.reader.Players(ctx, lobby.ID)
-	if err != nil {
-		return domain.Lobby{}, nil, fmt.Errorf("get lobby players: %w", err)
 	}
 	ids := make([]string, len(players))
 	for i, player := range players {
@@ -154,6 +150,88 @@ func (l *Lobbies) Join(ctx context.Context, groupID, lobbyID, callerID string, s
 		return fmt.Errorf("join lobby: %w", err)
 	}
 	return nil
+}
+
+// SetMode changes the mode of a lobby for a player of it and returns the lobby as saved. The mode, the caller's player
+// row and the player count are read under the group lock (ADR 0017 section 10); the rules are domain.LobbyFacts.CheckModeChange.
+func (l *Lobbies) SetMode(ctx context.Context, groupID, lobbyID, callerID, modeID string, currentModeID *string) (domain.Lobby, error) {
+	return l.changeSettings(ctx, groupID, lobbyID, callerID, func(tx LobbyTx, facts domain.LobbyFacts) error {
+		var mode *domain.GameMode
+		if facts.GameID != nil { // a lobby with no game refuses every mode
+			found, ok, err := tx.ModeOfGame(ctx, *facts.GameID, modeID)
+			if err != nil {
+				return err
+			}
+			if ok {
+				mode = &found
+			}
+		}
+		change, save, err := facts.CheckModeChange(l.clock.Now(), currentModeID, mode)
+		if err != nil || !save {
+			return err
+		}
+		return tx.SetLobbyMode(ctx, lobbyID, change)
+	})
+}
+
+// SetActivity sets the named activity of a lobby for a player of it and returns the lobby as saved.
+func (l *Lobbies) SetActivity(ctx context.Context, groupID, lobbyID, callerID, activityID string) (domain.Lobby, error) {
+	return l.changeSettings(ctx, groupID, lobbyID, callerID, func(tx LobbyTx, facts domain.LobbyFacts) error {
+		var activity *domain.Activity
+		if facts.ModeID != nil { // a lobby with no mode refuses every activity
+			found, ok, err := tx.ActivityOfMode(ctx, *facts.ModeID, activityID)
+			if err != nil {
+				return err
+			}
+			if ok {
+				activity = &found
+			}
+		}
+		if err := facts.CheckActivityChange(l.clock.Now(), activity); err != nil {
+			return err
+		}
+		return tx.SetLobbyActivity(ctx, lobbyID, activity)
+	})
+}
+
+// ClearActivity removes the named activity of a lobby for a player of it and returns the lobby. It is idempotent.
+func (l *Lobbies) ClearActivity(ctx context.Context, groupID, lobbyID, callerID string) (domain.Lobby, error) {
+	return l.changeSettings(ctx, groupID, lobbyID, callerID, func(tx LobbyTx, facts domain.LobbyFacts) error {
+		if err := facts.CheckChange(l.clock.Now()); err != nil {
+			return err
+		}
+		return tx.SetLobbyActivity(ctx, lobbyID, nil)
+	})
+}
+
+// changeSettings runs a settings change under the group lock in the order of ADR 0017 section 10: membership, the lobby
+// in this group, then apply, which reads its values and checks the rules. The answer is read in the same transaction
+// after the write, so a saved change is always answered with the lobby, even if it ends or the caller leaves right
+// after the commit. No player names are looked up: a lookup in auth after the commit could answer 503 to a saved
+// change (Amendment 2026-11-09).
+func (l *Lobbies) changeSettings(ctx context.Context, groupID, lobbyID, callerID string, apply func(LobbyTx, domain.LobbyFacts) error) (domain.Lobby, error) {
+	var lobby domain.Lobby
+	err := l.repo.WithLockedGroup(ctx, groupID, func(tx LobbyTx) error {
+		if _, err := requireMember(ctx, tx, groupID, callerID); err != nil {
+			return err
+		}
+		facts, found, err := tx.LobbyFacts(ctx, groupID, lobbyID, callerID)
+		switch {
+		case err != nil:
+			return err
+		case !found:
+			return domain.ErrLobbyNotFound
+		}
+		if err := apply(tx, facts); err != nil {
+			return err
+		}
+		lobby, err = tx.ReadLobby(ctx, groupID, lobbyID, callerID)
+		return err
+	})
+	if err != nil {
+		return domain.Lobby{}, fmt.Errorf("change lobby: %w", err)
+	}
+	return lobby, nil
 }
 
 // Leave removes a member from a lobby. It works at any time and for a non-player; only a missing lobby is refused.

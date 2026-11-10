@@ -28,8 +28,8 @@ func NewRouter(groups *application.Groups, invites *application.InviteLinks, gam
 	publicapi.HandlerWithOptions(strict, publicapi.StdHTTPServerOptions{
 		BaseRouter:       mux,
 		ErrorHandlerFunc: httpapi.InvalidRequestHandler,
-		// The last one wraps outermost: 401 first, then 404 for a malformed path ID, then the body (400) (ADR 0001).
-		Middlewares: []publicapi.MiddlewareFunc{httpapi.LimitBody, rejectMalformedPathID, requireUserID},
+		// The last one wraps outermost: 401 first, then 404 for a malformed path ID, then the body (400) (ADR 0001). The key check reads the body, so it sits inside LimitBody.
+		Middlewares: []publicapi.MiddlewareFunc{requireBodyKeys, httpapi.LimitBody, rejectMalformedPathID, requireUserID},
 	})
 
 	return requestid.Middleware(mux)

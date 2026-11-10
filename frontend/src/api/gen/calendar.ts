@@ -253,6 +253,63 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/groups/{groupId}/lobbies/{lobbyId}/mode": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Change the mode of a lobby
+         * @description Only a player of the lobby may change it. Runs in one transaction under the group's lock, and every value and state below is read after the lock.
+         *     Order: the form of the path and the body (`invalid_request`; an invalid uuid in the path gives its not-found code, from left to right), membership (`group_not_found`),
+         *     the lobby exists in this group (`lobby_not_found`), its end time has not passed (`lobby_has_ended`), the caller is a player (`not_allowed`),
+         *     the mode (`invalid_mode`: unknown, a mode of another game, or a lobby with no game), then the state: `currentModeId` is the lobby's current mode (`lobby_changed`),
+         *     and the new limit (the sum of the mode's role slots, or its max players) is not below the number of players (`lobby_has_more_players`).
+         *     If `modeId` is the lobby's current mode nothing changes and the answer is 200.
+         *     Otherwise the mode, its name and the max players are set from the mode, the activity is cleared, and the lobby's role slots are replaced by the mode's game roles.
+         *     Every player becomes flex. The number of players does not change.
+         */
+        put: operations["setLobbyMode"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/groups/{groupId}/lobbies/{lobbyId}/activity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set the named activity of a lobby
+         * @description Only a player of the lobby may change it. Runs in one transaction under the group's lock, and every value is read after the lock.
+         *     Order: the form of the path and the body (`invalid_request`; an invalid uuid in the path gives its not-found code, from left to right), membership (`group_not_found`),
+         *     the lobby exists in this group (`lobby_not_found`), its end time has not passed (`lobby_has_ended`), the caller is a player (`not_allowed`),
+         *     the activity (`invalid_activity`: unknown, not an activity of the lobby's mode, or a lobby with no mode).
+         *     The players and the limit do not change.
+         */
+        put: operations["setLobbyActivity"];
+        post?: never;
+        /**
+         * Clear the named activity of a lobby
+         * @description Only a player of the lobby may change it. Keeps the mode. Idempotent: a lobby without an activity answers 200 as well.
+         *     Order: an invalid uuid in the path, from left to right (`groupId` gives `group_not_found`, `lobbyId` gives `lobby_not_found`), membership (`group_not_found`),
+         *     the lobby exists in this group (`lobby_not_found`), its end time has not passed (`lobby_has_ended`), the caller is a player (`not_allowed`).
+         */
+        delete: operations["clearLobbyActivity"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/groups/{groupId}/lobbies/{lobbyId}/players/me": {
         parameters: {
             query?: never;
@@ -372,7 +429,7 @@ export interface components {
              * @description Machine-readable error code. The text for the user belongs to the frontend. not_found and method_not_allowed are returned by the gateway only.
              * @enum {string}
              */
-            code: "unauthenticated" | "service_unavailable" | "invalid_request" | "not_allowed" | "group_not_found" | "member_not_found" | "own_upcoming_lobbies_exist" | "invalid_group_name" | "invite_invalid" | "invalid_max_uses" | "lobby_not_found" | "lobby_in_past" | "lobby_end_not_after_start" | "lobby_too_long" | "lobby_has_ended" | "lobby_full" | "invalid_game" | "invalid_capacity" | "invalid_genre" | "invalid_mode" | "invalid_activity" | "invalid_game_role" | "game_role_full" | "game_taken" | "mode_taken" | "activity_taken" | "game_role_taken" | "game_not_found" | "internal_error" | "not_found" | "method_not_allowed";
+            code: "unauthenticated" | "service_unavailable" | "invalid_request" | "not_allowed" | "group_not_found" | "member_not_found" | "own_upcoming_lobbies_exist" | "invalid_group_name" | "invite_invalid" | "invalid_max_uses" | "lobby_not_found" | "lobby_in_past" | "lobby_end_not_after_start" | "lobby_too_long" | "lobby_has_ended" | "lobby_full" | "invalid_game" | "invalid_capacity" | "invalid_genre" | "invalid_mode" | "invalid_activity" | "invalid_game_role" | "game_role_full" | "lobby_changed" | "lobby_has_more_players" | "game_taken" | "mode_taken" | "activity_taken" | "game_role_taken" | "game_not_found" | "internal_error" | "not_found" | "method_not_allowed";
             /** @description Same value as `X-Request-Id` in the response. Used to match logs. */
             requestId: string;
         };
@@ -519,6 +576,25 @@ export interface components {
              * @description The player's game role. `null` means flex. Not in `required` so that existing fixtures stay valid, but the server always sends it (ADR 0017).
              */
             gameRoleId?: string | null;
+        };
+        SetLobbyModeRequest: {
+            /**
+             * Format: uuid
+             * @description The mode to set. It must be a mode of the lobby's game, otherwise `invalid_mode`.
+             */
+            modeId: string;
+            /**
+             * Format: uuid
+             * @description The mode the caller saw, `null` for none. If the lobby's mode is another one, because another change was saved first, the answer is `lobby_changed`.
+             */
+            currentModeId: string | null;
+        };
+        SetLobbyActivityRequest: {
+            /**
+             * Format: uuid
+             * @description The activity to set. It must be an activity of the lobby's mode, otherwise `invalid_activity`.
+             */
+            activityId: string;
         };
         LobbyDetail: components["schemas"]["Lobby"] & {
             players: components["schemas"]["LobbyPlayer"][];
@@ -1294,6 +1370,206 @@ export interface operations {
             };
             /** @description `group_not_found` if the caller is not a member. `lobby_not_found` if the lobby is missing. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            500: components["responses"]["InternalError"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    setLobbyMode: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Correlation ID (ADR 0001). A valid value is kept and passed on. A missing or invalid value is replaced by a new one. The response always contains `X-Request-Id`. */
+                "X-Request-Id"?: components["parameters"]["RequestIdHeader"];
+            };
+            path: {
+                /** @description The group's ID. An unknown ID or an invalid format gives `group_not_found`. */
+                groupId: components["parameters"]["GroupId"];
+                /** @description The lobby's ID. An invalid format gives `lobby_not_found`. A lobby that belongs to another group gives the same `lobby_not_found` as a missing lobby (ADR 0004 rule 12). */
+                lobbyId: components["parameters"]["LobbyId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetLobbyModeRequest"];
+            };
+        };
+        responses: {
+            /** @description The lobby as saved, without player names. The players are loaded with `GET /api/groups/{groupId}/lobbies/{lobbyId}`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Lobby"];
+                };
+            };
+            /** @description `invalid_request` (invalid JSON, a wrong JSON type or a missing `modeId` or `currentModeId`; checked before membership) or, after the lobby checks, `invalid_mode`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            /** @description `not_allowed`: the caller is not a player of the lobby. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `group_not_found` if the caller is not a member. `lobby_not_found` if the lobby is missing. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `lobby_has_ended`, `lobby_changed` (`currentModeId` is not the lobby's current mode) or `lobby_has_more_players` (the new limit is below the number of players). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            500: components["responses"]["InternalError"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    setLobbyActivity: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Correlation ID (ADR 0001). A valid value is kept and passed on. A missing or invalid value is replaced by a new one. The response always contains `X-Request-Id`. */
+                "X-Request-Id"?: components["parameters"]["RequestIdHeader"];
+            };
+            path: {
+                /** @description The group's ID. An unknown ID or an invalid format gives `group_not_found`. */
+                groupId: components["parameters"]["GroupId"];
+                /** @description The lobby's ID. An invalid format gives `lobby_not_found`. A lobby that belongs to another group gives the same `lobby_not_found` as a missing lobby (ADR 0004 rule 12). */
+                lobbyId: components["parameters"]["LobbyId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetLobbyActivityRequest"];
+            };
+        };
+        responses: {
+            /** @description The lobby as saved, without player names. The players are loaded with `GET /api/groups/{groupId}/lobbies/{lobbyId}`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Lobby"];
+                };
+            };
+            /** @description `invalid_request` (invalid JSON, a wrong JSON type or a missing `activityId`; checked before membership) or, after the lobby checks, `invalid_activity`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            /** @description `not_allowed`: the caller is not a player of the lobby. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `group_not_found` if the caller is not a member. `lobby_not_found` if the lobby is missing. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `lobby_has_ended`. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            500: components["responses"]["InternalError"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    clearLobbyActivity: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Correlation ID (ADR 0001). A valid value is kept and passed on. A missing or invalid value is replaced by a new one. The response always contains `X-Request-Id`. */
+                "X-Request-Id"?: components["parameters"]["RequestIdHeader"];
+            };
+            path: {
+                /** @description The group's ID. An unknown ID or an invalid format gives `group_not_found`. */
+                groupId: components["parameters"]["GroupId"];
+                /** @description The lobby's ID. An invalid format gives `lobby_not_found`. A lobby that belongs to another group gives the same `lobby_not_found` as a missing lobby (ADR 0004 rule 12). */
+                lobbyId: components["parameters"]["LobbyId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The lobby as saved, without player names. The players are loaded with `GET /api/groups/{groupId}/lobbies/{lobbyId}`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Lobby"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            /** @description `not_allowed`: the caller is not a player of the lobby. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `group_not_found` if the caller is not a member. `lobby_not_found` if the lobby is missing. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `lobby_has_ended`. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

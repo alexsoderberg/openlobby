@@ -28,10 +28,16 @@ type lobbyStore struct {
 	inserted  []domain.Lobby
 	// onLock runs when the group lock is taken, to show what happened before it.
 	onLock func()
+	// afterCommit runs after a locked function's writes are kept, to show what happens right after the commit.
+	afterCommit func()
 	// players lists the player IDs of a lobby in join order.
 	players map[string][]string
 	// seats holds the game role of a player by "lobbyID/userID"; a missing key or a nil value is flex.
 	seats map[string]*string
+	// tree is the game list that the settings reads look in, as the adapter's tables would.
+	tree []domain.Game
+	// reads counts the reads of the tree, to show that nothing is read before the lock or after a refusal.
+	reads int
 }
 
 func (s *lobbyStore) Upcoming(_ context.Context, groupID, callerID string, at time.Time) ([]domain.Lobby, error) {
@@ -47,20 +53,16 @@ func (s *lobbyStore) Upcoming(_ context.Context, groupID, callerID string, at ti
 	return upcoming, s.err
 }
 
-func (s *lobbyStore) Lobby(_ context.Context, groupID, id, callerID string, at time.Time) (domain.Lobby, error) {
+func (s *lobbyStore) Lobby(_ context.Context, groupID, id, callerID string, at time.Time) (domain.Lobby, []domain.Player, error) {
 	lobby, ok := s.lobbies[id]
 	if !ok || lobby.GroupID != groupID || !lobby.EndsAt.After(at) {
-		return domain.Lobby{}, domain.ErrLobbyNotFound
+		return domain.Lobby{}, nil, domain.ErrLobbyNotFound
 	}
-	return lobby, s.err
-}
-
-func (s *lobbyStore) Players(_ context.Context, id string) ([]domain.Player, error) {
 	var players []domain.Player
 	for _, userID := range s.players[id] {
 		players = append(players, domain.Player{UserID: userID, GameRoleID: s.seats[id+"/"+userID]})
 	}
-	return players, s.err
+	return lobby, players, s.err
 }
 
 func newLobbyStore() *lobbyStore {
@@ -89,6 +91,9 @@ func (s *lobbyStore) WithLockedGroup(_ context.Context, groupID string, fn func(
 		return err
 	}
 	s.lobbies = staged.lobbies
+	if s.afterCommit != nil {
+		s.afterCommit()
+	}
 	return nil
 }
 
@@ -149,6 +154,71 @@ func (t *lobbyTx) RemovePlayer(_ context.Context, id, userID string) error {
 func (t *lobbyTx) DeleteLobby(_ context.Context, _, id string) error {
 	delete(t.lobbies, id)
 	return nil
+}
+
+func (t *lobbyTx) LobbyFacts(_ context.Context, groupID, id, userID string) (domain.LobbyFacts, bool, error) {
+	lobby, ok := t.lobbies[id]
+	if !ok || lobby.GroupID != groupID {
+		return domain.LobbyFacts{}, false, nil
+	}
+	return domain.LobbyFacts{EndsAt: lobby.EndsAt, GameID: lobby.GameID, ModeID: lobby.ModeID, PlayerCount: len(t.players[id]),
+		IsPlayer: slices.Contains(t.players[id], userID)}, true, nil
+}
+
+func (t *lobbyTx) ModeOfGame(_ context.Context, gameID, modeID string) (domain.GameMode, bool, error) {
+	t.reads++
+	for _, game := range t.tree {
+		for _, mode := range game.Modes {
+			if game.ID == gameID && mode.ID == modeID {
+				return mode, true, nil
+			}
+		}
+	}
+	return domain.GameMode{}, false, nil
+}
+
+func (t *lobbyTx) ActivityOfMode(_ context.Context, modeID, activityID string) (domain.Activity, bool, error) {
+	t.reads++
+	for _, game := range t.tree {
+		for _, mode := range game.Modes {
+			for _, activity := range mode.Activities {
+				if mode.ID == modeID && activity.ID == activityID {
+					return activity, true, nil
+				}
+			}
+		}
+	}
+	return domain.Activity{}, false, nil
+}
+
+// SetLobbyMode does what the adapter and the foreign key do: the new mode and slots, and every player to flex.
+func (t *lobbyTx) SetLobbyMode(_ context.Context, id string, change domain.ModeChange) error {
+	lobby := t.lobbies[id]
+	lobby.ModeID, lobby.ModeName, lobby.MaxPlayers = &change.Mode.ID, &change.Mode.Name, &change.MaxPlayers
+	lobby.ActivityID, lobby.ActivityName, lobby.RoleSlots = nil, nil, change.Slots
+	t.lobbies[id] = lobby
+	for _, userID := range t.players[id] {
+		t.seats[id+"/"+userID] = nil
+	}
+	return nil
+}
+
+func (t *lobbyTx) SetLobbyActivity(_ context.Context, id string, activity *domain.Activity) error {
+	lobby := t.lobbies[id]
+	lobby.ActivityID, lobby.ActivityName = nil, nil
+	if activity != nil {
+		lobby.ActivityID, lobby.ActivityName = &activity.ID, &activity.Name
+	}
+	t.lobbies[id] = lobby
+	return nil
+}
+
+func (t *lobbyTx) ReadLobby(_ context.Context, groupID, id, _ string) (domain.Lobby, error) {
+	lobby, ok := t.lobbies[id]
+	if !ok || lobby.GroupID != groupID {
+		return domain.Lobby{}, domain.ErrLobbyNotFound
+	}
+	return lobby, nil
 }
 
 func (c *fakeCatalog) Find(_ context.Context, id string) (domain.Game, error) {

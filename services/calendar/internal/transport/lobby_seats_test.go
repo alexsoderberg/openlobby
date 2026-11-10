@@ -172,6 +172,9 @@ func TestLobbyBodiesSendNullForUnsetFields(t *testing.T) {
 			t.Errorf("%s = %v (present %v), want null", key, value, present)
 		}
 	}
+	if len(got.Players) != 2 {
+		t.Fatalf("players = %v, want 2", got.Players)
+	}
 	if value, present := got.Players[0]["gameRoleId"]; !present || value != nil {
 		t.Errorf("flex player gameRoleId = %v (present %v), want null", value, present)
 	}

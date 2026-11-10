@@ -107,9 +107,9 @@ Public endpoints (via `gateway`, which receives traffic from `edge`):
 | DELETE | `/api/groups/{groupId}/lobbies/{lobbyId}` | calendar | yes, creator | REQ-0003 |
 | PUT | `/api/groups/{groupId}/lobbies/{lobbyId}/players/me` | calendar | yes, member | REQ-0005, F-018 (ADR 0017: optional body `{gameRoleId, flex}`, also a change of seat for a player. Order: `lobby_not_found`, `lobby_has_ended` (also for a caller who is already a player), `invalid_game_role`, a player with the same seat → 204, a new player: `lobby_full` then `game_role_full`, a player with another seat: `game_role_full`. ADR 0004 rule 7) |
 | DELETE | `/api/groups/{groupId}/lobbies/{lobbyId}/players/me` | calendar | yes, member | REQ-0005 (204 when the lobby exists, also after the end time and idempotent. 404 `lobby_not_found` when the lobby is missing) |
-| PUT | `/api/groups/{groupId}/lobbies/{lobbyId}/mode` | calendar | yes, player | planned, ADR 0017 (REQ-0015). Body `{modeId, currentModeId}`; `lobby_changed` if `currentModeId` is stale |
-| PUT | `/api/groups/{groupId}/lobbies/{lobbyId}/activity` | calendar | yes, player | planned, ADR 0017 (REQ-0015). Body `{activityId}` |
-| DELETE | `/api/groups/{groupId}/lobbies/{lobbyId}/activity` | calendar | yes, player | planned, ADR 0017 (REQ-0015). Clears the activity, keeps the mode |
+| PUT | `/api/groups/{groupId}/lobbies/{lobbyId}/mode` | calendar | yes, player | ADR 0017 (REQ-0015). Body `{modeId, currentModeId}`, 200 `Lobby` without player names; no auth call (Amendment 2026-11-09). One transaction under the group lock, everything read after the lock. Order: `invalid_request`, `group_not_found`, `lobby_not_found`, `lobby_has_ended`, `not_allowed`, `invalid_mode`, `lobby_changed` (stale `currentModeId`), `lobby_has_more_players`. The same mode changes nothing. A change replaces max players and role slots, clears the activity and makes every player flex |
+| PUT | `/api/groups/{groupId}/lobbies/{lobbyId}/activity` | calendar | yes, player | ADR 0017 (REQ-0015). Body `{activityId}`, 200 `Lobby` without player names; no auth call. Order: `invalid_request`, `group_not_found`, `lobby_not_found`, `lobby_has_ended`, `not_allowed`, `invalid_activity` (not of the lobby's mode, or no mode) |
+| DELETE | `/api/groups/{groupId}/lobbies/{lobbyId}/activity` | calendar | yes, player | ADR 0017 (REQ-0015). Clears the activity, keeps the mode. Idempotent, 200 `Lobby` without player names; no auth call. Same checks as the PUT, without the value |
 | PUT | `/api/groups/{groupId}/lobbies/{lobbyId}/game` | calendar | yes, player | planned, ADR 0017 (REQ-0015). Body `{gameId}`; only for a lobby without a game (`lobby_game_set` otherwise) |
 
 Internal endpoints (not public, blocked by `gateway`, reachable only on the internal network `services`, ADR 0008):
@@ -167,8 +167,8 @@ The source is `enum` in `api/` (`auth/openapi.yaml` and `calendar/openapi.yaml` 
 | `game_role_taken` | 409 | Game role name already used by another role of the same owner (the game, or the mode), ignoring case |
 | `game_role_full` | 409 | The chosen game role has no free slot (join or change of seat, ADR 0017) |
 | `lobby_game_set` | 409 | Planned, ADR 0017. The lobby already has a game, including "Other" |
-| `lobby_changed` | 409 | Planned, ADR 0017. `currentModeId` is not the lobby's current mode (another change was saved first) |
-| `lobby_has_more_players` | 409 | Planned, ADR 0017. The new mode's limit is below the number of players |
+| `lobby_changed` | 409 | `currentModeId` is not the lobby's current mode (another change was saved first) |
+| `lobby_has_more_players` | 409 | The new mode's limit is below the number of players |
 | `service_unavailable` | 503 | A dependency (auth, database) does not respond. Never after a committed write |
 | `internal_error` | 500 | Unexpected error. No details to the client. Documented on every operation |
 

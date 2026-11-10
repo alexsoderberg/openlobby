@@ -32,19 +32,7 @@ func (h publicHandler) CreateLobby(ctx context.Context, request publicapi.Create
 	if body == nil || body.StartsAt.IsZero() || body.EndsAt.IsZero() {
 		return publicapi.CreateLobby400JSONResponse{Error: publicErrorBody(ctx, publicapi.ErrorBodyCodeInvalidRequest)}, nil
 	}
-	lobby, err := h.lobbies.Create(ctx, domain.NewLobbyRequest{
-		GroupID:        request.GroupId,
-		CreatorID:      userIDFrom(ctx),
-		StartsAt:       body.StartsAt,
-		EndsAt:         body.EndsAt,
-		GameID:         body.GameId,
-		CustomGameName: body.CustomGameName,
-		MaxPlayers:     body.MaxPlayers,
-		ModeID:         body.ModeId,
-		ActivityID:     body.ActivityId,
-		RoleSlots:      roleSlotInputs(body.RoleSlots),
-		Seat:           domain.Seat{GameRoleID: body.GameRoleId, Flex: body.Flex != nil && *body.Flex},
-	})
+	lobby, err := h.lobbies.Create(ctx, newLobbyRequest(request.GroupId, userIDFrom(ctx), *body))
 	if errors.Is(err, domain.ErrGroupNotFound) {
 		return publicapi.CreateLobby404JSONResponse{Error: publicErrorBody(ctx, publicapi.ErrorBodyCodeGroupNotFound)}, nil
 	}
@@ -57,6 +45,22 @@ func (h publicHandler) CreateLobby(ctx context.Context, request publicapi.Create
 		return nil, err
 	}
 	return lobbyBody(lobby)
+}
+
+func newLobbyRequest(groupID, creatorID string, body publicapi.CreateLobbyJSONRequestBody) domain.NewLobbyRequest {
+	return domain.NewLobbyRequest{
+		GroupID:        groupID,
+		CreatorID:      creatorID,
+		StartsAt:       body.StartsAt,
+		EndsAt:         body.EndsAt,
+		GameID:         body.GameId,
+		CustomGameName: body.CustomGameName,
+		MaxPlayers:     body.MaxPlayers,
+		ModeID:         body.ModeId,
+		ActivityID:     body.ActivityId,
+		RoleSlots:      roleSlotInputs(body.RoleSlots),
+		Seat:           domain.Seat{GameRoleID: body.GameRoleId, Flex: body.Flex != nil && *body.Flex},
+	}
 }
 
 // DeleteLobby removes a lobby for its creator. A malformed group or lobby ID is a 404 before this runs (ADR 0001).
@@ -106,15 +110,24 @@ func (h publicHandler) GetLobby(ctx context.Context, request publicapi.GetLobbyR
 	case err != nil:
 		return nil, err
 	}
-	body, err := lobbyBody(lobby)
+	detail, err := lobbyDetailBody(lobby, players)
 	if err != nil {
 		return nil, err
+	}
+	return publicapi.GetLobby200JSONResponse(detail), nil
+}
+
+// lobbyDetailBody converts a lobby and its players into the contract shape.
+func lobbyDetailBody(lobby domain.Lobby, players []domain.Player) (publicapi.LobbyDetail, error) {
+	body, err := lobbyBody(lobby)
+	if err != nil {
+		return publicapi.LobbyDetail{}, err
 	}
 	refs, err := playerBodies(players)
 	if err != nil {
-		return nil, err
+		return publicapi.LobbyDetail{}, err
 	}
-	return publicapi.GetLobby200JSONResponse{
+	return publicapi.LobbyDetail{
 		Id: body.Id, GameId: body.GameId, GameName: body.GameName, GameGenre: body.GameGenre, MaxPlayers: body.MaxPlayers,
 		ModeId: body.ModeId, ModeName: body.ModeName, ActivityId: body.ActivityId, ActivityName: body.ActivityName,
 		StartsAt: body.StartsAt, EndsAt: body.EndsAt, CreatedByUserId: body.CreatedByUserId, PlayerCount: body.PlayerCount,
@@ -191,11 +204,14 @@ func lobbyBody(lobby domain.Lobby) (publicapi.CreateLobby201JSONResponse, error)
 		return body, err
 	}
 	slots, err := roleSlotBodies(lobby.RoleSlots)
+	if err != nil {
+		return body, err
+	}
 	body.GameName, body.GameGenre, body.MaxPlayers = lobby.GameName, convertGenre[publicapi.Genre](lobby.GameGenre), lobby.MaxPlayers
 	body.ModeName, body.ActivityName = lobby.ModeName, lobby.ActivityName
 	body.StartsAt, body.EndsAt = lobby.StartsAt.UTC(), lobby.EndsAt.UTC()
 	body.PlayerCount, body.JoinedByMe, body.FlexCount, body.RoleSlots = lobby.PlayerCount, lobby.JoinedByMe, &lobby.FlexCount, &slots
-	return body, err
+	return body, nil
 }
 
 // JoinLobby makes the caller a player in a seat, or moves a player to another seat. Joining with the same seat twice is a
