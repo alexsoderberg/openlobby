@@ -71,9 +71,11 @@ function GameRow({
       <span>{game.name}</span>
       <GenreName genre={game.genre} />
       <span className="badge">
-        {game.defaultMaxPlayers === null
-          ? m.gameUnlimited
-          : m.gameMaxPlayers(game.defaultMaxPlayers)}
+        {game.modes?.length
+          ? m.gameModeCount(game.modes.length)
+          : game.defaultMaxPlayers === null
+            ? m.gameUnlimited
+            : m.gameMaxPlayers(game.defaultMaxPlayers)}
       </span>
       <button
         type="button"

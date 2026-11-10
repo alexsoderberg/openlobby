@@ -6,6 +6,8 @@ export type {
   Game,
   Genre,
   GameInput,
+  GameModeInput,
+  GameRoleInput,
   Group,
   GroupSummary,
   InviteInfo,
@@ -14,13 +16,16 @@ export type {
   LobbyDetail,
 } from "./client";
 export {
+  ACTIVITY_NAME_MAX_LENGTH,
   ApiError,
   DEFAULT_MAX_PLAYERS_LIMIT,
   DEFAULT_MAX_PLAYERS_MIN,
   GAME_NAME_MAX_LENGTH,
+  GAME_ROLE_NAME_MAX_LENGTH,
   GROUP_NAME_MAX_LENGTH,
   INVITE_MAX_USES_DEFAULT,
   INVITE_MAX_USES_LIMIT,
+  MODE_NAME_MAX_LENGTH,
   RESERVED_GAME_NAME,
   errorCodeOf,
   isUnauthenticated,
@@ -29,10 +34,14 @@ export {
 export { ApiProvider, useApi } from "./ApiProvider";
 export { createHttpApiClient } from "./httpApiClient";
 export {
+  INVALID_ACTIVITY,
   INVALID_CAPACITY,
   INVALID_GAME,
+  INVALID_GAME_ROLE,
   INVALID_GENRE,
+  INVALID_MODE,
   isGameNameLength,
+  isNameLength,
   parseMaxPlayers,
   trimLikeServer,
   type ChangeResult,

@@ -6,6 +6,11 @@ import {
   type GameInput,
 } from "../api";
 
+/** The saved game the server answers with: the fields the tests read, without the entered modes and roles. */
+function gameOf({ name, defaultMaxPlayers, genre }: GameInput) {
+  return { name, defaultMaxPlayers, genre };
+}
+
 export const testUser: AuthUser = {
   userId: "5f0c2e1a-9b7d-4c1e-8a3f-1d2e3f4a5b6c",
   displayName: "Maja Lind",
@@ -38,10 +43,10 @@ export function fakeApiClient(overrides: Partial<ApiClient> = {}): ApiClient {
     joinInvite: vi.fn(() => Promise.resolve({ id: "g1", name: "Friday crew" })),
     listGames: vi.fn(() => Promise.resolve([])),
     createGame: vi.fn((input: GameInput) =>
-      Promise.resolve({ id: "new-game", ...input }),
+      Promise.resolve({ id: "new-game", ...gameOf(input) }),
     ),
     replaceGame: vi.fn((gameId: string, input: GameInput) =>
-      Promise.resolve({ id: gameId, ...input }),
+      Promise.resolve({ id: gameId, ...gameOf(input) }),
     ),
     deleteGame: vi.fn(() => Promise.resolve()),
     listGroupGames: vi.fn(() => Promise.resolve([])),

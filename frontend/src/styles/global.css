@@ -572,6 +572,46 @@ a {
   gap: var(--space-2);
 }
 
+/* The modes, game roles and activities of the game form: groups with a legend, no hover or motion. */
+.group-form fieldset.structure {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+  margin: 0;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+}
+
+.group-form .structure > legend {
+  padding: 0 var(--space-1);
+  font-weight: 600;
+}
+
+.structure-list {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.group-form fieldset.structure-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.structure-field {
+  display: grid;
+  flex: 1 1 10rem;
+  gap: var(--space-1);
+}
+
 .list-row--editing > .group-form {
   flex: 1 1 100%;
 }

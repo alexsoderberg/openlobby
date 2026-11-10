@@ -1,21 +1,40 @@
-import { useId, useRef, useState, type ComponentProps, type Ref } from "react";
+import {
+  useId,
+  useRef,
+  useState,
+  type ComponentProps,
+  type Dispatch,
+  type Ref,
+  type RefObject,
+  type SetStateAction,
+} from "react";
 import {
   INVALID_CAPACITY,
   INVALID_GAME,
-  INVALID_GENRE,
   type ChangeResult,
   type Game,
   type GameInput,
 } from "../../api";
 import { toUserMessage, useMessages } from "../../i18n";
 import { GameGenreField } from "./GameGenreField";
+import { GameStructureFields } from "./GameStructureFields";
 import { parseGameInput } from "./gameInput";
+import {
+  draftFromGame,
+  errorSection,
+  hidesDefaultMax,
+  isStructureSection,
+  type ErrorSection,
+  type StructureDraft,
+} from "./gameStructure";
+import { useFocusRequest } from "./useFocusRequest";
 
 type SubmitGame = (input: GameInput) => ChangeResult;
 
 /**
- * Name, default max players and genre, nothing else (the ID is made by the server). A failure, local or from
- * the server, is shown next to the field it is about and focus moves to that field.
+ * Name, default max players, genre, and the game's modes, game roles and activities (the ID is made by the server).
+ * The default max players is not shown while the game has modes or game roles. A failure, local or from
+ * the server, is shown next to the field or section it is about and focus moves there.
  * `onSubmit` resolves to the error code of a failed save.
  */
 export function GameForm({
@@ -32,9 +51,17 @@ export function GameForm({
   onCancel?: () => void;
 }) {
   const id = useId();
-  const { errorCode, nameRef, maxRef, genreRef, submit } =
-    useGameFormSubmit(onSubmit);
+  const [draft, setDraft] = useState(() => draftFromGame(game));
+  const requestFocus = useFocusRequest(draft);
+  const { failure, nameRef, maxRef, genreRef, submit } = useGameFormSubmit(
+    id,
+    onSubmit,
+    draft,
+    setDraft,
+    game,
+  );
   const errorId = `${id}-error`;
+  const section = failure?.section;
 
   return (
     <form
@@ -48,14 +75,24 @@ export function GameForm({
       <GameFormFields
         id={id}
         game={game}
-        errorCode={errorCode}
+        section={section}
         errorId={errorId}
+        hideMax={hidesDefaultMax(draft)}
         nameRef={nameRef}
         maxRef={maxRef}
         genreRef={genreRef}
       />
-      {errorCode !== undefined && (
-        <GameFormError id={errorId} code={errorCode} />
+      <GameStructureFields
+        id={id}
+        draft={draft}
+        setDraft={setDraft}
+        requestFocus={requestFocus}
+        errorId={errorId}
+        errorSection={isStructureSection(section) ? section : undefined}
+        errorField={failure?.field}
+      />
+      {failure && (
+        <GameFormError id={errorId} code={failure.code} section={section} />
       )}
       <GameFormActions
         submitLabel={submitLabel}
@@ -66,27 +103,29 @@ export function GameForm({
   );
 }
 
-/** The name and max fields. The form's error describes the field it is about. */
+/** The name, max and genre fields. The form's error describes the field it is about. */
 function GameFormFields({
   id,
   game,
-  errorCode,
+  section,
   errorId,
+  hideMax,
   nameRef,
   maxRef,
   genreRef,
 }: {
   id: string;
   game?: Game;
-  errorCode?: string;
+  section?: ErrorSection;
   errorId: string;
+  hideMax: boolean;
   nameRef: Ref<HTMLInputElement>;
   maxRef: Ref<HTMLInputElement>;
   genreRef: Ref<HTMLSelectElement>;
 }) {
   const m = useMessages();
-  const aboutMax = errorCode === INVALID_CAPACITY;
-  const aboutGenre = errorCode === INVALID_GENRE;
+  const describing = (about: ErrorSection) =>
+    section === about ? errorId : undefined;
   return (
     <>
       <GameFormField
@@ -96,37 +135,47 @@ function GameFormFields({
         label={m.gameNameLabel}
         hint={m.gameNameHint}
         defaultValue={game?.name}
-        errorId={
-          errorCode !== undefined && !aboutMax && !aboutGenre
-            ? errorId
-            : undefined
-        }
+        errorId={describing("name")}
       />
-      <GameFormField
-        id={`${id}-max`}
-        ref={maxRef}
-        name="defaultMaxPlayers"
-        inputMode="numeric"
-        label={m.gameMaxPlayersLabel}
-        hint={m.gameMaxPlayersHint}
-        defaultValue={game?.defaultMaxPlayers ?? ""}
-        errorId={aboutMax ? errorId : undefined}
-      />
+      {!hideMax && (
+        <GameFormField
+          id={`${id}-max`}
+          ref={maxRef}
+          name="defaultMaxPlayers"
+          inputMode="numeric"
+          label={m.gameMaxPlayersLabel}
+          hint={m.gameMaxPlayersHint}
+          defaultValue={game?.defaultMaxPlayers ?? ""}
+          errorId={describing("max")}
+        />
+      )}
       <GameGenreField
         id={`${id}-genre`}
         ref={genreRef}
         genre={game?.genre ?? null}
-        errorId={aboutGenre ? errorId : undefined}
+        errorId={describing("genre")}
       />
     </>
   );
 }
 
-function GameFormError({ id, code }: { id: string; code: string }) {
+function GameFormError({
+  id,
+  code,
+  section,
+}: {
+  id: string;
+  code: string;
+  section?: ErrorSection;
+}) {
   const m = useMessages();
   return (
     <p id={id} role="alert" className="field-error">
-      {code === INVALID_GAME ? m.gameNameInvalid : toUserMessage(code)}
+      {code === INVALID_GAME
+        ? m.gameNameInvalid
+        : code === INVALID_CAPACITY && isStructureSection(section)
+          ? m.gameStructureCapacityInvalid
+          : toUserMessage(code)}
     </p>
   );
 }
@@ -159,29 +208,78 @@ function GameFormActions({
   );
 }
 
-/** Checks the input locally, then submits it. The error code it ends with is kept, and focus goes to its field. */
-function useGameFormSubmit(onSubmit: SubmitGame) {
-  const [errorCode, setErrorCode] = useState<string>();
+type FormFailure = { code: string; section: ErrorSection; field?: string };
+
+const formTexts = (form: HTMLFormElement) => {
+  const data = new FormData(form);
+  // The default max input is not rendered while the game has modes or game roles.
+  return [
+    String(data.get("name")),
+    String(data.get("defaultMaxPlayers") ?? ""),
+    String(data.get("genre")),
+  ] as const;
+};
+
+/** The element an error is about: the exact entry for a local failure, else the first field of its section. */
+function focusError(
+  form: HTMLFormElement,
+  id: string,
+  { section, field }: FormFailure,
+  refs: {
+    name: RefObject<HTMLInputElement | null>;
+    max: RefObject<HTMLInputElement | null>;
+    genre: RefObject<HTMLSelectElement | null>;
+  },
+) {
+  if (isStructureSection(section))
+    (
+      (field && document.getElementById(`${id}-${field}`)) ||
+      form.querySelector<HTMLElement>(`[data-section="${section}"] input`)
+    )?.focus();
+  else if (section === "max") refs.max.current?.focus();
+  else if (section === "genre") refs.genre.current?.focus();
+  else refs.name.current?.focus();
+}
+
+/**
+ * Checks the input locally, then submits it. The failure it ends with is kept until the next submit, and focus goes
+ * to what it is about.
+ */
+function useGameFormSubmit(
+  id: string,
+  onSubmit: SubmitGame,
+  draft: StructureDraft,
+  setDraft: Dispatch<SetStateAction<StructureDraft>>,
+  game?: Game,
+) {
+  const [failure, setFailure] = useState<FormFailure>();
   const nameRef = useRef<HTMLInputElement>(null);
   const maxRef = useRef<HTMLInputElement>(null);
   const genreRef = useRef<HTMLSelectElement>(null);
 
   async function submit(form: HTMLFormElement) {
-    const data = new FormData(form);
     const parsed = parseGameInput(
-      String(data.get("name")),
-      String(data.get("defaultMaxPlayers")),
-      String(data.get("genre")),
+      ...formTexts(form),
+      draft,
+      game?.defaultMaxPlayers,
     );
     const code = parsed.ok ? await onSubmit(parsed.input) : parsed.code;
-    setErrorCode(code);
-    if (code === undefined) form.reset();
-    else if (code === INVALID_CAPACITY) maxRef.current?.focus();
-    else if (code === INVALID_GENRE) genreRef.current?.focus();
-    else nameRef.current?.focus();
+    if (code === undefined) {
+      setFailure(undefined);
+      form.reset();
+      setDraft(draftFromGame(game));
+      return;
+    }
+    const next = {
+      code,
+      section: errorSection(code, draft),
+      field: parsed.ok ? undefined : parsed.field,
+    };
+    setFailure(next);
+    focusError(form, id, next, { name: nameRef, max: maxRef, genre: genreRef });
   }
 
-  return { errorCode, nameRef, maxRef, genreRef, submit };
+  return { failure, nameRef, maxRef, genreRef, submit };
 }
 
 /** A labelled text field with its hint. `errorId` is set when the form's error is about this field. */
