@@ -28,4 +28,22 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    // ADR 0021 point 1: the icon library is imported only in ui/Icon.tsx, so a swap stays in that one file.
+    files: ["src/**/*.{ts,tsx}"],
+    ignores: ["src/ui/Icon.tsx"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["lucide-react", "lucide-react/*"],
+              message: "Use Icon from src/ui instead (ADR 0021 point 1).",
+            },
+          ],
+        },
+      ],
+    },
+  },
 );

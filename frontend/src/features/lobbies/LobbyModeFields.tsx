@@ -1,5 +1,6 @@
 import type { Game, GameMode, GameRole } from "../../api";
 import { useMessages } from "../../i18n";
+import { Select } from "../../ui";
 import { LobbyField, fieldProps } from "./LobbyField";
 import { LobbyRoleFields } from "./LobbyRoleFields";
 
@@ -34,7 +35,7 @@ export function LobbyModeFields({
     <>
       {modes.length > 0 && (
         <LobbyField id={`${id}-mode`} label={m.lobbyModeLabel}>
-          <select
+          <Select
             {...fieldProps(`${id}-mode`, false, errorFor("mode"))}
             name="mode"
             value={modeValue}
@@ -46,12 +47,12 @@ export function LobbyModeFields({
                 {option.name}
               </option>
             ))}
-          </select>
+          </Select>
         </LobbyField>
       )}
       {mode && mode.activities.length > 0 && (
         <LobbyField id={`${id}-activity`} label={m.lobbyActivityLabel}>
-          <select
+          <Select
             {...fieldProps(`${id}-activity`, false, errorFor("activity"))}
             key={mode.id}
             name="activity"
@@ -62,7 +63,7 @@ export function LobbyModeFields({
                 {activity.name}
               </option>
             ))}
-          </select>
+          </Select>
         </LobbyField>
       )}
       {roles.length > 0 ? (

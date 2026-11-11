@@ -269,3 +269,34 @@ describe("opening", () => {
     expect(document.activeElement).toBe(game);
   });
 });
+
+describe("date and time pickers", () => {
+  const timeLabels = [en.lobbyDateLabel, en.lobbyStartLabel, en.lobbyEndLabel];
+  afterEach(() => {
+    delete (HTMLInputElement.prototype as Partial<HTMLInputElement>).showPicker;
+  });
+
+  it.each(timeLabels)(
+    "opens the picker on a click anywhere in %s",
+    async (label) => {
+      const showPicker = vi.fn();
+      HTMLInputElement.prototype.showPicker = showPicker;
+      renderForm();
+
+      fireEvent.click(await field(label));
+      expect(showPicker).toHaveBeenCalledOnce();
+    },
+  );
+
+  it("keeps the field usable when the browser refuses to open the picker", async () => {
+    HTMLInputElement.prototype.showPicker = () => {
+      throw new DOMException("Not allowed", "NotAllowedError");
+    };
+    const { client } = renderForm();
+
+    fireEvent.click(await field(en.lobbyDateLabel));
+    await fillValid();
+    submit();
+    await waitFor(() => expect(client.createLobby).toHaveBeenCalledOnce());
+  });
+});
