@@ -1,7 +1,9 @@
 # REQ-0011. Game roles and role slots in lobbies
-Status: Decided
+Status: Implemented
 Feature: F-027
 Priority: Should
+
+Build status (2026-11-11): all acceptance criteria are built in ADR 0017 PR1 to PR6 (PR6 APPROVED, merge pending). The amendment of 2026-11-08 (roles per mode) is built too.
 
 ## Problem
 Many team games have fixed roles. Overwatch needs one tank, two damage and two support players. Today a lobby only counts players, so five people can say "I'm in" with no tank, and nobody sees the gap until the game has started. The group needs to see which roles are covered before the game, and each player needs to say which role they take, or that they will take any role that is still missing.
@@ -104,7 +106,7 @@ Not a duplicate of the group roles `admin` and `member` (REQ-0002, REQ-0008). Th
 - Note: the API field `role` already means group role (`admin`/`member`, api/calendar/openapi.yaml). Game roles must not reuse that name.
 
 ## Amendment 2026-11-08 (REQ-0015, game modes and open lobbies)
-Status stays Decided. Decided by the user (DECISION, user, 2026-11-07, point 2: roles per mode; answers 2026-11-08). Pending implementation, delivered together with REQ-0015 (backlog A2 and A3).
+Status stays Implemented. Decided by the user (DECISION, user, 2026-11-07, point 2: roles per mode; answers 2026-11-08). Implemented in ADR 0017 PR1 to PR6 (2026-11-11), together with REQ-0015 (backlog A2 and A3).
 - Game roles may be defined on a mode of a game instead of on the game. A game with modes has no game roles of its own. A game without modes keeps its game roles as written above.
 - Max players of a mode with game roles is the sum of its slots, as for a game. A mode is never unlimited.
 - The role slots of a lobby are prefilled from its mode (or from its game, for a game without modes). The creator may change them at creation, as written above. After creation they follow the chosen mode (REQ-0015, "Applying a choice").
@@ -113,7 +115,7 @@ Status stays Decided. Decided by the user (DECISION, user, 2026-11-07, point 2: 
 - The glossary term "Game role" also applies to a game role of a mode. Its technical form (game or mode) is the architect's decision.
 
 ## Amendment 2026-11-08 (game role names per owner)
-Status stays Decided. Old wording of the name criterion in "Game roles in the game list": "a name that another game role of the same game already has (ignoring case and surrounding spaces)".
+Status stays Implemented. Old wording of the name criterion in "Game roles in the game list": "a name that another game role of the same game already has (ignoring case and surrounding spaces)".
 - A game role name must be unique per owner, not per game. The owner is the game mode the game role sits on, or the game when the game role sits on the game (a game without modes). Two game modes of the same game may each have a game role with the same name, e.g. "Tank" in both "Dungeon" and "Raid".
 - Within one owner, the name rules are unchanged: 1–30 characters, unique ignoring case and surrounding spaces, and an empty or too long name is denied as before.
 - DECISION (user, 2026-11-08, decision 3): game role names are unique per owner, as above.

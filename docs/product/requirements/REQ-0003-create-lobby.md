@@ -73,7 +73,7 @@ F-002: the Create group form is the pattern for the open and close behavior, and
 F-017 (calendar view): the time grid is the entry point for the prefill in item 3. The form, its rules and its data are unchanged.
 
 ## Amendment 2026-11-08 (REQ-0015, game modes and open lobbies)
-Status stays Implemented. Decided by the user on 2026-11-08 (REQ-0015, F-033, F-034). Pending implementation. Binding for the backend and UI experts.
+Status stays Implemented. Decided by the user on 2026-11-08 (REQ-0015, F-033, F-034). Implemented in ADR 0017 PR1 to PR6 (2026-11-11).
 
 1. The game is optional (DECISION, user, 2026-11-08). A lobby with no game is an open lobby (REQ-0015). Old wording: "Game is mandatory" (DECISION game, above), and the criterion on no game being chosen (criterion 7 under "Acceptance criteria", amended in place).
 2. The create form also offers a mode and an activity, each optional, as in REQ-0015 ("Creating a lobby"). Max players is prefilled from the chosen mode or game as in REQ-0015 ("Applying a choice").
