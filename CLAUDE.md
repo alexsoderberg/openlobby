@@ -100,24 +100,24 @@ Notes:
 
 ## Model selection
 
-Agents use the weakest model that can handle the task. Each task starts at step 1 and moves up one step at a time only when needed.
+Agents use the weakest model that can handle the task. Each task starts at step 1 (UI and backend tasks at step 3, see below) and moves up one step at a time only when needed.
 
 | Step | Model | Effort | Used |
 |---|---|---|---|
 | 1 | Haiku (`haiku`) | medium | Always first (except UI and backend tasks) |
 | 2 | Sonnet (`sonnet`) | medium | After escalation from step 1 |
-| 3 | Opus 5.5 (`opus`) | medium | After escalation from step 2. **Highest allowed level.** |
+| 3 | Opus 5.5 (`opus`) | medium | After escalation from step 2, and the start step for UI and backend tasks. **Highest allowed level.** |
 
-- Agent files have `model: haiku` and `effort: medium` by default. Exception: `ui-ux-expert.md` and `backend-expert.md` have `model: sonnet`.
-- **UI and backend tasks start at step 2.** Tasks for the UI/UX expert and the backend expert start at `sonnet`, because `haiku` work there has needed two or more review rounds almost every time. Escalation continues from step 2 to step 3.
+- Agent files have `model: haiku` and `effort: medium` by default. Exception: `ui-ux-expert.md` and `backend-expert.md` have `model: opus`.
+- **UI and backend tasks start at step 3.** Tasks for the UI/UX expert and the backend expert start at `opus`, because `haiku` work there needed two or more review rounds almost every time, and the ADR 0017 slices at `sonnet` needed escalation to `opus` after two rejections (PR3b, PR5a, PR5b; decided by the user 2026-11-11). There is no step above, so a rejection twice at step 3 means the orchestrator stops and asks the user.
 - Effort is never higher than `medium`. Models above Opus 5.5 (e.g. Fable or Mythos) and effort `high` or higher are never used.
 - **Escalation** happens when:
   - the agent itself returns `Status: ESCALATE` with a reason (it cannot handle the task or cannot judge it safely), or
   - the result is rejected by the reviewer or by tests twice at the same step, or
   - the orchestrator judges that the result clearly does not meet the bar.
 - The orchestrator then reruns the same task with the next model (the `model` parameter when starting the agent) and gives it the previous agent's result and problems as context.
-- Never skip a step. If step 3 fails, the orchestrator stops and asks the user.
-- The next task starts at step 1 again (step 2 for UI and backend tasks), including for the same agent.
+- Never skip a step when escalating. If step 3 fails, the orchestrator stops and asks the user.
+- The next task starts at step 1 again (step 3 for UI and backend tasks), including for the same agent.
 - The main session (orchestrator) also runs on at most Opus 5.5 with effort medium. It is selected in the session with `/model` and `/effort`.
 - Use the model names (`haiku`, `sonnet`, `opus`) in agent files. Check in Claude Code that they point to the versions you want.
 
