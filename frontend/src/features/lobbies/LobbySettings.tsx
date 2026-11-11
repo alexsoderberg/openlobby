@@ -15,7 +15,7 @@ import {
 } from "../../api";
 import { useChangeAction } from "../../hooks";
 import { toLobbyMessage, useMessages } from "../../i18n";
-import { ConfirmDialog, ErrorAlert } from "../../ui";
+import { ConfirmDialog, ErrorAlert, Select } from "../../ui";
 import { LOBBY_CHANGED, LOBBY_GAME_SET, NOT_ALLOWED } from "./lobbyErrors";
 import { fieldProps, LobbyField } from "./LobbyField";
 import { hasEnded } from "./lobbyTime";
@@ -173,7 +173,7 @@ function GameForm({
       }}
     >
       <LobbyField id={id} label={m.lobbyGameLabel} hint={m.lobbyGameSetHint}>
-        <select
+        <Select
           {...fieldProps(id, true, errorId)}
           name="game"
           value={gameId}
@@ -188,7 +188,7 @@ function GameForm({
               {game.name}
             </option>
           ))}
-        </select>
+        </Select>
       </LobbyField>
       <div className="form-actions">
         <button
@@ -297,7 +297,7 @@ function ModeSelect({
   const known = modes.some((mode) => mode.id === lobby.modeId);
   return (
     <LobbyField id={id} label={m.lobbyModeLabel} hint={m.lobbyModeChangeHint}>
-      <select
+      <Select
         {...fieldProps(id, true, errorId)}
         name="mode"
         value={lobby.modeId ?? ""}
@@ -317,7 +317,7 @@ function ModeSelect({
             {mode.name}
           </option>
         ))}
-      </select>
+      </Select>
     </LobbyField>
   );
 }
@@ -341,7 +341,7 @@ function ActivitySelect({
   const m = useMessages();
   return (
     <LobbyField id={id} label={m.lobbyActivityLabel}>
-      <select
+      <Select
         {...fieldProps(id, false, errorId)}
         name="activity"
         value={value}
@@ -354,7 +354,7 @@ function ActivitySelect({
             {activity.name}
           </option>
         ))}
-      </select>
+      </Select>
     </LobbyField>
   );
 }

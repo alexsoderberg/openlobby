@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { INVITE_MAX_USES_DEFAULT, INVITE_MAX_USES_LIMIT } from "../../api";
 import { useMessages } from "../../i18n";
+import { Select } from "../../ui";
 
 const MAX_USES_OPTIONS = Array.from(
   { length: INVITE_MAX_USES_LIMIT },
@@ -33,7 +34,7 @@ export function CreateInviteLinkForm({
       }}
     >
       <label htmlFor="invite-max-uses">{m.inviteMaxUsesLabel}</label>
-      <select
+      <Select
         ref={selectRef}
         id="invite-max-uses"
         value={maxUses}
@@ -45,7 +46,7 @@ export function CreateInviteLinkForm({
             {count}
           </option>
         ))}
-      </select>
+      </Select>
       <p id={HINT_ID} className="form-hint">
         {m.inviteMaxUsesHint}
       </p>

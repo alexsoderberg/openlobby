@@ -1,5 +1,6 @@
 import type { Game } from "../../api";
 import { useMessages } from "../../i18n";
+import { Select } from "../../ui";
 import { LobbyField, fieldProps } from "./LobbyField";
 import { OTHER_GAME } from "./lobbyInput";
 
@@ -56,7 +57,7 @@ function GameSelect({
       label={m.lobbyGameLabel}
       hint={m.lobbyGameHint}
     >
-      <select
+      <Select
         {...fieldProps(`${id}-game`, true, errorId)}
         name="game"
         value={value}
@@ -69,7 +70,7 @@ function GameSelect({
           </option>
         ))}
         <option value={OTHER_GAME}>{m.lobbyGameOther}</option>
-      </select>
+      </Select>
     </LobbyField>
   );
 }

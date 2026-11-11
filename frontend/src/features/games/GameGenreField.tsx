@@ -2,6 +2,7 @@ import type { Ref } from "react";
 import type { Game } from "../../api";
 import { GENRE_OPTIONS } from "../../genres";
 import { useMessages } from "../../i18n";
+import { Select } from "../../ui";
 
 /** The genre choice: "No genre" first (empty value), then the fixed list. `errorId` is set when the form's error is about this field. */
 export function GameGenreField({
@@ -19,7 +20,7 @@ export function GameGenreField({
   return (
     <>
       <label htmlFor={id}>{m.gameGenreLabel}</label>
-      <select
+      <Select
         id={id}
         ref={ref}
         name="genre"
@@ -33,7 +34,7 @@ export function GameGenreField({
             {m.genre[option]}
           </option>
         ))}
-      </select>
+      </Select>
     </>
   );
 }

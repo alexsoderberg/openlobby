@@ -1,7 +1,17 @@
+import type { MouseEvent } from "react";
 import type { PickedStart } from "../../calendar";
 import { useMessages } from "../../i18n";
 import { LobbyField, fieldProps } from "./LobbyField";
 import { localClockText, localDateText, suggestedEnd } from "./lobbyTime";
+
+/** Opens the picker on a click anywhere in the field, not only on its icon, as phones do (REQ-0003). */
+function openPicker(event: MouseEvent<HTMLInputElement>) {
+  try {
+    event.currentTarget.showPicker();
+  } catch {
+    // Fallback: the browser's own behaviour, where the picker icon opens it (REQ-0003). Older browsers lack showPicker.
+  }
+}
 
 /** Date and the two clock times, in the user's local time. The values are read by name on submit. */
 export function LobbyTimeFields({
@@ -22,6 +32,7 @@ export function LobbyTimeFields({
           {...fieldProps(`${id}-date`, false, errorId)}
           name="date"
           type="date"
+          onClick={openPicker}
           defaultValue={localDateText(initialStart?.moment ?? new Date())}
         />
       </LobbyField>
@@ -30,6 +41,7 @@ export function LobbyTimeFields({
           {...fieldProps(`${id}-start`, false)}
           name="start"
           type="time"
+          onClick={openPicker}
           defaultValue={
             initialStart?.timed
               ? localClockText(initialStart.moment)
@@ -46,6 +58,7 @@ export function LobbyTimeFields({
           {...fieldProps(`${id}-end`, true)}
           name="end"
           type="time"
+          onClick={openPicker}
           defaultValue={
             initialStart?.timed
               ? localClockText(suggestedEnd(initialStart.moment))

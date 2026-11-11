@@ -144,6 +144,9 @@
   /* App shell. The wide layout starts at 760px (47.5rem); media queries cannot read tokens, so it is written out there. */
   --width-app: 72rem;
   --size-tap: 2.75rem;
+  /* Buttons (ADR 0021): compact under a mouse, the larger box is the hit area on touch. */
+  --size-button: 2rem;
+  --size-button-touch: 2.5rem;
   /* A lobby row is a card: one and a half taps tall keeps it roomy yet calm. */
   --size-lobby-row: calc(var(--size-tap) * 1.5);
   --font-size-lobby-name: 1.125rem; /* a step above body text so the game leads the row */
@@ -307,17 +310,20 @@ a {
   margin: 0 auto;
 }
 
-/* Primary button is solid accent; the ghost variants are translucent with a neutral edge. */
+/* Button variants (ADR 0021): the primary is the only filled one; secondary has a neutral edge, ghost has
+   none, danger is text and edge in the danger colour. One size per pointer type. */
 .button,
 .button-ghost,
-.button--secondary {
+.button--secondary,
+.button--danger {
   position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: var(--size-tap);
+  gap: var(--space-2);
+  min-height: var(--size-button);
   overflow: hidden;
-  padding: var(--space-2) var(--space-4);
+  padding: 0 var(--space-3);
   border: 1px solid var(--color-accent);
   border-radius: var(--radius-control);
   background: var(--color-accent);
@@ -331,7 +337,8 @@ a {
   cursor: pointer;
   transition:
     transform var(--duration-base) var(--ease-spring),
-    border-color var(--duration-base) var(--ease-out);
+    border-color var(--duration-base) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out);
 }
 
 /* The sweep parks off the left edge and only animates on hover-in, so leaving does not flash it back across. */
@@ -353,21 +360,111 @@ a {
 }
 
 .button-ghost,
-.button--secondary {
+.button--secondary,
+.button--danger {
   background: var(--color-surface);
   border-color: var(--color-border);
   color: var(--color-text);
   box-shadow: none;
 }
 
+.button-ghost {
+  background: none;
+  border-color: transparent;
+}
+
+.button--danger {
+  background: none;
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+
 .button-ghost::after,
-.button--secondary::after {
+.button--secondary::after,
+.button--danger::after {
   content: none;
 }
 
-:is(.button, .button-ghost, .button--secondary):not(:disabled):hover {
+:is(.button, .button-ghost, .button--secondary, .button--danger):not(
+    :disabled
+  ):hover {
   transform: translateY(var(--lift-button));
+}
+
+:is(.button, .button--secondary):not(:disabled):hover {
   border-color: var(--color-accent);
+}
+
+.button-ghost:not(:disabled):hover {
+  background: var(--color-accent-wash);
+}
+
+@media (pointer: coarse) {
+  :is(.button, .button-ghost, .button--secondary, .button--danger) {
+    min-height: var(--size-button-touch);
+  }
+}
+
+/* Icon-only (IconButton): a round icon under a mouse with the label in the tooltip; on touch the short
+   label is shown beside the icon, since there is no hover. */
+.button--icon {
+  width: var(--size-button);
+  padding: 0;
+  border-radius: 50%;
+}
+
+.button__label {
+  display: none;
+}
+
+@media (pointer: coarse) {
+  .button--icon {
+    width: auto;
+    padding: 0 var(--space-3);
+    border-radius: var(--radius-chip);
+  }
+
+  .button__label {
+    display: inline;
+  }
+}
+
+/* The bubble lives inside the wrapper and its ::before bridges the gap, so the pointer can move onto it
+   (WCAG 1.4.13). No tooltip on touch: the button shows its label there. */
+.tooltip {
+  position: relative;
+  display: inline-flex;
+}
+
+.tooltip__bubble {
+  position: absolute;
+  bottom: calc(100% + var(--space-1));
+  left: 50%;
+  z-index: 70;
+  translate: -50% 0;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-badge);
+  background: var(--color-bg-raised);
+  color: var(--color-text);
+  font-size: var(--font-size-small);
+  white-space: nowrap;
+  animation: fade-in var(--duration-fast) var(--ease-out) both;
+}
+
+.tooltip__bubble::before {
+  content: "";
+  position: absolute;
+  top: 100%;
+  right: 0;
+  left: 0;
+  height: var(--space-1);
+}
+
+@media (pointer: coarse) {
+  .tooltip__bubble {
+    display: none;
+  }
 }
 
 .button:not(:disabled):hover::after {
@@ -375,12 +472,14 @@ a {
   transition: transform var(--duration-sweep) var(--ease-out);
 }
 
-:is(.button, .button-ghost, .button--secondary):not(:disabled):active {
+:is(.button, .button-ghost, .button--secondary, .button--danger):not(
+    :disabled
+  ):active {
   transform: scale(var(--press-scale));
   transition-duration: var(--duration-fast);
 }
 
-:is(.button, .button-ghost, .button--secondary):disabled {
+:is(.button, .button-ghost, .button--secondary, .button--danger):disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
@@ -560,22 +659,81 @@ a {
   font-weight: 600;
 }
 
-.group-form input,
-.group-form select {
-  padding: var(--space-2);
+/* Fields share the button heights (ADR 0021), so a field and a button in one row line up. Native controls
+   are kept for the keyboard, screen readers and mobile pickers; :root's color-scheme makes the pickers dark. */
+.group-form :is(input, select):where(:not([type="radio"])),
+.invite-link__url {
+  min-height: var(--size-button);
+  padding: 0 var(--space-2);
   font: inherit;
   color: var(--color-text);
-  background: var(--color-surface);
+  background-color: var(--color-surface);
   border: 1px solid var(--color-muted);
   border-radius: var(--radius-control);
+  transition: border-color var(--duration-fast) var(--ease-out);
+}
+
+@media (pointer: coarse) {
+  .group-form :is(input, select):where(:not([type="radio"])),
+  .invite-link__url {
+    min-height: var(--size-button-touch);
+  }
+}
+
+.group-form :is(input, select):where(:not([type="radio"])):not(:disabled):hover,
+.invite-link__url:hover {
+  border-color: var(--color-text);
+}
+
+.group-form :is(input, select):where(:not([type="radio"])):disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .group-form input {
   width: 100%;
-  min-height: var(--size-tap);
 }
 
-.group-form select,
+/* The select's own arrow gives way to the Select component's chevron icon (ADR 0021). Date and time inputs
+   keep their native look, so their picker icon stays. */
+.group-form select {
+  appearance: none;
+  padding-inline-end: calc(var(--space-2) * 2 + 1em);
+  cursor: pointer;
+}
+
+.select {
+  position: relative;
+  display: inline-grid;
+  align-items: center;
+}
+
+.select__chevron {
+  position: absolute;
+  right: var(--space-2);
+  color: var(--color-muted);
+  pointer-events: none;
+}
+
+.select:has(select:disabled) .select__chevron {
+  opacity: 0.5;
+}
+
+.group-form option {
+  background-color: var(--color-bg-raised);
+  color: var(--color-text);
+}
+
+/* WebKit only, in rules of their own so Firefox, which does not know these, keeps the rest. */
+.group-form ::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+}
+
+.group-form ::-webkit-date-and-time-value {
+  text-align: start;
+}
+
+.group-form .select,
 .group-form .button {
   justify-self: start;
 }
@@ -766,13 +924,14 @@ a {
 .invite-link__url {
   flex: 1 1 100%;
   min-width: 0;
-  padding: var(--space-2);
-  font: inherit;
   font-size: var(--font-size-small);
-  color: var(--color-text);
-  background: var(--color-surface);
-  border: 1px solid var(--color-muted);
-  border-radius: var(--radius-control);
+}
+
+/* iOS zooms into a focused field under 16px. */
+@media (pointer: coarse) {
+  .invite-link__url {
+    font-size: 1rem;
+  }
 }
 
 .invite-link__confirm {
@@ -1874,11 +2033,15 @@ a {
     display: none;
   }
 
-  :is(.button, .button-ghost, .button--secondary):not(:disabled):hover {
+  :is(.button, .button-ghost, .button--secondary, .button--danger):not(
+      :disabled
+    ):hover {
     transform: none;
   }
 
-  :is(.button, .button-ghost, .button--secondary):not(:disabled):active {
+  :is(.button, .button-ghost, .button--secondary, .button--danger):not(
+      :disabled
+    ):active {
     transform: none;
   }
 
@@ -1944,6 +2107,7 @@ a {
     .button,
     .button-ghost,
     .button--secondary,
+    .button--danger,
     .form-actions,
     .view-switch
   ),

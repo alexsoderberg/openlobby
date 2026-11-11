@@ -1,6 +1,6 @@
 # 0021. Icon library, tooltip and button variants
 
-Status: Proposed (2026-11-11)
+Status: Accepted (2026-11-11)
 Requirement: none. Visual improvement requested by the user, decided by the orchestrator on 2026-11-11.
 Amends: none. Replaces the button sizes and colour rules in `frontend/src/styles/global.css` (section "Primary button is solid accent").
 
@@ -25,12 +25,12 @@ Amends: none. Replaces the button sizes and colour rules in `frontend/src/styles
 - The five hand-drawn icons move to the library, and `icons.tsx` is deleted, so there is one icon source.
 
 **2. Tooltip: own component `Tooltip` in `frontend/src/ui/Tooltip.tsx`, no library.**
-- `Tooltip` is used only by `IconButton` (point 3). It shows `label` in a bubble beside its child.
+- `Tooltip` is used only by `IconButton` (point 3). It shows `label` in a bubble above its child.
 - Shown on pointer enter and on keyboard focus (the target matches `:focus-visible`, so a mouse click does not open it). Hidden on pointer leave and on blur.
 - Escape closes it. It opens again on the next pointer enter or focus. No extra state is needed for this.
-- Persistent and hoverable: the bubble is a child of the wrapper and its box touches the trigger with no gap, so the pointer can move onto it without leaving the wrapper (WCAG 1.4.13).
+- Persistent and hoverable: the bubble is a child of the wrapper and sits above the trigger with a small gap (`calc(100% + var(--space-1))`). A `::before` bridge fills that gap, so the pointer can move onto the bubble without leaving the wrapper (WCAG 1.4.13).
 - The bubble is `aria-hidden="true"`. The text is already the accessible name, so no `aria-describedby` is needed.
-- Wrapper: a `span` with `position: relative; display: inline-flex`. The bubble is `position: absolute`, above the trigger, centred.
+- Wrapper: a `span` with `position: relative; display: inline-flex`. The bubble is `position: absolute`, above the trigger, centred, with `bottom: calc(100% + var(--space-1))`.
 - **Coarse pointers (touch): the bubble is hidden with `@media (pointer: coarse) { display: none }`.** There is no tooltip on touch. The label is shown on the button instead (point 3).
 - Motion: a fade with the existing duration token. The `prefers-reduced-motion: reduce` block in `global.css` already sets `transition: none`, so no code is added.
 
@@ -79,6 +79,8 @@ Every file in the frontend that uses a button class or an icon is assigned below
   - `features/login/LoginPanel.tsx`, `features/profile/ProfilePage.tsx`, `features/landing/LandingPage.tsx`.
   - `ui/ConfirmDialog.tsx`, `ui/ErrorAlert.tsx`.
   - Tests `app/App.test.tsx`, `app/LoggedInApp.test.tsx`, `app/navigation.test.tsx` change only where they assert a button, in the same PR as the screen they cover.
+  - Check in PR2: `IconButton` puts the `span.tooltip` wrapper as the direct child in rows and panels, so sibling selectors such as `.list-row .button + .button`, `:is(.panel, .dialog, ...) > * + .button` and `.form-actions > :not(dialog)` must be checked and adjusted.
+  - Check in PR2: the centred bubble must not clip at viewport edges or inside `overflow: hidden` containers.
 - **PR3, after the in-flight UI work on lobbies and the admin game form is merged:**
   - `ui/ViewToggle.tsx` (its `ListIcon` and `CalendarIcon` are removed, which breaks `ThisWeek.tsx` and `Lobbies.tsx`, so they move in the same PR).
   - `features/dashboard/ThisWeek.tsx` and its tests `ThisWeek.test.tsx`, `Dashboard.test.tsx`.

@@ -14,6 +14,7 @@
     "gen:api": "openapi-typescript ../api/auth/openapi.yaml -o src/api/gen/auth.ts && openapi-typescript ../api/calendar/openapi.yaml -o src/api/gen/calendar.ts"
   },
   "dependencies": {
+    "lucide-react": "1.60.0",
     "openapi-fetch": "0.17.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
