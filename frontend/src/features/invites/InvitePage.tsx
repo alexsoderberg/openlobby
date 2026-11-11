@@ -1,6 +1,6 @@
 import type { InviteInfo } from "../../api";
 import { toUserMessage, useMessages } from "../../i18n";
-import { Alert, ErrorAlert, Panel } from "../../ui";
+import { Alert, ErrorAlert, Icon, Panel } from "../../ui";
 import { GROUPS_PATH } from "../groups";
 import { INVITE_INVALID } from "./inviteErrors";
 import { useInvite } from "./useInvite";
@@ -80,6 +80,7 @@ function Invitation({
           disabled={joining}
           onClick={onJoin}
         >
+          <Icon name="join" />
           {m.joinGroupSubmit}
         </button>
         <p role="status" className="status">

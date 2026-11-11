@@ -431,17 +431,20 @@ a {
 
 /* The bubble lives inside the wrapper and its ::before bridges the gap, so the pointer can move onto it
    (WCAG 1.4.13). No tooltip on touch: the button shows its label there. */
+/* In a grid or flex column the wrapper keeps the button's width, so only the button opens the bubble. */
 .tooltip {
-  position: relative;
   display: inline-flex;
+  justify-self: start;
+  align-self: center;
 }
 
+/* A popover in the top layer, placed by Tooltip.tsx flush against the trigger; the translate makes the gap,
+   which the ::before bridge fills. The UA popover box (inset, margin, overflow) is reset. */
 .tooltip__bubble {
-  position: absolute;
-  bottom: calc(100% + var(--space-1));
-  left: 50%;
-  z-index: 70;
-  translate: -50% 0;
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  overflow: visible;
   padding: var(--space-1) var(--space-2);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-badge);
@@ -449,7 +452,12 @@ a {
   color: var(--color-text);
   font-size: var(--font-size-small);
   white-space: nowrap;
+  translate: 0 calc(var(--space-1) * -1);
   animation: fade-in var(--duration-fast) var(--ease-out) both;
+}
+
+.tooltip__bubble[data-side="below"] {
+  translate: 0 var(--space-1);
 }
 
 .tooltip__bubble::before {
@@ -459,6 +467,11 @@ a {
   right: 0;
   left: 0;
   height: var(--space-1);
+}
+
+.tooltip__bubble[data-side="below"]::before {
+  top: auto;
+  bottom: 100%;
 }
 
 @media (pointer: coarse) {
@@ -577,6 +590,12 @@ a {
   color: var(--color-muted);
 }
 
+.crumb a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
 .row-list {
   margin: 0;
   padding: 0;
@@ -600,7 +619,8 @@ a {
   background: var(--color-row-hover);
 }
 
-.list-row .button,
+/* IconButton sits in its tooltip wrapper, so the wrapper stands for the button in these sibling rules. */
+.list-row :is(.button, .tooltip),
 .list-row .badge {
   margin-left: auto;
 }
@@ -1634,6 +1654,8 @@ a {
 /* The "+": two bars from one centre, turned into a cross while the form is open. Only the icon rotates. */
 .plus-button {
   position: relative;
+  display: inline-grid;
+  place-items: center;
   width: var(--size-plus);
   height: var(--size-plus);
   padding: 0;
@@ -1645,26 +1667,9 @@ a {
 }
 
 .plus-button__icon {
-  position: absolute;
-  inset: 0;
+  width: 1.5rem;
+  height: 1.5rem;
   transition: transform var(--duration-icon) var(--ease-spring);
-}
-
-.plus-button__icon::before,
-.plus-button__icon::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 1.25rem;
-  height: 2px;
-  border-radius: 2px;
-  background: currentColor;
-  transform: translate(-50%, -50%);
-}
-
-.plus-button__icon::after {
-  transform: translate(-50%, -50%) rotate(90deg);
 }
 
 .plus-button[aria-expanded="true"] .plus-button__icon {
@@ -2078,7 +2083,9 @@ a {
 }
 
 .context-menu__item {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   width: 100%;
   padding: var(--space-2) var(--space-3);
   border: 0;
@@ -2108,6 +2115,7 @@ a {
     .button-ghost,
     .button--secondary,
     .button--danger,
+    .tooltip,
     .form-actions,
     .view-switch
   ),
@@ -2128,7 +2136,7 @@ a {
 }
 
 /* Only the first button of a row pushes right; the rest follow at the row gap. */
-.list-row .button + .button {
+.list-row :is(.button, .tooltip) + :is(.button, .tooltip) {
   margin-left: 0;
 }
 

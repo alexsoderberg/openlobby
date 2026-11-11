@@ -6,12 +6,11 @@ import {
 } from "react";
 import type { GroupSummary } from "../../api";
 import { useMessages } from "../../i18n";
-import { GroupIcon } from "../../ui";
+import { GroupIcon, Icon } from "../../ui";
 import { groupPath } from "../groups";
 import { HOME_PATH, type ActiveNav } from "./activeNav";
 import { CreateGroupButton } from "./CreateGroupButton";
 import { GroupContextMenu, type MenuPosition } from "./GroupContextMenu";
-import { HomeIcon } from "./icons";
 
 type OpenMenu = {
   group: GroupSummary;
@@ -91,7 +90,7 @@ export function GroupRail({
         title={m.shell.home}
         aria-current={active.section === "home" ? "page" : undefined}
       >
-        <HomeIcon />
+        <Icon name="home" className="nav-icon" />
       </a>
       <span className="group-rail__separator" aria-hidden="true" />
       <ul className="row-list group-rail__groups" role="list">

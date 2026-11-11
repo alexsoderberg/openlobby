@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { useMessages } from "../../i18n";
+import { Icon } from "../../ui";
 
 /**
  * Revoking asks first. Keeping the link returns focus to the revoke button, so keyboard users stay
@@ -25,11 +26,12 @@ export function RevokeInviteLinkControl({
       <button
         ref={revokeRef}
         type="button"
-        className="button button--secondary"
+        className="button button--danger"
         aria-label={`${m.inviteLinkRevoke}, ${description}`}
         disabled={busy}
         onClick={() => setConfirming(true)}
       >
+        <Icon name="revoke" />
         {m.inviteLinkRevoke}
       </button>
       {confirming && (
@@ -37,11 +39,12 @@ export function RevokeInviteLinkControl({
           <p>{m.inviteLinkRevokeConfirm}</p>
           <button
             type="button"
-            className="button"
+            className="button button--danger"
             aria-label={`${m.inviteLinkRevokeSubmit}, ${description}`}
             disabled={busy}
             onClick={() => onRevoke(linkId)}
           >
+            <Icon name="revoke" />
             {m.inviteLinkRevokeSubmit}
           </button>
           <button
@@ -54,6 +57,7 @@ export function RevokeInviteLinkControl({
               revokeRef.current?.focus();
             }}
           >
+            <Icon name="close" />
             {m.inviteLinkKeep}
           </button>
         </div>

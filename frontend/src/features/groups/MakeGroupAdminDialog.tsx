@@ -17,6 +17,7 @@ export function MakeGroupAdminDialog({
       heading={m.makeAdminHeading(memberName)}
       body={m.makeAdminConfirm}
       submitLabel={m.makeAdminSubmit}
+      submitIcon="makeAdmin"
       keepLabel={m.makeAdminKeep}
       {...rest}
     />

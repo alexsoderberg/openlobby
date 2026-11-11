@@ -3,7 +3,7 @@ import { useApi, type LobbyDetail } from "../../api";
 import { GenreFrame, GenreName } from "../../genres";
 import { formatDateTimeRange, useMessages } from "../../i18n";
 import { lobbyLabel, RoleSlots } from "../../lobby";
-import { Panel } from "../../ui";
+import { Icon, Panel } from "../../ui";
 import { DeleteLobbyDialog } from "./DeleteLobbyDialog";
 import { LobbyMembership } from "./LobbyMembership";
 import { LobbySettings } from "./LobbySettings";
@@ -142,9 +142,10 @@ function DeleteLobby({
     <>
       <button
         type="button"
-        className="button button--secondary"
+        className="button button--danger"
         onClick={() => setConfirming(true)}
       >
+        <Icon name="remove" />
         {m.lobbyDelete}
       </button>
       {confirming && (

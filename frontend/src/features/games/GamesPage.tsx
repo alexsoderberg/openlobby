@@ -62,6 +62,7 @@ function GameAdmin({ onUnauthenticated }: { onUnauthenticated: () => void }) {
           <h2>{m.gameAddHeading}</h2>
           <GameForm
             submitLabel={m.gameAddSubmit}
+            submitIcon="plus"
             busy={admin.busy}
             onSubmit={admin.add}
           />

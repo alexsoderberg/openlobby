@@ -77,7 +77,7 @@ This is the single shared vocabulary. Use these exact English terms in documents
 | Icon | frontend only (`Icon`, `IconName`, `ui/Icon.tsx`) | The only way the frontend draws an icon. Names are the project's own (e.g. `pencil`). Only `ui/Icon.tsx` imports the icon library. Avoid: glyph, svg icon, symbol (ADR 0021) |
 | Tooltip | frontend only (`Tooltip`, `ui/Tooltip.tsx`) | Short text shown above an element on hover or keyboard focus. Used by `IconButton` only. Closed with Escape. Hidden on touch (coarse pointer), where the label is shown on the button instead. Avoid: hint, popup, title attribute (ADR 0021) |
 | Button variant | `.button` (primary), `.button--secondary`, `.button-ghost`, `.button--danger` | The colour style of a text button. One variant per button. One size per pointer type. Destructive actions are always `danger`, with visible text. Avoid: button type, kind, style (ADR 0021) |
-| Icon-only button | `IconButton` (`ui/IconButton.tsx`), `.button--icon` | A ghost button with an Icon and a label. Mouse and keyboard: the Icon alone, with the label as Tooltip. Touch: the Icon with the label beside it. Its accessible name is the label. For secondary actions only (edit, copy). Avoid: icon button, round button (ADR 0021) |
+| Icon-only button | `IconButton` (`ui/IconButton.tsx`), `.button--icon` | A ghost button with an Icon and a label. Mouse and keyboard: the Icon alone, with the label as Tooltip. Touch: the Icon with the label beside it. Its accessible name is the label, plus the subject when given. For secondary actions only (edit, copy). Avoid: icon button, round button (ADR 0021) |
 
 Notes:
 - "Time" in the sense of a clock time or timestamp is "time" (`startsAt`, `endsAt`, time zone). Only the bookable slot is a "lobby".

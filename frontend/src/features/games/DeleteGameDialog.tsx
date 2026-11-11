@@ -17,6 +17,8 @@ export function DeleteGameDialog({
       heading={m.gameRemoveHeading(game.name)}
       body={m.gameRemoveConfirm}
       submitLabel={m.gameRemoveSubmit}
+      submitIcon="remove"
+      danger
       keepLabel={m.gameRemoveKeep}
       {...rest}
     />

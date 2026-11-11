@@ -14,6 +14,11 @@ if (!HTMLDialogElement.prototype.showModal) {
   };
 }
 
+// jsdom has no popover API. Tooltip only needs showPopover to exist; there is no top layer to put it in.
+if (!HTMLElement.prototype.showPopover) {
+  HTMLElement.prototype.showPopover = () => undefined;
+}
+
 // jsdom has no matchMedia; useReveal asks it for reduced motion. Default: motion allowed.
 if (!window.matchMedia) {
   window.matchMedia = (query: string) =>

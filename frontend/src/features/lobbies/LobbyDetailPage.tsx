@@ -1,6 +1,6 @@
 import type { LobbyDetail } from "../../api";
 import { useMessages } from "../../i18n";
-import { ErrorAlert, Panel } from "../../ui";
+import { ErrorAlert, Icon, Panel } from "../../ui";
 import { LobbyDetails } from "./LobbyDetails";
 import { useLobby } from "./useLobby";
 
@@ -31,7 +31,10 @@ export function LobbyDetailPage({
   return (
     <>
       <p className="crumb">
-        <a href={backHref}>{m.lobbyBackToGroup}</a>
+        <a href={backHref}>
+          <Icon name="back" />
+          {m.lobbyBackToGroup}
+        </a>
       </p>
       {state.status === "loading" && <p role="status">{m.lobbyLoading}</p>}
       {state.status === "error" && (

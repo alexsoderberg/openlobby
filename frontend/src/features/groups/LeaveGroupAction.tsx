@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useMessages } from "../../i18n";
+import { Icon } from "../../ui";
 import { LeaveGroupDialog } from "./LeaveGroupDialog";
 import { useLeaveGroup } from "./useLeaveGroup";
 
@@ -27,9 +28,10 @@ export function LeaveGroupAction({
     <>
       <button
         type="button"
-        className="button button--secondary"
+        className="button button--danger"
         onClick={() => setConfirming(true)}
       >
+        <Icon name="leave" />
         {m.groupLeave}
       </button>
       {confirming && (

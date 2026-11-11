@@ -17,6 +17,8 @@ export function LeaveGroupDialog({
       heading={m.groupLeaveHeading(groupName)}
       body={m.groupLeaveConfirm}
       submitLabel={m.groupLeaveSubmit}
+      submitIcon="leave"
+      danger
       keepLabel={m.groupLeaveKeep}
       {...rest}
     />

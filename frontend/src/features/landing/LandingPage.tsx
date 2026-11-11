@@ -2,7 +2,7 @@ import { useRef } from "react";
 import { loginUrl } from "../../api";
 import { useFocusAfterLogout, useScrolledPast } from "../../hooks";
 import { useMessages } from "../../i18n";
-import { Alert, Brand } from "../../ui";
+import { Alert, Brand, Icon } from "../../ui";
 import { loggedOutNotice, type LoggedOutPageProps } from "../session";
 import { LandingHero } from "./LandingHero";
 import { StepCard } from "./StepCard";
@@ -31,6 +31,7 @@ export function LandingPage({
       >
         <Brand />
         <a className="button button-ghost" href={href}>
+          <Icon name="logIn" />
           {t.topBarLogIn}
         </a>
       </header>
@@ -45,6 +46,7 @@ export function LandingPage({
           <p className="hero__lead">{t.lead}</p>
           <div className="hero__actions">
             <a className="button" href={href}>
+              <Icon name="logIn" />
               {m.logInWithDiscord}
             </a>
           </div>

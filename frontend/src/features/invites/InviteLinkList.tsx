@@ -1,6 +1,6 @@
 import type { Group, InviteLink } from "../../api";
 import { useMessages } from "../../i18n";
-import { ErrorAlert, Meter } from "../../ui";
+import { ErrorAlert, IconButton, Meter } from "../../ui";
 import { useReveal } from "../../hooks";
 import { RevokeInviteLinkControl } from "./RevokeInviteLinkControl";
 import { formatExpiry, inviteUrl } from "./inviteLink";
@@ -83,15 +83,13 @@ function InviteLinkItem({
           aria-label={`${m.inviteLinkUrlLabel}, ${description}`}
           onFocus={(event) => event.currentTarget.select()}
         />
-        <button
-          type="button"
-          className="button button--secondary"
-          aria-label={`${m.inviteLinkCopy}, ${description}`}
+        <IconButton
+          icon="copy"
+          label={m.inviteLinkCopy}
+          subject={description}
           disabled={busy}
           onClick={() => onCopy(link.token)}
-        >
-          {m.inviteLinkCopy}
-        </button>
+        />
         <RevokeInviteLinkControl
           linkId={link.id}
           description={description}

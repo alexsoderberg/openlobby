@@ -174,7 +174,7 @@ export const en = {
       .filter(Boolean)
       .join(" · "),
   gameModeHasError: "This mode has an error. Open it to fix it.",
-  gameModeBack: "Back to game",
+  gameModeBack: "Back",
   gameModeAdd: "Add mode",
   gameModeRemove: "Remove mode",
   gameModeRemoveHeading: (name: string) => `Remove mode ${name}?`,

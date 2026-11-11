@@ -8,7 +8,7 @@ import {
   type SetStateAction,
 } from "react";
 import { useMessages } from "../../i18n";
-import { ConfirmDialog } from "../../ui";
+import { ConfirmDialog, Icon, IconButton } from "../../ui";
 import {
   emptyActivity,
   emptyMode,
@@ -131,6 +131,7 @@ export function GameStructureFields({
             onOpenMode(mode.key, `${id}-${mode.key}-name`);
           }}
         >
+          <Icon name="plus" />
           {m.gameModeAdd}
         </button>
       </fieldset>
@@ -227,14 +228,7 @@ export function ModeView({
   return (
     <FieldErrorContext value={fieldError(id, error)}>
       <section className="mode-view" aria-labelledby={headingId}>
-        <button
-          type="button"
-          className="button button--secondary"
-          onClick={onBack}
-        >
-          <span aria-hidden="true">‹ </span>
-          {m.gameModeBack}
-        </button>
+        <IconButton icon="back" label={m.gameModeBack} onClick={onBack} />
         <h3 id={headingId} tabIndex={-1} className="mode-view__heading">
           {label}
         </h3>
@@ -270,7 +264,7 @@ export function ModeView({
         />
         <button
           type="button"
-          className="button button--secondary"
+          className="button button--danger"
           aria-label={`${m.gameModeRemove}, ${label}`}
           onClick={() =>
             setRemoval({
@@ -284,6 +278,7 @@ export function ModeView({
             })
           }
         >
+          <Icon name="remove" />
           {m.gameModeRemove}
         </button>
         {removal && (
@@ -291,6 +286,8 @@ export function ModeView({
             heading={removal.heading}
             body={removal.body}
             submitLabel={removal.submitLabel}
+            submitIcon="remove"
+            danger
             keepLabel={removal.keepLabel}
             busy={false}
             onConfirm={async () => {
@@ -375,6 +372,7 @@ function ActivityFieldset({
           requestFocus(`${id}-${activity.key}-name`);
         }}
       >
+        <Icon name="plus" />
         {m.gameActivityAdd}
       </button>
     </fieldset>
@@ -464,6 +462,7 @@ function RoleFieldset({
           requestFocus(`${id}-${role.key}-name`);
         }}
       >
+        <Icon name="plus" />
         {m.gameRoleAdd}
       </button>
     </fieldset>
@@ -489,10 +488,11 @@ function StructureRow({
       {children}
       <button
         type="button"
-        className="button button--secondary"
+        className="button button--danger"
         aria-label={removeLabel}
         onClick={onRemove}
       >
+        <Icon name="remove" />
         {m.gameRemove}
       </button>
     </fieldset>

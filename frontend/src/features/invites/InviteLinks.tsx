@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import type { Group } from "../../api";
 import { toUserMessage, useMessages } from "../../i18n";
-import { Alert } from "../../ui";
+import { Alert, Icon } from "../../ui";
 import { CreateInviteLinkForm } from "./CreateInviteLinkForm";
 import { InviteLinkList } from "./InviteLinkList";
 import { useCopyInviteLink } from "./useCopyInviteLink";
@@ -75,6 +75,7 @@ export function InviteLinks({
         className="button button--secondary"
         onClick={onClose}
       >
+        <Icon name="close" />
         {m.inviteClose}
       </button>
     </>

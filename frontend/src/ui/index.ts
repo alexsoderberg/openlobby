@@ -10,4 +10,4 @@ export { Meter } from "./Meter";
 export { Panel } from "./Panel";
 export { Popover } from "./Popover";
 export { Select } from "./Select";
-export { CalendarIcon, ListIcon, ViewToggle } from "./ViewToggle";
+export { ViewToggle } from "./ViewToggle";

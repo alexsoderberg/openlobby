@@ -17,6 +17,7 @@ import {
   type GameInput,
 } from "../../api";
 import { toUserMessage, useMessages } from "../../i18n";
+import { Icon, type IconName } from "../../ui";
 import { GameGenreField } from "./GameGenreField";
 import {
   GameStructureFields,
@@ -47,12 +48,14 @@ type SubmitGame = (input: GameInput) => ChangeResult;
 export function GameForm({
   game,
   submitLabel,
+  submitIcon,
   busy,
   onSubmit,
   onCancel,
 }: {
   game?: Game;
   submitLabel: string;
+  submitIcon: IconName;
   busy: boolean;
   onSubmit: SubmitGame;
   onCancel?: () => void;
@@ -143,6 +146,7 @@ export function GameForm({
       {!openMode && (
         <GameFormActions
           submitLabel={submitLabel}
+          submitIcon={submitIcon}
           busy={busy}
           onCancel={onCancel}
         />
@@ -230,10 +234,12 @@ function GameFormError({
 
 function GameFormActions({
   submitLabel,
+  submitIcon,
   busy,
   onCancel,
 }: {
   submitLabel: string;
+  submitIcon: IconName;
   busy: boolean;
   onCancel?: () => void;
 }) {
@@ -241,6 +247,7 @@ function GameFormActions({
   return (
     <div className="form-actions">
       <button type="submit" className="button" disabled={busy}>
+        <Icon name={submitIcon} />
         {submitLabel}
       </button>
       {onCancel && (
@@ -249,6 +256,7 @@ function GameFormActions({
           className="button button--secondary"
           onClick={onCancel}
         >
+          <Icon name="close" />
           {m.gameEditCancel}
         </button>
       )}
