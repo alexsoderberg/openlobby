@@ -11,6 +11,9 @@ var ErrLobbyChanged = errors.New("lobby changed")
 // ErrLobbyHasMorePlayers means the new mode's limit is below the number of players (ADR 0017 section 10).
 var ErrLobbyHasMorePlayers = errors.New("lobby has more players")
 
+// ErrLobbyGameSet means the lobby has a game or a custom name already; a game once set never changes (REQ-0015).
+var ErrLobbyGameSet = errors.New("lobby game set")
+
 // ErrStoredModeInvalid means a stored mode has no usable limit. The request cannot fix it, so it is not a 400: the
 // transport leaves it to the 500 handling on purpose.
 var ErrStoredModeInvalid = errors.New("stored mode has no valid limit")
@@ -19,6 +22,7 @@ var ErrStoredModeInvalid = errors.New("stored mode has no valid limit")
 type LobbyFacts struct {
 	EndsAt      time.Time
 	GameID      *string // nil for a lobby with no game, or a custom name
+	HasGame     bool    // a game or a custom name is set
 	ModeID      *string
 	PlayerCount int
 	IsPlayer    bool
@@ -94,6 +98,21 @@ func (f LobbyFacts) CheckActivityChange(now time.Time, activity *Activity) error
 	}
 	if activity == nil {
 		return ErrInvalidActivity
+	}
+	return nil
+}
+
+// CheckGameChange applies the rules of ADR 0017 section 10 after CheckChange. The game is nil when it is not in the game
+// list; only a lobby with no game, not even a custom name, may get one.
+func (f LobbyFacts) CheckGameChange(now time.Time, game *Game) error {
+	if err := f.CheckChange(now); err != nil {
+		return err
+	}
+	switch {
+	case game == nil:
+		return ErrInvalidGame
+	case f.HasGame:
+		return ErrLobbyGameSet
 	}
 	return nil
 }

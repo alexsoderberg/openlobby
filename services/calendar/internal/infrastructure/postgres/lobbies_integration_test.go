@@ -24,7 +24,7 @@ const counterStrikeID = "ce3ff9c1-dabb-4270-b5e0-7b34de37410b"
 
 func newLobby(groupID, creatorID string, gameID *string, gameName string) domain.Lobby {
 	return domain.Lobby{
-		GroupID: groupID, CreatedByUserID: creatorID, GameID: gameID, GameName: gameName,
+		GroupID: groupID, CreatedByUserID: creatorID, GameID: gameID, GameName: &gameName,
 		StartsAt: joinedAt.Add(time.Hour), EndsAt: joinedAt.Add(3 * time.Hour), CreatedAt: joinedAt, PlayerCount: 1,
 	}
 }
@@ -259,7 +259,8 @@ func TestFindReturnsTheGameOrNotFound(t *testing.T) {
 	}
 }
 
-// ListForGroup counts the lobbies of the group per game. Custom names and lobbies of other groups do not count.
+// ListForGroup counts the lobbies of the group per game. Custom names, open lobbies with no game and lobbies of other
+// groups do not count (ADR 0017 section 15).
 func TestListForGroupCountsLobbiesOfTheGroupPerGame(t *testing.T) {
 	store := migratedStore(t)
 	seedGroups(t, store)
@@ -268,6 +269,9 @@ func TestListForGroupCountsLobbiesOfTheGroupPerGame(t *testing.T) {
 	insertLobby(t, store, newLobby(fridayID, alexID, &gameID, "Counter-Strike 2"))
 	insertLobby(t, store, newLobby(fridayID, alexID, nil, "Counter-Strike 2"))
 	insertLobby(t, store, newLobby(sundayID, alexID, &gameID, "Counter-Strike 2"))
+	open := newLobby(fridayID, alexID, nil, "")
+	open.GameName = nil
+	insertLobby(t, store, open)
 
 	usages, err := store.Games().ListForGroup(context.Background(), fridayID)
 	if err != nil {
@@ -326,7 +330,7 @@ func TestUpcomingFiltersOnEndSortsAndCountsPlayers(t *testing.T) {
 	if counts[sooner.ID] != 3 || counts[running.ID] != 1 {
 		t.Fatalf("player counts %v, want 3 for the lobby with two joiners and 1 for the other", counts)
 	}
-	if lobbies[0].GroupID != fridayID || lobbies[0].CreatedByUserID != alexID || lobbies[0].GameName != "Go" {
+	if lobbies[0].GroupID != fridayID || lobbies[0].CreatedByUserID != alexID || *lobbies[0].GameName != "Go" {
 		t.Fatalf("lobby %+v not filled in", lobbies[0])
 	}
 }

@@ -211,7 +211,7 @@ export interface paths {
          *     - `startsAt` is in the future. Otherwise `lobby_in_past`.
          *     - `endsAt` is after `startsAt`. Otherwise `lobby_end_not_after_start`.
          *     - The lobby is shorter than 24 hours. Exactly 24 hours is rejected. Otherwise `lobby_too_long`.
-         *     - Exactly one of `gameId` and `customGameName` is given. `gameId` must be the ID of a game in the game list. An unknown value, including a value that is not in uuid form, gives `invalid_game`. `customGameName` is 1–50 characters after trim. Otherwise `invalid_game`.
+         *     - At most one of `gameId` and `customGameName` is given; neither gives an open lobby with no game (`gameName` `null`). `gameId` must be the ID of a game in the game list. An unknown value, including a value that is not in uuid form, gives `invalid_game`. `customGameName` is 1–50 characters after trim. Otherwise `invalid_game`.
          *     - `modeId` needs `gameId`. A mode that is unknown, not a mode of the chosen game, or given with `customGameName`, gives `invalid_mode`.
          *     - `activityId` needs `modeId`. An activity that is unknown, not an activity of the chosen mode, or given without `modeId`, gives `invalid_activity`.
          *     - Game roles. The owner of the roles is the mode if given, otherwise the game if it has no modes, otherwise there are none. `roleSlots` omitted means the owner's own slots. Each `gameRoleId` must be a role of the owner, with no duplicates, otherwise `invalid_game_role`; `roleSlots` for an owner without roles also gives `invalid_game_role`. Roles not listed count 0. Each `slots` is an integer from 0 to 2147483647 and the sum must be from 1 to 2147483647, otherwise `invalid_capacity`. Roles with 0 slots are not stored. With roles, `maxPlayers` must be omitted or `null` (the sum is used), otherwise `invalid_capacity`.
@@ -248,6 +248,30 @@ export interface paths {
          *     membership (`group_not_found`), the lobby exists in this group (`lobby_not_found`), the caller is the creator (`not_allowed`).
          */
         delete: operations["deleteLobby"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/groups/{groupId}/lobbies/{lobbyId}/game": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set the game of a lobby with no game
+         * @description Only a player of the lobby may change it. Runs in one transaction under the group's lock, and every value and state below is read after the lock.
+         *     Order: the form of the path and the body (`invalid_request`; an invalid uuid in the path gives its not-found code, from left to right), membership (`group_not_found`),
+         *     the lobby exists in this group (`lobby_not_found`), its end time has not passed (`lobby_has_ended`), the caller is a player (`not_allowed`),
+         *     the game (`invalid_game`: not in the game list), then the state: the lobby has no game yet (`lobby_game_set`, also for a custom name).
+         *     The game's ID and name are copied into the lobby. A game once set never changes. The max players, the players and the role slots do not change.
+         */
+        put: operations["setLobbyGame"];
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -429,7 +453,7 @@ export interface components {
              * @description Machine-readable error code. The text for the user belongs to the frontend. not_found and method_not_allowed are returned by the gateway only.
              * @enum {string}
              */
-            code: "unauthenticated" | "service_unavailable" | "invalid_request" | "not_allowed" | "group_not_found" | "member_not_found" | "own_upcoming_lobbies_exist" | "invalid_group_name" | "invite_invalid" | "invalid_max_uses" | "lobby_not_found" | "lobby_in_past" | "lobby_end_not_after_start" | "lobby_too_long" | "lobby_has_ended" | "lobby_full" | "invalid_game" | "invalid_capacity" | "invalid_genre" | "invalid_mode" | "invalid_activity" | "invalid_game_role" | "game_role_full" | "lobby_changed" | "lobby_has_more_players" | "game_taken" | "mode_taken" | "activity_taken" | "game_role_taken" | "game_not_found" | "internal_error" | "not_found" | "method_not_allowed";
+            code: "unauthenticated" | "service_unavailable" | "invalid_request" | "not_allowed" | "group_not_found" | "member_not_found" | "own_upcoming_lobbies_exist" | "invalid_group_name" | "invite_invalid" | "invalid_max_uses" | "lobby_not_found" | "lobby_in_past" | "lobby_end_not_after_start" | "lobby_too_long" | "lobby_has_ended" | "lobby_full" | "invalid_game" | "invalid_capacity" | "invalid_genre" | "invalid_mode" | "invalid_activity" | "invalid_game_role" | "game_role_full" | "lobby_game_set" | "lobby_changed" | "lobby_has_more_players" | "game_taken" | "mode_taken" | "activity_taken" | "game_role_taken" | "game_not_found" | "internal_error" | "not_found" | "method_not_allowed";
             /** @description Same value as `X-Request-Id` in the response. Used to match logs. */
             requestId: string;
         };
@@ -507,11 +531,12 @@ export interface components {
             id: string;
             /**
              * Format: uuid
-             * @description ID of the lobby's game in the game list, a copy kept in the lobby. `null` for a custom name ("Other"). Not in `required` so that existing fixtures stay valid, but the server always sends it (ADR 0017).
+             * @description ID of the lobby's game in the game list, a copy kept in the lobby. `null` for a lobby with no game or a custom name ("Other"). Not in `required` so that existing fixtures stay valid, but the server always sends it (ADR 0017).
              */
             gameId?: string | null;
-            gameName: components["schemas"]["GameName"];
-            /** @description Genre of the lobby's game as it is in the game list now. `null` for a custom name ("Other"), a game without a genre, or a game that was removed. Not stored in the lobby, so a genre change shows at the next read. */
+            /** @description Name of the lobby's game, a copy kept in the lobby. `null` for a lobby with no game, shown as "Open" (ADR 0017). */
+            gameName: (string & components["schemas"]["GameName"]) | null;
+            /** @description Genre of the lobby's game as it is in the game list now. `null` for a lobby with no game, a custom name ("Other"), a game without a genre, or a game that was removed. Not stored in the lobby, so a genre change shows at the next read. */
             gameGenre: (string & components["schemas"]["Genre"]) | null;
             maxPlayers: components["schemas"]["MaxPlayers"];
             /**
@@ -577,6 +602,13 @@ export interface components {
              */
             gameRoleId?: string | null;
         };
+        SetLobbyGameRequest: {
+            /**
+             * Format: uuid
+             * @description The game to set, a game of the game list. An unknown game gives `invalid_game`.
+             */
+            gameId: string;
+        };
         SetLobbyModeRequest: {
             /**
              * Format: uuid
@@ -610,7 +642,7 @@ export interface components {
              * @description End time in UTC, RFC 3339.
              */
             endsAt: string;
-            /** @description ID of a game in the game list. Exactly one of `gameId` and `customGameName` must be given. An unknown value, including one that is not a uuid, gives `invalid_game`. */
+            /** @description ID of a game in the game list. At most one of `gameId` and `customGameName` may be given; neither gives a lobby with no game. An unknown value, including one that is not a uuid, gives `invalid_game`. */
             gameId?: string | null;
             /** @description ID of a mode of the chosen game. Needs `gameId`. An unknown value, a mode of another game, or a value with `customGameName` gives `invalid_mode`. */
             modeId?: string | null;
@@ -1370,6 +1402,77 @@ export interface operations {
             };
             /** @description `group_not_found` if the caller is not a member. `lobby_not_found` if the lobby is missing. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            500: components["responses"]["InternalError"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    setLobbyGame: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Correlation ID (ADR 0001). A valid value is kept and passed on. A missing or invalid value is replaced by a new one. The response always contains `X-Request-Id`. */
+                "X-Request-Id"?: components["parameters"]["RequestIdHeader"];
+            };
+            path: {
+                /** @description The group's ID. An unknown ID or an invalid format gives `group_not_found`. */
+                groupId: components["parameters"]["GroupId"];
+                /** @description The lobby's ID. An invalid format gives `lobby_not_found`. A lobby that belongs to another group gives the same `lobby_not_found` as a missing lobby (ADR 0004 rule 12). */
+                lobbyId: components["parameters"]["LobbyId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetLobbyGameRequest"];
+            };
+        };
+        responses: {
+            /** @description The lobby as saved, without player names. The players are loaded with `GET /api/groups/{groupId}/lobbies/{lobbyId}`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Lobby"];
+                };
+            };
+            /** @description `invalid_request` (invalid JSON, a wrong JSON type or a missing `gameId`; checked before membership) or, after the lobby checks, `invalid_game`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            /** @description `not_allowed`: the caller is not a player of the lobby. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `group_not_found` if the caller is not a member. `lobby_not_found` if the lobby is missing. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `lobby_has_ended` or `lobby_game_set` (the lobby has a game or a custom name already). */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -92,6 +92,8 @@ export interface ApiClient {
     modeId: string,
     currentModeId: string | null,
   ): Promise<void>;
+  /** Sets the game of a lobby with no game, once. The answer has no player names, so callers load the lobby again. */
+  setLobbyGame(groupId: string, lobbyId: string, gameId: string): Promise<void>;
   /** Sets the activity of the lobby's mode. The answer has no player names, so callers load the lobby again. */
   setLobbyActivity(
     groupId: string,

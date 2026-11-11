@@ -23,13 +23,15 @@ var settingsErrors = []struct {
 	{domain.ErrLobbyNotFound, http.StatusNotFound, publicapi.ErrorBodyCodeLobbyNotFound},
 	{domain.ErrLobbyHasEnded, http.StatusConflict, publicapi.ErrorBodyCodeLobbyHasEnded},
 	{domain.ErrNotAllowed, http.StatusForbidden, publicapi.ErrorBodyCodeNotAllowed},
+	{domain.ErrInvalidGame, http.StatusBadRequest, publicapi.ErrorBodyCodeInvalidGame},
 	{domain.ErrInvalidMode, http.StatusBadRequest, publicapi.ErrorBodyCodeInvalidMode},
 	{domain.ErrInvalidActivity, http.StatusBadRequest, publicapi.ErrorBodyCodeInvalidActivity},
+	{domain.ErrLobbyGameSet, http.StatusConflict, publicapi.ErrorBodyCodeLobbyGameSet},
 	{domain.ErrLobbyChanged, http.StatusConflict, publicapi.ErrorBodyCodeLobbyChanged},
 	{domain.ErrLobbyHasMorePlayers, http.StatusConflict, publicapi.ErrorBodyCodeLobbyHasMorePlayers},
 }
 
-// settingsFailure is the error answer of the three settings operations. They share it because every operation answers
+// settingsFailure is the error answer of the four settings operations. They share it because every operation answers
 // the same statuses with the same body, and the generated types differ only by name.
 type settingsFailure struct {
 	status int
@@ -42,6 +44,7 @@ func (f settingsFailure) write(w http.ResponseWriter) error {
 	return json.NewEncoder(w).Encode(publicapi.ErrorResponse{Error: f.body})
 }
 
+func (f settingsFailure) VisitSetLobbyGameResponse(w http.ResponseWriter) error { return f.write(w) }
 func (f settingsFailure) VisitSetLobbyModeResponse(w http.ResponseWriter) error { return f.write(w) }
 func (f settingsFailure) VisitSetLobbyActivityResponse(w http.ResponseWriter) error {
 	return f.write(w)
@@ -63,6 +66,19 @@ func settingsReply(ctx context.Context, lobby domain.Lobby, err error) (publicap
 	}
 	body, err := lobbyBody(lobby)
 	return publicapi.Lobby(body), nil, err
+}
+
+// SetLobbyGame sets the game of a lobby with no game for a player of it. requireBodyKeys has refused a body without its key.
+func (h publicHandler) SetLobbyGame(ctx context.Context, request publicapi.SetLobbyGameRequestObject) (publicapi.SetLobbyGameResponseObject, error) {
+	lobby, err := h.lobbies.SetGame(ctx, request.GroupId, request.LobbyId, userIDFrom(ctx), request.Body.GameId.String())
+	answer, failure, err := settingsReply(ctx, lobby, err)
+	switch {
+	case err != nil:
+		return nil, err
+	case failure != nil:
+		return failure, nil
+	}
+	return publicapi.SetLobbyGame200JSONResponse(answer), nil
 }
 
 // SetLobbyMode changes the mode of a lobby for a player of it. requireBodyKeys has refused a body without its keys.
@@ -113,13 +129,14 @@ func (h publicHandler) ClearLobbyActivity(ctx context.Context, request publicapi
 // requiredBodyKeys lists, per mux pattern as the generated code registers it, the body keys the contract requires, and
 // whether each one may be null.
 var requiredBodyKeys = map[string]map[string]bool{
+	http.MethodPut + " /api/groups/{groupId}/lobbies/{lobbyId}/game":     {"gameId": false},
 	http.MethodPut + " /api/groups/{groupId}/lobbies/{lobbyId}/mode":     {"modeId": false, "currentModeId": true},
 	http.MethodPut + " /api/groups/{groupId}/lobbies/{lobbyId}/activity": {"activityId": false},
 }
 
 // requireBodyKeys refuses a settings body with a required key missing, or null where the contract does not allow it.
 // The generated types read both as the zero UUID or nil, which a valid request can also mean: an all-zero ID is
-// invalid_mode or invalid_activity after the membership check, and an explicit null currentModeId means "no mode". A
+// invalid_game, invalid_mode or invalid_activity after the membership check, and an explicit null currentModeId means "no mode". A
 // body that is not a JSON object is left to the decoder, which reports it as invalid_request.
 func requireBodyKeys(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

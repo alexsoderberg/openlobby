@@ -132,6 +132,14 @@ export function createHttpApiClient(
         }),
       );
     },
+    setLobbyGame: async (groupId, lobbyId, gameId) => {
+      await receive(
+        http.PUT("/api/groups/{groupId}/lobbies/{lobbyId}/game", {
+          params: { path: { groupId, lobbyId } },
+          body: { gameId },
+        }),
+      );
+    },
     setLobbyMode: async (groupId, lobbyId, modeId, currentModeId) => {
       await receive(
         http.PUT("/api/groups/{groupId}/lobbies/{lobbyId}/mode", {

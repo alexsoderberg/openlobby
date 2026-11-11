@@ -207,6 +207,56 @@ describe("changing the mode on the page", () => {
   });
 });
 
+describe("an open lobby on the page", () => {
+  it("is labelled Open, and a player sets the game, then the page shows it and offers its modes", async () => {
+    const open: LobbyDetail = { ...lobby, gameId: null, gameName: null };
+    const getLobby = vi
+      .fn<ApiClient["getLobby"]>()
+      .mockResolvedValueOnce(open)
+      .mockResolvedValue({ ...lobby, gameId: "game1" });
+    const { client } = renderDetail({
+      getLobby,
+      listGroupGames: vi.fn(() =>
+        Promise.resolve([
+          {
+            id: "game1",
+            name: "Catan",
+            defaultMaxPlayers: null,
+            genre: null,
+            modes: [
+              {
+                id: "m1",
+                name: "Casual",
+                maxPlayers: 4,
+                gameRoles: [],
+                activities: [],
+              },
+            ],
+          },
+        ]),
+      ),
+    });
+
+    expect(
+      await screen.findByRole("heading", { name: en.lobbyOpen }),
+    ).toBeTruthy();
+    fireEvent.change(
+      await screen.findByRole("combobox", { name: en.lobbyGameLabel }),
+      { target: { value: "game1" } },
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: en.lobbyGameSetSubmit }),
+    );
+
+    expect(await screen.findByRole("heading", { name: "Catan" })).toBeTruthy();
+    expect(client.setLobbyGame).toHaveBeenCalledWith("g1", "l1", "game1");
+    expect(
+      await screen.findByRole("combobox", { name: en.lobbyModeLabel }),
+    ).toBeTruthy();
+    expect(document.activeElement).toBe(screen.getByText(en.lobbyGameSaved));
+  });
+});
+
 describe("lobby theme", () => {
   it("shows the genre name beside the game name", async () => {
     renderDetail({

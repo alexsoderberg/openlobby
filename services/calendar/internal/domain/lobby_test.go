@@ -65,21 +65,21 @@ func TestNewLobbyGameRules(t *testing.T) {
 	tests := []struct {
 		name     string
 		change   func(*domain.NewLobbyRequest)
-		wantName string
+		wantName *string
 		wantID   *string
 		want     error
 	}{
-		{name: "game of the list", change: func(*domain.NewLobbyRequest) {}, wantName: "Chess", wantID: strPtr("game-1")},
+		{name: "game of the list", change: func(*domain.NewLobbyRequest) {}, wantName: strPtr("Chess"), wantID: strPtr("game-1")},
 		{name: "custom name is trimmed", change: func(r *domain.NewLobbyRequest) {
 			r.GameID, r.Game, r.CustomGameName = nil, nil, strPtr("  Go  ")
-		}, wantName: "Go"},
+		}, wantName: strPtr("Go")},
 		{name: "custom name of 50 code points", change: func(r *domain.NewLobbyRequest) {
 			r.GameID, r.Game, r.CustomGameName = nil, nil, strPtr(strings.Repeat("å", 50))
-		}, wantName: strings.Repeat("å", 50)},
+		}, wantName: strPtr(strings.Repeat("å", 50))},
 		{name: "custom name Other is allowed", change: func(r *domain.NewLobbyRequest) {
 			r.GameID, r.Game, r.CustomGameName = nil, nil, strPtr("Other")
-		}, wantName: "Other"},
-		{name: "no game", change: func(r *domain.NewLobbyRequest) { r.GameID, r.Game = nil, nil }, want: domain.ErrInvalidGame},
+		}, wantName: strPtr("Other")},
+		{name: "no game is an open lobby", change: func(r *domain.NewLobbyRequest) { r.GameID, r.Game = nil, nil }},
 		{name: "both game and custom name", change: func(r *domain.NewLobbyRequest) { r.CustomGameName = strPtr("Go") }, want: domain.ErrInvalidGame},
 		{name: "unknown game id", change: func(r *domain.NewLobbyRequest) { r.Game = nil }, want: domain.ErrInvalidGame},
 		{name: "blank custom name", change: func(r *domain.NewLobbyRequest) {
@@ -105,8 +105,8 @@ func TestNewLobbyGameRules(t *testing.T) {
 			if tc.want != nil {
 				return
 			}
-			if lobby.GameName != tc.wantName {
-				t.Fatalf("game name %q, want %q", lobby.GameName, tc.wantName)
+			if (lobby.GameName == nil) != (tc.wantName == nil) || (tc.wantName != nil && *lobby.GameName != *tc.wantName) {
+				t.Fatalf("game name %v, want %v", lobby.GameName, tc.wantName)
 			}
 			if (lobby.GameID == nil) != (tc.wantID == nil) || (tc.wantID != nil && *lobby.GameID != *tc.wantID) {
 				t.Fatalf("game id %v, want %v", lobby.GameID, tc.wantID)
@@ -149,7 +149,7 @@ func TestNewLobbyCapacityRules(t *testing.T) {
 func TestNewLobbyReportsTheFirstBrokenRule(t *testing.T) {
 	request := validRequest()
 	request.StartsAt = lobbyNow.Add(-time.Hour)
-	request.GameID, request.Game = nil, nil
+	request.Game = nil // an unknown game
 	request.MaxPlayers = maxPtr(0)
 	if _, err := domain.NewLobby(request, lobbyNow); !errors.Is(err, domain.ErrLobbyInPast) {
 		t.Fatalf("error %v, want ErrLobbyInPast", err)

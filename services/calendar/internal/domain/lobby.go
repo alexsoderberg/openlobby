@@ -26,10 +26,10 @@ type Lobby struct {
 	ID              string
 	GroupID         string
 	CreatedByUserID string
-	GameID          *string // nil for a custom game name
-	GameName        string
-	GameGenre       *Genre // the game's genre now, read from the game list; nil for a custom name or a removed game
-	MaxPlayers      *int   // nil means unlimited
+	GameID          *string // nil for a custom game name or no game
+	GameName        *string // nil for a lobby with no game (ADR 0017)
+	GameGenre       *Genre  // the game's genre now, read from the game list; nil for no game, a custom name or a removed game
+	MaxPlayers      *int    // nil means unlimited
 	StartsAt        time.Time
 	EndsAt          time.Time
 	CreatedAt       time.Time
@@ -140,7 +140,7 @@ func NewLobby(request NewLobbyRequest, now time.Time) (Lobby, error) {
 // lobbyChoices are the checked results of the creation rules, in the order they are checked.
 type lobbyChoices struct {
 	gameID      *string
-	gameName    string
+	gameName    *string
 	mode        *GameMode
 	activity    *Activity
 	slots       []RoleSlot
@@ -327,23 +327,26 @@ func checkLobbyTimes(startsAt, endsAt, now time.Time) error {
 	return nil
 }
 
-// chooseGame requires exactly one of a game of the list and a custom name, and returns the id and the name to store.
-func chooseGame(request NewLobbyRequest) (*string, string, error) {
+// chooseGame allows at most one of a game of the list and a custom name, and returns the id and the name to store.
+// Neither is an open lobby with no game (ADR 0017 section 7).
+func chooseGame(request NewLobbyRequest) (*string, *string, error) {
 	switch {
-	case (request.GameID == nil) == (request.CustomGameName == nil):
-		return nil, "", ErrInvalidGame
+	case request.GameID != nil && request.CustomGameName != nil:
+		return nil, nil, ErrInvalidGame
 	case request.GameID != nil:
 		if request.Game == nil {
-			return nil, "", ErrInvalidGame
+			return nil, nil, ErrInvalidGame
 		}
-		id := request.Game.ID
-		return &id, request.Game.Name, nil
+		id, name := request.Game.ID, request.Game.Name
+		return &id, &name, nil
+	case request.CustomGameName == nil:
+		return nil, nil, nil
 	}
 	name, ok := trimName(*request.CustomGameName, maxNameLength)
 	if !ok {
-		return nil, "", ErrInvalidGame
+		return nil, nil, ErrInvalidGame
 	}
-	return nil, name, nil
+	return nil, &name, nil
 }
 
 // ErrLobbyHasEnded means the lobby's end time has passed, so nobody can join it (REQ-0005).

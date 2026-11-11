@@ -161,8 +161,25 @@ func (t *lobbyTx) LobbyFacts(_ context.Context, groupID, id, userID string) (dom
 	if !ok || lobby.GroupID != groupID {
 		return domain.LobbyFacts{}, false, nil
 	}
-	return domain.LobbyFacts{EndsAt: lobby.EndsAt, GameID: lobby.GameID, ModeID: lobby.ModeID, PlayerCount: len(t.players[id]),
+	return domain.LobbyFacts{EndsAt: lobby.EndsAt, GameID: lobby.GameID, HasGame: lobby.GameName != nil, ModeID: lobby.ModeID, PlayerCount: len(t.players[id]),
 		IsPlayer: slices.Contains(t.players[id], userID)}, true, nil
+}
+
+func (t *lobbyTx) GameOfList(_ context.Context, gameID string) (domain.Game, bool, error) {
+	t.reads++
+	for _, game := range t.tree {
+		if game.ID == gameID {
+			return game, true, nil
+		}
+	}
+	return domain.Game{}, false, nil
+}
+
+func (t *lobbyTx) SetLobbyGame(_ context.Context, id string, game domain.Game) error {
+	lobby := t.lobbies[id]
+	lobby.GameID, lobby.GameName = &game.ID, &game.Name
+	t.lobbies[id] = lobby
+	return nil
 }
 
 func (t *lobbyTx) ModeOfGame(_ context.Context, gameID, modeID string) (domain.GameMode, bool, error) {
@@ -263,7 +280,7 @@ func TestCreateLobbySavesLobbyForMemberWithGameNameCopied(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if lobby.ID != newLobby || lobby.GameName != "Chess" || lobby.CreatedByUserID != bobID || lobby.PlayerCount != 1 {
+	if lobby.ID != newLobby || *lobby.GameName != "Chess" || lobby.CreatedByUserID != bobID || lobby.PlayerCount != 1 {
 		t.Fatalf("lobby %+v, want the stored ID, game name Chess, Bob as creator and one player", lobby)
 	}
 	if !lobby.CreatedAt.Equal(now) {
@@ -316,7 +333,7 @@ func TestCreateLobbyWithCustomNameDoesNotAskTheGameList(t *testing.T) {
 
 	lobby, err := newLobbies(newLobbyStore(), catalog).Create(context.Background(), request)
 
-	if err != nil || lobby.GameName != "Go" || lobby.GameID != nil {
+	if err != nil || *lobby.GameName != "Go" || lobby.GameID != nil {
 		t.Fatalf("lobby %+v, error %v; want custom name Go and no game id", lobby, err)
 	}
 	if catalog.findCalls != 0 {

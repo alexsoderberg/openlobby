@@ -44,7 +44,6 @@ describe("parseLobbyInput", () => {
   });
 
   it.each([
-    ["no game chosen", { game: "" }],
     ["an empty name for Other", { game: OTHER_GAME, customGameName: "  " }],
     [
       "a name of 51 characters",
@@ -52,6 +51,16 @@ describe("parseLobbyInput", () => {
     ],
   ])("denies %s with invalid_game", (_, fields) => {
     expect(parse(fields)).toEqual({ ok: false, code: "invalid_game" });
+  });
+
+  it("builds an open lobby with neither gameId nor customGameName when no game is chosen", () => {
+    const result = parse({ game: "" });
+    expect(result.ok).toBe(true);
+    expect(result.ok && Object.keys(result.input)).toEqual([
+      "maxPlayers",
+      "startsAt",
+      "endsAt",
+    ]);
   });
 
   it("allows a name of exactly 50 characters", () => {

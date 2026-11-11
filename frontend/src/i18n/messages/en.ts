@@ -204,6 +204,8 @@ export const en = {
   lobbyPlayers: (count: number, max: number | null) =>
     max === null ? `${count} players` : `${count}/${max} players`,
   lobbyLabelSeparator: " › ",
+  // The label of a lobby with no game (ADR 0017 section 4).
+  lobbyOpen: "Open",
   lobbyRoleSlotsLabel: "Game roles",
   lobbyRoleSlot: (name: string, count: number, slots: number) =>
     `${name} ${count}/${slots}`,
@@ -228,7 +230,9 @@ export const en = {
   lobbyCreateButton: "Create lobby",
   gamesLoading: "Loading the games.",
   lobbyGameLabel: "Game",
-  lobbyGameChoose: "Choose a game",
+  lobbyGameNone: "No game yet",
+  lobbyGameHint:
+    "With no game, the lobby is shown as Open. A player can set the game later.",
   lobbyGameOther: RESERVED_GAME_NAME,
   lobbyCustomGameLabel: "Name of the game",
   lobbyCustomGameHint: `1 to ${GAME_NAME_MAX_LENGTH} characters.`,
@@ -292,7 +296,15 @@ export const en = {
   lobbyModeChangeKeep: "Keep mode",
   lobbySettingsSaved: "Saved.",
   lobbySettingsNotPlayer:
-    "Only players of this lobby can change its mode or activity. Join the lobby first.",
+    "Only players of this lobby can change its game, mode or activity. Join the lobby first.",
+  lobbyGameSetHeading: "Game",
+  lobbyGameSetHint:
+    "This lobby is Open. Choose its game. The game cannot be changed afterwards.",
+  lobbyGameSetChoose: "Choose a game",
+  lobbyGameSetSubmit: "Set game",
+  lobbyGameSaved: "Game set.",
+  lobbyGameSetInvalid:
+    "This game is no longer in the game list. Choose another game.",
 
   shell: {
     mainNav: "Main",
@@ -347,6 +359,8 @@ export const en = {
       "Someone changed this lobby while you were looking at it. It now shows the current mode. Try again if you still want the change.",
     lobby_has_more_players:
       "The lobby has more players than this mode allows. Choose another mode, or wait until someone leaves.",
+    lobby_game_set:
+      "Someone else set the game of this lobby first. It now shows that game.",
   },
 
   genericError: "Something went wrong. Try again in a moment.",
@@ -384,6 +398,7 @@ export const en = {
     invalid_game_role: "A game role name must be 1 to 30 characters.",
     game_role_full:
       "This game role has no free slot. Choose another game role or flex.",
+    lobby_game_set: "This lobby already has a game. Reload it to see it.",
     lobby_changed:
       "The lobby was changed by someone else. Reload it and try again.",
     lobby_has_more_players:

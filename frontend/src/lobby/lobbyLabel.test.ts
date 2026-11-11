@@ -20,4 +20,10 @@ describe("lobbyLabel", () => {
   ])("%s", (_name, mode, activity, expected) => {
     expect(label(mode, activity)).toBe(expected);
   });
+
+  it("is Open for a lobby with no game", () => {
+    expect(
+      lobbyLabel({ gameName: null, modeName: null, activityName: null }, en),
+    ).toBe("Open");
+  });
 });

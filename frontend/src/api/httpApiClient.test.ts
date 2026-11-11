@@ -46,6 +46,7 @@ const failingCalls: Array<[string, (api: ApiClient) => Promise<unknown>]> = [
   ],
   ["deleteLobby", (api) => api.deleteLobby("g1", "l1")],
   ["joinLobby", (api) => api.joinLobby("g1", "l1")],
+  ["setLobbyGame", (api) => api.setLobbyGame("g1", "l1", "game1")],
   ["setLobbyMode", (api) => api.setLobbyMode("g1", "l1", "m1", null)],
   ["setLobbyActivity", (api) => api.setLobbyActivity("g1", "l1", "a1")],
   ["clearLobbyActivity", (api) => api.clearLobbyActivity("g1", "l1")],
@@ -243,7 +244,7 @@ describe("createHttpApiClient", () => {
     expect(sent).toEqual(['{"gameRoleId":"r1"}', '{"flex":true}', ""]);
   });
 
-  it("sends the mode with the mode the caller saw, and the activity calls", async () => {
+  it("sends the game, the mode with the mode the caller saw, and the activity calls", async () => {
     const sent: { method: string; path: string; body: string }[] = [];
     const fetchImpl = vi.fn<typeof fetch>(async (input) => {
       const request = new Request(input);
@@ -256,12 +257,14 @@ describe("createHttpApiClient", () => {
     });
     const api = createHttpApiClient(fetchImpl, BASE_URL);
 
+    await api.setLobbyGame("g1", "l1", "game1");
     await api.setLobbyMode("g1", "l1", "m2", null);
     await api.setLobbyActivity("g1", "l1", "a1");
     await api.clearLobbyActivity("g1", "l1");
 
     const base = "/api/groups/g1/lobbies/l1";
     expect(sent).toEqual([
+      { method: "PUT", path: `${base}/game`, body: '{"gameId":"game1"}' },
       {
         method: "PUT",
         path: `${base}/mode`,

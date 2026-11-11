@@ -432,7 +432,7 @@ paths:
         - `startsAt` is in the future. Otherwise `lobby_in_past`.
         - `endsAt` is after `startsAt`. Otherwise `lobby_end_not_after_start`.
         - The lobby is shorter than 24 hours. Exactly 24 hours is rejected. Otherwise `lobby_too_long`.
-        - Exactly one of `gameId` and `customGameName` is given. `gameId` must be the ID of a game in the game list. An unknown value, including a value that is not in uuid form, gives `invalid_game`. `customGameName` is 1–50 characters after trim. Otherwise `invalid_game`.
+        - At most one of `gameId` and `customGameName` is given; neither gives an open lobby with no game (`gameName` `null`). `gameId` must be the ID of a game in the game list. An unknown value, including a value that is not in uuid form, gives `invalid_game`. `customGameName` is 1–50 characters after trim. Otherwise `invalid_game`.
         - `modeId` needs `gameId`. A mode that is unknown, not a mode of the chosen game, or given with `customGameName`, gives `invalid_mode`.
         - `activityId` needs `modeId`. An activity that is unknown, not an activity of the chosen mode, or given without `modeId`, gives `invalid_activity`.
         - Game roles. The owner of the roles is the mode if given, otherwise the game if it has no modes, otherwise there are none. `roleSlots` omitted means the owner's own slots. Each `gameRoleId` must be a role of the owner, with no duplicates, otherwise `invalid_game_role`; `roleSlots` for an owner without roles also gives `invalid_game_role`. Roles not listed count 0. Each `slots` is an integer from 0 to 2147483647 and the sum must be from 1 to 2147483647, otherwise `invalid_capacity`. Roles with 0 slots are not stored. With roles, `maxPlayers` must be omitted or `null` (the sum is used), otherwise `invalid_capacity`.
@@ -531,6 +531,65 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
         '404':
           description: "`group_not_found` if the caller is not a member. `lobby_not_found` if the lobby is missing."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/groups/{groupId}/lobbies/{lobbyId}/game:
+    put:
+      operationId: setLobbyGame
+      tags: [Lobbies]
+      summary: Set the game of a lobby with no game
+      description: |
+        Only a player of the lobby may change it. Runs in one transaction under the group's lock, and every value and state below is read after the lock.
+        Order: the form of the path and the body (`invalid_request`; an invalid uuid in the path gives its not-found code, from left to right), membership (`group_not_found`),
+        the lobby exists in this group (`lobby_not_found`), its end time has not passed (`lobby_has_ended`), the caller is a player (`not_allowed`),
+        the game (`invalid_game`: not in the game list), then the state: the lobby has no game yet (`lobby_game_set`, also for a custom name).
+        The game's ID and name are copied into the lobby. A game once set never changes. The max players, the players and the role slots do not change.
+      parameters:
+        - $ref: '#/components/parameters/RequestIdHeader'
+        - $ref: '#/components/parameters/GroupId'
+        - $ref: '#/components/parameters/LobbyId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetLobbyGameRequest'
+      responses:
+        '200':
+          description: The lobby as saved, without player names. The players are loaded with `GET /api/groups/{groupId}/lobbies/{lobbyId}`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Lobby'
+        '400':
+          description: "`invalid_request` (invalid JSON, a wrong JSON type or a missing `gameId`; checked before membership) or, after the lobby checks, `invalid_game`."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: "`not_allowed`: the caller is not a player of the lobby."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: "`group_not_found` if the caller is not a member. `lobby_not_found` if the lobby is missing."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: "`lobby_has_ended` or `lobby_game_set` (the lobby has a game or a custom name already)."
           content:
             application/json:
               schema:
@@ -1113,6 +1172,7 @@ components:
             - invalid_activity
             - invalid_game_role
             - game_role_full
+            - lobby_game_set
             - lobby_changed
             - lobby_has_more_players
             - game_taken
@@ -1278,15 +1338,19 @@ components:
           format: uuid
           nullable: true
           x-omitempty: false
-          description: ID of the lobby's game in the game list, a copy kept in the lobby. `null` for a custom name ("Other"). Not in `required` so that existing fixtures stay valid, but the server always sends it (ADR 0017).
+          description: ID of the lobby's game in the game list, a copy kept in the lobby. `null` for a lobby with no game or a custom name ("Other"). Not in `required` so that existing fixtures stay valid, but the server always sends it (ADR 0017).
         gameName:
-          $ref: '#/components/schemas/GameName'
+          type: string
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/GameName'
+          description: Name of the lobby's game, a copy kept in the lobby. `null` for a lobby with no game, shown as "Open" (ADR 0017).
         gameGenre:
           type: string
           nullable: true
           allOf:
             - $ref: '#/components/schemas/Genre'
-          description: Genre of the lobby's game as it is in the game list now. `null` for a custom name ("Other"), a game without a genre, or a game that was removed. Not stored in the lobby, so a genre change shows at the next read.
+          description: Genre of the lobby's game as it is in the game list now. `null` for a lobby with no game, a custom name ("Other"), a game without a genre, or a game that was removed. Not stored in the lobby, so a genre change shows at the next read.
         maxPlayers:
           $ref: '#/components/schemas/MaxPlayers'
         startsAt:
@@ -1392,6 +1456,15 @@ components:
               x-omitempty: false
               description: The player's game role. `null` means flex. Not in `required` so that existing fixtures stay valid, but the server always sends it (ADR 0017).
 
+    SetLobbyGameRequest:
+      type: object
+      required: [gameId]
+      properties:
+        gameId:
+          type: string
+          format: uuid
+          description: The game to set, a game of the game list. An unknown game gives `invalid_game`.
+
     SetLobbyModeRequest:
       type: object
       required: [modeId, currentModeId]
@@ -1441,7 +1514,7 @@ components:
         gameId:
           type: string
           nullable: true
-          description: ID of a game in the game list. Exactly one of `gameId` and `customGameName` must be given. An unknown value, including one that is not a uuid, gives `invalid_game`.
+          description: ID of a game in the game list. At most one of `gameId` and `customGameName` may be given; neither gives a lobby with no game. An unknown value, including one that is not a uuid, gives `invalid_game`.
         modeId:
           type: string
           nullable: true

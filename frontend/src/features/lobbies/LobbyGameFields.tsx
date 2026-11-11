@@ -35,7 +35,7 @@ export function LobbyGameFields({
   );
 }
 
-/** The group's games in the server's order (most used first), then "Other". */
+/** No game (an open lobby), the group's games in the server's order (most used first), then "Other". */
 function GameSelect({
   id,
   games,
@@ -51,14 +51,18 @@ function GameSelect({
 }) {
   const m = useMessages();
   return (
-    <LobbyField id={`${id}-game`} label={m.lobbyGameLabel}>
+    <LobbyField
+      id={`${id}-game`}
+      label={m.lobbyGameLabel}
+      hint={m.lobbyGameHint}
+    >
       <select
-        {...fieldProps(`${id}-game`, false, errorId)}
+        {...fieldProps(`${id}-game`, true, errorId)}
         name="game"
         value={value}
         onChange={(event) => onChange(event.target.value)}
       >
-        <option value="">{m.lobbyGameChoose}</option>
+        <option value="">{m.lobbyGameNone}</option>
         {games.map((game) => (
           <option key={game.id} value={game.id}>
             {game.name}

@@ -92,8 +92,24 @@ func (t memoryLobbyTx) LobbyFacts(_ context.Context, groupID, lobbyID, userID st
 	if !ok || lobby.GroupID != groupID {
 		return domain.LobbyFacts{}, false, nil
 	}
-	return domain.LobbyFacts{EndsAt: lobby.EndsAt, GameID: lobby.GameID, ModeID: lobby.ModeID, PlayerCount: lobby.PlayerCount,
+	return domain.LobbyFacts{EndsAt: lobby.EndsAt, GameID: lobby.GameID, HasGame: lobby.GameName != nil, ModeID: lobby.ModeID, PlayerCount: lobby.PlayerCount,
 		IsPlayer: t.store.joined[lobbyID+"/"+userID]}, true, nil
+}
+
+func (t memoryLobbyTx) GameOfList(_ context.Context, gameID string) (domain.Game, bool, error) {
+	for _, game := range t.store.games {
+		if game.ID == gameID {
+			return game, true, nil
+		}
+	}
+	return domain.Game{}, false, nil
+}
+
+func (t memoryLobbyTx) SetLobbyGame(_ context.Context, lobbyID string, game domain.Game) error {
+	lobby := t.store.lobbies[lobbyID]
+	lobby.GameID, lobby.GameName = &game.ID, &game.Name
+	t.store.lobbies[lobbyID] = lobby
+	return nil
 }
 
 func (t memoryLobbyTx) ModeOfGame(_ context.Context, gameID, modeID string) (domain.GameMode, bool, error) {
@@ -211,7 +227,7 @@ func TestCreateLobbyReturns201WithTheContractShape(t *testing.T) {
 	tests := []struct {
 		name      string
 		body      string
-		wantGame  string
+		wantGame  any
 		wantMax   any
 		wantStart string
 	}{
@@ -219,6 +235,7 @@ func TestCreateLobbyReturns201WithTheContractShape(t *testing.T) {
 		{name: "custom name with max, offset time shown in UTC", body: lobbyJSON("2026-11-02T20:00:00+01:00", validEnd, `,"customGameName":"  Go  ","maxPlayers":4`),
 			wantGame: "Go", wantMax: float64(4), wantStart: validStart},
 		{name: "explicit null max and null game id", body: lobbyJSON(validStart, validEnd, `,"gameId":null,"customGameName":"Go","maxPlayers":null`), wantGame: "Go", wantStart: validStart},
+		{name: "no game is an open lobby", body: lobbyJSON(validStart, validEnd, `,"maxPlayers":3`), wantGame: nil, wantMax: float64(3), wantStart: validStart},
 		{name: "largest max", body: lobbyJSON(validStart, validEnd, withChess+`,"maxPlayers":2147483647`), wantGame: "Chess", wantMax: float64(2147483647), wantStart: validStart},
 	}
 	for _, tc := range tests {
@@ -284,7 +301,6 @@ func TestCreateLobbyGivesTheContractErrors(t *testing.T) {
 		{name: "end equal to start", body: lobbyJSON(validStart, validStart, withChess), wantCode: "lobby_end_not_after_start", want: 400},
 		{name: "end before start", body: lobbyJSON(validStart, "2026-11-02T18:30:00Z", withChess), wantCode: "lobby_end_not_after_start", want: 400},
 		{name: "exactly 24 hours", body: lobbyJSON(validStart, "2026-11-03T19:00:00Z", withChess), wantCode: "lobby_too_long", want: 400},
-		{name: "no game", body: lobbyJSON(validStart, validEnd, ""), wantCode: "invalid_game", want: 400},
 		{name: "both game and custom name", body: lobbyJSON(validStart, validEnd, withChess+`,"customGameName":"Go"`), wantCode: "invalid_game", want: 400},
 		{name: "unknown game", body: lobbyJSON(validStart, validEnd, `,"gameId":"`+missingID+`"`), wantCode: "invalid_game", want: 400},
 		{name: "game id that is not a uuid", body: lobbyJSON(validStart, validEnd, `,"gameId":"chess"`), wantCode: "invalid_game", want: 400},
@@ -389,11 +405,11 @@ func TestDeleteLobbyNeedsALoggedInUserAndADatabase(t *testing.T) {
 func upcomingStore() *memoryGroups {
 	store := lobbyStore()
 	start := time.Date(2026, 11, 2, 19, 0, 0, 0, time.UTC)
-	store.lobbies[otherLobby] = domain.Lobby{ID: otherLobby, GroupID: fridayID, CreatedByUserID: otherID, GameName: "Chess",
+	store.lobbies[otherLobby] = domain.Lobby{ID: otherLobby, GroupID: fridayID, CreatedByUserID: otherID, GameName: strp("Chess"),
 		StartsAt: start.Add(time.Hour), EndsAt: start.Add(2 * time.Hour), PlayerCount: 1, JoinedByMe: true}
-	store.lobbies[aliceLobby] = domain.Lobby{ID: aliceLobby, GroupID: fridayID, CreatedByUserID: alexID, GameName: "Go",
+	store.lobbies[aliceLobby] = domain.Lobby{ID: aliceLobby, GroupID: fridayID, CreatedByUserID: alexID, GameName: strp("Go"),
 		StartsAt: start, EndsAt: start.Add(time.Hour), PlayerCount: 2}
-	store.lobbies[endedLobby] = domain.Lobby{ID: endedLobby, GroupID: fridayID, CreatedByUserID: alexID, GameName: "Old"}
+	store.lobbies[endedLobby] = domain.Lobby{ID: endedLobby, GroupID: fridayID, CreatedByUserID: alexID, GameName: strp("Old")}
 	return store
 }
 
@@ -577,7 +593,7 @@ func TestLobbyResponsesCarryTheGameGenre(t *testing.T) {
 	store := lobbyStore()
 	strategy := domain.Genre("strategy")
 	store.games[0].Genre = &strategy
-	store.lobbies[aliceLobby] = domain.Lobby{ID: aliceLobby, GroupID: fridayID, CreatedByUserID: alexID, GameName: "Chess", GameGenre: &strategy}
+	store.lobbies[aliceLobby] = domain.Lobby{ID: aliceLobby, GroupID: fridayID, CreatedByUserID: alexID, GameName: strp("Chess"), GameGenre: &strategy}
 
 	created := call(newRouter(store, fridayDirectory()), http.MethodPost, lobbiesPath, asUser(otherID), lobbyJSON(validStart, validEnd, withChess))
 	listed := call(newRouter(store, fridayDirectory()), http.MethodGet, lobbiesPath, asUser(otherID), "")
