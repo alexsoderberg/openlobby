@@ -1,7 +1,9 @@
 # REQ-0015. Game modes, named activities and open lobbies
-Status: Decided
+Status: Implemented
 Feature: F-033, F-034
 Priority: Should
+
+Build status (2026-11-11): all acceptance criteria are built in ADR 0017 PR1 to PR6. The UI-only criteria are PR4 (confirmation before removing a mode or activity) and PR5 (label truncation in the week view block). The open-lobby criteria are PR6 (APPROVED, merge pending).
 
 Decided by the user (DECISION, user, 2026-11-07) in four points, and the user's answers to the twelve questions of 2026-11-08 (DECISION, user, 2026-11-08). They are listed under Decisions. The acceptance criteria are written by the product owner. The ASSUMPTIONs are the product owner's defaults for details the user did not address; they are listed under Assumptions and stand unless the user overrules them. The data model, API and design are the architect's.
 
@@ -138,7 +140,7 @@ F-004, F-017, F-028 (lobby lists, week view, Dashboard) and F-032 (genre themes)
 
 F-030 (Game presentation: logo and accent color): no interaction in this requirement. The per-game accent color, when built, follows the game as before.
 
-## Amendments to other requirements (decided 2026-11-08, pending implementation)
+## Amendments to other requirements (decided 2026-11-08, implemented 2026-11-11)
 Each amendment is written in the requirement it changes, marked "Amendment 2026-11-08 (REQ-0015)", with the replaced wording kept as "Old wording".
 - REQ-0003: the game is optional; the open lobby criteria replace "game is mandatory"; mode and activity are added to the form; max players is prefilled from the mode. F-018 exception recorded.
 - REQ-0009: the game list has modes and activities as new fields; game-level default max and game roles apply only to games without modes; lobbies without a game do not count toward the "most used first" order.

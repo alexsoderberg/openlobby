@@ -71,7 +71,7 @@ describe("game choice", () => {
 
     const select = await field(en.lobbyGameLabel);
     expect(Array.from(select.options, (option) => option.text)).toEqual([
-      en.lobbyGameChoose,
+      en.lobbyGameNone,
       "Chess",
       "Catan",
       "Other",
@@ -150,6 +150,21 @@ describe("saving a lobby", () => {
     );
   });
 
+  it("creates an open lobby with no game when none is chosen", async () => {
+    const { client, onCreated } = renderForm();
+    await fillValid();
+    set(await field(en.lobbyGameLabel), "");
+
+    submit();
+
+    await waitFor(() => expect(onCreated).toHaveBeenCalled());
+    expect(client.createLobby).toHaveBeenCalledWith("g1", {
+      maxPlayers: null,
+      startsAt: new Date(2026, 10, 5, 18).toISOString(),
+      endsAt: new Date(2026, 10, 5, 20).toISOString(),
+    });
+  });
+
   it("reads an end clock time before the start as the next day", async () => {
     const { client } = renderForm();
     await fillValid({ start: "22:00", end: "02:00" });
@@ -197,15 +212,6 @@ describe("local checks", () => {
     await fillValid({ end: "" });
 
     await expectDenied(en.lobbyTimeMissing, en.lobbyDateLabel);
-  });
-
-  it("denies no game chosen", async () => {
-    const { client } = renderForm();
-    await fillValid();
-    set(await field(en.lobbyGameLabel), "");
-
-    await expectDenied(en.errors.invalid_game, en.lobbyGameLabel);
-    expect(client.createLobby).not.toHaveBeenCalled();
   });
 
   it.each(["", "x".repeat(51)])(

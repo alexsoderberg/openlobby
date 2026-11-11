@@ -488,3 +488,87 @@ func wholeModeChange(lobby domain.Lobby, players []domain.Player) error {
 	}
 	return nil
 }
+
+// rolesGame has game roles on the game and no modes, so a lobby created with it would get role slots.
+func rolesGame(t *testing.T, store *Store) domain.Game {
+	t.Helper()
+	game, err := store.Games().Create(context.Background(), domain.Game{Name: "Roles Game", GameRoles: []domain.GameRole{{Name: "Tank", Slots: 1}, {Name: "Healer", Slots: 2}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return game
+}
+
+// openLobby creates a lobby with no game and room for three, with Alex as its only player.
+func openLobby(t *testing.T, store *Store) domain.Lobby {
+	t.Helper()
+	lobby, err := seatLobbies(store).Create(context.Background(), domain.NewLobbyRequest{GroupID: fridayID, CreatorID: alexID,
+		StartsAt: joinedAt.Add(time.Hour), EndsAt: joinedAt.Add(3 * time.Hour), MaxPlayers: intPtr(3)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return lobby
+}
+
+// A lobby created with no game stores no name, and its game can be set once: the ID and name are copied, the max
+// players stay and no role slots are made (ADR 0017 section 10).
+func TestCreateOpenLobbyThenSetItsGameOnce(t *testing.T) {
+	store := migratedStore(t)
+	seedGroups(t, store)
+	game := rolesGame(t, store)
+	lobby := openLobby(t, store)
+	ctx := context.Background()
+	if n := count(t, store, `SELECT count(*) FROM lobbies WHERE id = $1 AND game_id IS NULL AND game_name IS NULL`, lobby.ID); n != 1 || lobby.GameName != nil {
+		t.Fatalf("stored %d open rows, name %v; want an open lobby with no game", n, lobby.GameName)
+	}
+
+	saved, err := seatLobbies(store).SetGame(ctx, fridayID, lobby.ID, alexID, game.ID)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	if saved.GameID == nil || *saved.GameID != game.ID || saved.GameName == nil || *saved.GameName != "Roles Game" ||
+		saved.MaxPlayers == nil || *saved.MaxPlayers != 3 || len(saved.RoleSlots) != 0 || saved.ModeID != nil || !saved.JoinedByMe {
+		t.Fatalf("saved %+v, want the game copied, max 3 kept and no role slots", saved)
+	}
+	if _, err := seatLobbies(store).SetGame(ctx, fridayID, lobby.ID, alexID, counterStrikeID); !errors.Is(err, domain.ErrLobbyGameSet) {
+		t.Fatalf("second set: error %v, want ErrLobbyGameSet", err)
+	}
+	if n := count(t, store, `SELECT count(*) FROM lobbies WHERE id = $1 AND game_id = $2 AND game_name = 'Roles Game'`, lobby.ID, game.ID); n != 1 {
+		t.Fatal("the game changed after it was set")
+	}
+}
+
+// The refusals of PUT .../game in the order of ADR 0017 section 10, and the lobby keeps no game after them.
+func TestSetGameRefusals(t *testing.T) {
+	store := migratedStore(t)
+	seedGroups(t, store)
+	addMember(t, store, fridayID, otherID)
+	lobby := openLobby(t, store)
+	custom := insertLobby(t, store, newLobby(fridayID, alexID, nil, "Go"))
+	lobbies := seatLobbies(store)
+	ended := application.NewLobbies(store.Lobbies(), store.Lobbies(), store.Games(), nil, fixedNow{joinedAt.Add(4 * time.Hour)})
+	ctx := context.Background()
+
+	for name, tc := range map[string]struct {
+		lobbies         *application.Lobbies
+		lobbyID, userID string
+		gameID          string
+		want            error
+	}{
+		"non-member":           {lobbies, lobby.ID, strangerID, counterStrikeID, domain.ErrGroupNotFound},
+		"member, not a player": {lobbies, lobby.ID, otherID, counterStrikeID, domain.ErrNotAllowed},
+		"unknown lobby":        {lobbies, nobodyID, alexID, counterStrikeID, domain.ErrLobbyNotFound},
+		"ended":                {ended, lobby.ID, alexID, nobodyID, domain.ErrLobbyHasEnded},
+		"unknown game":         {lobbies, lobby.ID, alexID, nobodyID, domain.ErrInvalidGame},
+		"unknown game first":   {lobbies, custom.ID, alexID, nobodyID, domain.ErrInvalidGame},
+		"custom name is set":   {lobbies, custom.ID, alexID, counterStrikeID, domain.ErrLobbyGameSet},
+	} {
+		if _, err := tc.lobbies.SetGame(ctx, fridayID, tc.lobbyID, tc.userID, tc.gameID); !errors.Is(err, tc.want) {
+			t.Fatalf("%s: error %v, want %v", name, err, tc.want)
+		}
+	}
+	if n := count(t, store, `SELECT count(*) FROM lobbies WHERE id = $1 AND game_id IS NULL AND game_name IS NULL`, lobby.ID); n != 1 {
+		t.Fatal("a refused change was saved")
+	}
+}

@@ -11,11 +11,12 @@ import (
 )
 
 const (
-	duelModeID  = "b2b2b2b2-b2b2-4b2b-8b2b-b2b2b2b2b2b3"
-	arenaID     = "e5e5e5e5-e5e5-4e5e-8e5e-e5e5e5e5e5e6"
-	outsiderID  = "77777777-7777-4777-8777-777777777777"
-	modePath    = lobbiesPath + "/" + roleLobby + "/mode"
-	activityURL = lobbiesPath + "/" + roleLobby + "/activity"
+	duelModeID   = "b2b2b2b2-b2b2-4b2b-8b2b-b2b2b2b2b2b3"
+	arenaID      = "e5e5e5e5-e5e5-4e5e-8e5e-e5e5e5e5e5e6"
+	outsiderID   = "77777777-7777-4777-8777-777777777777"
+	modePath     = lobbiesPath + "/" + roleLobby + "/mode"
+	activityURL  = lobbiesPath + "/" + roleLobby + "/activity"
+	lobbyGameURL = lobbiesPath + "/" + roleLobby + "/game"
 )
 
 // settingsStore is the quest store with the lobby in the mode Raid (activity The Keep), Alex as its only player, and a
@@ -200,4 +201,75 @@ func TestSetLobbyModeToACorruptModeIs500(t *testing.T) {
 	response := call(newRouter(store, fridayDirectory()), http.MethodPut, modePath, asUser(alexID), modeBody(duelModeID, `"`+raidModeID+`"`))
 
 	assertErrorEnvelope(t, response, http.StatusInternalServerError, "internal_error")
+}
+
+// openStore is the settings store with the lobby open: no game, no mode, no role slots.
+func openStore() *memoryGroups {
+	store := settingsStore()
+	lobby := store.lobbies[roleLobby]
+	lobby.GameID, lobby.GameName, lobby.ModeID, lobby.ModeName, lobby.ActivityID, lobby.ActivityName, lobby.RoleSlots = nil, nil, nil, nil, nil, nil, nil
+	store.lobbies[roleLobby] = lobby
+	return store
+}
+
+func gameBody(gameID string) string { return `{"gameId":"` + gameID + `"}` }
+
+func withGameName(gameID *string, name string) func(*memoryGroups) {
+	return func(s *memoryGroups) {
+		lobby := s.lobbies[roleLobby]
+		lobby.GameID, lobby.GameName = gameID, &name
+		s.lobbies[roleLobby] = lobby
+	}
+}
+
+func TestSetLobbyGameReturnsTheLobbyWithoutAskingAuth(t *testing.T) {
+	names := &fakeDirectory{err: domain.ErrUnavailable}
+
+	response := call(newRouter(openStore(), names), http.MethodPut, lobbyGameURL, asUser(alexID), gameBody(chessGameID))
+
+	if response.Code != http.StatusOK {
+		t.Fatalf("status %d, want 200; body %q", response.Code, response.Body.String())
+	}
+	var got map[string]any
+	if err := json.Unmarshal(response.Body.Bytes(), &got); err != nil {
+		t.Fatal(err)
+	}
+	_, hasPlayers := got["players"]
+	if got["gameId"] != chessGameID || got["gameName"] != "Chess" || got["maxPlayers"] != float64(3) || got["modeId"] != nil || hasPlayers || names.calls != 0 {
+		t.Fatalf("body %q with %d name lookups, want Chess, max 3 kept, no mode, no players key and no lookup", response.Body.String(), names.calls)
+	}
+}
+
+// The shape, the authorization and the check order of PUT .../game (ADR 0017 sections 10 and 15).
+func TestSetLobbyGameAnswersTheContractStatuses(t *testing.T) {
+	tests := []struct {
+		name   string
+		body   string
+		caller string
+		setup  func(*memoryGroups)
+		status int
+		code   string
+	}{
+		{name: "missing gameId before membership", body: `{}`, caller: outsiderID, status: http.StatusBadRequest, code: "invalid_request"},
+		{name: "null gameId", body: `{"gameId":null}`, caller: alexID, status: http.StatusBadRequest, code: "invalid_request"},
+		{name: "gameId not a uuid", body: `{"gameId":"nope"}`, caller: alexID, status: http.StatusBadRequest, code: "invalid_request"},
+		{name: "non-member", body: gameBody(chessGameID), caller: outsiderID, status: http.StatusNotFound, code: "group_not_found"},
+		{name: "member who is not a player", body: gameBody(chessGameID), caller: otherID, status: http.StatusForbidden, code: "not_allowed"},
+		{name: "unknown game", body: gameBody(missingID), caller: alexID, status: http.StatusBadRequest, code: "invalid_game"},
+		{name: "unknown game before a set game", body: gameBody(missingID), caller: alexID, setup: withGameName(nil, "Go"), status: http.StatusBadRequest, code: "invalid_game"},
+		{name: "a custom name is set", body: gameBody(chessGameID), caller: alexID, setup: withGameName(nil, "Go"), status: http.StatusConflict, code: "lobby_game_set"},
+		{name: "a game is set", body: gameBody(chessGameID), caller: alexID, setup: withGameName(strp(questGameID), "Quest"), status: http.StatusConflict, code: "lobby_game_set"},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			store := openStore()
+			if tc.setup != nil {
+				tc.setup(store)
+			}
+
+			response := call(newRouter(store, fridayDirectory()), http.MethodPut, lobbyGameURL, asUser(tc.caller), tc.body)
+
+			assertErrorEnvelope(t, response, tc.status, tc.code)
+		})
+	}
 }

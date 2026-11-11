@@ -152,6 +152,25 @@ func (l *Lobbies) Join(ctx context.Context, groupID, lobbyID, callerID string, s
 	return nil
 }
 
+// SetGame sets the game of a lobby with no game for a player of it and returns the lobby as saved. The game is read under
+// the group lock (ADR 0017 section 10); the rules are domain.LobbyFacts.CheckGameChange.
+func (l *Lobbies) SetGame(ctx context.Context, groupID, lobbyID, callerID, gameID string) (domain.Lobby, error) {
+	return l.changeSettings(ctx, groupID, lobbyID, callerID, func(tx LobbyTx, facts domain.LobbyFacts) error {
+		game, ok, err := tx.GameOfList(ctx, gameID)
+		if err != nil {
+			return err
+		}
+		var found *domain.Game
+		if ok {
+			found = &game
+		}
+		if err := facts.CheckGameChange(l.clock.Now(), found); err != nil {
+			return err
+		}
+		return tx.SetLobbyGame(ctx, lobbyID, game)
+	})
+}
+
 // SetMode changes the mode of a lobby for a player of it and returns the lobby as saved. The mode, the caller's player
 // row and the player count are read under the group lock (ADR 0017 section 10); the rules are domain.LobbyFacts.CheckModeChange.
 func (l *Lobbies) SetMode(ctx context.Context, groupID, lobbyID, callerID, modeID string, currentModeID *string) (domain.Lobby, error) {

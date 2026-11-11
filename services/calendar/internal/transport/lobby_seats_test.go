@@ -35,7 +35,7 @@ func questStore() *memoryGroups {
 		GameRoles:  []domain.GameRole{{ID: tankRoleID, Name: "Tank", Slots: 1}, {ID: dpsRoleID, Name: "DPS", Slots: 2}},
 		Activities: []domain.Activity{{ID: keepID, Name: "The Keep"}}}
 	store.games = append(store.games, domain.Game{ID: questGameID, Name: "Quest", Modes: []domain.GameMode{raid}})
-	store.lobbies[roleLobby] = domain.Lobby{ID: roleLobby, GroupID: fridayID, CreatedByUserID: alexID, GameName: "Quest", MaxPlayers: intp(3),
+	store.lobbies[roleLobby] = domain.Lobby{ID: roleLobby, GroupID: fridayID, CreatedByUserID: alexID, GameName: strp("Quest"), MaxPlayers: intp(3),
 		EndsAt: store.lobbies[aliceLobby].EndsAt, PlayerCount: 1,
 		RoleSlots: []domain.RoleSlot{{GameRoleID: tankRoleID, Name: "Tank", Slots: 1, PlayerCount: 1}, {GameRoleID: dpsRoleID, Name: "DPS", Slots: 2}}}
 	return store

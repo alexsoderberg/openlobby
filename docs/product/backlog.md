@@ -62,13 +62,15 @@ Confirmed by the user on 2026-11-04: game roles (REQ-0011) stay after the MVP (D
 
 Delivered (2026-11-08): A1 (REQ-0014, game genre themes) in PR #70. The landing hero criterion of REQ-0014 is not part of it; it is delivered with C1 (see below).
 
+Delivered (2026-11-11): A2 (REQ-0011, game roles) and A3 (REQ-0015, modes, named activities and open lobbies, F-033, F-034) in ADR 0017, PR1 to PR6. PR5b (#85) and PR5c (#86) are merged; PR6 (open lobbies) is APPROVED in branch `adr0017-pr6-open-lobbies`, merge pending the user's yes. All acceptance criteria of REQ-0011 and REQ-0015 are covered. ADR 0017 work is done.
+
 Order decided by the user on 2026-11-07: genre themes (REQ-0014) come first, ahead of game roles (REQ-0011). The user asked for the genre themes now ("we also need more gaming aesthetics"). Game roles stay Should and follow directly. REQ-0014 needs no game roles and can be delivered on its own.
 
 Order decided by the user on 2026-11-08 (question 12): A2 (REQ-0011, game roles) and A3 (REQ-0015, modes, named activities and open lobbies) are delivered together, after A1 (REQ-0014). Reason: both change the same game form (F-025), the same lobby data and the role slots, so game roles are not built on the game and then moved to a mode. The open-lobby slice (F-034) is not built first on its own.
 
 Order decided by the user on 2026-11-10 ("the app feels too simple"): A4 to A7 follow A3.
 
-DECISION (user, 2026-11-10): no, A4 to A6 are not moved ahead of A2 and A3, which are in progress. ADR 0017 is finished first (PR5b, PR5c, PR6), then A4 to A6. The architect designs them in parallel: ADR 0018 (A4, F-029), ADR 0019 (A5, F-035) and ADR 0020 (A6, F-036, with ADR 0019), all Proposed.
+DECISION (user, 2026-11-10): no, A4 to A6 are not moved ahead of A2 and A3, which were in progress. ADR 0017 was finished first (PR5b, PR5c, PR6), then A4 to A6, in that order (A4 REQ-0016, A5 REQ-0017, A6 REQ-0018), unless this backlog says otherwise. The architect designs them in parallel: ADR 0018 (A4, F-029), ADR 0019 (A5, F-035) and ADR 0020 (A6, F-036, with ADR 0019), all Proposed. A4 is next.
 
 | Order | Requirement | Title | Priority | Depends on |
 |---|---|---|---|---|

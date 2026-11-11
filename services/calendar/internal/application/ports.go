@@ -156,9 +156,13 @@ type LobbyTx interface {
 	RemovePlayer(ctx context.Context, lobbyID, userID string) error
 	// DeleteLobby removes the lobby of this group with its players.
 	DeleteLobby(ctx context.Context, groupID, lobbyID string) error
-	// LobbyFacts returns the lobby's end, game, mode, player count and whether the user is a player, and false when the
+	// LobbyFacts returns the lobby's end, game, whether it has a game or custom name, mode, player count and whether the user is a player, and false when the
 	// lobby is not in this group.
 	LobbyFacts(ctx context.Context, groupID, lobbyID, userID string) (domain.LobbyFacts, bool, error)
+	// GameOfList returns the game of the game list with its ID and name only, and false when no game has the ID.
+	GameOfList(ctx context.Context, gameID string) (domain.Game, bool, error)
+	// SetLobbyGame sets the lobby's game ID and the copy of its name.
+	SetLobbyGame(ctx context.Context, lobbyID string, game domain.Game) error
 	// ModeOfGame returns the mode with its game roles, and false when the game has no mode with the ID.
 	ModeOfGame(ctx context.Context, gameID, modeID string) (domain.GameMode, bool, error)
 	// ActivityOfMode returns the activity, and false when the mode has no activity with the ID.

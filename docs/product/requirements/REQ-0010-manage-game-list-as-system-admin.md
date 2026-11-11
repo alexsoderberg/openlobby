@@ -68,7 +68,7 @@ F-024 (Game list with default max players) is the members' view of the list and 
 - ASSUMPTION (display of use): The app does not show how many lobbies use a game before it is removed. If that is wanted, it becomes a separate requirement.
 
 ## Amendment 2026-11-08 (REQ-0015, game modes and open lobbies)
-Status stays Implemented. Decided by the user on 2026-11-08 (REQ-0015, F-033, F-025). Pending implementation. Binding for the backend and UI experts. The management rules above stay the same; the form gets modes and activities.
+Status stays Implemented. Decided by the user on 2026-11-08 (REQ-0015, F-033, F-025). Implemented in ADR 0017 PR1 to PR6 (2026-11-11). The management rules above stay the same; the form gets modes and activities.
 
 Acceptance criteria (additions):
 - Given that I am a system admin, when I add or change a game, then the form lists its modes; each mode has a name and either game roles or a max players value; each mode may list activities, each with a name (REQ-0015 defines the rules).

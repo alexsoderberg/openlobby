@@ -2,7 +2,7 @@ import type { CSSProperties } from "react";
 import type { Genre, Lobby } from "../api";
 import { GenreFrame } from "../genres";
 import { formatTimeRange, useMessages } from "../i18n";
-import { lobbyLabelDetail } from "../lobby";
+import { lobbyGameLabel, lobbyLabelDetail } from "../lobby";
 import type { Block } from "./gridGeometry";
 
 /** A lobby to draw, with the name of its group when the grid spans several groups. */
@@ -45,7 +45,7 @@ export function TimeBlock({
     >
       <div className="time-block__body">
         <a className="time-block__game" href={href}>
-          <span>{lobby.gameName}</span>
+          <span>{lobbyGameLabel(lobby, m)}</span>
           {/* A real space keeps the link's accessible name "game › mode"; flex layout hides it. */}{" "}
           {detail && (
             <span className="time-block__detail">

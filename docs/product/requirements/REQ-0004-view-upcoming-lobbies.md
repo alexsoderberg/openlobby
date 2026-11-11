@@ -126,7 +126,7 @@ Status stays Implemented. DECISION, user, 2026-11-07. Binding for the UI expert.
 Related features (icon toggle): F-017 (the same switch, icon form only). The dashboard's This week toggle (REQ-0012, Amendment 2026-11-07) uses the same kind of control with its own names; it is not a second group switch.
 
 ## Amendment 2026-11-08 (REQ-0015, game modes and open lobbies)
-Status stays Implemented. Decided by the user on 2026-11-08 (REQ-0015, F-033, F-034). Pending implementation. Binding for the UI expert. Build together with REQ-0011 and REQ-0015 (backlog A2 and A3).
+Status stays Implemented. Decided by the user on 2026-11-08 (REQ-0015, F-033, F-034). Implemented in ADR 0017 PR1 to PR6 (2026-11-11), together with REQ-0011 (backlog A2 and A3).
 
 - Given that I see a lobby in the list, the calendar or the week grid, when it has a game, then its label is "game › mode › activity", leaving out a missing mode or activity (e.g. "WoW › Dungeon › <activity>", "WoW › Dungeon" or "WoW"). When it has no game, its label is "Open". An "Other" lobby shows its free-text name only. Old wording: "each row shows game, date and clock time, creator, and Spot / max players" and "it shows the game, the time range and Spot / max players" (the criteria above, kept for reference).
 - Given that a lobby has a mode with game roles, when I see its player count, then the game role display of REQ-0011 applies in the list and in the detail view. The Spot / max players criteria above are unchanged for lobbies without game roles.

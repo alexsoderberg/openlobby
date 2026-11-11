@@ -47,8 +47,9 @@ type CapacityPart = {
 type Failure = { ok: false; code: string };
 export type LobbyInputResult = { ok: true; input: CreateLobbyInput } | Failure;
 
+/** The game part of the request; no game chosen is an open lobby, so an empty part. */
 function gameOf(fields: LobbyFields) {
-  if (fields.game === "") return undefined;
+  if (fields.game === "") return {};
   if (fields.game !== OTHER_GAME) return { gameId: fields.game };
   const name = trimLikeServer(fields.customGameName);
   return isGameNameLength(name) ? { customGameName: name } : undefined;

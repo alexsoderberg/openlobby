@@ -88,7 +88,7 @@ Acceptance criteria (additions):
 - Given that this amendment is delivered, when I look at games that were in the list before, then each has no genre. No name, default max, identity or order changes.
 
 ## Amendment 2026-11-08 (REQ-0015, game modes and open lobbies)
-Status stays Implemented. Decided by the user on 2026-11-08 (REQ-0015, F-033). Pending implementation. Binding for the backend and UI experts.
+Status stays Implemented. Decided by the user on 2026-11-08 (REQ-0015, F-033). Implemented in ADR 0017 PR1 to PR6 (2026-11-11).
 
 DECISION, user, 2026-11-07 (point 1) and 2026-11-08 (question 8): a game in the game list may have modes, each with its own named activities (REQ-0015). A game with modes has no default max players and no game roles of its own; the mode gives the limit. A game without modes keeps this requirement as written.
 

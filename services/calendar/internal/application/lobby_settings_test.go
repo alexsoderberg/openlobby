@@ -230,3 +230,59 @@ func TestSetModeToACorruptModeIsNotABadRequest(t *testing.T) {
 		t.Fatalf("error %v, want the stored-mode error and not invalid capacity", err)
 	}
 }
+
+// openSettingsStore has the lobby of settingsStore with no game, mode or activity. Quest is in the game list.
+func openSettingsStore() *lobbyStore {
+	store := settingsStore()
+	editLobby(store, func(l *domain.Lobby) {
+		l.GameID, l.GameName, l.ModeID, l.ModeName, l.ActivityID, l.ActivityName = nil, nil, nil, nil, nil, nil
+	})
+	return store
+}
+
+func TestSetGameCopiesTheGameAndKeepsTheLimit(t *testing.T) {
+	store := openSettingsStore()
+	editLobby(store, func(l *domain.Lobby) { l.MaxPlayers = intPtr(5) })
+
+	lobby, err := newLobbies(store, chessCatalog()).SetGame(context.Background(), fridayID, lobbyID, bobID, chessID)
+
+	if err != nil || *lobby.GameID != chessID || *lobby.GameName != "Quest" || *lobby.MaxPlayers != 5 || lobby.ModeID != nil {
+		t.Fatalf("lobby %+v error %v, want Quest copied and max 5 kept", lobby, err)
+	}
+}
+
+// The check order of ADR 0017 section 10 for PUT .../game. Each case fails in its own place.
+func TestSetGameChecksInTheOrderOfTheContract(t *testing.T) {
+	tests := []struct {
+		name   string
+		setup  func(*domain.Lobby)
+		caller string
+		lobby  string
+		gameID string
+		want   error
+	}{
+		{name: "non-member", caller: strangerID, lobby: lobbyID, gameID: missingID, want: domain.ErrGroupNotFound},
+		{name: "missing lobby", caller: bobID, lobby: missingID, gameID: missingID, want: domain.ErrLobbyNotFound},
+		{name: "ended before player", setup: func(l *domain.Lobby) { l.EndsAt = now }, caller: aliceID, lobby: lobbyID, gameID: missingID, want: domain.ErrLobbyHasEnded},
+		{name: "member who is not a player", caller: aliceID, lobby: lobbyID, gameID: missingID, want: domain.ErrNotAllowed},
+		{name: "unknown game before a set game", setup: func(l *domain.Lobby) { l.GameName = strPtr("Go") }, caller: bobID, lobby: lobbyID, gameID: missingID, want: domain.ErrInvalidGame},
+		{name: "a custom name is set", setup: func(l *domain.Lobby) { l.GameName = strPtr("Go") }, caller: bobID, lobby: lobbyID, gameID: chessID, want: domain.ErrLobbyGameSet},
+		{name: "a game is set", setup: func(l *domain.Lobby) { l.GameID, l.GameName = strPtr(newLobby), strPtr("Other game") }, caller: bobID, lobby: lobbyID, gameID: chessID, want: domain.ErrLobbyGameSet},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			store := openSettingsStore()
+			if tc.setup != nil {
+				editLobby(store, tc.setup)
+			}
+			before := store.lobbies[lobbyID]
+
+			_, err := newLobbies(store, chessCatalog()).SetGame(context.Background(), fridayID, tc.lobby, tc.caller, tc.gameID)
+
+			after := store.lobbies[lobbyID]
+			if !errors.Is(err, tc.want) || after.GameID != before.GameID || after.GameName != before.GameName {
+				t.Fatalf("error %v, lobby %+v, want %v and the game unchanged", err, after, tc.want)
+			}
+		})
+	}
+}

@@ -41,6 +41,7 @@ const (
 	ErrorBodyCodeLobbyChanged            ErrorBodyCode = "lobby_changed"
 	ErrorBodyCodeLobbyEndNotAfterStart   ErrorBodyCode = "lobby_end_not_after_start"
 	ErrorBodyCodeLobbyFull               ErrorBodyCode = "lobby_full"
+	ErrorBodyCodeLobbyGameSet            ErrorBodyCode = "lobby_game_set"
 	ErrorBodyCodeLobbyHasEnded           ErrorBodyCode = "lobby_has_ended"
 	ErrorBodyCodeLobbyHasMorePlayers     ErrorBodyCode = "lobby_has_more_players"
 	ErrorBodyCodeLobbyInPast             ErrorBodyCode = "lobby_in_past"
@@ -98,6 +99,8 @@ func (e ErrorBodyCode) Valid() bool {
 	case ErrorBodyCodeLobbyEndNotAfterStart:
 		return true
 	case ErrorBodyCodeLobbyFull:
+		return true
+	case ErrorBodyCodeLobbyGameSet:
 		return true
 	case ErrorBodyCodeLobbyHasEnded:
 		return true
@@ -245,7 +248,7 @@ type CreateLobbyRequest struct {
 	// Flex `true` for the creator to take a spot without a game role. `false` counts as not given.
 	Flex *bool `json:"flex,omitempty"`
 
-	// GameId ID of a game in the game list. Exactly one of `gameId` and `customGameName` must be given. An unknown value, including one that is not a uuid, gives `invalid_game`.
+	// GameId ID of a game in the game list. At most one of `gameId` and `customGameName` may be given; neither gives a lobby with no game. An unknown value, including one that is not a uuid, gives `invalid_game`.
 	GameId *string `json:"gameId,omitempty"`
 
 	// GameRoleId The creator's game role, a role of the lobby. Any other value, also one that is not a uuid, gives `invalid_game_role`.
@@ -446,14 +449,14 @@ type Lobby struct {
 	// FlexCount Number of players without a game role (flex). 0 for a lobby without game roles. Not in `required` so that existing fixtures stay valid, but the server always sends it (ADR 0017).
 	FlexCount *int `json:"flexCount,omitempty"`
 
-	// GameGenre Genre of the lobby's game as it is in the game list now. `null` for a custom name ("Other"), a game without a genre, or a game that was removed. Not stored in the lobby, so a genre change shows at the next read.
+	// GameGenre Genre of the lobby's game as it is in the game list now. `null` for a lobby with no game, a custom name ("Other"), a game without a genre, or a game that was removed. Not stored in the lobby, so a genre change shows at the next read.
 	GameGenre *Genre `json:"gameGenre"`
 
-	// GameId ID of the lobby's game in the game list, a copy kept in the lobby. `null` for a custom name ("Other"). Not in `required` so that existing fixtures stay valid, but the server always sends it (ADR 0017).
+	// GameId ID of the lobby's game in the game list, a copy kept in the lobby. `null` for a lobby with no game or a custom name ("Other"). Not in `required` so that existing fixtures stay valid, but the server always sends it (ADR 0017).
 	GameId *openapi_types.UUID `json:"gameId"`
 
-	// GameName Game name, 1–50 characters after trim.
-	GameName GameName           `json:"gameName"`
+	// GameName Name of the lobby's game, a copy kept in the lobby. `null` for a lobby with no game, shown as "Open" (ADR 0017).
+	GameName *GameName          `json:"gameName"`
 	Id       openapi_types.UUID `json:"id"`
 
 	// JoinedByMe `true` when the caller is a player of the lobby (ADR 0014). Always `true` in the response of create.
@@ -493,14 +496,14 @@ type LobbyDetail struct {
 	// FlexCount Number of players without a game role (flex). 0 for a lobby without game roles. Not in `required` so that existing fixtures stay valid, but the server always sends it (ADR 0017).
 	FlexCount *int `json:"flexCount,omitempty"`
 
-	// GameGenre Genre of the lobby's game as it is in the game list now. `null` for a custom name ("Other"), a game without a genre, or a game that was removed. Not stored in the lobby, so a genre change shows at the next read.
+	// GameGenre Genre of the lobby's game as it is in the game list now. `null` for a lobby with no game, a custom name ("Other"), a game without a genre, or a game that was removed. Not stored in the lobby, so a genre change shows at the next read.
 	GameGenre *Genre `json:"gameGenre"`
 
-	// GameId ID of the lobby's game in the game list, a copy kept in the lobby. `null` for a custom name ("Other"). Not in `required` so that existing fixtures stay valid, but the server always sends it (ADR 0017).
+	// GameId ID of the lobby's game in the game list, a copy kept in the lobby. `null` for a lobby with no game or a custom name ("Other"). Not in `required` so that existing fixtures stay valid, but the server always sends it (ADR 0017).
 	GameId *openapi_types.UUID `json:"gameId"`
 
-	// GameName Game name, 1–50 characters after trim.
-	GameName GameName           `json:"gameName"`
+	// GameName Name of the lobby's game, a copy kept in the lobby. `null` for a lobby with no game, shown as "Open" (ADR 0017).
+	GameName *GameName          `json:"gameName"`
 	Id       openapi_types.UUID `json:"id"`
 
 	// JoinedByMe `true` when the caller is a player of the lobby (ADR 0014). Always `true` in the response of create.
@@ -591,6 +594,12 @@ type RoleSlotInput struct {
 type SetLobbyActivityRequest struct {
 	// ActivityId The activity to set. It must be an activity of the lobby's mode, otherwise `invalid_activity`.
 	ActivityId openapi_types.UUID `json:"activityId"`
+}
+
+// SetLobbyGameRequest defines model for SetLobbyGameRequest.
+type SetLobbyGameRequest struct {
+	// GameId The game to set, a game of the game list. An unknown game gives `invalid_game`.
+	GameId openapi_types.UUID `json:"gameId"`
 }
 
 // SetLobbyModeRequest defines model for SetLobbyModeRequest.
@@ -746,6 +755,12 @@ type SetLobbyActivityParams struct {
 	XRequestId *RequestIdHeader `json:"X-Request-Id,omitempty"`
 }
 
+// SetLobbyGameParams defines parameters for SetLobbyGame.
+type SetLobbyGameParams struct {
+	// XRequestId Correlation ID (ADR 0001). A valid value is kept and passed on. A missing or invalid value is replaced by a new one. The response always contains `X-Request-Id`.
+	XRequestId *RequestIdHeader `json:"X-Request-Id,omitempty"`
+}
+
 // SetLobbyModeParams defines parameters for SetLobbyMode.
 type SetLobbyModeParams struct {
 	// XRequestId Correlation ID (ADR 0001). A valid value is kept and passed on. A missing or invalid value is replaced by a new one. The response always contains `X-Request-Id`.
@@ -799,6 +814,9 @@ type CreateLobbyJSONRequestBody = CreateLobbyRequest
 
 // SetLobbyActivityJSONRequestBody defines body for SetLobbyActivity for application/json ContentType.
 type SetLobbyActivityJSONRequestBody = SetLobbyActivityRequest
+
+// SetLobbyGameJSONRequestBody defines body for SetLobbyGame for application/json ContentType.
+type SetLobbyGameJSONRequestBody = SetLobbyGameRequest
 
 // SetLobbyModeJSONRequestBody defines body for SetLobbyMode for application/json ContentType.
 type SetLobbyModeJSONRequestBody = SetLobbyModeRequest
@@ -862,6 +880,9 @@ type ServerInterface interface {
 	// SetLobbyActivity Set the named activity of a lobby
 	// (PUT /api/groups/{groupId}/lobbies/{lobbyId}/activity)
 	SetLobbyActivity(w http.ResponseWriter, r *http.Request, groupId GroupId, lobbyId LobbyId, params SetLobbyActivityParams)
+	// SetLobbyGame Set the game of a lobby with no game
+	// (PUT /api/groups/{groupId}/lobbies/{lobbyId}/game)
+	SetLobbyGame(w http.ResponseWriter, r *http.Request, groupId GroupId, lobbyId LobbyId, params SetLobbyGameParams)
 	// SetLobbyMode Change the mode of a lobby
 	// (PUT /api/groups/{groupId}/lobbies/{lobbyId}/mode)
 	SetLobbyMode(w http.ResponseWriter, r *http.Request, groupId GroupId, lobbyId LobbyId, params SetLobbyModeParams)
@@ -1809,6 +1830,65 @@ func (siw *ServerInterfaceWrapper) SetLobbyActivity(w http.ResponseWriter, r *ht
 	handler.ServeHTTP(w, r)
 }
 
+// SetLobbyGame operation middleware
+func (siw *ServerInterfaceWrapper) SetLobbyGame(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "groupId" -------------
+	var groupId GroupId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "groupId", r.PathValue("groupId"), &groupId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "groupId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "lobbyId" -------------
+	var lobbyId LobbyId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "lobbyId", r.PathValue("lobbyId"), &lobbyId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "lobbyId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params SetLobbyGameParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "X-Request-Id" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-Request-Id")]; found {
+		var XRequestId RequestIdHeader
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Request-Id", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-Request-Id", valueList[0], &XRequestId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Request-Id", Err: err})
+			return
+		}
+
+		params.XRequestId = &XRequestId
+
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SetLobbyGame(w, r, groupId, lobbyId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // SetLobbyMode operation middleware
 func (siw *ServerInterfaceWrapper) SetLobbyMode(w http.ResponseWriter, r *http.Request) {
 
@@ -2270,6 +2350,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/groups/{groupId}/lobbies", wrapper.CreateLobby)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/groups/{groupId}/lobbies/{lobbyId}", wrapper.DeleteLobby)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/groups/{groupId}/lobbies/{lobbyId}", wrapper.GetLobby)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/api/groups/{groupId}/lobbies/{lobbyId}/game", wrapper.SetLobbyGame)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/api/groups/{groupId}/lobbies/{lobbyId}/mode", wrapper.SetLobbyMode)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/groups/{groupId}/lobbies/{lobbyId}/activity", wrapper.ClearLobbyActivity)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/api/groups/{groupId}/lobbies/{lobbyId}/activity", wrapper.SetLobbyActivity)
@@ -3926,6 +4007,129 @@ func (response SetLobbyActivity503JSONResponse) VisitSetLobbyActivityResponse(w 
 	return err
 }
 
+type SetLobbyGameRequestObject struct {
+	GroupId GroupId `json:"groupId"`
+	LobbyId LobbyId `json:"lobbyId"`
+	Params  SetLobbyGameParams
+	Body    *SetLobbyGameJSONRequestBody
+}
+
+type SetLobbyGameResponseObject interface {
+	VisitSetLobbyGameResponse(w http.ResponseWriter) error
+}
+
+type SetLobbyGame200JSONResponse Lobby
+
+func (response SetLobbyGame200JSONResponse) VisitSetLobbyGameResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetLobbyGame400JSONResponse ErrorResponse
+
+func (response SetLobbyGame400JSONResponse) VisitSetLobbyGameResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetLobbyGame401JSONResponse struct{ UnauthenticatedJSONResponse }
+
+func (response SetLobbyGame401JSONResponse) VisitSetLobbyGameResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetLobbyGame403JSONResponse ErrorResponse
+
+func (response SetLobbyGame403JSONResponse) VisitSetLobbyGameResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetLobbyGame404JSONResponse ErrorResponse
+
+func (response SetLobbyGame404JSONResponse) VisitSetLobbyGameResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetLobbyGame409JSONResponse ErrorResponse
+
+func (response SetLobbyGame409JSONResponse) VisitSetLobbyGameResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetLobbyGame500JSONResponse struct{ InternalErrorJSONResponse }
+
+func (response SetLobbyGame500JSONResponse) VisitSetLobbyGameResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetLobbyGame503JSONResponse struct{ ServiceUnavailableJSONResponse }
+
+func (response SetLobbyGame503JSONResponse) VisitSetLobbyGameResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type SetLobbyModeRequestObject struct {
 	GroupId GroupId `json:"groupId"`
 	LobbyId LobbyId `json:"lobbyId"`
@@ -4537,6 +4741,9 @@ type StrictServerInterface interface {
 	// SetLobbyActivity Set the named activity of a lobby
 	// (PUT /api/groups/{groupId}/lobbies/{lobbyId}/activity)
 	SetLobbyActivity(ctx context.Context, request SetLobbyActivityRequestObject) (SetLobbyActivityResponseObject, error)
+	// SetLobbyGame Set the game of a lobby with no game
+	// (PUT /api/groups/{groupId}/lobbies/{lobbyId}/game)
+	SetLobbyGame(ctx context.Context, request SetLobbyGameRequestObject) (SetLobbyGameResponseObject, error)
 	// SetLobbyMode Change the mode of a lobby
 	// (PUT /api/groups/{groupId}/lobbies/{lobbyId}/mode)
 	SetLobbyMode(ctx context.Context, request SetLobbyModeRequestObject) (SetLobbyModeResponseObject, error)
@@ -5122,6 +5329,41 @@ func (sh *strictHandler) SetLobbyActivity(w http.ResponseWriter, r *http.Request
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(SetLobbyActivityResponseObject); ok {
 		if err := validResponse.VisitSetLobbyActivityResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SetLobbyGame operation middleware
+func (sh *strictHandler) SetLobbyGame(w http.ResponseWriter, r *http.Request, groupId GroupId, lobbyId LobbyId, params SetLobbyGameParams) {
+	var request SetLobbyGameRequestObject
+
+	request.GroupId = groupId
+	request.LobbyId = lobbyId
+	request.Params = params
+
+	var body SetLobbyGameJSONRequestBody
+	if err := runtime.BindJSONBody(r, &body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SetLobbyGame(ctx, request.(SetLobbyGameRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SetLobbyGame")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SetLobbyGameResponseObject); ok {
+		if err := validResponse.VisitSetLobbyGameResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

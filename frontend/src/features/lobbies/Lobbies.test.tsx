@@ -239,6 +239,17 @@ describe("label and role slots", () => {
       "time-block__detail",
     );
   });
+
+  it("labels a lobby with no game Open, with the neutral theme, in the list and the week view", async () => {
+    const open = lobby({ id: "l10", gameId: null, gameName: null });
+    renderLobbies(withLobbies(open));
+
+    const listLink = await screen.findByRole("link", { name: en.lobbyOpen });
+    expect(listLink.closest("li")!.getAttribute("data-genre")).toBe("neutral");
+    fireEvent.click(calendarButton());
+    const block = screen.getByRole("link", { name: en.lobbyOpen });
+    expect(block.closest("li")!.getAttribute("data-genre")).toBe("neutral");
+  });
 });
 
 describe("calendar view", () => {

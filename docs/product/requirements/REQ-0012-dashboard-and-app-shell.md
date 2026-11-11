@@ -192,7 +192,7 @@ Status stays Implemented. Decided by the user on 2026-11-10. Pending implementat
 3. The dashboard shows no Group feed. The Group feed is in the group view only (REQ-0018).
 
 ## Amendment 2026-11-08 (REQ-0015, game modes and open lobbies)
-Status stays Implemented. Decided by the user on 2026-11-08 (REQ-0015, F-033, F-034). Pending implementation. Binding for the UI expert. Build together with REQ-0011 and REQ-0015 (backlog A2 and A3).
+Status stays Implemented. Decided by the user on 2026-11-08 (REQ-0015, F-033, F-034). Implemented in ADR 0017 PR1 to PR6 (2026-11-11), together with REQ-0011 (backlog A2 and A3).
 
 1. Wherever this requirement says "game" for a lobby on the dashboard (Next up card, This week list, grid blocks, day list), the lobby's label is shown instead: "game › mode › activity", leaving out a missing mode or activity, or "Open" for a lobby with no game (REQ-0015, "Display"). Old wording: "with date, clock time, countdown, game, group name and Spot / max players" (Next up), and "each with clock time, game, group name and Spot / max players" (This week and day list) are kept as in the criteria above for reference.
 2. A lobby with no game shows the neutral genre theme (REQ-0014, Amendment 2026-11-08).

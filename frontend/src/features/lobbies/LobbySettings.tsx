@@ -1,14 +1,27 @@
-import { useEffect, useId, useRef, useState, type RefObject } from "react";
-import { useApi, type GameMode, type LobbyDetail } from "../../api";
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type ReactNode,
+  type RefObject,
+} from "react";
+import {
+  INVALID_GAME,
+  useApi,
+  type Game,
+  type GameMode,
+  type LobbyDetail,
+} from "../../api";
 import { useChangeAction } from "../../hooks";
 import { toLobbyMessage, useMessages } from "../../i18n";
 import { ConfirmDialog, ErrorAlert } from "../../ui";
-import { LOBBY_CHANGED, NOT_ALLOWED } from "./lobbyErrors";
+import { LOBBY_CHANGED, LOBBY_GAME_SET, NOT_ALLOWED } from "./lobbyErrors";
 import { fieldProps, LobbyField } from "./LobbyField";
 import { hasEnded } from "./lobbyTime";
 import { useGroupGames } from "./useGroupGames";
 
-type Field = "mode" | "activity";
+type Field = "game" | "mode" | "activity";
 /** What the last change ended in: `code` is undefined when it was saved. */
 type Outcome = { field: Field; code?: string };
 type Props = {
@@ -18,41 +31,89 @@ type Props = {
   onUnauthenticated: () => void;
 };
 
+/** A saved change, or a stale view, loads the lobby again. */
+const reloads = (code?: string) =>
+  code === undefined || code === LOBBY_CHANGED || code === LOBBY_GAME_SET;
+const errorIdOf = (id: string, field: Field, outcome?: Outcome) =>
+  outcome?.field === field && outcome.code ? `${id}-${field}-error` : undefined;
+
 /**
- * Lets a player of the lobby change its game mode and choose or clear the activity of that mode. A mode
- * change is confirmed first, since it makes every player flex. Nothing is shown, and no game list is loaded,
- * for a viewer who is not a player, a lobby with no game or an ended lobby.
+ * Lets a player of an open lobby set its game once, and a player of a lobby with a listed game change its
+ * game mode and choose or clear the activity of that mode (ADR 0017). A mode change is confirmed first, since
+ * it makes every player flex. Nothing is shown, and no game list is loaded, for a viewer who is not a player,
+ * a lobby with a custom game name or an ended lobby.
  */
 export function LobbySettings(props: Props) {
   const { lobby } = props;
-  if (!lobby.joinedByMe || !lobby.gameId || hasEnded(lobby)) return null;
-  return <LoadedSettings {...props} gameId={lobby.gameId} />;
+  const customGame = lobby.gameName !== null && !lobby.gameId;
+  if (!lobby.joinedByMe || customGame || hasEnded(lobby)) return null;
+  return <LoadedSettings {...props} />;
 }
 
-function LoadedSettings({ gameId, ...props }: Props & { gameId: string }) {
+/** Keeps the last change here, so the game's result stays when the reload swaps the game control for the modes. */
+function LoadedSettings(props: Props) {
+  const { lobby } = props;
   const m = useMessages();
+  const id = useId();
+  const root = useRef<HTMLDivElement>(null);
+  const change = useSettingChange(
+    root,
+    props.onChanged,
+    props.onUnauthenticated,
+  );
   const { state, reload } = useGroupGames(
     props.groupId,
     props.onUnauthenticated,
   );
   if (state.status === "error")
     return <ErrorAlert code={state.code} onRetry={reload} />;
-  const modes =
-    state.status === "loaded"
-      ? (state.value.find((game) => game.id === gameId)?.modes ?? [])
-      : [];
-  if (modes.length === 0) return null;
+  const games = state.status === "loaded" ? state.value : [];
+  const modes = games.find((game) => game.id === lobby.gameId)?.modes ?? [];
+  const gameErrorId = errorIdOf(id, "game", change.outcome);
   return (
-    <section aria-labelledby="lobby-settings-heading">
-      <h2 id="lobby-settings-heading">{m.lobbySettingsHeading}</h2>
-      <SettingsForm {...props} modes={modes} />
+    <div ref={root}>
+      {lobby.gameName === null
+        ? games.length > 0 && (
+            <SettingsSection heading={m.lobbyGameSetHeading}>
+              <GameForm
+                {...props}
+                {...change}
+                id={`${id}-game`}
+                games={games}
+                errorId={gameErrorId}
+              />
+            </SettingsSection>
+          )
+        : modes.length > 0 && (
+            <SettingsSection heading={m.lobbySettingsHeading}>
+              <SettingsForm {...props} {...change} modes={modes} />
+            </SettingsSection>
+          )}
+      <Result field="game" outcome={change.outcome} errorId={gameErrorId} />
+    </div>
+  );
+}
+
+function SettingsSection({
+  heading,
+  children,
+}: {
+  heading: string;
+  children: ReactNode;
+}) {
+  const id = useId();
+  return (
+    <section aria-labelledby={id}>
+      <h2 id={id}>{heading}</h2>
+      {children}
     </section>
   );
 }
 
 /**
  * One change at a time: runs it, keeps what it ended in, and moves focus to the control it was about (the
- * dialog has left the page by then). A saved change or a stale view loads the lobby again.
+ * dialog has left the page by then). A set game takes the game control off the page on the reload, so focus
+ * goes to the game's result instead.
  */
 function useSettingChange(
   root: RefObject<HTMLElement | null>,
@@ -63,10 +124,13 @@ function useSettingChange(
   const [outcome, setOutcome] = useState<Outcome>();
 
   useEffect(() => {
-    if (outcome)
-      root.current
-        ?.querySelector<HTMLElement>(`[name="${outcome.field}"]`)
-        ?.focus();
+    if (!outcome) return;
+    const toResult = outcome.field === "game" && reloads(outcome.code);
+    root.current
+      ?.querySelector<HTMLElement>(
+        toResult ? `[data-result="game"]` : `[name="${outcome.field}"]`,
+      )
+      ?.focus();
   }, [outcome, root]);
 
   /** `settled` runs before the outcome is shown, so a dialog is gone when focus moves. */
@@ -79,34 +143,81 @@ function useSettingChange(
     const code = await run(call);
     settled?.();
     setOutcome({ field, code });
-    if (code === undefined || code === LOBBY_CHANGED) onChanged();
+    if (reloads(code)) onChanged();
   }
   return { busy, outcome, apply };
+}
+
+type Change = ReturnType<typeof useSettingChange>;
+
+/** The group's games for an open lobby. Sent only with the button, since a game once set never changes. */
+function GameForm({
+  id,
+  groupId,
+  lobby,
+  games,
+  errorId,
+  busy,
+  apply,
+}: Props & Change & { id: string; games: Game[]; errorId?: string }) {
+  const m = useMessages();
+  const api = useApi();
+  const [gameId, setGameId] = useState("");
+  return (
+    <form
+      className="group-form"
+      noValidate
+      onSubmit={(event) => {
+        event.preventDefault();
+        void apply("game", () => api.setLobbyGame(groupId, lobby.id, gameId));
+      }}
+    >
+      <LobbyField id={id} label={m.lobbyGameLabel} hint={m.lobbyGameSetHint}>
+        <select
+          {...fieldProps(id, true, errorId)}
+          name="game"
+          value={gameId}
+          disabled={busy}
+          onChange={(event) => setGameId(event.target.value)}
+        >
+          <option value="" disabled>
+            {m.lobbyGameSetChoose}
+          </option>
+          {games.map((game) => (
+            <option key={game.id} value={game.id}>
+              {game.name}
+            </option>
+          ))}
+        </select>
+      </LobbyField>
+      <div className="form-actions">
+        <button
+          type="submit"
+          className="button"
+          disabled={busy || gameId === ""}
+        >
+          {m.lobbyGameSetSubmit}
+        </button>
+      </div>
+    </form>
+  );
 }
 
 function SettingsForm({
   groupId,
   lobby,
   modes,
-  onChanged,
-  onUnauthenticated,
-}: Props & { modes: GameMode[] }) {
+  busy,
+  outcome,
+  apply,
+}: Props & Change & { modes: GameMode[] }) {
   const m = useMessages();
   const api = useApi();
   const id = useId();
-  const root = useRef<HTMLDivElement>(null);
-  const { busy, outcome, apply } = useSettingChange(
-    root,
-    onChanged,
-    onUnauthenticated,
-  );
   const [pending, setPending] = useState<GameMode>();
   const activities =
     modes.find((mode) => mode.id === lobby.modeId)?.activities ?? [];
-  const errorIdOf = (field: Field) =>
-    outcome?.field === field && outcome.code
-      ? `${id}-${field}-error`
-      : undefined;
+  const errorFor = (field: Field) => errorIdOf(id, field, outcome);
 
   async function changeMode(mode: GameMode) {
     await apply(
@@ -119,16 +230,16 @@ function SettingsForm({
   }
 
   return (
-    <div ref={root} className="group-form">
+    <div className="group-form">
       <ModeSelect
         id={`${id}-mode`}
         lobby={lobby}
         modes={modes}
         disabled={busy}
-        errorId={errorIdOf("mode")}
+        errorId={errorFor("mode")}
         onChoose={setPending}
       />
-      <Result field="mode" outcome={outcome} errorId={errorIdOf("mode")} />
+      <Result field="mode" outcome={outcome} errorId={errorFor("mode")} />
       {activities.length > 0 && (
         <>
           <ActivitySelect
@@ -136,7 +247,7 @@ function SettingsForm({
             activities={activities}
             value={lobby.activityId ?? ""}
             disabled={busy}
-            errorId={errorIdOf("activity")}
+            errorId={errorFor("activity")}
             onChoose={(activityId) =>
               apply("activity", () =>
                 activityId
@@ -148,7 +259,7 @@ function SettingsForm({
           <Result
             field="activity"
             outcome={outcome}
-            errorId={errorIdOf("activity")}
+            errorId={errorFor("activity")}
           />
         </>
       )}
@@ -248,7 +359,10 @@ function ActivitySelect({
   );
 }
 
-/** "Saved." or the plain-text refusal of the last change, when it was about this field. */
+/**
+ * "Saved." or the plain-text refusal of the last change, when it was about this field. Only the game's result
+ * takes focus, since its control leaves the page when the lobby loads again.
+ */
 function Result({
   field,
   outcome,
@@ -260,17 +374,21 @@ function Result({
 }) {
   const m = useMessages();
   if (outcome?.field !== field) return null;
+  const focusable =
+    field === "game" ? { tabIndex: -1, "data-result": field } : {};
   if (outcome.code === undefined)
     return (
-      <p role="status" className="form-hint">
-        {m.lobbySettingsSaved}
+      <p role="status" className="form-hint" {...focusable}>
+        {field === "game" ? m.lobbyGameSaved : m.lobbySettingsSaved}
       </p>
     );
   return (
-    <p id={errorId} role="alert" className="field-error">
+    <p id={errorId} role="alert" className="field-error" {...focusable}>
       {outcome.code === NOT_ALLOWED
         ? m.lobbySettingsNotPlayer
-        : toLobbyMessage(outcome.code)}
+        : outcome.code === INVALID_GAME
+          ? m.lobbyGameSetInvalid
+          : toLobbyMessage(outcome.code)}
     </p>
   );
 }

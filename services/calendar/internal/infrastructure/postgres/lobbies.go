@@ -23,10 +23,12 @@ const (
 		(SELECT p.game_role_id FROM lobby_players p WHERE p.lobby_id = l.id AND p.user_id = $3),
 		EXISTS (SELECT 1 FROM lobby_players p WHERE p.lobby_id = l.id AND p.user_id = $3)
 		FROM lobbies l WHERE l.id = $1 AND l.group_id = $2`
-	selectLobbyFactsSQL = `SELECT l.ends_at, l.game_id, l.game_mode_id,
+	selectLobbyFactsSQL = `SELECT l.ends_at, l.game_id, l.game_name IS NOT NULL, l.game_mode_id,
 		(SELECT count(*) FROM lobby_players p WHERE p.lobby_id = l.id),
 		EXISTS (SELECT 1 FROM lobby_players p WHERE p.lobby_id = l.id AND p.user_id = $3)
 		FROM lobbies l WHERE l.id = $1 AND l.group_id = $2`
+	selectGameOfListSQL     = `SELECT id, name FROM games WHERE id = $1`
+	updateLobbyGameSQL      = `UPDATE lobbies SET game_id = $2, game_name = $3 WHERE id = $1`
 	selectModeOfGameSQL     = `SELECT id, name, max_players FROM game_modes WHERE id = $1 AND game_id = $2`
 	selectActivityOfModeSQL = `SELECT id, name FROM activities WHERE id = $1 AND game_mode_id = $2`
 	// The activity belongs to the old mode, so a mode change clears it.
@@ -252,7 +254,7 @@ func (t lobbyTx) RemovePlayer(ctx context.Context, lobbyID, userID string) error
 func (t lobbyTx) LobbyFacts(ctx context.Context, groupID, lobbyID, userID string) (domain.LobbyFacts, bool, error) {
 	var facts domain.LobbyFacts
 	err := t.tx.QueryRowContext(ctx, selectLobbyFactsSQL, lobbyID, groupID, userID).
-		Scan(&facts.EndsAt, &facts.GameID, &facts.ModeID, &facts.PlayerCount, &facts.IsPlayer)
+		Scan(&facts.EndsAt, &facts.GameID, &facts.HasGame, &facts.ModeID, &facts.PlayerCount, &facts.IsPlayer)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return domain.LobbyFacts{}, false, nil
@@ -260,6 +262,25 @@ func (t lobbyTx) LobbyFacts(ctx context.Context, groupID, lobbyID, userID string
 		return domain.LobbyFacts{}, false, err
 	}
 	return facts, true, nil
+}
+
+// GameOfList reads the game's ID and name in the caller's transaction.
+func (t lobbyTx) GameOfList(ctx context.Context, gameID string) (domain.Game, bool, error) {
+	var game domain.Game
+	err := t.tx.QueryRowContext(ctx, selectGameOfListSQL, gameID).Scan(&game.ID, &game.Name)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return domain.Game{}, false, nil
+	case err != nil:
+		return domain.Game{}, false, err
+	}
+	return game, true, nil
+}
+
+// SetLobbyGame copies the game's ID and name into the lobby.
+func (t lobbyTx) SetLobbyGame(ctx context.Context, lobbyID string, game domain.Game) error {
+	_, err := t.tx.ExecContext(ctx, updateLobbyGameSQL, lobbyID, game.ID, game.Name)
+	return err
 }
 
 // ModeOfGame reads the mode of the game with its game roles in the caller's transaction.

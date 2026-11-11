@@ -99,3 +99,32 @@ func TestCheckActivityChange(t *testing.T) {
 		})
 	}
 }
+
+func TestCheckGameChange(t *testing.T) {
+	chess := &domain.Game{ID: "game-1", Name: "Chess"}
+	tests := []struct {
+		name  string
+		facts func(*domain.LobbyFacts)
+		game  *domain.Game
+		want  error
+	}{
+		{name: "a lobby with no game", game: chess},
+		{name: "ended before everything else", facts: func(f *domain.LobbyFacts) { f.EndsAt, f.IsPlayer = lobbyNow, false }, game: chess, want: domain.ErrLobbyHasEnded},
+		{name: "not a player before the game", facts: func(f *domain.LobbyFacts) { f.IsPlayer = false }, want: domain.ErrNotAllowed},
+		{name: "unknown game before a set game", facts: func(f *domain.LobbyFacts) { f.HasGame = true }, want: domain.ErrInvalidGame},
+		{name: "a game is set", facts: func(f *domain.LobbyFacts) { f.GameID, f.HasGame = strPtr("game-2"), true }, game: chess, want: domain.ErrLobbyGameSet},
+		{name: "a custom name is set", facts: func(f *domain.LobbyFacts) { f.HasGame = true }, game: chess, want: domain.ErrLobbyGameSet},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			facts := domain.LobbyFacts{EndsAt: lobbyNow.Add(time.Hour), PlayerCount: 2, IsPlayer: true}
+			if tc.facts != nil {
+				tc.facts(&facts)
+			}
+
+			if err := facts.CheckGameChange(lobbyNow, tc.game); !errors.Is(err, tc.want) {
+				t.Fatalf("error %v, want %v", err, tc.want)
+			}
+		})
+	}
+}

@@ -97,7 +97,7 @@ const confirm = async () =>
 describe("who sees the mode and activity", () => {
   it.each([
     ["is not a player", { joinedByMe: false }],
-    ["has no game", { gameId: null }],
+    ["has a custom game name", { gameId: null }],
     ["has ended", { endsAt: new Date(Date.now() - HOUR_MS).toISOString() }],
   ])("shows nothing to a viewer when the lobby %s", async (_name, shown) => {
     const { client } = renderSettings(shown);
@@ -337,6 +337,89 @@ describe("the activity", () => {
     const alert = await screen.findByRole("alert");
     expect(alert.textContent).toBe(en.lobbyErrors.invalid_activity);
     expect(select.getAttribute("aria-describedby")).toBe(alert.id);
+    expect(document.activeElement).toBe(select);
+  });
+});
+
+describe("setting the game of an open lobby", () => {
+  const open = { gameId: null, gameName: null, modeId: null, modeName: null };
+  const gameSelect = () =>
+    screen.findByRole<HTMLSelectElement>("combobox", {
+      name: en.lobbyGameLabel,
+    });
+  const setGame = async () => {
+    fireEvent.change(await gameSelect(), { target: { value: "game1" } });
+    fireEvent.click(
+      screen.getByRole("button", { name: en.lobbyGameSetSubmit }),
+    );
+  };
+
+  it("shows nothing to a viewer who is not a player", () => {
+    const { client } = renderSettings({ ...open, joinedByMe: false });
+
+    expect(client.listGroupGames).not.toHaveBeenCalled();
+    expect(screen.queryByRole("combobox")).toBeNull();
+  });
+
+  it("offers the group's games and sends nothing until a game is chosen", async () => {
+    const { client } = renderSettings(open);
+
+    const select = await gameSelect();
+    expect(
+      within(select)
+        .getAllByRole("option")
+        .map((o) => o.textContent),
+    ).toEqual([en.lobbyGameSetChoose, "Destiny"]);
+    expect(
+      (
+        screen.getByRole("button", {
+          name: en.lobbyGameSetSubmit,
+        }) as HTMLButtonElement
+      ).disabled,
+    ).toBe(true);
+    expect(client.setLobbyGame).not.toHaveBeenCalled();
+  });
+
+  it("sets the chosen game, loads the lobby again and focuses the result", async () => {
+    const { client, onChanged } = renderSettings(open);
+
+    await setGame();
+
+    await waitFor(() => expect(onChanged).toHaveBeenCalled());
+    expect(client.setLobbyGame).toHaveBeenCalledWith("g1", "l1", "game1");
+    const status = await screen.findByText(en.lobbyGameSaved);
+    expect(document.activeElement).toBe(status);
+  });
+
+  it("explains that someone set the game first, loads the lobby again and focuses the message", async () => {
+    const { onChanged } = renderSettings(open, {
+      setLobbyGame: vi.fn(() =>
+        Promise.reject(new ApiError(409, "lobby_game_set")),
+      ),
+    });
+
+    await setGame();
+
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).toBe(en.lobbyErrors.lobby_game_set);
+    expect(onChanged).toHaveBeenCalled();
+    expect(document.activeElement).toBe(alert);
+  });
+
+  it("explains a game that is no longer listed beside the game and does not reload", async () => {
+    const { onChanged } = renderSettings(open, {
+      setLobbyGame: vi.fn(() =>
+        Promise.reject(new ApiError(400, "invalid_game")),
+      ),
+    });
+
+    await setGame();
+
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).toBe(en.lobbyGameSetInvalid);
+    expect(onChanged).not.toHaveBeenCalled();
+    const select = await gameSelect();
+    expect(select.getAttribute("aria-describedby")).toContain(alert.id);
     expect(document.activeElement).toBe(select);
   });
 });
