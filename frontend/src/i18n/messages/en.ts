@@ -281,6 +281,19 @@ export const en = {
   lobbyDeleteSubmit: "Yes, delete lobby",
   lobbyDeleteKeep: "Keep lobby",
 
+  lobbySettingsHeading: "Mode and activity",
+  lobbyModeChoose: "Choose a mode",
+  lobbyModeChangeHint:
+    "Changing the mode makes every player flex and replaces the role slots.",
+  lobbyModeChangeHeading: (mode: string) => `Change the mode to ${mode}?`,
+  lobbyModeChangeConfirm:
+    "Every player becomes flex, and the role slots and max players change to those of the new mode. The activity is cleared.",
+  lobbyModeChangeSubmit: "Yes, change mode",
+  lobbyModeChangeKeep: "Keep mode",
+  lobbySettingsSaved: "Saved.",
+  lobbySettingsNotPlayer:
+    "Only players of this lobby can change its mode or activity. Join the lobby first.",
+
   shell: {
     mainNav: "Main",
     groupsNav: "Groups",
@@ -330,6 +343,10 @@ export const en = {
     invalid_activity: "Choose an activity of this mode, or no activity.",
     invalid_game_role:
       "This seat is not available in this lobby. Choose one of its game roles, or flex.",
+    lobby_changed:
+      "Someone changed this lobby while you were looking at it. It now shows the current mode. Try again if you still want the change.",
+    lobby_has_more_players:
+      "The lobby has more players than this mode allows. Choose another mode, or wait until someone leaves.",
   },
 
   genericError: "Something went wrong. Try again in a moment.",

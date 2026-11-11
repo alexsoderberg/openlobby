@@ -46,6 +46,9 @@ const failingCalls: Array<[string, (api: ApiClient) => Promise<unknown>]> = [
   ],
   ["deleteLobby", (api) => api.deleteLobby("g1", "l1")],
   ["joinLobby", (api) => api.joinLobby("g1", "l1")],
+  ["setLobbyMode", (api) => api.setLobbyMode("g1", "l1", "m1", null)],
+  ["setLobbyActivity", (api) => api.setLobbyActivity("g1", "l1", "a1")],
+  ["clearLobbyActivity", (api) => api.clearLobbyActivity("g1", "l1")],
   ["leaveLobby", (api) => api.leaveLobby("g1", "l1")],
   ["leaveGroup", (api) => api.leaveGroup("g1")],
   ["makeGroupAdmin", (api) => api.makeGroupAdmin("g1", "u1")],
@@ -238,6 +241,35 @@ describe("createHttpApiClient", () => {
     await api.joinLobby("g1", "l1");
 
     expect(sent).toEqual(['{"gameRoleId":"r1"}', '{"flex":true}', ""]);
+  });
+
+  it("sends the mode with the mode the caller saw, and the activity calls", async () => {
+    const sent: { method: string; path: string; body: string }[] = [];
+    const fetchImpl = vi.fn<typeof fetch>(async (input) => {
+      const request = new Request(input);
+      sent.push({
+        method: request.method,
+        path: new URL(request.url).pathname,
+        body: await request.text(),
+      });
+      return Response.json({});
+    });
+    const api = createHttpApiClient(fetchImpl, BASE_URL);
+
+    await api.setLobbyMode("g1", "l1", "m2", null);
+    await api.setLobbyActivity("g1", "l1", "a1");
+    await api.clearLobbyActivity("g1", "l1");
+
+    const base = "/api/groups/g1/lobbies/l1";
+    expect(sent).toEqual([
+      {
+        method: "PUT",
+        path: `${base}/mode`,
+        body: '{"modeId":"m2","currentModeId":null}',
+      },
+      { method: "PUT", path: `${base}/activity`, body: '{"activityId":"a1"}' },
+      { method: "DELETE", path: `${base}/activity`, body: "" },
+    ]);
   });
 
   it("makeGroupAdmin sends PUT /api/groups/g1/admins/u1 and resolves on 204", async () => {
