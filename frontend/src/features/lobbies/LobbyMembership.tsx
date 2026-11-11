@@ -1,5 +1,5 @@
 import { toLobbyMessage, useMessages } from "../../i18n";
-import { Alert } from "../../ui";
+import { Alert, Icon } from "../../ui";
 import { LOBBY_HAS_ENDED, LOBBY_NOT_FOUND } from "./lobbyErrors";
 import { hasEnded } from "./lobbyTime";
 import { SeatForm } from "./SeatForm";
@@ -60,6 +60,7 @@ export function LobbyMembership({
         roleSlots={lobby.roleSlots}
         seat={leaving ? seat : undefined}
         submitLabel={leaving ? m.lobbySeatSave : m.lobbySeatJoin}
+        submitIcon={leaving ? "save" : "join"}
         busy={busy}
         error={errorCode === undefined ? undefined : failure}
         onSubmit={join}
@@ -78,6 +79,7 @@ export function LobbyMembership({
           disabled={busy}
           onClick={openSeats}
         >
+          <Icon name="edit" />
           {m.lobbySeatChange}
         </button>
       )}
@@ -88,6 +90,7 @@ export function LobbyMembership({
         disabled={busy}
         onClick={leaving ? leave : hasSeats ? openSeats : () => join()}
       >
+        <Icon name={leaving ? "leave" : "join"} />
         {leaving ? m.lobbyLeave : m.lobbyJoin}
       </button>
     </>

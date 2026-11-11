@@ -3,14 +3,7 @@ import type { Group } from "../../api";
 import { usePopover } from "../../hooks";
 import type { PickedStart } from "../../calendar";
 import { useMessages } from "../../i18n";
-import {
-  CalendarIcon,
-  ErrorAlert,
-  ListIcon,
-  Panel,
-  Popover,
-  ViewToggle,
-} from "../../ui";
+import { ErrorAlert, Icon, Panel, Popover, ViewToggle } from "../../ui";
 import { CreateLobby } from "./CreateLobby";
 import { LobbyCalendar } from "./LobbyCalendar";
 import { LobbyList } from "./LobbyList";
@@ -62,6 +55,7 @@ export function Lobbies({
             aria-expanded={popover.open}
             onClick={(event) => openForm(undefined, event.currentTarget)}
           >
+            <Icon name="plus" />
             {m.lobbyCreateButton}
           </button>
         </div>
@@ -72,11 +66,11 @@ export function Lobbies({
           label={m.lobbyViewLabel}
           value={view}
           options={[
-            { value: "list", label: m.lobbyViewList, icon: <ListIcon /> },
+            { value: "list", label: m.lobbyViewList, icon: "list" },
             {
               value: "calendar",
               label: m.lobbyViewCalendar,
-              icon: <CalendarIcon />,
+              icon: "calendar",
             },
           ]}
           onChange={setView}

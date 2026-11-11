@@ -20,6 +20,17 @@ describe("IconButton", () => {
     expect(bubble?.textContent).toBe(button.getAttribute("aria-label"));
   });
 
+  it("adds the subject to the accessible name after the label, and keeps the tooltip short", () => {
+    render(<IconButton icon="edit" label="Edit" subject="Chess" />);
+
+    const button = screen.getByRole("button", { name: "Edit, Chess" });
+    fireEvent.pointerEnter(button);
+    expect(
+      button.parentElement!.querySelector('[aria-hidden="true"]:not(svg)')
+        ?.textContent,
+    ).toBe("Edit");
+  });
+
   it("passes disabled to the button", () => {
     render(<IconButton icon="copy" label="Copy" disabled />);
     expect(
@@ -31,14 +42,27 @@ describe("IconButton", () => {
 
 // A Record over IconName fails to compile when a name is added without being listed here.
 const everyIcon: Record<IconName, true> = {
+  back: true,
   calendar: true,
   chevronDown: true,
+  close: true,
   copy: true,
   edit: true,
+  forward: true,
   groups: true,
   home: true,
+  invite: true,
+  join: true,
+  leave: true,
   list: true,
+  logIn: true,
+  logOut: true,
+  makeAdmin: true,
   plus: true,
+  remove: true,
+  retry: true,
+  revoke: true,
+  save: true,
   you: true,
 };
 

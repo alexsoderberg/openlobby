@@ -17,6 +17,8 @@ export function DeleteLobbyDialog({
       heading={m.lobbyDeleteHeading(label)}
       body={m.lobbyDeleteConfirm}
       submitLabel={m.lobbyDeleteSubmit}
+      submitIcon="remove"
+      danger
       keepLabel={m.lobbyDeleteKeep}
       {...rest}
     />

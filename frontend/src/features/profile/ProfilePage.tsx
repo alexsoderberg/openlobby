@@ -1,6 +1,6 @@
 import type { AuthUser } from "../../api";
 import { useMessages } from "../../i18n";
-import { Avatar, ErrorAlert, Panel } from "../../ui";
+import { Avatar, ErrorAlert, Icon, Panel } from "../../ui";
 import { GAMES_PATH } from "../games";
 
 /** The You page: who is logged in, Log out and, for a system admin only, the way to the game list. A failed logout is shown next to the button. */
@@ -36,6 +36,7 @@ export function ProfilePage({
           className="button button--secondary"
           onClick={onLogout}
         >
+          <Icon name="logOut" />
           {m.logOut}
         </button>
       </Panel>

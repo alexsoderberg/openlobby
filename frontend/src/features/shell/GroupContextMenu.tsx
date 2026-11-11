@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useMessages } from "../../i18n";
+import { Icon } from "../../ui";
 
 export type MenuPosition = { x: number; y: number };
 
@@ -52,6 +53,7 @@ export function GroupContextMenu({
         className="context-menu__item"
         onClick={onInvite}
       >
+        <Icon name="invite" />
         {m.shell.invitePeople}
       </button>
     </div>

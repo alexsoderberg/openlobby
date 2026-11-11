@@ -1,9 +1,9 @@
 import type { ReactNode } from "react";
 import { useMessages } from "../../i18n";
+import { Icon } from "../../ui";
 import { GROUPS_PATH } from "../groups";
 import { PROFILE_PATH } from "../profile";
 import { HOME_PATH, type ActiveNav } from "./activeNav";
-import { GroupsIcon, HomeIcon, YouIcon } from "./icons";
 
 function Tab({
   href,
@@ -34,21 +34,21 @@ export function TabBar({ active }: { active: ActiveNav }) {
         label={m.shell.home}
         active={active.section === "home"}
       >
-        <HomeIcon />
+        <Icon name="home" className="nav-icon" />
       </Tab>
       <Tab
         href={GROUPS_PATH}
         label={m.shell.groups}
         active={active.section === "groups"}
       >
-        <GroupsIcon />
+        <Icon name="groups" className="nav-icon" />
       </Tab>
       <Tab
         href={PROFILE_PATH}
         label={m.shell.you}
         active={active.section === "profile"}
       >
-        <YouIcon />
+        <Icon name="you" className="nav-icon" />
       </Tab>
     </nav>
   );

@@ -1,7 +1,7 @@
 import type { ChangeResult, Game, GameInput } from "../../api";
 import { GenreName } from "../../genres";
 import { useMessages } from "../../i18n";
-import { ErrorAlert } from "../../ui";
+import { ErrorAlert, Icon, IconButton } from "../../ui";
 import { GameForm } from "./GameForm";
 import type { GamesState } from "./useGames";
 
@@ -77,20 +77,19 @@ function GameRow({
             ? m.gameUnlimited
             : m.gameMaxPlayers(game.defaultMaxPlayers)}
       </span>
-      <button
-        type="button"
-        className="button button--secondary"
-        aria-label={`${m.gameEdit}, ${game.name}`}
+      <IconButton
+        icon="edit"
+        label={m.gameEdit}
+        subject={game.name}
         onClick={onEdit}
-      >
-        {m.gameEdit}
-      </button>
+      />
       <button
         type="button"
-        className="button button--secondary"
+        className="button button--danger"
         aria-label={`${m.gameRemove}, ${game.name}`}
         onClick={onRemove}
       >
+        <Icon name="remove" />
         {m.gameRemove}
       </button>
     </li>
@@ -114,6 +113,7 @@ function GameEditRow({
       <GameForm
         game={game}
         submitLabel={m.gameEditSubmit}
+        submitIcon="save"
         busy={busy}
         onSubmit={onSave}
         onCancel={onCancel}

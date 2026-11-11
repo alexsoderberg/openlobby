@@ -2,7 +2,7 @@ import { useRef } from "react";
 import { loginUrl } from "../../api";
 import { useFocusAfterLogout } from "../../hooks";
 import { useMessages } from "../../i18n";
-import { Alert } from "../../ui";
+import { Alert, Icon } from "../../ui";
 import { loggedOutNotice, type LoggedOutPageProps } from "../session";
 
 export function LoginPanel({
@@ -24,6 +24,7 @@ export function LoginPanel({
       {notice && <Alert>{notice}</Alert>}
       <p>{m.loginIntro}</p>
       <a className="button" href={loginUrl(returnTo)}>
+        <Icon name="logIn" />
         {m.logInWithDiscord}
       </a>
     </section>

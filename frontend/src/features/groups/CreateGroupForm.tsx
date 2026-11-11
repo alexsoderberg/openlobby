@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { toUserMessage, useMessages } from "../../i18n";
-import { Alert } from "../../ui";
+import { Alert, Icon } from "../../ui";
 import { INVALID_GROUP_NAME } from "./groupErrors";
 import type { CreateGroupState } from "./useCreateGroup";
 
@@ -78,6 +78,7 @@ export function CreateGroupForm({
             className="button"
             disabled={state.status === "saving"}
           >
+            <Icon name="plus" />
             {m.createGroupSubmit}
           </button>
           <button
@@ -85,6 +86,7 @@ export function CreateGroupForm({
             className="button button--secondary"
             onClick={onCancel}
           >
+            <Icon name="close" />
             {m.cancel}
           </button>
         </div>

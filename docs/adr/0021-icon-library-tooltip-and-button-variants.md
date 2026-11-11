@@ -108,3 +108,37 @@ Each PR is reviewed on its own. The reviewer reviews PR1 against this ADR as the
 - **Hit area via `::before` pseudo-element.** The primary button's hover sweep needs `overflow: hidden`, which clips the extra area. Rejected; the 2.5rem box on coarse pointers is used instead.
 - **Transparent border to extend the hit area.** Works, but adds a hidden trick for one case. Rejected.
 - **Tooltip on touch via long press.** Adds gesture logic and a hidden feature; the visible label solves the same need. Rejected.
+
+## Amendment 2026-11-11
+Recorded while putting icons on all screens. The amendment changes or extends the Decision above. Where they differ, this amendment wins.
+
+**A1. One action, one icon.** DECISION
+- Each action has one icon, and each `IconName` names an action: plus, save, edit, close, remove, revoke, join, leave, invite, copy, makeAdmin, logIn, logOut, retry, back, forward, home, groups, you, list, calendar, chevronDown.
+- Selects show `chevronDown` through a `Select` ui component (PR1).
+
+**A2. Accessible name of an icon-only button with a subject.** DECISION
+- `IconButton` takes an optional `subject`. The accessible name is `"<label>, <subject>"`, e.g. "Change, Chess", so that identical buttons in list rows can be told apart.
+- Without `subject` the accessible name is the `label`. This replaces "its accessible name is the label" in point 3.
+- The tooltip and the touch label stay the short `label`. The accessible name starts with the visible label (WCAG 2.5.3).
+
+**A3. The tooltip is a top-layer popover.** DECISION
+- The bubble is a `popover="manual"` element, so it is shown in the top layer. No `overflow: hidden` container or stacking context clips it. This resolves the PR2 clipping watch item.
+- On open it is placed above the trigger, centred, and kept at least 8px from the window edges. When there is no room above, it is placed below the trigger.
+- It stays a DOM child of the wrapper, so the pointer can move onto the bubble and keep it open (WCAG 1.4.13).
+- It closes on Escape, pointer leave, blur, scroll and window resize. Coarse pointers: hidden, as in point 2.
+- This replaces the absolute positioning described in point 2: the bubble is `position: fixed` and placed by script. The `::before` bridge is kept to fill the small `translate` gap between trigger and bubble, so the bubble stays hoverable.
+
+**A4. `ConfirmDialog` takes a submit icon and a danger flag.** DECISION
+- `ConfirmDialog` takes a required `submitIcon: IconName`.
+- It takes an optional `danger` (boolean). Destructive confirms set `danger`, and their submit button uses `.button--danger`.
+
+**A5. Leaving a lobby is secondary, not danger.** DECISION
+- A player can join a lobby again, so leaving a lobby is a secondary action: a secondary button with icon and text.
+- Leave group, remove, delete and revoke are danger actions (point 4 table).
+
+**A6. Date and time fields open on click.** DECISION
+- Date and time fields open their picker on click through `showPicker()` (PR1).
+- Where the browser refuses `showPicker()`, the browser's own picker icon stays visible as the fallback.
+
+**A7. Delivery.** DECISION
+- PR2 and PR3 were shipped as one PR, because nothing else was in flight. The split in "5. Delivery plan" does not apply to them.

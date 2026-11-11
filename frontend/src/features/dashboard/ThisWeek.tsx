@@ -1,7 +1,7 @@
 import { WeekTimeGrid } from "../../calendar";
 import { useStoredChoice } from "../../hooks";
 import { useMessages } from "../../i18n";
-import { CalendarIcon, ListIcon, ViewToggle } from "../../ui";
+import { ViewToggle } from "../../ui";
 import { lobbyPath } from "../lobbies";
 import { thisWeekOf, type DashboardLobby } from "./dashboardLobby";
 import { DayList } from "./DayList";
@@ -40,9 +40,9 @@ export function ThisWeek({
           {
             value: "calendar",
             label: m.dashboard.viewCalendar,
-            icon: <CalendarIcon />,
+            icon: "calendar",
           },
-          { value: "days", label: m.dashboard.viewDays, icon: <ListIcon /> },
+          { value: "days", label: m.dashboard.viewDays, icon: "list" },
         ]}
         onChange={setView}
       />

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { Lobby } from "../../api";
 import { formatDayRange, useMessages } from "../../i18n";
+import { Icon } from "../../ui";
 import {
   nextWeekStart,
   weekItems,
@@ -39,6 +40,7 @@ export function LobbyCalendar({
           className="button button--secondary"
           onClick={() => setWeekStart(nextWeekStart(weekStart))}
         >
+          <Icon name="forward" />
           {m.calendarNextWeek}
         </button>
       </div>

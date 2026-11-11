@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import type { Lobby, Seat } from "../../api";
 import { useMessages } from "../../i18n";
+import { Icon, type IconName } from "../../ui";
 import { SeatChoice } from "./SeatChoice";
 import { FLEX_SEAT, SEAT_FIELD } from "./lobbyInput";
 
@@ -13,6 +14,7 @@ export function SeatForm({
   roleSlots,
   seat,
   submitLabel,
+  submitIcon,
   busy,
   error,
   onSubmit,
@@ -21,6 +23,7 @@ export function SeatForm({
   roleSlots: NonNullable<Lobby["roleSlots"]>;
   seat?: string | null;
   submitLabel: string;
+  submitIcon: IconName;
   busy: boolean;
   /** The text of a refused save, shown next to the choice. */
   error?: string;
@@ -82,6 +85,7 @@ export function SeatForm({
       )}
       <div className="form-actions">
         <button type="submit" className="button" disabled={busy}>
+          <Icon name={submitIcon} />
           {submitLabel}
         </button>
         <button
@@ -89,6 +93,7 @@ export function SeatForm({
           className="button button--secondary"
           onClick={onCancel}
         >
+          <Icon name="close" />
           {m.cancel}
         </button>
       </div>

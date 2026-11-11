@@ -15,7 +15,7 @@ import {
 } from "../../api";
 import { useChangeAction } from "../../hooks";
 import { toLobbyMessage, useMessages } from "../../i18n";
-import { ConfirmDialog, ErrorAlert, Select } from "../../ui";
+import { ConfirmDialog, ErrorAlert, Icon, Select } from "../../ui";
 import { LOBBY_CHANGED, LOBBY_GAME_SET, NOT_ALLOWED } from "./lobbyErrors";
 import { fieldProps, LobbyField } from "./LobbyField";
 import { hasEnded } from "./lobbyTime";
@@ -196,6 +196,7 @@ function GameForm({
           className="button"
           disabled={busy || gameId === ""}
         >
+          <Icon name="save" />
           {m.lobbyGameSetSubmit}
         </button>
       </div>
@@ -268,6 +269,7 @@ function SettingsForm({
           heading={m.lobbyModeChangeHeading(pending.name)}
           body={m.lobbyModeChangeConfirm}
           submitLabel={m.lobbyModeChangeSubmit}
+          submitIcon="edit"
           keepLabel={m.lobbyModeChangeKeep}
           busy={busy}
           onConfirm={() => changeMode(pending)}
