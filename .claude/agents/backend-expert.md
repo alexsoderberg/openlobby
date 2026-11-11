@@ -2,7 +2,7 @@
 name: backend-expert
 description: Backend, auth and database expert for Go microservices. Used for services, API contracts, domain logic, Discord OAuth login, sessions, authorization, data model, migrations and database queries.
 tools: Read, Grep, Glob, Bash, Write, Edit, Skill
-model: sonnet
+model: opus
 effort: medium
 ---
 
