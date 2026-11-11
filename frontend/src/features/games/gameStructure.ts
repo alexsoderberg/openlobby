@@ -34,8 +34,16 @@ export type ModeDraft = {
 };
 export type StructureDraft = { gameRoles: RoleDraft[]; modes: ModeDraft[] };
 
-/** A parse failure names the field to focus: the part of its element ID after the form's ID. */
-export type StructureFailure = { ok: false; code: string; field: string };
+/**
+ * A parse failure names the field to focus: the part of its element ID after the form's ID. `modeKey` is the mode
+ * the field belongs to, so the form can open that mode.
+ */
+export type StructureFailure = {
+  ok: false;
+  code: string;
+  field: string;
+  modeKey?: string;
+};
 type Parsed<T> = { ok: true; value: T } | StructureFailure;
 
 // Module-level so that a key is never reused, also across forms: the keys become element IDs.
@@ -139,30 +147,45 @@ function parseActivities(
 }
 
 /** A mode has game roles (its max is their sum) or a max players value, never both. */
-function parseModes(modes: ModeDraft[]): Parsed<GameModeInput[]> {
-  const value: GameModeInput[] = [];
-  for (const mode of modes) {
-    const name = trimLikeServer(mode.name);
-    if (!isNameLength(name, MODE_NAME_MAX_LENGTH))
-      return fail(INVALID_MODE, `${mode.key}-name`);
-    const roles = parseRoles(mode.gameRoles);
-    if (!roles.ok) return roles;
-    const maxPlayers =
-      roles.value.length > 0 ? null : parseWhole(mode.maxPlayers);
-    if (maxPlayers === undefined)
-      return fail(INVALID_CAPACITY, `${mode.key}-max`);
-    const activities = parseActivities(mode.activities);
-    if (!activities.ok) return activities;
-    value.push({
+function parseMode(mode: ModeDraft): Parsed<GameModeInput> {
+  const name = trimLikeServer(mode.name);
+  if (!isNameLength(name, MODE_NAME_MAX_LENGTH))
+    return fail(INVALID_MODE, `${mode.key}-name`);
+  const roles = parseRoles(mode.gameRoles);
+  if (!roles.ok) return roles;
+  const maxPlayers =
+    roles.value.length > 0 ? null : parseWhole(mode.maxPlayers);
+  if (maxPlayers === undefined)
+    return fail(INVALID_CAPACITY, `${mode.key}-max`);
+  const activities = parseActivities(mode.activities);
+  if (!activities.ok) return activities;
+  return {
+    ok: true,
+    value: {
       id: mode.id,
       name,
       maxPlayers,
       gameRoles: roles.value,
       activities: activities.value,
-    });
+    },
+  };
+}
+
+function parseModes(modes: ModeDraft[]): Parsed<GameModeInput[]> {
+  const value: GameModeInput[] = [];
+  for (const mode of modes) {
+    const parsed = parseMode(mode);
+    if (!parsed.ok) return { ...parsed, modeKey: mode.key };
+    value.push(parsed.value);
   }
   return { ok: true, value };
 }
+
+/** The players a mode allows so far: the sum of its slots, or its max. Undefined while the max is not a valid number. */
+export const modePlayers = (mode: ModeDraft) =>
+  mode.gameRoles.length > 0
+    ? sumSlots(mode.gameRoles)
+    : parseWhole(mode.maxPlayers);
 
 /** The one place for the rule: the game's own default max and game roles apply only while the game has no modes (ADR 0017 section 2). */
 export const usesOwnLimit = (draft: StructureDraft) => draft.modes.length === 0;

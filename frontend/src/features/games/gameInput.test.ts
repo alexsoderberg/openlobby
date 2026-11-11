@@ -169,11 +169,15 @@ describe("parseGameInput with modes and game roles", () => {
       "invalid_capacity",
       "r1-slots",
     ],
-  ])("rejects %s and names the field", (_, draftMode, code, field) => {
-    expect(parse({ gameRoles: [], modes: [draftMode] })).toEqual({
-      ok: false,
-      code,
-      field,
-    });
-  });
+  ])(
+    "rejects %s and names the field and its mode",
+    (_, draftMode, code, field) => {
+      expect(parse({ gameRoles: [], modes: [draftMode] })).toEqual({
+        ok: false,
+        code,
+        field,
+        modeKey: "m1",
+      });
+    },
+  );
 });

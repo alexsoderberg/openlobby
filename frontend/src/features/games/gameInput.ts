@@ -16,7 +16,8 @@ import {
 } from "./gameStructure";
 
 export type GameInputResult =
-  { ok: true; input: GameInput } | { ok: false; code: string; field?: string };
+  | { ok: true; input: GameInput }
+  | { ok: false; code: string; field?: string; modeKey?: string };
 
 /** The max players field is not shown for a game with modes or game roles: it then keeps `keptMax`, or the sum of its roles applies. */
 function parseDefaultMax(

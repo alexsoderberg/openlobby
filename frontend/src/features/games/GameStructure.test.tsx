@@ -79,31 +79,45 @@ const type = (field: HTMLElement, value: string) =>
 const click = (scope: HTMLElement, name: string) =>
   fireEvent.click(within(scope).getByRole("button", { name }));
 
-/** The fieldset of the n-th mode, found by its visible legend. */
-const modeGroup = (scope: HTMLElement, position: number) =>
-  within(scope).getByRole("group", { name: en.gameModeLegend(position) });
+/** The open mode's view. Only one is open at a time. */
+const modeView = (scope: HTMLElement) => within(scope).getByRole("region");
+
+/** Opens a mode from its row in the game view. */
+function openMode(scope: HTMLElement, name: string) {
+  click(scope, name);
+  return modeView(scope);
+}
+
+const back = (scope: HTMLElement) => click(scope, en.gameModeBack);
 
 function fillName(scope: HTMLElement, name: string) {
   type(within(scope).getAllByLabelText(en.gameNameLabel)[0], name);
+}
+
+async function answer(name: string) {
+  fireEvent.click(
+    within(await screen.findByRole("dialog")).getByRole("button", { name }),
+  );
 }
 
 describe("add with modes", () => {
   it("adds a mode with a max players value, hides the default max and sends the entered arrays", async () => {
     const client = renderPage();
     const form = await addForm();
+    fillName(form, "Azul");
 
     expect(within(form).getByLabelText(en.gameMaxPlayersLabel)).toBeTruthy();
     click(form, en.gameModeAdd);
 
-    const mode = modeGroup(form, 1);
+    const mode = modeView(form);
     expect(document.activeElement).toBe(
       within(mode).getByLabelText(en.gameModeNameLabel),
     );
-    expect(within(form).queryByLabelText(en.gameMaxPlayersLabel)).toBeNull();
-
-    fillName(form, "Azul");
     type(within(mode).getByLabelText(en.gameModeNameLabel), " Solo ");
     type(within(mode).getByLabelText(en.gameModeMaxLabel), "2");
+    back(form);
+
+    expect(within(form).queryByLabelText(en.gameMaxPlayersLabel)).toBeNull();
     click(form, en.gameAddSubmit);
 
     await waitFor(() =>
@@ -121,7 +135,7 @@ describe("add with modes", () => {
     const form = await addForm();
     fillName(form, "Azul");
     click(form, en.gameModeAdd);
-    const mode = modeGroup(form, 1);
+    const mode = modeView(form);
     type(within(mode).getByLabelText(en.gameModeNameLabel), "Raid");
 
     click(mode, en.gameRoleAdd);
@@ -138,6 +152,8 @@ describe("add with modes", () => {
     expect(within(mode).getByText(en.gameRolesTotal(2))).toBeTruthy();
     click(mode, en.gameActivityAdd);
     type(within(mode).getByLabelText(en.gameActivityNameLabel), "Crypt");
+    back(form);
+    expect(within(form).getByText(en.gameModeSummary(2, 1))).toBeTruthy();
     click(form, en.gameAddSubmit);
 
     await waitFor(() =>
@@ -196,11 +212,79 @@ describe("add with modes", () => {
     expect(within(form).getAllByText(en.gameRolesLegend)).toHaveLength(1);
 
     click(form, en.gameModeAdd);
-
     // The only game roles left are the mode's own.
-    const mode = modeGroup(form, 1);
-    expect(within(mode).getByText(en.gameRolesLegend)).toBeTruthy();
-    expect(within(form).getAllByText(en.gameRolesLegend)).toHaveLength(1);
+    expect(within(modeView(form)).getByText(en.gameRolesLegend)).toBeTruthy();
+    back(form);
+    expect(within(form).queryByText(en.gameRolesLegend)).toBeNull();
+  });
+});
+
+describe("one level at a time", () => {
+  it("opens a mode in its own view with focus on its heading, and goes back to its row", async () => {
+    renderPage();
+    const form = await editForm("Dungeons");
+    type(within(form).getByLabelText(en.gameNameLabel), "Dungeons 2");
+    expect(within(form).getByText(en.gameModeSummary(4, 1))).toBeTruthy();
+    expect(within(form).getByText(en.gameModeSummary(2, 0))).toBeTruthy();
+
+    const mode = openMode(form, "Raid");
+
+    expect(document.activeElement).toBe(
+      within(mode).getByRole("heading", { name: "Raid" }),
+    );
+    // The game's own fields, the other modes and the save button are out of sight while a mode is open.
+    expect(
+      within(form).queryByRole("textbox", { name: en.gameNameLabel }),
+    ).toBeNull();
+    expect(within(form).queryByRole("button", { name: "Duel" })).toBeNull();
+    expect(
+      within(form).queryByRole("button", { name: en.gameEditSubmit }),
+    ).toBeNull();
+
+    back(form);
+
+    expect(within(form).queryByRole("region")).toBeNull();
+    expect(document.activeElement).toBe(
+      within(form).getByRole("button", { name: "Raid" }),
+    );
+    // The game's fields stayed in the form, so what was typed is kept.
+    expect(
+      within(form).getByRole("textbox", { name: en.gameNameLabel }),
+    ).toHaveProperty("value", "Dungeons 2");
+  });
+
+  it("keeps focus in the field being typed in, and does not apply an earlier focus request again", async () => {
+    renderPage();
+    const form = await editForm("Dungeons");
+    openMode(form, "Raid");
+    back(form);
+    // Back asked for focus on the Raid row, and the row got it.
+    expect(document.activeElement).toBe(
+      within(form).getByRole("button", { name: "Raid" }),
+    );
+    const name = within(openMode(form, "Raid")).getByLabelText(
+      en.gameModeNameLabel,
+    );
+    name.focus();
+
+    for (const text of ["R", "Ra", "Rai", "Raid 2"]) {
+      type(name, text);
+      expect(document.activeElement).toBe(name);
+    }
+    expect(name).toHaveProperty("value", "Raid 2");
+  });
+
+  it("keeps the edits made in a mode in the form until the game is saved", async () => {
+    const client = renderPage();
+    const form = await editForm("Dungeons");
+    type(
+      within(openMode(form, "Duel")).getByLabelText(en.gameModeNameLabel),
+      "Duo",
+    );
+    back(form);
+
+    expect(client.replaceGame).not.toHaveBeenCalled();
+    expect(within(openMode(form, "Duo")).getByDisplayValue("Duo")).toBeTruthy();
   });
 });
 
@@ -208,26 +292,20 @@ describe("remove a mode or an activity", () => {
   it("asks before removing a mode, keeps it on Keep, and removes it on confirm", async () => {
     const client = renderPage();
     const form = await editForm("Dungeons");
+    const mode = openMode(form, "Raid");
 
-    click(form, `${en.gameModeRemove}, Raid`);
-    const dialog = await screen.findByRole("dialog", {
+    click(mode, `${en.gameModeRemove}, Raid`);
+    await screen.findByRole("dialog", {
       name: en.gameModeRemoveHeading("Raid"),
     });
-    fireEvent.click(
-      within(dialog).getByRole("button", { name: en.gameModeRemoveKeep }),
-    );
+    await answer(en.gameModeRemoveKeep);
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
-    expect(within(form).getByDisplayValue("Raid")).toBeTruthy();
+    expect(within(mode).getByDisplayValue("Raid")).toBeTruthy();
 
-    click(form, `${en.gameModeRemove}, Raid`);
-    fireEvent.click(
-      within(await screen.findByRole("dialog")).getByRole("button", {
-        name: en.gameModeRemoveSubmit,
-      }),
-    );
-    await waitFor(() =>
-      expect(within(form).queryByDisplayValue("Raid")).toBeNull(),
-    );
+    click(mode, `${en.gameModeRemove}, Raid`);
+    await answer(en.gameModeRemoveSubmit);
+    await waitFor(() => expect(within(form).queryByRole("region")).toBeNull());
+    expect(within(form).queryByRole("button", { name: "Raid" })).toBeNull();
     expect(document.activeElement).toBe(
       within(form).getByRole("button", { name: en.gameModeAdd }),
     );
@@ -251,12 +329,8 @@ describe("remove a mode or an activity", () => {
     const form = await editForm("Dungeons");
     expect(within(form).queryByLabelText(en.gameMaxPlayersLabel)).toBeNull();
 
-    click(form, `${en.gameModeRemove}, Duel`);
-    fireEvent.click(
-      within(await screen.findByRole("dialog")).getByRole("button", {
-        name: en.gameModeRemoveSubmit,
-      }),
-    );
+    click(openMode(form, "Duel"), `${en.gameModeRemove}, Duel`);
+    await answer(en.gameModeRemoveSubmit);
 
     // Game roles on the game apply again, so the max stays hidden and the roles show.
     await waitFor(() =>
@@ -283,12 +357,8 @@ describe("remove a mode or an activity", () => {
     const form = await editForm("Dungeons");
     expect(within(form).queryByLabelText(en.gameMaxPlayersLabel)).toBeNull();
 
-    click(form, `${en.gameModeRemove}, Duel`);
-    fireEvent.click(
-      within(await screen.findByRole("dialog")).getByRole("button", {
-        name: en.gameModeRemoveSubmit,
-      }),
-    );
+    click(openMode(form, "Duel"), `${en.gameModeRemove}, Duel`);
+    await answer(en.gameModeRemoveSubmit);
 
     await waitFor(() =>
       expect(
@@ -311,34 +381,29 @@ describe("remove a mode or an activity", () => {
   it("keeps the activity when Keep is chosen", async () => {
     renderPage();
     const form = await editForm("Dungeons");
-    click(modeGroup(form, 1), `${en.gameActivityRemove}, Crypt`);
+    const mode = openMode(form, "Raid");
+    click(mode, `${en.gameActivityRemove}, Crypt`);
 
-    fireEvent.click(
-      within(await screen.findByRole("dialog")).getByRole("button", {
-        name: en.gameActivityRemoveKeep,
-      }),
-    );
+    await answer(en.gameActivityRemoveKeep);
 
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
-    expect(within(form).getByDisplayValue("Crypt")).toBeTruthy();
+    expect(within(mode).getByDisplayValue("Crypt")).toBeTruthy();
   });
 
   it("asks before removing an activity and focuses its add button after", async () => {
     renderPage();
     const form = await editForm("Dungeons");
-    const mode = modeGroup(form, 1);
+    const mode = openMode(form, "Raid");
 
     click(mode, `${en.gameActivityRemove}, Crypt`);
-    const dialog = await screen.findByRole("dialog", {
+    await screen.findByRole("dialog", {
       name: en.gameActivityRemoveHeading("Crypt"),
     });
-    expect(within(form).getByDisplayValue("Crypt")).toBeTruthy();
-    fireEvent.click(
-      within(dialog).getByRole("button", { name: en.gameActivityRemoveSubmit }),
-    );
+    expect(within(mode).getByDisplayValue("Crypt")).toBeTruthy();
+    await answer(en.gameActivityRemoveSubmit);
 
     await waitFor(() =>
-      expect(within(form).queryByDisplayValue("Crypt")).toBeNull(),
+      expect(within(mode).queryByDisplayValue("Crypt")).toBeNull(),
     );
     expect(document.activeElement).toBe(
       within(mode).getByRole("button", { name: en.gameActivityAdd }),
@@ -352,15 +417,17 @@ describe("edit with modes", () => {
     const form = await editForm("Dungeons");
 
     expect(within(form).queryByLabelText(en.gameMaxPlayersLabel)).toBeNull();
-    const mode = modeGroup(form, 1);
+    const mode = openMode(form, "Raid");
     expect(within(mode).getByDisplayValue("Tank")).toBeTruthy();
     expect(within(mode).getByText(en.gameRolesTotal(4))).toBeTruthy();
     expect(within(mode).queryByLabelText(en.gameModeMaxLabel)).toBeNull();
-    expect(
-      within(modeGroup(form, 2)).getByLabelText(en.gameModeMaxLabel),
-    ).toHaveProperty("value", "2");
-
     type(within(mode).getByDisplayValue("Healer"), "Medic");
+    back(form);
+    expect(
+      within(openMode(form, "Duel")).getByLabelText(en.gameModeMaxLabel),
+    ).toHaveProperty("value", "2");
+    back(form);
+
     click(form, en.gameEditSubmit);
 
     await waitFor(() => expect(client.replaceGame).toHaveBeenCalledOnce());
@@ -447,36 +514,69 @@ describe("errors", () => {
   it.each([
     ["a mode name", en.gameModeNameLabel, "invalid_mode"],
     ["an activity name", en.gameActivityNameLabel, "invalid_activity"],
-  ])("checks %s locally and focuses that entry", async (_, label, code) => {
-    const client = renderPage();
+  ])(
+    "checks %s locally, opens its mode and focuses that entry",
+    async (_, label, code) => {
+      const client = renderPage();
+      const form = await addForm();
+      fillName(form, "Azul");
+      click(form, en.gameModeAdd);
+      const mode = modeView(form);
+      type(within(mode).getByLabelText(en.gameModeNameLabel), "Raid");
+      type(within(mode).getByLabelText(en.gameModeMaxLabel), "4");
+      click(mode, en.gameActivityAdd);
+      if (label === en.gameModeNameLabel)
+        type(within(mode).getByLabelText(label), "");
+      back(form);
+      click(form, en.gameAddSubmit);
+
+      const alert = await within(form).findByRole("alert");
+      expect(alert.textContent).toBe(en.errors[code as "invalid_mode"]);
+      const field = within(modeView(form)).getByLabelText(label);
+      expect(document.activeElement).toBe(field);
+      expect(field.getAttribute("aria-invalid")).toBe("true");
+      expect(field.getAttribute("aria-describedby")).toContain(alert.id);
+      // The entry is known, so the section is not described as well.
+      expect(
+        within(form)
+          .getByText(en.gameModesLegend)
+          .closest("fieldset")!
+          .getAttribute("aria-describedby"),
+      ).toBeNull();
+      expect(client.createGame).not.toHaveBeenCalled();
+    },
+  );
+
+  it("marks the row of the mode a local failure is in", async () => {
+    renderPage();
     const form = await addForm();
     fillName(form, "Azul");
     click(form, en.gameModeAdd);
-    const mode = modeGroup(form, 1);
-    type(within(mode).getByLabelText(en.gameModeNameLabel), "Raid");
-    type(within(mode).getByLabelText(en.gameModeMaxLabel), "4");
-    click(mode, en.gameActivityAdd);
-    if (label === en.gameModeNameLabel)
-      type(within(mode).getByLabelText(label), "");
+    type(within(modeView(form)).getByLabelText(en.gameModeNameLabel), "Raid");
+    type(within(modeView(form)).getByLabelText(en.gameModeMaxLabel), "4");
+    back(form);
+    click(form, en.gameModeAdd);
+    back(form);
     click(form, en.gameAddSubmit);
 
-    expect((await within(form).findByRole("alert")).textContent).toBe(
-      en.errors[code as "invalid_mode"],
-    );
-    const field = within(mode).getByLabelText(label);
-    expect(document.activeElement).toBe(field);
-    expect(field.getAttribute("aria-invalid")).toBe("true");
-    expect(field.getAttribute("aria-describedby")).toContain(
-      within(form).getByRole("alert").id,
-    );
-    // The entry is known, so the section is not described as well.
+    const alert = await within(form).findByRole("alert");
+    expect(
+      within(modeView(form)).getByRole("heading", {
+        name: en.gameModeLegend(2),
+      }),
+    ).toBeTruthy();
+    back(form);
+
+    const row = within(form).getByRole("button", {
+      name: en.gameModeLegend(2),
+    });
+    expect(within(row).getByText(en.gameModeHasError)).toBeTruthy();
+    expect(row.getAttribute("aria-describedby")).toContain(alert.id);
     expect(
       within(form)
-        .getByText(en.gameModesLegend)
-        .closest("fieldset")!
+        .getByRole("button", { name: "Raid" })
         .getAttribute("aria-describedby"),
-    ).toBeNull();
-    expect(client.createGame).not.toHaveBeenCalled();
+    ).not.toContain(alert.id);
   });
 
   it("checks the slots and the mode max locally with the structure text", async () => {
@@ -484,15 +584,15 @@ describe("errors", () => {
     const form = await addForm();
     fillName(form, "Azul");
     click(form, en.gameModeAdd);
-    const mode = modeGroup(form, 1);
-    type(within(mode).getByLabelText(en.gameModeNameLabel), "Raid");
+    type(within(modeView(form)).getByLabelText(en.gameModeNameLabel), "Raid");
+    back(form);
     click(form, en.gameAddSubmit);
 
     expect((await within(form).findByRole("alert")).textContent).toBe(
       en.gameStructureCapacityInvalid,
     );
     expect(document.activeElement).toBe(
-      within(mode).getByLabelText(en.gameModeMaxLabel),
+      within(modeView(form)).getByLabelText(en.gameModeMaxLabel),
     );
     expect(client.createGame).not.toHaveBeenCalled();
   });
