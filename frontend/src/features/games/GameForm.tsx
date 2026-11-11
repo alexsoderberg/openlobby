@@ -1,3 +1,4 @@
+import { flushSync } from "react-dom";
 import {
   useId,
   useRef,
@@ -17,7 +18,12 @@ import {
 } from "../../api";
 import { toUserMessage, useMessages } from "../../i18n";
 import { GameGenreField } from "./GameGenreField";
-import { GameStructureFields } from "./GameStructureFields";
+import {
+  GameStructureFields,
+  ModeView,
+  modeRowId,
+  type StructureError,
+} from "./GameStructureFields";
 import { parseGameInput } from "./gameInput";
 import {
   draftFromGame,
@@ -33,9 +39,10 @@ type SubmitGame = (input: GameInput) => ChangeResult;
 
 /**
  * Name, default max players, genre, and the game's modes, game roles and activities (the ID is made by the server).
- * The default max players is not shown while the game has modes or game roles. A failure, local or from
- * the server, is shown next to the field or section it is about and focus moves there.
- * `onSubmit` resolves to the error code of a failed save.
+ * The form shows one level at a time: the game with its modes as rows, or one open mode. The game's fields stay
+ * mounted while a mode is open, so what was typed is kept. The default max players is not shown while the game has
+ * modes or game roles. A failure, local or from the server, is shown next to the field or section it is about and
+ * focus moves there; a local failure in a mode opens that mode. `onSubmit` resolves to the error code of a failed save.
  */
 export function GameForm({
   game,
@@ -52,16 +59,33 @@ export function GameForm({
 }) {
   const id = useId();
   const [draft, setDraft] = useState(() => draftFromGame(game));
-  const requestFocus = useFocusRequest(draft);
+  const [openKey, setOpenKey] = useState<string>();
+  // Once a mode has been open, the game view slides back in when it shows again; not when the form first opens.
+  const [modeWasOpen, setModeWasOpen] = useState(false);
+  const openModeView = (modeKey: string) => {
+    setOpenKey(modeKey);
+    setModeWasOpen(true);
+  };
+  const requestFocus = useFocusRequest();
   const { failure, nameRef, maxRef, genreRef, submit } = useGameFormSubmit(
     id,
     onSubmit,
     draft,
     setDraft,
+    openModeView,
     game,
   );
   const errorId = `${id}-error`;
   const section = failure?.section;
+  // A removed mode has no view: the form is back on the game.
+  const openIndex = draft.modes.findIndex((mode) => mode.key === openKey);
+  const openMode = draft.modes[openIndex];
+  const structureError: StructureError = {
+    errorId,
+    section: isStructureSection(section) ? section : undefined,
+    field: failure?.field,
+    modeKey: failure?.modeKey,
+  };
 
   return (
     <form
@@ -72,33 +96,57 @@ export function GameForm({
         void submit(event.currentTarget);
       }}
     >
-      <GameFormFields
-        id={id}
-        game={game}
-        section={section}
-        errorId={errorId}
-        hideMax={hidesDefaultMax(draft)}
-        nameRef={nameRef}
-        maxRef={maxRef}
-        genreRef={genreRef}
-      />
-      <GameStructureFields
-        id={id}
-        draft={draft}
-        setDraft={setDraft}
-        requestFocus={requestFocus}
-        errorId={errorId}
-        errorSection={isStructureSection(section) ? section : undefined}
-        errorField={failure?.field}
-      />
+      <div
+        className={modeWasOpen ? "form-view form-view--returned" : "form-view"}
+        hidden={openMode !== undefined}
+      >
+        <GameFormFields
+          id={id}
+          game={game}
+          section={section}
+          errorId={errorId}
+          hideMax={hidesDefaultMax(draft)}
+          nameRef={nameRef}
+          maxRef={maxRef}
+          genreRef={genreRef}
+        />
+        <GameStructureFields
+          id={id}
+          draft={draft}
+          setDraft={setDraft}
+          requestFocus={requestFocus}
+          error={structureError}
+          onOpenMode={(modeKey, focusId) => {
+            openModeView(modeKey);
+            requestFocus(focusId);
+          }}
+        />
+      </div>
+      {openMode && (
+        <ModeView
+          id={id}
+          mode={openMode}
+          position={openIndex + 1}
+          setDraft={setDraft}
+          requestFocus={requestFocus}
+          error={structureError}
+          onBack={() => {
+            setOpenKey(undefined);
+            requestFocus(modeRowId(id, openMode.key));
+          }}
+        />
+      )}
       {failure && (
         <GameFormError id={errorId} code={failure.code} section={section} />
       )}
-      <GameFormActions
-        submitLabel={submitLabel}
-        busy={busy}
-        onCancel={onCancel}
-      />
+      {/* Saving is done from the game view. Without a submit button, Enter in a mode does not submit. */}
+      {!openMode && (
+        <GameFormActions
+          submitLabel={submitLabel}
+          busy={busy}
+          onCancel={onCancel}
+        />
+      )}
     </form>
   );
 }
@@ -208,7 +256,12 @@ function GameFormActions({
   );
 }
 
-type FormFailure = { code: string; section: ErrorSection; field?: string };
+type FormFailure = {
+  code: string;
+  section: ErrorSection;
+  field?: string;
+  modeKey?: string;
+};
 
 const formTexts = (form: HTMLFormElement) => {
   const data = new FormData(form);
@@ -234,7 +287,9 @@ function focusError(
   if (isStructureSection(section))
     (
       (field && document.getElementById(`${id}-${field}`)) ||
-      form.querySelector<HTMLElement>(`[data-section="${section}"] input`)
+      form.querySelector<HTMLElement>(
+        `[data-section="${section}"] :is(input, button)`,
+      )
     )?.focus();
   else if (section === "max") refs.max.current?.focus();
   else if (section === "genre") refs.genre.current?.focus();
@@ -243,13 +298,14 @@ function focusError(
 
 /**
  * Checks the input locally, then submits it. The failure it ends with is kept until the next submit, and focus goes
- * to what it is about.
+ * to what it is about. A local failure in a mode opens that mode first.
  */
 function useGameFormSubmit(
   id: string,
   onSubmit: SubmitGame,
   draft: StructureDraft,
   setDraft: Dispatch<SetStateAction<StructureDraft>>,
+  openModeView: (modeKey: string) => void,
   game?: Game,
 ) {
   const [failure, setFailure] = useState<FormFailure>();
@@ -273,9 +329,13 @@ function useGameFormSubmit(
     const next = {
       code,
       section: errorSection(code, draft),
-      field: parsed.ok ? undefined : parsed.field,
+      ...(parsed.ok ? {} : { field: parsed.field, modeKey: parsed.modeKey }),
     };
-    setFailure(next);
+    // Rendered at once, so the field to focus is on screen.
+    flushSync(() => {
+      setFailure(next);
+      if (next.modeKey) openModeView(next.modeKey);
+    });
     focusError(form, id, next, { name: nameRef, max: maxRef, genre: genreRef });
   }
 

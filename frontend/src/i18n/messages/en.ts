@@ -158,6 +158,23 @@ export const en = {
   gameModeNameLabel: "Mode name",
   gameModeMaxLabel: "Max players",
   gameModeMaxHint: "Used when the mode has no game roles.",
+  gameModeSummary: (players: number | undefined, activities: number) =>
+    [
+      players === undefined
+        ? "Max players not set"
+        : players === 1
+          ? "1 player"
+          : `${players} players`,
+      activities === 0
+        ? ""
+        : activities === 1
+          ? "1 activity"
+          : `${activities} activities`,
+    ]
+      .filter(Boolean)
+      .join(" · "),
+  gameModeHasError: "This mode has an error. Open it to fix it.",
+  gameModeBack: "Back to game",
   gameModeAdd: "Add mode",
   gameModeRemove: "Remove mode",
   gameModeRemoveHeading: (name: string) => `Remove mode ${name}?`,

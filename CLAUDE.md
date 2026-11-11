@@ -74,6 +74,10 @@ This is the single shared vocabulary. Use these exact English terms in documents
 | Live update | `GET /api/live-updates` (server-sent events), event `groupChanged`, data = group ID | The signal that a group's lobbies changed, sent while the page is visible. The screen then loads its data again. The signal carries no lobby data. Avoid: push, real-time, socket, sync (REQ-0017, ADR 0019) |
 | Group feed | `GET /api/groups/{groupId}/feed`, frontend "Group feed" | The recent feed events of one group, newest first: seven days, at most 20. Not the history of lobbies (F-020). Avoid: activity feed, timeline, history, log. Do not use the bare word "activity" (REQ-0018, ADR 0020) |
 | Feed event | `group_events`, `FeedEvent`, `kind`: `lobby_created`, `player_joined`, `player_left`, `lobby_full` | One recorded event of the group feed. Recorded in the same transaction as the lobby change that caused it. Keeps the game, mode and named activity names of its lobby as they were then. Holds user IDs only. The frontend composes its text and label. Avoid: activity, notification, log entry (ADR 0020) |
+| Icon | frontend only (`Icon`, `IconName`, `ui/Icon.tsx`) | The only way the frontend draws an icon. Names are the project's own (e.g. `pencil`). Only `ui/Icon.tsx` imports the icon library. Avoid: glyph, svg icon, symbol (ADR 0021) |
+| Tooltip | frontend only (`Tooltip`, `ui/Tooltip.tsx`) | Short text shown beside an element on hover or keyboard focus. Used by `IconButton` only. Closed with Escape. Hidden on touch (coarse pointer), where the label is shown on the button instead. Avoid: hint, popup, title attribute (ADR 0021) |
+| Button variant | `.button` (primary), `.button--secondary`, `.button-ghost`, `.button--danger` | The colour style of a text button. One variant per button. One size per pointer type. Destructive actions are always `danger`, with visible text. Avoid: button type, kind, style (ADR 0021) |
+| Icon-only button | `IconButton` (`ui/IconButton.tsx`), `.button--icon` | A ghost button with an Icon and a label. Mouse and keyboard: the Icon alone, with the label as Tooltip. Touch: the Icon with the label beside it. Its accessible name is the label. For secondary actions only (edit, copy). Avoid: icon button, round button (ADR 0021) |
 
 Notes:
 - "Time" in the sense of a clock time or timestamp is "time" (`startsAt`, `endsAt`, time zone). Only the bookable slot is a "lobby".
@@ -100,24 +104,24 @@ Notes:
 
 ## Model selection
 
-Agents use the weakest model that can handle the task. Each task starts at step 1 and moves up one step at a time only when needed.
+Agents use the weakest model that can handle the task. Each task starts at step 1 (UI and backend tasks at step 3, see below) and moves up one step at a time only when needed.
 
 | Step | Model | Effort | Used |
 |---|---|---|---|
 | 1 | Haiku (`haiku`) | medium | Always first (except UI and backend tasks) |
 | 2 | Sonnet (`sonnet`) | medium | After escalation from step 1 |
-| 3 | Opus 5.5 (`opus`) | medium | After escalation from step 2. **Highest allowed level.** |
+| 3 | Opus 5.5 (`opus`) | medium | After escalation from step 2, and the start step for UI and backend tasks. **Highest allowed level.** |
 
-- Agent files have `model: haiku` and `effort: medium` by default. Exception: `ui-ux-expert.md` and `backend-expert.md` have `model: sonnet`.
-- **UI and backend tasks start at step 2.** Tasks for the UI/UX expert and the backend expert start at `sonnet`, because `haiku` work there has needed two or more review rounds almost every time. Escalation continues from step 2 to step 3.
+- Agent files have `model: haiku` and `effort: medium` by default. Exception: `ui-ux-expert.md` and `backend-expert.md` have `model: opus`.
+- **UI and backend tasks start at step 3.** Tasks for the UI/UX expert and the backend expert start at `opus`, because `haiku` work there needed two or more review rounds almost every time, and the ADR 0017 slices at `sonnet` needed escalation to `opus` after two rejections (PR3b, PR5a, PR5b; decided by the user 2026-11-11). There is no step above, so a rejection twice at step 3 means the orchestrator stops and asks the user.
 - Effort is never higher than `medium`. Models above Opus 5.5 (e.g. Fable or Mythos) and effort `high` or higher are never used.
 - **Escalation** happens when:
   - the agent itself returns `Status: ESCALATE` with a reason (it cannot handle the task or cannot judge it safely), or
   - the result is rejected by the reviewer or by tests twice at the same step, or
   - the orchestrator judges that the result clearly does not meet the bar.
 - The orchestrator then reruns the same task with the next model (the `model` parameter when starting the agent) and gives it the previous agent's result and problems as context.
-- Never skip a step. If step 3 fails, the orchestrator stops and asks the user.
-- The next task starts at step 1 again (step 2 for UI and backend tasks), including for the same agent.
+- Never skip a step when escalating. If step 3 fails, the orchestrator stops and asks the user.
+- The next task starts at step 1 again (step 3 for UI and backend tasks), including for the same agent.
 - The main session (orchestrator) also runs on at most Opus 5.5 with effort medium. It is selected in the session with `/model` and `/effort`.
 - Use the model names (`haiku`, `sonnet`, `opus`) in agent files. Check in Claude Code that they point to the versions you want.
 
