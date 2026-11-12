@@ -211,6 +211,7 @@ func TestLobbyModesRolesDown(t *testing.T) {
 		VALUES ('`+fridayID+`', '`+alexID+`', NULL, now() + interval '1 hour', now() + interval '2 hours', now())`); err != nil {
 		t.Fatal(err)
 	}
+	migrateDownTo(t, store, 7)
 	if err := store.Migrate(ctx, true); err == nil {
 		t.Fatal("down of 0007 succeeded with a lobby without a game")
 	}

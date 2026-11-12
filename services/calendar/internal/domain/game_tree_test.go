@@ -3,6 +3,7 @@ package domain_test
 import (
 	"errors"
 	"math"
+	"slices"
 	"strings"
 	"testing"
 
@@ -193,6 +194,33 @@ func TestCheckIDs(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			if err := tc.game.CheckIDs(current); !errors.Is(err, tc.want) {
 				t.Fatalf("error %v, want %v", err, tc.want)
+			}
+		})
+	}
+}
+
+func TestEffectiveGameRoles(t *testing.T) {
+	scout, tank, healer := domain.GameRole{ID: "scout"}, domain.GameRole{ID: "tank"}, domain.GameRole{ID: "healer"}
+	tests := []struct {
+		name string
+		game domain.Game
+		want []string
+	}{
+		{name: "no modes: the game's roles", game: domain.Game{GameRoles: []domain.GameRole{scout}}, want: []string{"scout"}},
+		{name: "modes hide the game-level roles", game: domain.Game{GameRoles: []domain.GameRole{scout}, Modes: []domain.GameMode{
+			{GameRoles: []domain.GameRole{tank}}, {}, {GameRoles: []domain.GameRole{healer}},
+		}}, want: []string{"tank", "healer"}},
+		{name: "modes without roles: none", game: domain.Game{GameRoles: []domain.GameRole{scout}, Modes: []domain.GameMode{{}}}, want: nil},
+		{name: "no roles at all", game: domain.Game{}, want: nil},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			var got []string
+			for _, role := range tc.game.EffectiveGameRoles() {
+				got = append(got, role.ID)
+			}
+			if !slices.Equal(got, tc.want) {
+				t.Fatalf("roles %v, want %v", got, tc.want)
 			}
 		})
 	}

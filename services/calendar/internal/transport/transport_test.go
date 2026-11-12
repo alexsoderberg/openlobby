@@ -38,7 +38,8 @@ type memoryGroups struct {
 	links   map[string][]domain.InviteLink
 	games   []domain.Game
 	lobbies map[string]domain.Lobby
-	joined  map[string]bool // "lobbyID/userID" of the players added through the lobby port
+	joined  map[string]bool     // "lobbyID/userID" of the players added through the lobby port
+	choices map[string][]string // preferred game role IDs by user
 	err     error
 	calls   int
 	created int
@@ -142,7 +143,7 @@ func newRouter(store *memoryGroups, directory *fakeDirectory) http.Handler {
 	games := application.NewGames(store, store, memoryEditor{store}, logger)
 	invites := application.NewInviteLinks(store, store, store, fixedTokens{}, fixedClock{})
 	lobbies := application.NewLobbies(memoryLobbyRepo{store}, store, store, directory, fixedClock{})
-	return transport.NewRouter(groups, invites, games, lobbies, application.NewMemberships(memoryMemberships{store}, fixedClock{}), ready, logger)
+	return transport.NewRouter(groups, invites, games, lobbies, application.NewMemberships(memoryMemberships{store}, fixedClock{}), application.NewPreferredGameRoles(memoryChoices{store}, store), ready, logger)
 }
 
 func call(router http.Handler, method, target string, headers map[string]string, body string) *httptest.ResponseRecorder {

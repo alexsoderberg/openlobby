@@ -20,6 +20,8 @@ type publicHandler struct {
 	invites     *application.InviteLinks
 	lobbies     *application.Lobbies
 	memberships *application.Memberships
+	// preferredGameRoles are the caller's own preferred game roles (ADR 0022).
+	preferredGameRoles *application.PreferredGameRoles
 }
 
 var _ publicapi.StrictServerInterface = publicHandler{}
