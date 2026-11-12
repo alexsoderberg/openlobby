@@ -293,15 +293,25 @@ a {
   top: 0;
   z-index: 10;
   border-bottom: 1px solid transparent;
-  transition:
-    background-color var(--duration-base) var(--ease-out),
-    border-color var(--duration-base) var(--ease-out);
 }
 
-.topbar.is-scrolled {
+/* The frost is a layer that fades by opacity, so the scroll state change repaints nothing. It also covers the
+   bar's transparent bottom border. */
+.topbar::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 -1px;
+  z-index: -1;
   background: var(--color-frost);
   backdrop-filter: blur(var(--blur-glass));
-  border-bottom-color: var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-base) var(--ease-out);
+}
+
+.topbar.is-scrolled::before {
+  opacity: 1;
 }
 
 .page {
@@ -335,10 +345,7 @@ a {
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
-  transition:
-    transform var(--duration-base) var(--ease-spring),
-    border-color var(--duration-base) var(--ease-out),
-    background-color var(--duration-fast) var(--ease-out);
+  transition: transform var(--duration-base) var(--ease-spring);
 }
 
 /* The sweep parks off the left edge and only animates on hover-in, so leaving does not flash it back across. */
@@ -362,10 +369,47 @@ a {
 .button-ghost,
 .button--secondary,
 .button--danger {
+  overflow: visible;
+  isolation: isolate;
   background: var(--color-surface);
   border-color: var(--color-border);
   color: var(--color-text);
   box-shadow: none;
+}
+
+/* Hover layers fade by opacity behind the content, so hover animates no colour. They lie on the border, outside
+   the padding box, where overflow: hidden would clip them; these variants have no sweep that needs the clip. */
+:is(.button--secondary, .button--danger, .button.button-ghost)::before,
+.button-ghost::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* The accent edge. */
+:is(.button--secondary, .button--danger, .button.button-ghost)::before {
+  z-index: -1;
+  border: 1px solid var(--color-accent);
+  transition: opacity var(--duration-base) var(--ease-out);
+}
+
+/* A ghost's wash, under the edge and quicker. Ghosts have no sweep, so ::after is free; this resets it. */
+.button-ghost::after {
+  z-index: -2;
+  width: auto;
+  background: var(--color-accent-wash);
+  transform: none;
+  transition: opacity var(--duration-fast) var(--ease-out);
+}
+
+:is(.button--secondary, .button--danger, .button.button-ghost):not(
+    :disabled
+  ):hover::before,
+.button-ghost:not(:disabled):hover::after {
+  opacity: 1;
 }
 
 .button-ghost {
@@ -379,7 +423,6 @@ a {
   color: var(--color-danger);
 }
 
-.button-ghost::after,
 .button--secondary::after,
 .button--danger::after {
   content: none;
@@ -389,14 +432,6 @@ a {
     :disabled
   ):hover {
   transform: translateY(var(--lift-button));
-}
-
-:is(.button, .button--secondary):not(:disabled):hover {
-  border-color: var(--color-accent);
-}
-
-.button-ghost:not(:disabled):hover {
-  background: var(--color-accent-wash);
 }
 
 @media (pointer: coarse) {
@@ -480,7 +515,7 @@ a {
   }
 }
 
-.button:not(:disabled):hover::after {
+.button:not(:disabled, .button-ghost):hover::after {
   transform: translateX(var(--sweep-end)) skewX(var(--sweep-skew));
   transition: transform var(--duration-sweep) var(--ease-out);
 }
@@ -538,7 +573,6 @@ a {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-panel);
-  backdrop-filter: blur(var(--blur-glass));
 }
 
 .panel {
@@ -611,12 +645,29 @@ a {
   min-height: var(--size-tap);
   padding: var(--space-2);
   border-radius: var(--radius-control);
-  transition: background-color var(--duration-base) var(--ease-out);
 }
 
-/* Scoped to real lists. */
-.row-list > .list-row:hover {
+/* Scoped to real lists. The tint is a layer behind the content that fades by opacity, under a genre
+   pattern (::before, z-index -1) as the row's own background was. */
+.row-list > .list-row {
+  position: relative;
+  isolation: isolate;
+}
+
+.row-list > .list-row::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  border-radius: inherit;
   background: var(--color-row-hover);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-base) var(--ease-out);
+}
+
+.row-list > .list-row:hover::after {
+  opacity: 1;
 }
 
 /* IconButton sits in its tooltip wrapper, so the wrapper stands for the button in these sibling rules. */
@@ -1206,11 +1257,20 @@ a {
   border: 0;
   background: transparent;
   cursor: pointer;
-  transition: background-color var(--duration-fast) var(--ease-out);
 }
 
-.time-grid__create:hover {
+/* The wash fades by opacity on a layer, so the button's own focus ring is never faded with it. */
+.time-grid__create::before {
+  content: "";
+  position: absolute;
+  inset: 0;
   background: var(--color-accent-wash);
+  opacity: 0;
+  transition: opacity var(--duration-fast) var(--ease-out);
+}
+
+.time-grid__create:hover::before {
+  opacity: 1;
 }
 
 .time-grid__blocks {
@@ -1457,14 +1517,15 @@ a {
 
 .meter > span {
   display: block;
-  width: calc(var(--meter-value, 0) * 100%);
   height: 100%;
   background: var(--color-accent);
-  transition: width var(--duration-meter) var(--ease-out);
+  transform: scaleX(var(--meter-value, 0));
+  transform-origin: left;
+  transition: transform var(--duration-meter) var(--ease-out);
 }
 
 [data-reveal="pending"] .meter > span {
-  width: 0;
+  transform: scaleX(0);
 }
 
 @keyframes rise {
@@ -2034,7 +2095,7 @@ a {
     scroll-behavior: auto !important;
   }
 
-  .button::after {
+  .button:not(.button-ghost)::after {
     display: none;
   }
 
