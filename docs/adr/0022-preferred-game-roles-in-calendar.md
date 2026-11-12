@@ -161,7 +161,7 @@ Each PR keeps the earlier behavior: the new fields are optional and the old scre
 - **Keep hidden choices across saves.** The client cannot send them, so the save would need a special merge rule for them. Rejected (point 2).
 
 ## Answered questions
-All answered 2026-11-12; the design above uses these answers. Questions 1, 2, 3 and 6: DECISION (user, 2026-11-12), the recommended answer. Questions 4, 5 and 7: DECISION (architect), the recommended answer; they were not put to the user, who may change them.
+All answered by the user on 2026-11-12 with the recommended answers (DECISION, user, 2026-11-12); the design above uses these answers.
 1. **A signed-in person who is in no group sees the game catalogue.** The account page lists every game that has game roles, so a person sees games outside their groups. Recommended: yes, since the game names are not private and the account page is not tied to a group. Alternative: only the games of the groups the member is in (one extra query per group and a merge in the frontend). The recommendation is the smaller change.
 2. **Are the lobby player choices shown for the lobby's game only, or only for the lobby's mode?** Recommended: the game (all its modes), with the mode name shown next to each role. The lobby has one game, and a choice for another mode of that game still says what the player plays. Filtering by the lobby's mode would hide that and add a rule. Alternative: only the roles of the lobby's mode.
 3. **What happens when a member chose a game role that the admin removed?** Recommended: the choice is removed by the admin write, and nothing is shown or said. Alternative: keep a stale row and show it greyed out. That needs a second rule and is not recommended.
