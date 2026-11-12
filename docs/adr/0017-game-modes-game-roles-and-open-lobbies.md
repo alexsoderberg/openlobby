@@ -89,6 +89,8 @@ Write order and identity checks (one transaction; `SELECT ... FOR UPDATE` on the
 
 Deleting before inserting means that a swap of two names in one request never meets the unique indexes in an intermediate state.
 
+Amendment 2026-11-12 (ADR 0022): the write has one more step after step 4. It deletes the preferred game roles (ADR 0022) of every game role that no longer exists. It runs at the end of the tree write, every time the tree is written, and in the game delete. Lobbies and their copies are still not touched.
+
 Rules for values, in this order after the existing checks (`invalid_request`, `not_allowed`, `invalid_game`, `invalid_capacity`, `invalid_genre`):
 - Game without modes with game roles: `defaultMaxPlayers` is omitted or `null`, or equal to the sum of the game's role slots. The sum is stored as the game's default max. Any other value gives `invalid_capacity`. The equal-sum rule keeps the existing admin page working: it sends the value it read (the sum, for a game with roles) when only the name changes. A game without modes and without roles keeps the existing rule for `defaultMaxPlayers`. Test in PR2: a rename of a game with roles, sending the old sum, succeeds; a different value gives `invalid_capacity`.
 - Game with modes: `defaultMaxPlayers`, the game-level roles and the modes are stored as sent; the game's own default and roles are not used (section 2).
