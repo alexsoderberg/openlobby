@@ -33,26 +33,25 @@ function rule(css: string, selector: string): string {
 
 const WIDE = "@media (min-width: 47.5rem)";
 const PHONE = "@media (max-width: 47.499rem)";
-const GRID_HEIGHT = "var(--grid-height, var(--size-grid-height))";
 
-// jsdom does no layout and cannot clamp a scroll, so these read the rules of REQ-0019 from the stylesheet.
+// jsdom does no layout, so these read the rules of REQ-0019 from the stylesheet.
 describe("week time grid layout", () => {
   it("is 32rem tall on phones", () => {
     expect(token("--size-grid-height")).toBe("32rem");
-    expect(rule(stylesheet, ".time-grid")).toContain(`height: ${GRID_HEIGHT};`);
+    expect(rule(stylesheet, ".time-grid")).toContain(
+      "height: var(--size-grid-height);",
+    );
   });
 
   it("reaches the window bottom on wide screens, never shorter than on phones", () => {
     expect(rule(mediaText(WIDE), ".time-grid")).toContain(
-      "--grid-height: max(var(--size-grid-height), calc(100dvh - var(--grid-top, 0px) - var(--space-4)));",
+      "height: max(var(--size-grid-height), calc(100dvh - var(--grid-top, 0px) - var(--space-6)));",
     );
   });
 
-  it("has room below 24:00, so the last hour can scroll to the top", () => {
-    const end = rule(stylesheet, ".time-grid__days::after");
-    expect(end).toContain("grid-column: 1 / -1;");
-    expect(end).toContain(
-      `height: calc(${GRID_HEIGHT} - var(--size-grid-title) - var(--size-hour));`,
+  it("leaves the main area's bottom padding below it, so a page that ends with the grid does not scroll", () => {
+    expect(rule(mediaText(WIDE), ".shell__main")).toContain(
+      "padding: var(--space-4) var(--space-6) var(--space-6);",
     );
   });
 

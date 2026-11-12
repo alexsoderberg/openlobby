@@ -1179,7 +1179,7 @@ a {
    start and span in minutes (--start, --span), and its share of the width from --column of --columns. */
 .time-grid {
   display: flex;
-  height: var(--grid-height, var(--size-grid-height));
+  height: var(--size-grid-height);
   overflow-y: auto;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-control);
@@ -1209,18 +1209,6 @@ a {
   margin: 0;
   padding: 0;
   list-style: none;
-}
-
-/* The end of the day: room below 24:00, so that any hour, even 23:00, can scroll to the top of the grid. */
-.time-grid__days::after {
-  content: "";
-  grid-column: 1 / -1;
-  height: calc(
-    var(--grid-height, var(--size-grid-height)) - var(--size-grid-title) -
-      var(--size-hour)
-  );
-  border-top: 1px solid var(--color-border);
-  background: var(--color-bg);
 }
 
 .time-grid__day {
@@ -2094,11 +2082,12 @@ a {
   }
 
   /* The week grid reaches the bottom of the window from where it starts on the page (--grid-top, set by
-     useGridTop), but never gets shorter than it is on phones. */
+     useGridTop), but never gets shorter than it is on phones. The margin is the main area's bottom padding, so
+     a page that ends with the grid fits the window and does not scroll. */
   .time-grid {
-    --grid-height: max(
+    height: max(
       var(--size-grid-height),
-      calc(100dvh - var(--grid-top, 0px) - var(--space-4))
+      calc(100dvh - var(--grid-top, 0px) - var(--space-6))
     );
   }
 }
