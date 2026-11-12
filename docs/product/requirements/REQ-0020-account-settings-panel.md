@@ -21,6 +21,7 @@ Sections and order:
 
 Account section:
 - Given that I open the You page, when I see the "Account" section, then it shows my avatar (REQ-0016, or my initials when I have no picture) and my display name, as today.
+- Given that I open the You page, when I see the "Account" section, then the text "Signed in as" is shown as a small label above my display name. The label is smaller than the eyebrow size used elsewhere in the app, 0.75rem: on the You page it is 0.6875rem (DECISION, user, 2026-11-12).
 - Given that I open the You page, when I look at the "Account" section, then there is no control to change my display name or my avatar (profile editing is out of scope, REQ-0001).
 
 Game list row:
@@ -54,8 +55,9 @@ Layout and later sections:
 
 ## Decisions
 - DECISION (user, 2026-11-12): the You page becomes an account settings panel. Structure only, no new setting in this requirement. Sections: Account, System admin (system admin only), Log out.
-- ASSUMPTION (section title): "System admin", not "Admin". The glossary says "Admin" without a prefix is to be avoided, because it can mean group admin or system admin.
+- DECISION (user, 2026-11-12): section title "System admin", not "Admin". The glossary says "Admin" without a prefix is to be avoided, because it can mean group admin or system admin.
+- DECISION (user, 2026-11-12): the "Signed in as" label stays on the You page, in a smaller size than before.
 - ASSUMPTION (priority and order): Should, placed after the group feed (A6) as A8 in `backlog.md`. The user may move it earlier; it is small.
 
 ## Open questions
-- Section title "System admin" is decided by the user (2026-11-12), not "Admin".
+None open. The section title "System admin" and the "Signed in as" label are decided by the user (2026-11-12).
