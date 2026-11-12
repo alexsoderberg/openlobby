@@ -337,6 +337,8 @@ export const en = {
 
   profileHeading: "You",
   profileNameLabel: "Signed in as",
+  profileAccountHeading: "Account",
+  profileSystemAdminHeading: "System admin",
 
   dashboard: {
     heading: "Dashboard",
