@@ -369,6 +369,10 @@ func TestGetGroupReturnsNameAndMembersWithNamesAndRoles(t *testing.T) {
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("members %v, want %v", got, want)
 	}
+	// The contract field is an array, never null (ADR 0022).
+	if strings.Count(response.Body.String(), `"preferredGameRoles":[]`) != len(want) {
+		t.Fatalf("body %q, want preferredGameRoles [] on each member", response.Body.String())
+	}
 }
 
 // A non-member and an unknown group get the same 404 with no lookup of names (ADR 0004 rule 2).

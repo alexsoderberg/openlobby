@@ -477,6 +477,10 @@ func TestGetLobbyReturns200WithPlayers(t *testing.T) {
 		got.Players[0].GameRoleID != nil || got.Players[1].GameRoleID == nil || *got.Players[1].GameRoleID != tankRoleID {
 		t.Fatalf("body %q, want the lobby with Other and Alex as named players", response.Body.String())
 	}
+	// The contract field is an array, never null (ADR 0022).
+	if strings.Count(response.Body.String(), `"preferredGameRoles":[]`) != len(got.Players) {
+		t.Fatalf("body %q, want preferredGameRoles [] on each player", response.Body.String())
+	}
 }
 
 func TestUpcomingAndGetLobbyGiveTheContractErrors(t *testing.T) {

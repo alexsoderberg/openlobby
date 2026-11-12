@@ -441,6 +441,32 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/users/me/preferred-game-roles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get the caller's preferred game roles
+         * @description Any signed-in person, no membership needed (REQ-0021, ADR 0022). Only the caller's own choices.
+         *     `gameRoleIds` are the caller's choices that are effective game roles (a role of a mode, or a role of a game with no modes; ADR 0017). `games` are the games that have at least one effective game role, sorted by name ignoring case, then `id` (the order of `GET /api/games`). Each game lists only its effective game roles: for a game with modes, the game-level `gameRoles` is `[]`, so a hidden role is never offered.
+         */
+        get: operations["getPreferredGameRoles"];
+        /**
+         * Replace the caller's preferred game roles
+         * @description Any signed-in person, no membership needed (REQ-0021, ADR 0022). Replaces all the caller's choices with `gameRoleIds`, one choice for all groups. An empty array clears them.
+         *     Rules in this order: identity (401 `unauthenticated`), shape (400 `invalid_request`: invalid JSON, a wrong JSON type, a missing or `null` `gameRoleIds`, or the same ID twice in `gameRoleIds`; `[]` is valid and clears the choices), then each entry (400 `invalid_game_role`: not a uuid, or not an effective game role of an existing game). The client reloads the list on `invalid_game_role`.
+         */
+        put: operations["replacePreferredGameRoles"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -479,6 +505,8 @@ export interface components {
         Member: components["schemas"]["UserRef"] & {
             /** @enum {string} */
             role: "admin" | "member";
+            /** @description The member's preferred game roles (ADR 0022). Not in `required` so that existing fixtures stay valid, but the server always sends it. */
+            preferredGameRoles?: components["schemas"]["PreferredGameRole"][];
         };
         /** @description Max uses for a link. Set at creation and not changed. */
         InviteMaxUses: number;
@@ -601,6 +629,8 @@ export interface components {
              * @description The player's game role. `null` means flex. Not in `required` so that existing fixtures stay valid, but the server always sends it (ADR 0017).
              */
             gameRoleId?: string | null;
+            /** @description The player's preferred game roles for the lobby's game, all its modes. Empty for a lobby with no game and for a player who is no longer a member of the group (ADR 0022). Not in `required` so that existing fixtures stay valid, but the server always sends it. */
+            preferredGameRoles?: components["schemas"]["PreferredGameRole"][];
         };
         SetLobbyGameRequest: {
             /**
@@ -703,6 +733,27 @@ export interface components {
             name: string;
             /** @description How many players the role takes in a lobby. */
             slots: number;
+        };
+        /** @description A game role that a person usually plays (ADR 0022). Order in a list - game name ignoring case, then mode order, then role order, as entered by the system admin. */
+        PreferredGameRole: {
+            /** Format: uuid */
+            gameRoleId: string;
+            /** @description The game role's name. */
+            name: string;
+            /** @description The name of the game role's game. */
+            gameName: string;
+            /** @description The name of the game role's mode, or `null` for a role of a game with no modes. */
+            modeName: string | null;
+        };
+        PreferredGameRoleChoices: {
+            /** @description The caller's preferred game roles. Only effective game roles (ADR 0017), so a role that is not offered in `games` is never listed. */
+            gameRoleIds: string[];
+            /** @description Every game with at least one effective game role, with its modes, sorted by name ignoring case, then `id` (the order of `GET /api/games`). Only effective game roles are listed. For a game with modes, the game-level `gameRoles` is `[]`, so the client never offers a hidden role. */
+            games: components["schemas"]["Game"][];
+        };
+        SetPreferredGameRolesRequest: {
+            /** @description All the caller's preferred game roles. An empty array `[]` is the way to clear them. A missing or `null` `gameRoleIds`, or a repeated value, gives `invalid_request`. A value that is not a uuid, or not an effective game role, gives `invalid_game_role`. */
+            gameRoleIds: string[];
         };
         GameRoleInput: {
             /**
@@ -2030,6 +2081,71 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
+            500: components["responses"]["InternalError"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    getPreferredGameRoles: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Correlation ID (ADR 0001). A valid value is kept and passed on. A missing or invalid value is replaced by a new one. The response always contains `X-Request-Id`. */
+                "X-Request-Id"?: components["parameters"]["RequestIdHeader"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The caller's choices and the games to choose from. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PreferredGameRoleChoices"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            500: components["responses"]["InternalError"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    replacePreferredGameRoles: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Correlation ID (ADR 0001). A valid value is kept and passed on. A missing or invalid value is replaced by a new one. The response always contains `X-Request-Id`. */
+                "X-Request-Id"?: components["parameters"]["RequestIdHeader"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetPreferredGameRolesRequest"];
+            };
+        };
+        responses: {
+            /** @description The stored choices, in the shape of the GET. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PreferredGameRoleChoices"];
+                };
+            };
+            /** @description `invalid_request` (invalid JSON, a wrong JSON type, a missing or `null` `gameRoleIds`, or a repeated ID) or `invalid_game_role` (an entry that is not a uuid, or not an effective game role of an existing game). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
             500: components["responses"]["InternalError"];
             503: components["responses"]["ServiceUnavailable"];
         };
