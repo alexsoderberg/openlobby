@@ -535,7 +535,10 @@ type LobbyPlayer struct {
 
 	// GameRoleId The player's game role. `null` means flex. Not in `required` so that existing fixtures stay valid, but the server always sends it (ADR 0017).
 	GameRoleId *openapi_types.UUID `json:"gameRoleId"`
-	UserId     openapi_types.UUID  `json:"userId"`
+
+	// PreferredGameRoles The player's preferred game roles for the lobby's game, all its modes. Empty for a lobby with no game and for a player who is no longer a member of the group (ADR 0022). Not in `required` so that existing fixtures stay valid, but the server always sends it.
+	PreferredGameRoles *[]PreferredGameRole `json:"preferredGameRoles"`
+	UserId             openapi_types.UUID   `json:"userId"`
 }
 
 // MaxPlayers Max players, an integer from 1 to 2147483647. `null` or omitted means unlimited. Set at creation and not changed.
@@ -543,13 +546,38 @@ type MaxPlayers = int
 
 // Member defines model for Member.
 type Member struct {
-	DisplayName string             `json:"displayName"`
-	Role        MemberRole         `json:"role"`
-	UserId      openapi_types.UUID `json:"userId"`
+	DisplayName string `json:"displayName"`
+
+	// PreferredGameRoles The member's preferred game roles (ADR 0022). Not in `required` so that existing fixtures stay valid, but the server always sends it.
+	PreferredGameRoles *[]PreferredGameRole `json:"preferredGameRoles"`
+	Role               MemberRole           `json:"role"`
+	UserId             openapi_types.UUID   `json:"userId"`
 }
 
 // MemberRole defines model for Member.Role.
 type MemberRole string
+
+// PreferredGameRole A game role that a person usually plays (ADR 0022). Order in a list - game name ignoring case, then mode order, then role order, as entered by the system admin.
+type PreferredGameRole struct {
+	// GameName The name of the game role's game.
+	GameName   string             `json:"gameName"`
+	GameRoleId openapi_types.UUID `json:"gameRoleId"`
+
+	// ModeName The name of the game role's mode, or `null` for a role of a game with no modes.
+	ModeName *string `json:"modeName"`
+
+	// Name The game role's name.
+	Name string `json:"name"`
+}
+
+// PreferredGameRoleChoices defines model for PreferredGameRoleChoices.
+type PreferredGameRoleChoices struct {
+	// GameRoleIds The caller's preferred game roles. Only effective game roles (ADR 0017), so a role that is not offered in `games` is never listed.
+	GameRoleIds []openapi_types.UUID `json:"gameRoleIds"`
+
+	// Games Every game with at least one effective game role, with its modes, sorted by name ignoring case, then `id` (the order of `GET /api/games`). Only effective game roles are listed. For a game with modes, the game-level `gameRoles` is `[]`, so the client never offers a hidden role.
+	Games []Game `json:"games"`
+}
 
 // ReplaceGameRequest defines model for ReplaceGameRequest.
 type ReplaceGameRequest struct {
@@ -609,6 +637,12 @@ type SetLobbyModeRequest struct {
 
 	// ModeId The mode to set. It must be a mode of the lobby's game, otherwise `invalid_mode`.
 	ModeId openapi_types.UUID `json:"modeId"`
+}
+
+// SetPreferredGameRolesRequest defines model for SetPreferredGameRolesRequest.
+type SetPreferredGameRolesRequest struct {
+	// GameRoleIds All the caller's preferred game roles. An empty array `[]` is the way to clear them. A missing or `null` `gameRoleIds`, or a repeated value, gives `invalid_request`. A value that is not a uuid, or not an effective game role, gives `invalid_game_role`.
+	GameRoleIds []string `json:"gameRoleIds"`
 }
 
 // UserRef defines model for UserRef.
@@ -797,6 +831,18 @@ type JoinInviteParams struct {
 	XRequestId *RequestIdHeader `json:"X-Request-Id,omitempty"`
 }
 
+// GetPreferredGameRolesParams defines parameters for GetPreferredGameRoles.
+type GetPreferredGameRolesParams struct {
+	// XRequestId Correlation ID (ADR 0001). A valid value is kept and passed on. A missing or invalid value is replaced by a new one. The response always contains `X-Request-Id`.
+	XRequestId *RequestIdHeader `json:"X-Request-Id,omitempty"`
+}
+
+// ReplacePreferredGameRolesParams defines parameters for ReplacePreferredGameRoles.
+type ReplacePreferredGameRolesParams struct {
+	// XRequestId Correlation ID (ADR 0001). A valid value is kept and passed on. A missing or invalid value is replaced by a new one. The response always contains `X-Request-Id`.
+	XRequestId *RequestIdHeader `json:"X-Request-Id,omitempty"`
+}
+
 // CreateGameJSONRequestBody defines body for CreateGame for application/json ContentType.
 type CreateGameJSONRequestBody = CreateGameRequest
 
@@ -823,6 +869,9 @@ type SetLobbyModeJSONRequestBody = SetLobbyModeRequest
 
 // JoinLobbyJSONRequestBody defines body for JoinLobby for application/json ContentType.
 type JoinLobbyJSONRequestBody = JoinLobbyRequest
+
+// ReplacePreferredGameRolesJSONRequestBody defines body for ReplacePreferredGameRoles for application/json ContentType.
+type ReplacePreferredGameRolesJSONRequestBody = SetPreferredGameRolesRequest
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
@@ -901,6 +950,12 @@ type ServerInterface interface {
 	// JoinInvite Join group via invite link
 	// (POST /api/invites/{token}/join)
 	JoinInvite(w http.ResponseWriter, r *http.Request, token InviteToken, params JoinInviteParams)
+	// GetPreferredGameRoles Get the caller's preferred game roles
+	// (GET /api/users/me/preferred-game-roles)
+	GetPreferredGameRoles(w http.ResponseWriter, r *http.Request, params GetPreferredGameRolesParams)
+	// ReplacePreferredGameRoles Replace the caller's preferred game roles
+	// (PUT /api/users/me/preferred-game-roles)
+	ReplacePreferredGameRoles(w http.ResponseWriter, r *http.Request, params ReplacePreferredGameRolesParams)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -2216,6 +2271,88 @@ func (siw *ServerInterfaceWrapper) JoinInvite(w http.ResponseWriter, r *http.Req
 	handler.ServeHTTP(w, r)
 }
 
+// GetPreferredGameRoles operation middleware
+func (siw *ServerInterfaceWrapper) GetPreferredGameRoles(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetPreferredGameRolesParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "X-Request-Id" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-Request-Id")]; found {
+		var XRequestId RequestIdHeader
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Request-Id", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-Request-Id", valueList[0], &XRequestId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Request-Id", Err: err})
+			return
+		}
+
+		params.XRequestId = &XRequestId
+
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetPreferredGameRoles(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ReplacePreferredGameRoles operation middleware
+func (siw *ServerInterfaceWrapper) ReplacePreferredGameRoles(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ReplacePreferredGameRolesParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "X-Request-Id" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-Request-Id")]; found {
+		var XRequestId RequestIdHeader
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Request-Id", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-Request-Id", valueList[0], &XRequestId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Request-Id", Err: err})
+			return
+		}
+
+		params.XRequestId = &XRequestId
+
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ReplacePreferredGameRoles(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 type UnescapedCookieParamError struct {
 	ParamName string
 	Err       error
@@ -2361,6 +2498,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/games", wrapper.CreateGame)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/games/{gameId}", wrapper.DeleteGame)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/api/games/{gameId}", wrapper.ReplaceGame)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/users/me/preferred-game-roles", wrapper.GetPreferredGameRoles)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/api/users/me/preferred-game-roles", wrapper.ReplacePreferredGameRoles)
 
 	return m
 }
@@ -4685,6 +4824,149 @@ func (response JoinInvite503JSONResponse) VisitJoinInviteResponse(w http.Respons
 	return err
 }
 
+type GetPreferredGameRolesRequestObject struct {
+	Params GetPreferredGameRolesParams
+}
+
+type GetPreferredGameRolesResponseObject interface {
+	VisitGetPreferredGameRolesResponse(w http.ResponseWriter) error
+}
+
+type GetPreferredGameRoles200JSONResponse PreferredGameRoleChoices
+
+func (response GetPreferredGameRoles200JSONResponse) VisitGetPreferredGameRolesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetPreferredGameRoles401JSONResponse struct{ UnauthenticatedJSONResponse }
+
+func (response GetPreferredGameRoles401JSONResponse) VisitGetPreferredGameRolesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetPreferredGameRoles500JSONResponse struct{ InternalErrorJSONResponse }
+
+func (response GetPreferredGameRoles500JSONResponse) VisitGetPreferredGameRolesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetPreferredGameRoles503JSONResponse struct{ ServiceUnavailableJSONResponse }
+
+func (response GetPreferredGameRoles503JSONResponse) VisitGetPreferredGameRolesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReplacePreferredGameRolesRequestObject struct {
+	Params ReplacePreferredGameRolesParams
+	Body   *ReplacePreferredGameRolesJSONRequestBody
+}
+
+type ReplacePreferredGameRolesResponseObject interface {
+	VisitReplacePreferredGameRolesResponse(w http.ResponseWriter) error
+}
+
+type ReplacePreferredGameRoles200JSONResponse PreferredGameRoleChoices
+
+func (response ReplacePreferredGameRoles200JSONResponse) VisitReplacePreferredGameRolesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReplacePreferredGameRoles400JSONResponse ErrorResponse
+
+func (response ReplacePreferredGameRoles400JSONResponse) VisitReplacePreferredGameRolesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReplacePreferredGameRoles401JSONResponse struct{ UnauthenticatedJSONResponse }
+
+func (response ReplacePreferredGameRoles401JSONResponse) VisitReplacePreferredGameRolesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReplacePreferredGameRoles500JSONResponse struct{ InternalErrorJSONResponse }
+
+func (response ReplacePreferredGameRoles500JSONResponse) VisitReplacePreferredGameRolesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReplacePreferredGameRoles503JSONResponse struct{ ServiceUnavailableJSONResponse }
+
+func (response ReplacePreferredGameRoles503JSONResponse) VisitReplacePreferredGameRolesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 	// ListGames List the game list (system admin)
@@ -4762,6 +5044,12 @@ type StrictServerInterface interface {
 	// JoinInvite Join group via invite link
 	// (POST /api/invites/{token}/join)
 	JoinInvite(ctx context.Context, request JoinInviteRequestObject) (JoinInviteResponseObject, error)
+	// GetPreferredGameRoles Get the caller's preferred game roles
+	// (GET /api/users/me/preferred-game-roles)
+	GetPreferredGameRoles(ctx context.Context, request GetPreferredGameRolesRequestObject) (GetPreferredGameRolesResponseObject, error)
+	// ReplacePreferredGameRoles Replace the caller's preferred game roles
+	// (PUT /api/users/me/preferred-game-roles)
+	ReplacePreferredGameRoles(ctx context.Context, request ReplacePreferredGameRolesRequestObject) (ReplacePreferredGameRolesResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
@@ -5546,6 +5834,65 @@ func (sh *strictHandler) JoinInvite(w http.ResponseWriter, r *http.Request, toke
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(JoinInviteResponseObject); ok {
 		if err := validResponse.VisitJoinInviteResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetPreferredGameRoles operation middleware
+func (sh *strictHandler) GetPreferredGameRoles(w http.ResponseWriter, r *http.Request, params GetPreferredGameRolesParams) {
+	var request GetPreferredGameRolesRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetPreferredGameRoles(ctx, request.(GetPreferredGameRolesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetPreferredGameRoles")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetPreferredGameRolesResponseObject); ok {
+		if err := validResponse.VisitGetPreferredGameRolesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ReplacePreferredGameRoles operation middleware
+func (sh *strictHandler) ReplacePreferredGameRoles(w http.ResponseWriter, r *http.Request, params ReplacePreferredGameRolesParams) {
+	var request ReplacePreferredGameRolesRequestObject
+
+	request.Params = params
+
+	var body ReplacePreferredGameRolesJSONRequestBody
+	if err := runtime.BindJSONBody(r, &body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ReplacePreferredGameRoles(ctx, request.(ReplacePreferredGameRolesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ReplacePreferredGameRoles")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ReplacePreferredGameRolesResponseObject); ok {
+		if err := validResponse.VisitReplacePreferredGameRolesResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
