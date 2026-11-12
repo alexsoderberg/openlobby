@@ -132,6 +132,8 @@ var requiredBodyKeys = map[string]map[string]bool{
 	http.MethodPut + " /api/groups/{groupId}/lobbies/{lobbyId}/game":     {"gameId": false},
 	http.MethodPut + " /api/groups/{groupId}/lobbies/{lobbyId}/mode":     {"modeId": false, "currentModeId": true},
 	http.MethodPut + " /api/groups/{groupId}/lobbies/{lobbyId}/activity": {"activityId": false},
+	// A missing gameRoleIds must never clear the choices; only an empty array does (ADR 0022 point 4).
+	http.MethodPut + " /api/users/me/preferred-game-roles": {"gameRoleIds": false},
 }
 
 // requireBodyKeys refuses a settings body with a required key missing, or null where the contract does not allow it.

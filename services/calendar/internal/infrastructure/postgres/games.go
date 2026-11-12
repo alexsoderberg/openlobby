@@ -194,13 +194,21 @@ func (r gameRepo) Replace(ctx context.Context, game domain.Game) (stored domain.
 	return stored, gameWriteError(err)
 }
 
-// Delete removes the game with the ID. Lobbies have no foreign key to games, so they are not touched (ADR 0010).
+// Delete removes the game with the ID, and the choices of its game roles in the same transaction (ADR 0022 point 2).
+// Lobbies have no foreign key to games, so they are not touched (ADR 0010).
 func (r gameRepo) Delete(ctx context.Context, id string) error {
-	result, err := r.s.db.ExecContext(ctx, deleteGameSQL, id)
-	if err != nil {
-		return gameWriteError(err)
-	}
-	return requireOneGame(result)
+	err := r.s.inTx(ctx, func(tx *sql.Tx) error {
+		result, err := tx.ExecContext(ctx, deleteGameSQL, id)
+		if err != nil {
+			return err
+		}
+		if err := requireOneGame(result); err != nil {
+			return err
+		}
+		_, err = tx.ExecContext(ctx, deleteOrphanChoicesSQL)
+		return err
+	})
+	return gameWriteError(err)
 }
 
 // loadGame reads one game with its game roles and modes, or ErrGameNotFound.
@@ -305,7 +313,9 @@ func eachRow(ctx context.Context, q queryer, scan func(*sql.Rows) error, query s
 }
 
 // writeTree replaces the game roles and modes that the write gives (nil leaves them as they are). It deletes first and
-// inserts after, so a swap of two names never meets a unique index half way (ADR 0017 section 6).
+// inserts after, so a swap of two names never meets a unique index half way (ADR 0017 section 6). It ends with the
+// cleanup of the choices of removed game roles on every run, also when only the modes were replaced, because their roles
+// cascade (ADR 0022 point 2). A kept role is re-inserted with its ID first, so its choices stay.
 func writeTree(ctx context.Context, tx *sql.Tx, game domain.Game) error {
 	if game.GameRoles != nil {
 		if _, err := tx.ExecContext(ctx, deleteGameRolesSQL, game.ID); err != nil {
@@ -321,17 +331,26 @@ func writeTree(ctx context.Context, tx *sql.Tx, game domain.Game) error {
 		return err
 	}
 	for order, mode := range game.Modes {
-		var modeID string
-		if err := tx.QueryRowContext(ctx, insertGameModeSQL, nullIfEmpty(mode.ID), game.ID, mode.Name, mode.MaxPlayers, order).Scan(&modeID); err != nil {
+		if err := insertMode(ctx, tx, game.ID, order, mode); err != nil {
 			return err
 		}
-		if err := insertGameRoles(ctx, tx, game.ID, modeID, mode.GameRoles); err != nil {
+	}
+	_, err := tx.ExecContext(ctx, deleteOrphanChoicesSQL)
+	return err
+}
+
+// insertMode stores one mode at its place in the game's order, with its game roles and activities.
+func insertMode(ctx context.Context, tx *sql.Tx, gameID string, order int, mode domain.GameMode) error {
+	var modeID string
+	if err := tx.QueryRowContext(ctx, insertGameModeSQL, nullIfEmpty(mode.ID), gameID, mode.Name, mode.MaxPlayers, order).Scan(&modeID); err != nil {
+		return err
+	}
+	if err := insertGameRoles(ctx, tx, gameID, modeID, mode.GameRoles); err != nil {
+		return err
+	}
+	for activityOrder, activity := range mode.Activities {
+		if _, err := tx.ExecContext(ctx, insertActivitySQL, nullIfEmpty(activity.ID), modeID, activity.Name, activityOrder); err != nil {
 			return err
-		}
-		for activityOrder, activity := range mode.Activities {
-			if _, err := tx.ExecContext(ctx, insertActivitySQL, nullIfEmpty(activity.ID), modeID, activity.Name, activityOrder); err != nil {
-				return err
-			}
 		}
 	}
 	return nil

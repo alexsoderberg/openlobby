@@ -187,3 +187,17 @@ func claimAll[T any](given, current []T, id func(T) string, claim func(string, m
 	}
 	return true
 }
+
+// EffectiveGameRoles returns the game roles a lobby of the game can offer (ADR 0017 section 2): the roles of its modes in
+// mode order, or the game's own roles when it has no modes. A game-level role of a game with modes is hidden. The
+// postgres adapter holds the same rule as SQL, and an integration test keeps the two equal (ADR 0022 point 2).
+func (g Game) EffectiveGameRoles() []GameRole {
+	if len(g.Modes) == 0 {
+		return g.GameRoles
+	}
+	var roles []GameRole
+	for _, mode := range g.Modes {
+		roles = append(roles, mode.GameRoles...)
+	}
+	return roles
+}

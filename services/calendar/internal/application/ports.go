@@ -199,3 +199,13 @@ type MembershipTx interface {
 	// DeleteGroup removes the group with its members, lobbies, players and invite links.
 	DeleteGroup(ctx context.Context, groupID string) error
 }
+
+// PreferredGameRoleRepository stores the game roles each person usually plays, one choice for all groups (ADR 0022).
+type PreferredGameRoleRepository interface {
+	// ChosenGameRoleIDs returns the user's stored game role IDs, hidden choices included, in no order.
+	ChosenGameRoleIDs(ctx context.Context, userID string) ([]string, error)
+	// Replace stores exactly the given game roles as the user's choices, in one transaction with the lock order of ADR
+	// 0022 point 5. It returns domain.ErrInvalidGameRole and changes nothing when an ID is not a uuid or not an effective
+	// game role of an existing game.
+	Replace(ctx context.Context, userID string, gameRoleIDs []string) error
+}
