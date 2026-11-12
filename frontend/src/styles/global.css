@@ -1744,7 +1744,7 @@ a {
   transition:
     transform var(--duration-close) var(--ease-in),
     opacity var(--duration-pop-fade-out) linear var(--delay-pop-fade-out);
-  will-change: transform, opacity;
+  /* No will-change: a permanent layer can stay rasterised at the small start scale and blur the text. */
 }
 
 .create-popover[data-open="true"] .create-popover__card {
@@ -1755,14 +1755,13 @@ a {
     opacity var(--duration-pop-fade) linear;
 }
 
-/* A form opened from a button in the page: centred, so the card is measured from its own box. */
+/* A form opened from a button in the page: centred, so the card is measured from its own box.
+   Auto margins, not translate(-50%): a half-pixel transform offset blurred the whole card. */
 .create-popover.create-popover--centered {
-  top: 50%;
-  right: auto;
-  bottom: auto;
-  left: 50%;
+  inset: 0;
   width: min(var(--width-popover), calc(100vw - var(--space-3) * 2));
-  translate: -50% -50%;
+  height: max-content;
+  margin: auto;
 }
 
 .create-popover--centered .create-popover__card {
