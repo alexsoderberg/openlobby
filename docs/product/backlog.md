@@ -94,6 +94,15 @@ Open questions for A7 (F-037), kept here so they are not lost:
 
 Ideas assessed on 2026-11-10 without a new requirement: "Play now" ping and Discord reminders are EXTEND F-015 (F-015 stays Proposed, not ordered). Group statistics are REJECTED. Game presentation: DUPLICATE OF F-030 (B1). Recurring lobbies: DUPLICATE OF F-014 (Proposed).
 
+### A8 and A9, added 2026-11-12
+
+Added 2026-11-12 (DECISION, user). A8 is the account settings panel on the You page (REQ-0020, F-038). A9 is preferred game roles per member (REQ-0021, F-039). Both are placed after A7 because A4 to A6 are in progress. They are small enough to be moved earlier by the user at any time. Personal todo list (F-040) is Proposed and postponed: the user said "wait with this". No requirement; a list of game goals would be EXTEND F-031.
+
+| Order | Requirement | Title | Priority | Depends on |
+|---|---|---|---|---|
+| A8 | REQ-0020 | Account settings panel on the You page (sections Account, System admin, Log out) | Should | REQ-0001, REQ-0010, REQ-0012 (You page criteria amended by REQ-0020), REQ-0016 (avatar in Account; initials without it) |
+| A9 | REQ-0021 | Preferred game roles per member (preselect the seat; shown to group members) | Should | REQ-0005, REQ-0011, REQ-0016 (visibility rule), REQ-0020 (Account section); ADR 0022 (design) |
+
 ## Could, after the MVP
 
 Ordered after the Should items, because priority comes first. Not yet a requirement: the requirement is written after the MVP, as F-030 (Decided) with the same scope as before.
@@ -119,7 +128,6 @@ Technical improvements found while building the operations base. They are not us
 2. **Automated PostgreSQL backups with a tested restore.** Scheduled backups, and a restore that has been tested, not only configured. Owner: devops-expert. Reference: ADR 0008.
 3. **Monitoring of TLS certificate expiry.** Alert before the certbot margin runs out. Owner: devops-expert. Reference: ADR 0009 (and ADR 0008, operations responsibility).
 4. **CI jobs that need service code.** Network-membership check (ADR 0008 review 5) and smoke test in CI (ADR 0009 review 5). Owner: devops-expert. Reference: ADR 0008, ADR 0009. Notes: `bash infra/smoke-test.sh` passed locally against the full dev stack on 2026-11-02 (commit e7305a9). In CI it needs infra/.env from .env.example, dev certs and image tags, and it calls Discord, which adds external flakiness.
-
 ## Later
 
 Ideas outside the MVP are listed in `features.md` with status `Proposed`. They are prioritized only after the MVP is delivered and the user has seen how it is used.

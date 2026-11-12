@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { token } from "../test/cssTokens";
 
 const stylesheet = readFileSync(
   join(import.meta.dirname, "global.css"),
@@ -31,5 +32,20 @@ describe("Panel button rows", () => {
     expect(declarationsFor(String.raw`\.view-switch\s*\)`)).toMatch(
       /margin-top:\s*var\(--space-3\)/,
     );
+  });
+});
+
+describe("Settings rows (REQ-0020)", () => {
+  // The Game list row gets its tap height and focus ring from these shared rules, not from rules of its own.
+  it("makes a list row at least the 44px tap size", () => {
+    expect(declarationsFor(String.raw`\.list-row`)).toMatch(
+      /min-height:\s*var\(--size-tap\)/,
+    );
+    expect(token("--size-tap")).toBe("2.75rem");
+  });
+
+  it("draws a visible outline on every keyboard focus", () => {
+    const rule = /(?:^|\})\s*:focus-visible\s*\{([^}]*)\}/.exec(stylesheet);
+    expect(rule?.[1]).toMatch(/outline:\s*3px solid var\(--color-focus\)/);
   });
 });

@@ -1838,7 +1838,6 @@ a {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  margin-bottom: var(--space-3);
 }
 
 .profile .initials-icon {
@@ -1855,6 +1854,18 @@ a {
   font-family: var(--font-heading);
   font-size: 1.25rem;
   font-weight: 600;
+}
+
+/* A settings row that opens another page: the whole row is the link, so it drops the underline. The negative
+   inline margin lines the icon up with the section heading while the focus ring keeps its padding. */
+.nav-row {
+  margin-inline: calc(-1 * var(--space-2));
+  text-decoration: none;
+}
+
+.nav-row__chevron {
+  margin-left: auto;
+  color: var(--color-muted);
 }
 
 /* Dashboard */
