@@ -616,6 +616,11 @@ a {
     grid-template-columns: minmax(0, 1fr) var(--width-aside);
     align-items: start;
   }
+
+  /* The week time grid takes the whole main area (REQ-0019), so the side panel goes below it. */
+  .panel-group--aside:has(.time-grid) {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .crumb {
@@ -1174,7 +1179,7 @@ a {
    start and span in minutes (--start, --span), and its share of the width from --column of --columns. */
 .time-grid {
   display: flex;
-  height: var(--size-grid-height);
+  height: var(--grid-height, var(--size-grid-height));
   overflow-y: auto;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-control);
@@ -1204,6 +1209,18 @@ a {
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+/* The end of the day: room below 24:00, so that any hour, even 23:00, can scroll to the top of the grid. */
+.time-grid__days::after {
+  content: "";
+  grid-column: 1 / -1;
+  height: calc(
+    var(--grid-height, var(--size-grid-height)) - var(--size-grid-title) -
+      var(--size-hour)
+  );
+  border-top: 1px solid var(--color-border);
+  background: var(--color-bg);
 }
 
 .time-grid__day {
@@ -1280,6 +1297,28 @@ a {
   padding: 0;
   list-style: none;
   pointer-events: none;
+}
+
+/* The Now line at --now minutes. It sits above the blocks but lets the pointer through to them. */
+.time-grid__now {
+  position: absolute;
+  top: calc(var(--size-hour) * var(--now, 0) / 60);
+  inset-inline: 0;
+  height: 2px;
+  margin-top: -1px;
+  background: var(--color-accent);
+  pointer-events: none;
+}
+
+.time-grid__now::before {
+  content: "";
+  position: absolute;
+  top: -3px;
+  left: -4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-accent);
 }
 
 .time-block {
@@ -2052,6 +2091,15 @@ a {
 
   .day-pills {
     display: none;
+  }
+
+  /* The week grid reaches the bottom of the window from where it starts on the page (--grid-top, set by
+     useGridTop), but never gets shorter than it is on phones. */
+  .time-grid {
+    --grid-height: max(
+      var(--size-grid-height),
+      calc(100dvh - var(--grid-top, 0px) - var(--space-4))
+    );
   }
 }
 

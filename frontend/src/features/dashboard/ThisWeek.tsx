@@ -51,7 +51,6 @@ export function ThisWeek({
       ) : (
         <WeekTimeGrid
           days={days}
-          now={new Date(now)}
           titleLevel={3}
           hrefOf={(lobby) => lobbyPath(lobby.groupId, lobby.id)}
           genreOf={(lobby) => lobby.gameGenre}

@@ -41,3 +41,12 @@ Object.defineProperty(HTMLImageElement.prototype, "src", {
     queueMicrotask(() => this.dispatchEvent(new Event("load")));
   },
 });
+
+// jsdom has no layout, so nothing ever resizes; the week grid only needs ResizeObserver to exist.
+if (!window.ResizeObserver) {
+  window.ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
+}

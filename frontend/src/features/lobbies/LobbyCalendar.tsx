@@ -45,9 +45,7 @@ export function LobbyCalendar({
         </button>
       </div>
       <WeekTimeGrid
-        key={weekStart.getTime()}
         days={week}
-        now={new Date()}
         titleLevel={4}
         hrefOf={(lobby) => lobbyPath(groupId, lobby.id)}
         genreOf={(lobby) => lobby.gameGenre}

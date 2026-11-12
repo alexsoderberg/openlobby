@@ -57,6 +57,7 @@ This is the single shared vocabulary. Use these exact English terms in documents
 | Dashboard | `/` when logged in (ADR 0014) | The home screen after login: Next up and This week across all the user's groups (REQ-0012). Not the group list |
 | Next up | frontend only (`nextUp`), no API field | The card on the dashboard with the lobby that starts first among all lobbies of the user's groups. Running lobbies count |
 | This week | frontend only (`thisWeek`) | The dashboard section with the lobbies that start in the current week (Monday to Sunday, local time), across all groups |
+| Now line | frontend only (`NowLine`) | The thin line at the current time in today's column of the week time grid. Not shown in the Day list (REQ-0019). Avoid: current-time marker, red line |
 | Running | derived from `startsAt` and `endsAt` | Lobby state from start time until end time. Shown on Next up instead of the countdown |
 | Ended | derived from `endsAt` | Lobby state after the end time (REQ-0005). Joining then gives `lobby_has_ended` |
 | Joined by me | `joinedByMe` | `true` when the caller is a player of the lobby. On `Lobby` (ADR 0014) |
