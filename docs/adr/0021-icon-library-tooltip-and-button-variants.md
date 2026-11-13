@@ -2,7 +2,7 @@
 
 Status: Accepted (2026-11-11)
 Requirement: none. Visual improvement requested by the user, decided by the orchestrator on 2026-11-11.
-Amends: none. Replaces the button sizes and colour rules in `frontend/src/styles/global.css` (section "Primary button is solid accent").
+Amended by ADR 0023 (points 2, 3 and 4; the A3 amendment is superseded). ADR 0023 overturns two rejected alternatives below: "Radix or another tooltip library" (line 104) and "A `Button` component with `variant` and `size` props" (line 107). Replaces the button sizes and colour rules in `frontend/src/styles/global.css` (section "Primary button is solid accent").
 
 ## Context
 - Buttons share three classes in `frontend/src/styles/global.css`: `.button` (primary), `.button-ghost` and `.button--secondary`. Ghost and secondary look the same. Every button is at least `--size-tap` (2.75rem, 44px) high.

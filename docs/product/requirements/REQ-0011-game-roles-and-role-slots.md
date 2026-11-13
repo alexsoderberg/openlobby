@@ -67,7 +67,7 @@ Display:
 - Changing slots or game roles after the lobby is created (F-011).
 - Matching, rank, skill or suggestions for who should play which role.
 - Reading game state or using the games' own systems or APIs (vision.md: no integration with the games).
-- Icons or images for game roles (REQ-0009 excludes more fields per game).
+- Icons or images for game roles, except an icon from the fixed set in REQ-0023 (see the amendment 2026-11-13 below). Images stay out of scope.
 - Translation of game role names. They are data entered by the system admin, not UI text (see F-026).
 - Notifications when a game role is missing.
 - Moving another member to a different game role or to flex.
@@ -119,3 +119,6 @@ Status stays Implemented. Old wording of the name criterion in "Game roles in th
 - A game role name must be unique per owner, not per game. The owner is the game mode the game role sits on, or the game when the game role sits on the game (a game without modes). Two game modes of the same game may each have a game role with the same name, e.g. "Tank" in both "Dungeon" and "Raid".
 - Within one owner, the name rules are unchanged: 1–30 characters, unique ignoring case and surrounding spaces, and an empty or too long name is denied as before.
 - DECISION (user, 2026-11-08, decision 3): game role names are unique per owner, as above.
+
+## Amendment 2026-11-13 (REQ-0023, icons for game roles)
+Status stays Implemented. DECISION (user, 2026-11-13, REQ-0023): a game role may have one icon from a fixed set, chosen by the system admin in the game form (suggested from the name, changeable). The icon is shown wherever the game role is shown, and flex never has one. Images are still out of scope.

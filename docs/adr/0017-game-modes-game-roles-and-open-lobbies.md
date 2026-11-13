@@ -272,7 +272,7 @@ UI-only criteria, owned by the frontend PRs (not by the backend): removal confir
 - The label is written once in the frontend.
 
 ### 18. Not built now (YAGNI)
-- Reserved spots per game role, role icons, role ordering other than `sort_order`, translation of names, a genre per mode or per activity, activity limits, roles on activities.
+- Reserved spots per game role, role icons (specified by REQ-0023, 2026-11-13; a later ADR decides the icon's data model and contract), role ordering other than `sort_order`, translation of names, a genre per mode or per activity, activity limits, roles on activities.
 - A "clear mode" endpoint (REQ-0015 says a mode cannot be cleared).
 - Changing the game of a lobby once set.
 - Per-role max players for "Other" lobbies.
