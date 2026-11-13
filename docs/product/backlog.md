@@ -104,7 +104,7 @@ Added 2026-11-12 (DECISION, user). A8 is the account settings panel on the You p
 | Order | Requirement | Title | Priority | Depends on |
 |---|---|---|---|---|
 | A8 | REQ-0020 | Account settings panel on the You page (sections Account, System admin, Log out) | Should | REQ-0001, REQ-0010, REQ-0012 (You page criteria amended by REQ-0020), REQ-0016 (avatar in Account; initials without it) |
-| A9 | REQ-0021 | Preferred game roles per member (preselect the seat; shown to group members) | Should | REQ-0005, REQ-0011, REQ-0016 (visibility rule), REQ-0020 (Account section); ADR 0022 (design) |
+| A9 | REQ-0021 | Preferred game roles per member (preselect the seat; shown to group members) | Should | REQ-0005, REQ-0011, REQ-0016 (visibility rule), REQ-0020 (the You page sections; "Game roles" between "Account" and "System admin", ADR 0022); ADR 0022 (design) |
 
 ## Could, after the MVP
 

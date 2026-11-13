@@ -55,6 +55,7 @@ export function ProtectedPage({
           user={user}
           logoutError={logoutError}
           onLogout={onLogout}
+          onUnauthenticated={onUnauthenticated}
         />
       );
     case "group":

@@ -7,7 +7,7 @@ const COMPOSITED = new Set(["transform", "opacity", "visibility", "none"]);
 
 // A field's border repaints one small box for 0.1 s, and inputs cannot host a fading layer, so it stays.
 const ALLOWED = new Set([
-  `.group-form :is(input, select):where(:not([type="radio"])), .invite-link__url border-color`,
+  `.group-form :is(input, select):where(:not([type="radio"], [type="checkbox"])), .invite-link__url border-color`,
 ]);
 
 /** Each rule as [selector, declarations]; at-rule wrappers fall away because only innermost blocks match. */

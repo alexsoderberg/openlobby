@@ -2,19 +2,23 @@ import type { AuthUser } from "../../api";
 import { useMessages } from "../../i18n";
 import { Avatar, ErrorAlert, Icon, Panel } from "../../ui";
 import { GAMES_PATH } from "../games";
+import { PreferredGameRoles } from "./PreferredGameRoles";
 
 /**
- * The You page as account settings (REQ-0020): Account, System admin for a system admin only, then Log out last.
+ * The You page as account settings (REQ-0020): Account, Game roles (REQ-0021), System admin for a system admin
+ * only, then Log out last.
  * A later settings section goes above Log out. A failed logout is shown next to the button.
  */
 export function ProfilePage({
   user,
   logoutError,
   onLogout,
+  onUnauthenticated,
 }: {
   user: AuthUser;
   logoutError?: string;
   onLogout: () => void;
+  onUnauthenticated: () => void;
 }) {
   const m = useMessages();
   return (
@@ -31,6 +35,7 @@ export function ProfilePage({
             </div>
           </div>
         </Panel>
+        <PreferredGameRoles onUnauthenticated={onUnauthenticated} />
         {user.isSystemAdmin && (
           <Panel>
             <h2>{m.profileSystemAdminHeading}</h2>

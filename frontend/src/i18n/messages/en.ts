@@ -339,6 +339,17 @@ export const en = {
   profileNameLabel: "Signed in as",
   profileAccountHeading: "Account",
   profileSystemAdminHeading: "System admin",
+  preferredGameRoles: {
+    heading: "Game roles",
+    hint: "Choose the game roles you play in each game. Your choice applies to all your groups.",
+    loading: "Loading game roles.",
+    empty: "No game has game roles yet.",
+    roleWithMode: (role: string, mode: string) => `${role} (${mode})`,
+    save: "Save game roles",
+    saved: "Game roles saved.",
+    removedRole:
+      "A game role you chose has been removed. The list now shows the current game roles. Check your choice and save again.",
+  },
 
   dashboard: {
     heading: "Dashboard",
