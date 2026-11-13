@@ -14,7 +14,7 @@ As a member I want to record which game roles I play in each game, so that my us
 ## Acceptance criteria
 
 Recording:
-- Given that I am logged in, when I open the "Account" section of the You page (REQ-0020), then I see each game that has game roles and can choose which of its game roles I play. Choosing none is allowed. The list is shown to any signed-in member, also to a member who is in no group (DECISION, user, 2026-11-12).
+- Given that I am logged in, when I open the You page, then I see a section "Game roles" between "Account" and "System admin" that lists each game that has game roles and can choose which of its game roles I play. Choosing none is allowed. The list is shown to any signed-in member, also to a member who is in no group (DECISION, user, 2026-11-12).
 - Given that a game has no effective game role (ADR 0017 section 2), when I open the list, then that game is not shown. A game whose only role is a game-level role of a game with modes is not shown.
 - Given that I have chosen game roles for a game and I save, when I open the list again, then my choice is shown.
 - Given that a system admin removes a game role that I have chosen, when I open the list, then that game role is no longer offered, and the removal is silent: no error is shown (same rule as REQ-0011 for removed game roles; DECISION, user, 2026-11-12).
@@ -49,7 +49,7 @@ Visibility (decided by the user, 2026-11-12, option (b)):
 - F-024 and F-025 (game list): the game roles belong to the game list. The member's choice refers to them and adds no field to the game list.
 - F-029 (Discord avatars): the visibility rule follows the same rule as the avatar: members of groups the viewer shares with the owner.
 - F-031 (Per-player item goals): also per-player data kept for a game, but a different need, and its decision is postponed. Not a duplicate.
-- REQ-0020 (Account settings panel): the place where the choice is made.
+- REQ-0020 (Account settings panel): the You page is where the choice is made, in its own section "Game roles" between "Account" and "System admin", not inside "Account" (see the placement decision below, adopted by the product owner on 2026-11-13).
 
 ## Decisions
 - DECISION (user, 2026-11-12): the purposes are (a) preselect my seat when I join a lobby and (b) show my game roles to other members.
@@ -59,7 +59,8 @@ Visibility (decided by the user, 2026-11-12, option (b)):
 - DECISION (user, 2026-11-12): ADR 0022 question 1, the account list shows to any signed-in member, also with no group; question 2, lobby players show choices for every mode of the game; question 3, a removed role's choice is removed silently; question 6, nothing is preselected without a free preferred slot.
 - DECISION (user, 2026-11-12): question 4, a stale ID on save gives `invalid_game_role`, and the list reloads; question 5, a choice for a game role of a game with modes is dropped at the member's next save; question 7, REQ-0020 is merged before PR4.
 - ASSUMPTION (optional): recording is optional. Nothing chosen means no preference.
-- ASSUMPTION (place): the choice sits in the "Account" section of the You page (REQ-0020).
+- DECISION (architect, ADR 0022, 2026-11-12, adopted by the product owner on 2026-11-13), place: the choice sits in its own section "Game roles" on the You page, between "Account" and "System admin". It is not inside "Account". Reason: REQ-0020 gives later settings their own section above "Log out", and a list of games in "Account" would mix the name and avatar with gameplay choices.
+- DECISION (architect, ADR 0022, 2026-11-12, adopted by the product owner on 2026-11-13), games without roles: the server alone leaves out a game with no effective game role, and the page shows the games it receives. The criterion "a game with no effective game role is not shown" stays as written; it is met by the server rule together with the page.
 - Option (c) is not part of this requirement. It would need REQ-0011 amended first.
 - Priority Should: the user is actively asking for it.
 

@@ -32,7 +32,7 @@ export function SeatChoice({
         </p>
       )}
       {all.map(({ value, label, disabled }) => (
-        <label key={value} className="seat-option">
+        <label key={value} className="choice-option">
           <input
             type="radio"
             name={SEAT_FIELD}

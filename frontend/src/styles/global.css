@@ -733,7 +733,7 @@ a {
 
 /* Fields share the button heights (ADR 0021), so a field and a button in one row line up. Native controls
    are kept for the keyboard, screen readers and mobile pickers; :root's color-scheme makes the pickers dark. */
-.group-form :is(input, select):where(:not([type="radio"])),
+.group-form :is(input, select):where(:not([type="radio"], [type="checkbox"])),
 .invite-link__url {
   min-height: var(--size-button);
   padding: 0 var(--space-2);
@@ -746,18 +746,22 @@ a {
 }
 
 @media (pointer: coarse) {
-  .group-form :is(input, select):where(:not([type="radio"])),
+  .group-form :is(input, select):where(:not([type="radio"], [type="checkbox"])),
   .invite-link__url {
     min-height: var(--size-button-touch);
   }
 }
 
-.group-form :is(input, select):where(:not([type="radio"])):not(:disabled):hover,
+.group-form
+  :is(input, select):where(
+    :not([type="radio"], [type="checkbox"])
+  ):enabled:hover,
 .invite-link__url:hover {
   border-color: var(--color-text);
 }
 
-.group-form :is(input, select):where(:not([type="radio"])):disabled {
+.group-form
+  :is(input, select):where(:not([type="radio"], [type="checkbox"])):disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
@@ -2299,12 +2303,12 @@ a {
   margin: 0;
 }
 
-/* The seat choice: radio buttons with the full label as text. No hover or motion. */
+/* The seat choice and the preferred game roles: radio buttons or check boxes with the full label as text. No hover or motion. */
 .seat-form {
   flex: 1 1 100%;
 }
 
-.group-form .seat-option {
+.group-form .choice-option {
   display: flex;
   align-items: center;
   gap: var(--space-2);
@@ -2312,7 +2316,7 @@ a {
   font-weight: 400;
 }
 
-.group-form .seat-option input[type="radio"] {
+.group-form .choice-option input:is([type="radio"], [type="checkbox"]) {
   flex: none;
   width: auto;
   min-height: 0;
@@ -2320,6 +2324,6 @@ a {
   accent-color: var(--color-accent);
 }
 
-.group-form .seat-option:has(input:disabled) {
+.group-form .choice-option:has(input:disabled) {
   color: var(--color-muted);
 }

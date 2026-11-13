@@ -17,6 +17,9 @@ export type GameRole = calendarComponents["schemas"]["GameRole"];
 export type GameMode = calendarComponents["schemas"]["GameMode"];
 /** What a player chooses when joining a lobby with game roles: `{gameRoleId}` or `{flex: true}`. */
 export type Seat = calendarComponents["schemas"]["JoinLobbyRequest"];
+/** The caller's preferred game roles and the games to choose them from (ADR 0022). */
+export type PreferredGameRoleChoices =
+  calendarComponents["schemas"]["PreferredGameRoleChoices"];
 export type GameRoleInput = calendarComponents["schemas"]["GameRoleInput"];
 export type GameModeInput = calendarComponents["schemas"]["GameModeInput"];
 /** What the system admin sets on a game: the game without its generated ID, with its modes and game roles as entered. */
@@ -106,6 +109,12 @@ export interface ApiClient {
   leaveLobby(groupId: string, lobbyId: string): Promise<void>;
   /** Leaves the group. Refused with `own_upcoming_lobbies_exist` while the caller has upcoming lobbies. */
   leaveGroup(groupId: string): Promise<void>;
+  /** The caller's preferred game roles, and every game that has game roles to choose from. */
+  getPreferredGameRoles(): Promise<PreferredGameRoleChoices>;
+  /** Replaces all the caller's preferred game roles. `[]` clears them. A removed game role gives `invalid_game_role`. */
+  replacePreferredGameRoles(
+    gameRoleIds: string[],
+  ): Promise<PreferredGameRoleChoices>;
   /** Makes a member a group admin. Already an admin is a success. There is no way back in the MVP. */
   makeGroupAdmin(groupId: string, userId: string): Promise<void>;
 }

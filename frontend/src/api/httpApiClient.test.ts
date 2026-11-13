@@ -53,6 +53,8 @@ const failingCalls: Array<[string, (api: ApiClient) => Promise<unknown>]> = [
   ["leaveLobby", (api) => api.leaveLobby("g1", "l1")],
   ["leaveGroup", (api) => api.leaveGroup("g1")],
   ["makeGroupAdmin", (api) => api.makeGroupAdmin("g1", "u1")],
+  ["getPreferredGameRoles", (api) => api.getPreferredGameRoles()],
+  ["replacePreferredGameRoles", (api) => api.replacePreferredGameRoles(["r1"])],
 ];
 
 describe("createHttpApiClient", () => {
@@ -242,6 +244,43 @@ describe("createHttpApiClient", () => {
     await api.joinLobby("g1", "l1");
 
     expect(sent).toEqual(['{"gameRoleId":"r1"}', '{"flex":true}', ""]);
+  });
+
+  it("gets the preferred game roles and returns the stored choices", async () => {
+    const stored = { gameRoleIds: ["r1"], games: [] };
+    const sent: Request[] = [];
+    const fetchImpl = vi.fn<typeof fetch>(async (input) => {
+      sent.push(new Request(input));
+      return Response.json(stored);
+    });
+
+    await expect(
+      createHttpApiClient(fetchImpl, BASE_URL).getPreferredGameRoles(),
+    ).resolves.toEqual(stored);
+    expect(sent[0]).toMatchObject({ method: "GET" });
+    expect(new URL(sent[0].url).pathname).toBe(
+      "/api/users/me/preferred-game-roles",
+    );
+  });
+
+  it("puts the preferred game roles as gameRoleIds and returns the stored choices", async () => {
+    const stored = { gameRoleIds: ["r1"], games: [] };
+    const sent: Request[] = [];
+    const fetchImpl = vi.fn<typeof fetch>(async (input) => {
+      sent.push(new Request(input));
+      return Response.json(stored);
+    });
+
+    await expect(
+      createHttpApiClient(fetchImpl, BASE_URL).replacePreferredGameRoles([
+        "r1",
+      ]),
+    ).resolves.toEqual(stored);
+    expect(sent[0]).toMatchObject({ method: "PUT" });
+    expect(new URL(sent[0].url).pathname).toBe(
+      "/api/users/me/preferred-game-roles",
+    );
+    await expect(sent[0].json()).resolves.toEqual({ gameRoleIds: ["r1"] });
   });
 
   it("sends the game, the mode with the mode the caller saw, and the activity calls", async () => {

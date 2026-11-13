@@ -177,6 +177,16 @@ export function createHttpApiClient(
         }),
       );
     },
+    getPreferredGameRoles: async () =>
+      bodyOf(await receive(http.GET("/api/users/me/preferred-game-roles"))),
+    replacePreferredGameRoles: async (gameRoleIds) =>
+      bodyOf(
+        await receive(
+          http.PUT("/api/users/me/preferred-game-roles", {
+            body: { gameRoleIds },
+          }),
+        ),
+      ),
     makeGroupAdmin: async (groupId, userId) => {
       await receive(
         http.PUT("/api/groups/{groupId}/admins/{userId}", {

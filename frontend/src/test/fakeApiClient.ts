@@ -64,6 +64,12 @@ export function fakeApiClient(overrides: Partial<ApiClient> = {}): ApiClient {
     leaveLobby: vi.fn(() => Promise.resolve()),
     leaveGroup: vi.fn(() => Promise.resolve()),
     makeGroupAdmin: vi.fn(() => Promise.resolve()),
+    getPreferredGameRoles: vi.fn(() =>
+      Promise.resolve({ gameRoleIds: [], games: [] }),
+    ),
+    replacePreferredGameRoles: vi.fn((gameRoleIds: string[]) =>
+      Promise.resolve({ gameRoleIds, games: [] }),
+    ),
     ...overrides,
   };
 }
