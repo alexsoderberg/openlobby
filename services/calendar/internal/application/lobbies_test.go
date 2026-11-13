@@ -4,6 +4,7 @@ import (
 	"cmp"
 	"context"
 	"errors"
+	"reflect"
 	"slices"
 	"testing"
 	"time"
@@ -487,7 +488,7 @@ func TestGetReturnsLobbyWithPlayersInStoredOrderAndOneNameLookup(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := []domain.Player{{UserID: bobID, DisplayName: "Bob"}, {UserID: aliceID, DisplayName: "Alice"}}
-	if lobby.ID != "started" || !slices.Equal(players, want) || names.calls != 1 {
+	if lobby.ID != "started" || !reflect.DeepEqual(players, want) || names.calls != 1 {
 		t.Fatalf("lobby %q, players %v, name lookups %d; want started, %v and 1 lookup", lobby.ID, players, names.calls, want)
 	}
 }

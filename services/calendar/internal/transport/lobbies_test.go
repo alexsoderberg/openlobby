@@ -188,7 +188,11 @@ func (m *memoryGroups) Lobby(_ context.Context, groupID, lobbyID, callerID strin
 	if !ok || lobby.GroupID != groupID || !lobby.EndsAt.After(at) {
 		return domain.Lobby{}, nil, domain.ErrLobbyNotFound
 	}
-	return lobby, []domain.Player{{UserID: otherID}, {UserID: alexID, GameRoleID: intpStr(tankRoleID)}}, m.err
+	players := []domain.Player{{UserID: otherID}, {UserID: alexID, GameRoleID: intpStr(tankRoleID)}}
+	for i := range players {
+		players[i].PreferredGameRoles = m.visible[players[i].UserID]
+	}
+	return lobby, players, m.err
 }
 
 func (m *memoryGroups) Find(_ context.Context, id string) (domain.Game, error) {

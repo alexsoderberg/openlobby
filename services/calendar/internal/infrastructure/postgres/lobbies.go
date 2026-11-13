@@ -170,17 +170,35 @@ func (r lobbyRepo) Lobby(ctx context.Context, groupID, lobbyID, callerID string,
 		if lobby, err = loadLobby(ctx, tx, groupID, lobbyID, callerID, now); err != nil {
 			return err
 		}
-		return eachRow(ctx, tx, func(rows *sql.Rows) error {
-			var player domain.Player
-			err := rows.Scan(&player.UserID, &player.GameRoleID)
-			players = append(players, player)
-			return err
-		}, selectPlayersSQL, lobby.ID)
+		players, err = loadPlayers(ctx, tx, lobby.ID)
+		return err
 	})
 	if err != nil {
 		return domain.Lobby{}, nil, translate(err)
 	}
 	return lobby, players, nil
+}
+
+// loadPlayers reads the lobby's players with the preferred game roles that the group may see (ADR 0022 point 6).
+func loadPlayers(ctx context.Context, q queryer, lobbyID string) ([]domain.Player, error) {
+	var players []domain.Player
+	err := eachRow(ctx, q, func(rows *sql.Rows) error {
+		var player domain.Player
+		err := rows.Scan(&player.UserID, &player.GameRoleID)
+		players = append(players, player)
+		return err
+	}, selectPlayersSQL, lobbyID)
+	if err != nil {
+		return nil, err
+	}
+	choices, err := visibleChoicesByUser(ctx, q, choicesOfLobbyPlayersSQL, lobbyID)
+	if err != nil {
+		return nil, err
+	}
+	for i := range players {
+		players[i].PreferredGameRoles = choices[players[i].UserID]
+	}
+	return players, nil
 }
 
 // loadLobby reads the lobby that ends after now with its role slots, or returns domain.ErrLobbyNotFound.

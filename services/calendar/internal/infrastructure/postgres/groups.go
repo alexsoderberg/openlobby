@@ -96,21 +96,33 @@ func membership(ctx context.Context, querier rowQuerier, groupID, userID string)
 	return member, true, nil
 }
 
-// Members returns the members of the group with their roles. Names are not stored here (ADR 0003).
-func (r groupRepo) Members(ctx context.Context, groupID string) (members []domain.Member, err error) {
-	rows, err := r.s.db.QueryContext(ctx, selectMembersSQL, groupID)
+// Members returns the members of the group with their roles and their visible preferred game roles, in one snapshot.
+// Names are not stored here (ADR 0003).
+func (r groupRepo) Members(ctx context.Context, groupID string) ([]domain.Member, error) {
+	var members []domain.Member
+	err := r.s.inSnapshot(ctx, func(tx *sql.Tx) error {
+		err := eachRow(ctx, tx, func(rows *sql.Rows) error {
+			var member domain.Member
+			var role string
+			err := rows.Scan(&member.UserID, &role)
+			member.Role = domain.Role(role)
+			members = append(members, member)
+			return err
+		}, selectMembersSQL, groupID)
+		if err != nil {
+			return err
+		}
+		choices, err := visibleChoicesByUser(ctx, tx, choicesOfMembersSQL, groupID)
+		if err != nil {
+			return err
+		}
+		for i := range members {
+			members[i].PreferredGameRoles = choices[members[i].UserID]
+		}
+		return nil
+	})
 	if err != nil {
 		return nil, translate(err)
 	}
-	defer func() { err = errors.Join(err, translate(rows.Close())) }()
-	for rows.Next() {
-		var member domain.Member
-		var role string
-		if scanErr := rows.Scan(&member.UserID, &role); scanErr != nil {
-			return nil, translate(scanErr)
-		}
-		member.Role = domain.Role(role)
-		members = append(members, member)
-	}
-	return members, translate(rows.Err())
+	return members, nil
 }

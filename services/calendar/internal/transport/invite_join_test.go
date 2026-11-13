@@ -147,7 +147,7 @@ func TestJoinInviteReturns200WithGroupAndAddsMemberAndCountsOneUse(t *testing.T)
 		t.Fatalf("status %d, body %q; want 200 with the GroupSummary", response.Code, response.Body.String())
 	}
 	members := store.members[fridayID]
-	if len(members) != 3 || members[2] != (domain.Member{UserID: missingID, Role: domain.RoleMember}) {
+	if len(members) != 3 || !reflect.DeepEqual(members[2], domain.Member{UserID: missingID, Role: domain.RoleMember}) {
 		t.Fatalf("members %v, want the caller added as member", members)
 	}
 	if store.links[fridayID][0].UseCount != 1 {
