@@ -2,6 +2,7 @@ import { toLobbyMessage, useMessages } from "../../i18n";
 import { Alert, Icon } from "../../ui";
 import { LOBBY_HAS_ENDED, LOBBY_NOT_FOUND } from "./lobbyErrors";
 import { hasEnded } from "./lobbyTime";
+import { JoinSeatForm } from "./JoinSeatForm";
 import { SeatForm } from "./SeatForm";
 import { useLobbyMembership, type Membership } from "./useLobbyMembership";
 
@@ -54,19 +55,30 @@ export function LobbyMembership({
       ? m.lobbyGone
       : toLobbyMessage(errorCode ?? "");
 
-  if (choosing && lobby.roleSlots)
-    return (
+  if (choosing && lobby.roleSlots) {
+    const form = {
+      roleSlots: lobby.roleSlots,
+      busy,
+      error: errorCode === undefined ? undefined : failure,
+      onCancel: closeSeats,
+      onSubmit: join,
+    };
+    return leaving ? (
       <SeatForm
-        roleSlots={lobby.roleSlots}
-        seat={leaving ? seat : undefined}
-        submitLabel={leaving ? m.lobbySeatSave : m.lobbySeatJoin}
-        submitIcon={leaving ? "save" : "join"}
-        busy={busy}
-        error={errorCode === undefined ? undefined : failure}
-        onSubmit={join}
-        onCancel={closeSeats}
+        {...form}
+        seat={seat}
+        submitLabel={m.lobbySeatSave}
+        submitIcon="save"
+      />
+    ) : (
+      <JoinSeatForm
+        {...form}
+        submitLabel={m.lobbySeatJoin}
+        submitIcon="join"
+        onUnauthenticated={onUnauthenticated}
       />
     );
+  }
 
   return (
     <>

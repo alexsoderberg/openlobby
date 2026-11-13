@@ -17,6 +17,9 @@ export type GameRole = calendarComponents["schemas"]["GameRole"];
 export type GameMode = calendarComponents["schemas"]["GameMode"];
 /** What a player chooses when joining a lobby with game roles: `{gameRoleId}` or `{flex: true}`. */
 export type Seat = calendarComponents["schemas"]["JoinLobbyRequest"];
+/** A game role a person usually plays, with its game and mode names, as `Member` and `LobbyPlayer` send it. */
+export type PreferredGameRole =
+  calendarComponents["schemas"]["PreferredGameRole"];
 /** The caller's preferred game roles and the games to choose them from (ADR 0022). */
 export type PreferredGameRoleChoices =
   calendarComponents["schemas"]["PreferredGameRoleChoices"];
