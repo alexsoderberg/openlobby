@@ -1,9 +1,10 @@
 import type { Genre } from "../api";
-import { useEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { formatTime, useMessages } from "../i18n";
 import type { GridLobby } from "./TimeBlock";
 import { TimeGridDay, type CreateAt, type TitleLevel } from "./TimeGridDay";
-import { DAY_MINUTES, dayBlocks, initialScrollMinute } from "./gridGeometry";
+import { DAY_MINUTES, dayBlocks, openingMinute } from "./gridGeometry";
+import { useGridTop } from "./useGridTop";
 import type { WeekDay } from "./week";
 
 const HOURS = Array.from({ length: 24 }, (_, hour) => hour);
@@ -11,9 +12,10 @@ const HOURS = Array.from({ length: 24 }, (_, hour) => hour);
 const hourLabel = (hour: number) => formatTime(new Date(2000, 0, 1, hour));
 
 /**
- * Days as columns and the hours 00 to 24 down the side, in a fixed-height area that scrolls. It opens
- * scrolled to the afternoon, or to the earliest lobby shown if that is earlier. On phones CSS shows
- * only the selected day. The opening scroll is set once; later day or data changes keep the user's scroll.
+ * Days as columns and the hours 00 to 24 down the side, in an area that scrolls. On wide screens CSS makes it
+ * reach the bottom of the window, from where it starts on the page (`--grid-top`). It opens scrolled to the next
+ * lobby that has not ended, or to now (REQ-0019). On phones CSS shows only the selected day. The opening scroll
+ * is set once; later week, day or data changes keep the user's scroll.
  */
 export function TimeGrid<T extends GridLobby>({
   days,
@@ -41,11 +43,17 @@ export function TimeGrid<T extends GridLobby>({
   const daysRef = useRef<HTMLOListElement>(null);
   const columns = days.map(({ day, items }) => dayBlocks(day, items));
   const [opening] = useState(() => ({
-    week: initialScrollMinute(columns.flat()),
-    day: initialScrollMinute(columns[selected]),
+    week: openingMinute(
+      days.flatMap(({ items }) => items),
+      days[0].day,
+      now,
+    ),
+    day: openingMinute(days[selected].items, days[selected].day, now),
   }));
 
-  useEffect(() => {
+  // After useGridTop, so the grid has its full height before it scrolls; before paint, so it never jumps.
+  useGridTop(scrollRef);
+  useLayoutEffect(() => {
     const scroll = scrollRef.current;
     const hours = hoursRef.current;
     const dayList = daysRef.current;

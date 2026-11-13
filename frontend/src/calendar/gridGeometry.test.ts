@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   clickableFromMinute,
   dayBlocks,
-  initialScrollMinute,
   momentAt,
+  openingMinute,
   roundDownToHalfHour,
 } from "./gridGeometry";
 
@@ -118,19 +118,37 @@ describe("dayBlocks", () => {
   });
 });
 
-describe("initialScrollMinute", () => {
-  it("is 16:00 when nothing starts earlier, also with no lobbies", () => {
-    expect(initialScrollMinute([])).toBe(16 * 60);
-    expect(initialScrollMinute([{ startMinute: 20 * 60 }])).toBe(16 * 60);
+describe("openingMinute", () => {
+  // REQ-0019 examples: Wednesday 14:10, the week from Monday 2 November is shown.
+  const now = at(4, 14, 10);
+  const monday = at(2, 0);
+  const evening = lobby("evening", at(4, 19), at(4, 21));
+
+  it("is the hour of the first lobby to start", () => {
+    const thursday = lobby("thursday", at(5, 18), at(5, 20));
+    expect(openingMinute([thursday, evening], monday, now)).toBe(19 * 60);
   });
 
-  it("is the hour of the earliest lobby when that is before 16:00", () => {
+  it("skips lobbies that have ended", () => {
+    const ended = lobby("ended", at(3, 9), at(3, 11));
+    expect(openingMinute([ended, evening], monday, now)).toBe(19 * 60);
+  });
+
+  it("counts a Running lobby, from its full hour", () => {
+    const running = lobby("running", at(4, 13), at(4, 15));
+    expect(openingMinute([evening, running], monday, now)).toBe(13 * 60);
+  });
+
+  it("is the hour of now when no lobby is left", () => {
+    expect(openingMinute([], monday, now)).toBe(14 * 60);
     expect(
-      initialScrollMinute([
-        { startMinute: 20 * 60 },
-        { startMinute: 9 * 60 + 40 },
-      ]),
-    ).toBe(9 * 60);
+      openingMinute([lobby("ended", at(3, 9), at(3, 11))], monday, now),
+    ).toBe(14 * 60);
+  });
+
+  it("is midnight for a lobby that started before the first day shown and still runs", () => {
+    const carried = lobby("carried", at(3, 22), at(4, 16));
+    expect(openingMinute([carried, evening], at(4, 0), now)).toBe(0);
   });
 });
 

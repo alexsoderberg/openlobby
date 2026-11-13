@@ -294,19 +294,19 @@ describe("This week", () => {
     });
     afterEach(() => vi.restoreAllMocks());
 
-    it("goes to the earliest lobby of the week on wide screens", async () => {
+    it("goes to the next lobby of the week that has not ended on wide screens", async () => {
       renderDashboard(earlyThursday);
       await nextUpCard();
 
-      expect(scrollTop()).toBe(9 * 100);
+      expect(scrollTop()).toBe(20 * 100);
     });
 
     it("goes to the selected day on phones, not to an earlier lobby on another day", async () => {
       onPhone();
-      renderDashboard(earlyThursday);
+      renderDashboard({ g1: [lobby("l1", "Catan", at(5, 9), at(5, 10))] });
       await nextUpCard();
 
-      expect(scrollTop()).toBe(16 * 100);
+      expect(scrollTop()).toBe(18 * 100);
     });
 
     it("keeps the scroll position on phones when another Day pill is chosen", async () => {

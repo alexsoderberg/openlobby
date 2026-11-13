@@ -2,7 +2,6 @@ import { dayAfter, type Span } from "./week";
 
 export const DAY_MINUTES = 24 * 60;
 const HALF_HOUR = 30;
-const FIRST_SCROLL_MINUTE = 16 * 60;
 
 /** The part of an item that falls on one day, in minutes from that day's midnight. */
 export type Segment<T extends Span> = {
@@ -20,7 +19,7 @@ export type Block<T extends Span> = Segment<T> & {
 };
 
 /** Wall-clock minutes, so a day with a daylight-saving shift still reads 00:00 to 24:00 on the grid. */
-const minuteOfDay = (moment: Date) =>
+export const minuteOfDay = (moment: Date) =>
   moment.getHours() * 60 + moment.getMinutes();
 
 function segmentOf<T extends Span>(day: Date, item: T): Segment<T> {
@@ -71,10 +70,18 @@ export function dayBlocks<T extends Span>(day: Date, items: T[]): Block<T>[] {
   return packColumns(items.map((item) => segmentOf(day, item)));
 }
 
-/** The minute the grid scrolls to on opening: 16:00, or the hour of the earliest block if that is earlier. */
-export function initialScrollMinute(blocks: { startMinute: number }[]): number {
-  const earliest = Math.min(...blocks.map((block) => block.startMinute));
-  return Math.min(FIRST_SCROLL_MINUTE, Math.floor(earliest / 60) * 60);
+/**
+ * The minute the grid scrolls to on opening (REQ-0019): the full hour at or before the start of the first item
+ * that has not ended at `now`, a Running one included, or of `now` when none is left. An item that started before
+ * `from` (the first day shown) counts as starting at its midnight.
+ */
+export function openingMinute(items: Span[], from: Date, now: Date): number {
+  const starts = items
+    .filter((item) => new Date(item.endsAt) > now)
+    .map((item) => new Date(item.startsAt).getTime());
+  const first = starts.length > 0 ? new Date(Math.min(...starts)) : now;
+  const minute = first < from ? 0 : minuteOfDay(first);
+  return Math.floor(minute / 60) * 60;
 }
 
 /** The minute from which a new lobby can be started on `day`: 0 for a later day, the next half hour for today, none for the past. */

@@ -140,3 +140,10 @@ Status stays Implemented. Decided by the user on 2026-11-10 (ideas: live updates
 - The rule "no real-time updates" of the MVP stays for the MVP. From REQ-0017 the lobbies on the group view update without a reload. The criterion "when I reload the group's page, then the change is shown" stays as the fallback when the connection is down.
 - The group view shows the Group feed of REQ-0018 next to the lobbies and members. It is not a view switch and does not change the List / Calendar switch of this requirement.
 - Out of scope in the MVP: notifications outside the app (F-015).
+
+## Amendment 2026-11-12 (REQ-0019, week view width and scroll)
+Status stays Implemented. Decided by the user on 2026-11-12, specified in REQ-0019 (Should).
+- Replaced: the size of the week view on desktop in the criterion "Layout (screen 760 px or wider)". The grid fills the width of the main area (up to 72rem, centred) and the window height down to a small margin, at least 32rem (REQ-0019). In the group view, with the Calendar view shown on a screen 75rem or wider, the members panel sits below the lobbies panel; the List view keeps it beside (REQ-0019, DECISION, orchestrator, 2026-11-12). The rest of the page keeps its current layout. Correction 2026-11-12: the grid was not limited to 40rem; the 40rem page width applies only to logged-out pages.
+- Replaced: the opening scroll rule of "Amendment 2026-11-04 (time grid)" (16:00 at the top, or the earliest lobby of the week) and the phone scroll criterion. The grid opens at the next lobby that has not ended, or at the current time when there is none (REQ-0019). Later data or day changes keep the scroll position.
+- Added: a now line in today's column (REQ-0019).
+- Phone layout (day pills, one day at a time) is unchanged.

@@ -77,7 +77,10 @@ DECISION (user, 2026-11-10): no, A4 to A6 are not moved ahead of A2 and A3, whic
 | A4 | REQ-0016 | Discord avatars for users (F-029) | Should | REQ-0001, REQ-0002, REQ-0004, REQ-0012 (amended by REQ-0016) |
 | A5 | REQ-0017 | Live lobby updates on open screens (F-035) | Should | REQ-0004, REQ-0005, REQ-0012 (amended by REQ-0017); needs an ADR for the transport |
 | A6 | REQ-0018 | Group feed of recent lobby events (F-036) | Should | REQ-0003, REQ-0004, REQ-0005; REQ-0017 for new entries shown live |
+| A6a | REQ-0019 | Larger week view on desktop and scroll to the next lobby (F-017, F-028) | Should | REQ-0004, REQ-0012 (both amended by REQ-0019) |
 | A7 | – (F-037, not yet a requirement) | Member availability and group heatmap ("When can everyone play?") | not yet prioritised | REQ-0002, REQ-0003 (lobby from a suggested slot) |
+
+A6a was decided by the user on 2026-11-12 and is placed after A6 by the product owner, in line with the decided order of A4 to A6. It is an extension of the week view, not a new feature, and no other requirement depends on it. The user may move it earlier at any time. Its open questions are listed in REQ-0019.
 
 A7 is not a requirement yet. Parked by the user on 2026-11-10 (F-037, Proposed): it is taken up after A4 and A5 are under way. It is written after the questions below are answered.
 

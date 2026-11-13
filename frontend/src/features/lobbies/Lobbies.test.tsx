@@ -422,6 +422,38 @@ describe("calendar view", () => {
     ).toBeNull();
   });
 
+  it("keeps the scroll position and goes back to Monday when the next week is shown", async () => {
+    renderLobbies(withLobbies(catan));
+    await screen.findByRole("link", { name: "Catan" });
+    fireEvent.click(calendarButton());
+    const grid = screen.getByRole("region", { name: en.calendarGridLabel });
+    grid.scrollTop = 1234;
+
+    fireEvent.click(screen.getByRole("button", { name: en.calendarNextWeek }));
+
+    expect(
+      screen.getByRole("region", { name: en.calendarGridLabel }).scrollTop,
+    ).toBe(1234);
+    expect(selectedColumns()).toEqual([dayColumns()[0]]);
+  });
+
+  it("draws the Now line at the current minute in today's column only, hidden from screen readers", async () => {
+    renderLobbies(withLobbies(catan));
+    await screen.findByRole("link", { name: "Catan" });
+    fireEvent.click(calendarButton());
+
+    const lines = () =>
+      document.querySelectorAll<HTMLElement>(".time-grid__now");
+    expect(lines()).toHaveLength(1);
+    const [line] = lines();
+    expect(line.closest("li.time-grid__day")).toBe(dayColumns()[2]);
+    expect(line.style.getPropertyValue("--now")).toBe(String(12 * 60));
+    expect(line.getAttribute("aria-hidden")).toBe("true");
+
+    fireEvent.click(screen.getByRole("button", { name: en.calendarNextWeek }));
+    expect(lines()).toHaveLength(0);
+  });
+
   it("shows the same empty text as the list", async () => {
     renderLobbies();
     await screen.findByText("No lobbies have been created yet");

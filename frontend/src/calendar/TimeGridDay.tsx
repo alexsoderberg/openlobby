@@ -10,6 +10,7 @@ import { TimeBlock, type GridLobby } from "./TimeBlock";
 import {
   DAY_MINUTES,
   clickableFromMinute,
+  minuteOfDay,
   momentAt,
   roundDownToHalfHour,
   type Block,
@@ -36,6 +37,20 @@ function startOfClick(
     moment: momentAt(day, roundDownToHalfHour(fromMinute + offset)),
     timed: true,
   };
+}
+
+/**
+ * The Now line: the current time across today's column. It is hidden from screen readers, which read the time
+ * from the hour lines and blocks, and CSS lets the pointer through to the blocks under it.
+ */
+function NowLine({ now }: { now: Date }) {
+  return (
+    <div
+      className="time-grid__now"
+      aria-hidden="true"
+      style={{ "--now": minuteOfDay(now) } as CSSProperties}
+    />
+  );
 }
 
 /**
@@ -103,6 +118,7 @@ export function TimeGridDay<T extends GridLobby>({
             />
           ))}
         </ul>
+        {isToday && <NowLine now={now} />}
       </div>
     </li>
   );

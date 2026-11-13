@@ -197,3 +197,9 @@ Status stays Implemented. Decided by the user on 2026-11-08 (REQ-0015, F-033, F-
 1. Wherever this requirement says "game" for a lobby on the dashboard (Next up card, This week list, grid blocks, day list), the lobby's label is shown instead: "game › mode › activity", leaving out a missing mode or activity, or "Open" for a lobby with no game (REQ-0015, "Display"). Old wording: "with date, clock time, countdown, game, group name and Spot / max players" (Next up), and "each with clock time, game, group name and Spot / max players" (This week and day list) are kept as in the criteria above for reference.
 2. A lobby with no game shows the neutral genre theme (REQ-0014, Amendment 2026-11-08).
 3. The buttons on the Next up card (REQ-0005) work for open lobbies as for any lobby. Setting or changing the game, mode or activity is not offered on the card; it is done on the lobby page (REQ-0015). This is a decision of the product owner within REQ-0015 (ASSUMPTION for the UI expert to confirm).
+
+## Amendment 2026-11-12 (REQ-0019, week view width and scroll)
+Status stays Implemented. Decided by the user on 2026-11-12, specified in REQ-0019 (Should). Binding for the UI expert.
+- Desktop: This week uses the same grid as the group view (REQ-0019): it fills the width of the main area (up to 72rem, centred) and the window height down to a small margin, at least 32rem. The other parts of the Dashboard keep their current layout. Phones are unchanged.
+- Opening scroll: the grid opens at the next lobby of the selected week or day that has not ended (a Running lobby counts), or at the current time when there is none. Later data or day changes keep the scroll position. This replaces the scroll rule of the Fifth amendment (REQ-0004 Amendment 2026-11-04, time grid).
+- A now line is shown in today's column. It is not shown in the Day list.
