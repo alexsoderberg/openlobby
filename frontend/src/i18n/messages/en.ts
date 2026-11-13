@@ -271,6 +271,8 @@ export const en = {
   lobbySeatJoin: "Join with this seat",
   lobbySeatChange: "Change seat",
   lobbySeatSave: "Save seat",
+  lobbySeatNotPreselected:
+    "Your game roles could not be loaded, so no seat is chosen for you.",
   lobbyModeMaxPlayersInvalid: `A mode needs a number of players from 1 to ${DEFAULT_MAX_PLAYERS_LIMIT}.`,
   lobbySlotsInvalid:
     "Each slot must be a whole number, 0 or more, and the slots must add up to at least 1.",
@@ -345,6 +347,13 @@ export const en = {
     loading: "Loading game roles.",
     empty: "No game has game roles yet.",
     roleWithMode: (role: string, mode: string) => `${role} (${mode})`,
+    /** Next to a person's name. Without `game` the list is for the lobby's game. */
+    plays: (games: { roles: string[]; game?: string }[]) =>
+      `Plays ${games
+        .map(({ roles, game }) =>
+          game ? `${roles.join(", ")} in ${game}` : roles.join(", "),
+        )
+        .join("; ")}`,
     save: "Save game roles",
     saved: "Game roles saved.",
     removedRole:

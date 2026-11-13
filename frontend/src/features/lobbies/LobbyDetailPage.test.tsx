@@ -106,6 +106,45 @@ describe("lobby label, role slots and seats", () => {
     ).toBeTruthy();
   });
 
+  it("shows each player's preferred game roles next to the name", async () => {
+    renderDetail({
+      getLobby: () =>
+        Promise.resolve({
+          ...withRoles,
+          players: [
+            {
+              ...withRoles.players[0],
+              preferredGameRoles: [
+                {
+                  gameRoleId: "r1",
+                  name: "Tank",
+                  gameName: "Catan",
+                  modeName: "Competitive",
+                },
+                {
+                  gameRoleId: "r3",
+                  name: "Support",
+                  gameName: "Catan",
+                  modeName: null,
+                },
+              ],
+            },
+            { ...withRoles.players[1], preferredGameRoles: [] },
+          ],
+        }),
+    });
+
+    const tank = await screen.findByRole("region", { name: "Tank" });
+    expect(within(tank).getByRole("listitem").textContent).toBe(
+      "Maja Lind " +
+        en.preferredGameRoles.plays([
+          { roles: ["Tank (Competitive)", "Support"] },
+        ]),
+    );
+    const flex = screen.getByRole("region", { name: "Flex" });
+    expect(within(flex).getByRole("listitem").textContent).toBe("Kim Berg");
+  });
+
   it("still lists a player whose game role is unknown or missing", async () => {
     renderDetail({
       getLobby: () =>
