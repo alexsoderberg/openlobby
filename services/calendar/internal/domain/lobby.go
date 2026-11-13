@@ -77,6 +77,8 @@ type Player struct {
 	UserID      string
 	DisplayName string
 	GameRoleID  *string
+	// PreferredGameRoles are for the lobby's game only, and empty for a player who is no longer a member (ADR 0022).
+	PreferredGameRoles []PreferredGameRole
 }
 
 // Seat is the choice of a player: one game role, or flex (ADR 0017 section 8). Flex false counts as not given.

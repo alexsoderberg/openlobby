@@ -105,3 +105,37 @@ func lockForReplace(ctx context.Context, tx *sql.Tx, userID string, gameRoleIDs 
 	}, lockEffectiveGameRoleSQL, gameRoleIDs)
 	return effective, err
 }
+
+// The choices visible to a member of the group (ADR 0022 point 6), one query per read, never one per person. Only
+// effective game roles, in the order of the contract: game name ignoring case, then mode order, then role order.
+const (
+	selectVisibleChoicesSQL = `SELECT p.user_id, gr.id, gr.name, g.name, gm.name FROM preferred_game_roles p
+		JOIN game_roles gr ON gr.id = p.game_role_id
+		JOIN games g ON g.id = gr.game_id
+		LEFT JOIN game_modes gm ON gm.id = gr.game_mode_id
+		WHERE ` + effectiveGameRoleSQL + ` AND `
+	visibleChoiceOrderSQL = ` ORDER BY lower(g.name), g.id, gm.sort_order, gm.id, gr.sort_order, gr.id`
+
+	// choicesOfMembersSQL reads the choices of every current member of the group $1.
+	choicesOfMembersSQL = selectVisibleChoicesSQL +
+		`p.user_id IN (SELECT user_id FROM group_members WHERE group_id = $1)` + visibleChoiceOrderSQL
+	// choicesOfLobbyPlayersSQL reads, for the lobby $1, the choices of its game (all modes) of the players who are still
+	// members of its group, which hides a former member's row on a past lobby. A lobby with no game matches no role.
+	choicesOfLobbyPlayersSQL = selectVisibleChoicesSQL + `gr.game_id = (SELECT game_id FROM lobbies WHERE id = $1)
+		AND p.user_id IN (SELECT lp.user_id FROM lobby_players lp JOIN lobbies l ON l.id = lp.lobby_id
+			JOIN group_members m ON m.group_id = l.group_id AND m.user_id = lp.user_id WHERE lp.lobby_id = $1)` +
+		visibleChoiceOrderSQL
+)
+
+// visibleChoicesByUser runs one of the visible-choice queries and groups its rows by person, keeping their order.
+func visibleChoicesByUser(ctx context.Context, q queryer, query, id string) (map[string][]domain.PreferredGameRole, error) {
+	byUser := map[string][]domain.PreferredGameRole{}
+	err := eachRow(ctx, q, func(rows *sql.Rows) error {
+		var userID string
+		var role domain.PreferredGameRole
+		err := rows.Scan(&userID, &role.GameRoleID, &role.Name, &role.GameName, &role.ModeName)
+		byUser[userID] = append(byUser[userID], role)
+		return err
+	}, query, id)
+	return byUser, err
+}

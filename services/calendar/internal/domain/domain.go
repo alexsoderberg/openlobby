@@ -126,6 +126,17 @@ type Member struct {
 	UserID      string
 	DisplayName string
 	Role        Role
+	// PreferredGameRoles are the member's effective preferred game roles, read with the members (ADR 0022 point 6).
+	PreferredGameRoles []PreferredGameRole
+}
+
+// PreferredGameRole is a game role that a person usually plays, with the names shown next to the person (ADR 0022).
+// ModeName is nil for a game role of a game with no modes.
+type PreferredGameRole struct {
+	GameRoleID string
+	Name       string
+	GameName   string
+	ModeName   *string
 }
 
 // NewGroupName trims the name and checks its length. It returns the trimmed name.

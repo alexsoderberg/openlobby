@@ -4,11 +4,16 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"reflect"
 	"slices"
 	"strings"
 	"testing"
 
+	"github.com/google/uuid"
+	openapi_types "github.com/oapi-codegen/runtime/types"
+
 	"openlobby/services/calendar/internal/domain"
+	publicapi "openlobby/services/calendar/internal/transport/gen/publicapi"
 )
 
 const (
@@ -179,6 +184,84 @@ func TestReplacePreferredGameRolesRefusalsKeepTheChoices(t *testing.T) {
 			assertErrorEnvelope(t, response, http.StatusBadRequest, tc.code)
 			if !slices.Equal(store.choices[alexID], []string{choiceTankID}) {
 				t.Fatalf("choices changed to %v", store.choices[alexID])
+			}
+		})
+	}
+}
+
+// visibleChoices gives alex a mode role and a role of a game with no modes, in the adapter's order; other has none.
+func visibleChoices() map[string][]domain.PreferredGameRole {
+	raid := "Raid"
+	return map[string][]domain.PreferredGameRole{alexID: {
+		{GameRoleID: choiceTankID, Name: "Tank", GameName: "Raid", ModeName: &raid},
+		{GameRoleID: choiceScoutID, Name: "Scout", GameName: "Scout"},
+	}}
+}
+
+// choicesByUser keys the people of a getGroup or getLobby body by user ID, decoded into the generated contract types.
+// A nil pointer means the body had null or no preferredGameRoles, which the contract does not allow.
+type choicesByUser map[openapi_types.UUID]*[]publicapi.PreferredGameRole
+
+func groupChoices(t *testing.T, body []byte) choicesByUser {
+	t.Helper()
+	var group publicapi.GetGroup200JSONResponse
+	if err := json.Unmarshal(body, &group); err != nil {
+		t.Fatalf("decode %q: %v", body, err)
+	}
+	byUser := choicesByUser{}
+	for _, member := range group.Members {
+		byUser[member.UserId] = member.PreferredGameRoles
+	}
+	return byUser
+}
+
+func lobbyChoices(t *testing.T, body []byte) choicesByUser {
+	t.Helper()
+	var lobby publicapi.GetLobby200JSONResponse
+	if err := json.Unmarshal(body, &lobby); err != nil {
+		t.Fatalf("decode %q: %v", body, err)
+	}
+	byUser := choicesByUser{}
+	for _, player := range lobby.Players {
+		byUser[player.UserId] = player.PreferredGameRoles
+	}
+	return byUser
+}
+
+func TestGroupAndLobbyShowTheVisibleChoicesInTheContractShape(t *testing.T) {
+	tests := []struct {
+		name, path string
+		decode     func(*testing.T, []byte) choicesByUser
+	}{
+		{name: "getGroup", path: "/api/groups/" + fridayID, decode: groupChoices},
+		{name: "getLobby", path: lobbiesPath + "/" + otherLobby, decode: lobbyChoices},
+	}
+	raid := "Raid"
+	wantAlex := []publicapi.PreferredGameRole{
+		{GameRoleId: uuid.MustParse(choiceTankID), Name: "Tank", GameName: "Raid", ModeName: &raid},
+		{GameRoleId: uuid.MustParse(choiceScoutID), Name: "Scout", GameName: "Scout", ModeName: nil},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			store := upcomingStore()
+			store.visible = visibleChoices()
+
+			response := call(newRouter(store, fridayDirectory()), http.MethodGet, tc.path, asUser(otherID), "")
+
+			if response.Code != http.StatusOK {
+				t.Fatalf("status %d, body %q; want 200", response.Code, response.Body.String())
+			}
+			got := tc.decode(t, response.Body.Bytes())
+			alex, other := got[uuid.MustParse(alexID)], got[uuid.MustParse(otherID)]
+			if alex == nil || !reflect.DeepEqual(*alex, wantAlex) {
+				t.Fatalf("alex's choices %v, want %v", alex, wantAlex)
+			}
+			if other == nil || len(*other) != 0 {
+				t.Fatalf("other's choices %v, want [] (never null)", other)
+			}
+			// Decoding gives a nil ModeName for both null and a missing key; the contract sends null.
+			if !strings.Contains(response.Body.String(), `"modeName":null,"name":"Scout"`) {
+				t.Fatalf("body %q, want modeName null on the role of a game with no modes", response.Body.String())
 			}
 		})
 	}

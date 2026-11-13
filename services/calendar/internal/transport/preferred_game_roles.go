@@ -88,3 +88,17 @@ func choicesBody(choices application.PreferredGameRoleChoices) (publicapi.Prefer
 	games, err := gameList(choices.Games)
 	return publicapi.PreferredGameRoleChoices{GameRoleIds: ids, Games: games}, err
 }
+
+// preferredGameRoleBodies converts a person's visible choices into the contract shape. It is never nil: the contract
+// always sends the list, [] when there is none (ADR 0022 point 6).
+func preferredGameRoleBodies(roles []domain.PreferredGameRole) (*[]publicapi.PreferredGameRole, error) {
+	bodies := make([]publicapi.PreferredGameRole, 0, len(roles))
+	for _, role := range roles {
+		id, err := parseUUID(role.GameRoleID)
+		if err != nil {
+			return nil, err
+		}
+		bodies = append(bodies, publicapi.PreferredGameRole{GameRoleId: id, Name: role.Name, GameName: role.GameName, ModeName: role.ModeName})
+	}
+	return &bodies, nil
+}
