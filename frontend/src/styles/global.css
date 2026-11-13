@@ -209,12 +209,45 @@
   --genre-motif-opacity: 0.12;
   --size-genre-icon: 1.5rem;
   --size-genre-motif: 6rem;
+
+  /* Scrollbars: a dim thumb that still stands out at 3:1 on the page, panels and the popover card. */
+  --color-scrollbar-thumb: #63646d;
+  --size-scrollbar: 0.5rem;
 }
 
 *,
 *::before,
 *::after {
   box-sizing: border-box;
+}
+
+/* One scrollbar look for the page and every scroll container. Touch keeps the system's overlay scrollbars.
+   Engines with the standard properties get only those: Chromium ignores ::-webkit-scrollbar once they are set.
+   scrollbar-color inherits, scrollbar-width does not, hence the universal selector. No hover colour: the
+   standard properties have none, so Safari keeps the same look as the others. */
+@media (pointer: fine) {
+  @supports (scrollbar-color: auto) {
+    :root {
+      scrollbar-color: var(--color-scrollbar-thumb) transparent;
+    }
+
+    * {
+      scrollbar-width: thin;
+    }
+  }
+
+  @supports not (scrollbar-color: auto) {
+    ::-webkit-scrollbar {
+      width: var(--size-scrollbar);
+      height: var(--size-scrollbar);
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      border-radius: var(--radius-chip);
+      background: var(--color-scrollbar-thumb);
+    }
+  }
 }
 
 body {
