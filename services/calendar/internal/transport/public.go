@@ -97,7 +97,11 @@ func groupDetail(group domain.Group, members []domain.Member) (publicapi.GetGrou
 		if err != nil {
 			return publicapi.GetGroup200JSONResponse{}, err
 		}
-		list = append(list, publicapi.Member{UserId: userID, DisplayName: member.DisplayName, Role: publicapi.MemberRole(member.Role), PreferredGameRoles: &[]publicapi.PreferredGameRole{}}) // never nil: the contract sends [] (ADR 0022)
+		choices, err := preferredGameRoleBodies(member.PreferredGameRoles)
+		if err != nil {
+			return publicapi.GetGroup200JSONResponse{}, err
+		}
+		list = append(list, publicapi.Member{UserId: userID, DisplayName: member.DisplayName, Role: publicapi.MemberRole(member.Role), PreferredGameRoles: choices})
 	}
 	return publicapi.GetGroup200JSONResponse{Id: id, Name: group.Name, Members: list}, nil
 }

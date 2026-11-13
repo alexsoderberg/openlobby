@@ -7,7 +7,9 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"maps"
 	"net/url"
+	"reflect"
 	"slices"
 	"sync"
 	"testing"
@@ -412,5 +414,127 @@ func TestEffectiveGameRoleRuleParity(t *testing.T) {
 	slices.Sort(fromDomain)
 	if !slices.Equal(fromSQL, fromDomain) || !slices.Equal(fromSQL, sorted(fixture.tank, fixture.healer, fixture.fighter)) {
 		t.Fatalf("SQL %v, domain %v; want the tank, the healer and the fighter, not the hidden scout", fromSQL, fromDomain)
+	}
+}
+
+// chooseHidden stores a choice that Replace refuses: the game-level role of a game with modes, saved while the game had
+// none (ADR 0022 point 2).
+func chooseHidden(t *testing.T, store *Store, userID, gameRoleID string) {
+	t.Helper()
+	if _, err := store.db.Exec(`INSERT INTO preferred_game_roles (user_id, game_role_id) VALUES ($1, $2)`, userID, gameRoleID); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func choiceIDs(roles []domain.PreferredGameRole) []string {
+	ids := make([]string, 0, len(roles))
+	for _, role := range roles {
+		ids = append(ids, role.GameRoleID)
+	}
+	return ids
+}
+
+// visibleTo runs a visible-choice query directly and returns the IDs of the people it shows. The public reads attach
+// choices only to members and players they return, so only this shows whether the query leaks a non-member's row.
+func visibleTo(t *testing.T, store *Store, query, id string) []string {
+	t.Helper()
+	byUser, err := visibleChoicesByUser(context.Background(), store.db, query, id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return slices.Sorted(maps.Keys(byUser))
+}
+
+// seedMemberChoices gives alex four effective choices and a hidden one, other the healer, and nobody, a member of Friday
+// only, the tank. It returns alex's visible choices in the contract's order, and other's.
+func seedMemberChoices(t *testing.T, store *Store) (wantAlex []domain.PreferredGameRole, healer string) {
+	t.Helper()
+	seedGroups(t, store)
+	addMember(t, store, fridayID, nobodyID)
+	fixture := seedChoiceGames(t, store, "")
+	// Lower case, so only an order that ignores case puts it first.
+	arena, err := store.Games().Create(context.Background(), domain.Game{Name: "arena", GameRoles: []domain.GameRole{{Name: "Solo", Slots: 1}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	replaceChoices(t, store, alexID, fixture.healer, fixture.tank, fixture.fighter, arena.GameRoles[0].ID)
+	chooseHidden(t, store, alexID, fixture.scout)
+	replaceChoices(t, store, otherID, fixture.healer)
+	replaceChoices(t, store, nobodyID, fixture.tank)
+	raid := "Raid"
+	return []domain.PreferredGameRole{
+		{GameRoleID: arena.GameRoles[0].ID, Name: "Solo", GameName: "arena"},
+		{GameRoleID: fixture.fighter, Name: "Fighter", GameName: "Duel"},
+		{GameRoleID: fixture.tank, Name: "Tank", GameName: "Raid Game", ModeName: &raid},
+		{GameRoleID: fixture.healer, Name: "Healer", GameName: "Raid Game", ModeName: &raid},
+	}, fixture.healer
+}
+
+func TestMembersShowEveryMembersEffectiveChoicesInOrder(t *testing.T) {
+	store := migratedStore(t)
+	wantAlex, healer := seedMemberChoices(t, store)
+
+	members, err := store.Groups().Members(context.Background(), sundayID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	byUser := map[string][]domain.PreferredGameRole{}
+	for _, member := range members {
+		byUser[member.UserID] = member.PreferredGameRoles
+	}
+	if !reflect.DeepEqual(byUser[alexID], wantAlex) || !slices.Equal(choiceIDs(byUser[otherID]), []string{healer}) {
+		t.Fatalf("alex %+v, other %+v; want alex %+v without the hidden scout, other the healer", byUser[alexID], byUser[otherID], wantAlex)
+	}
+	if got := visibleTo(t, store, choicesOfMembersSQL, sundayID); !slices.Equal(got, sorted(alexID, otherID)) {
+		t.Fatalf("Sunday's read shows %v, want only its members, not Friday's", got)
+	}
+}
+
+func TestLobbyPlayersShowTheChoicesOfTheLobbysGameForMembersOnly(t *testing.T) {
+	store := migratedStore(t)
+	seedGroups(t, store)
+	addMember(t, store, fridayID, otherID)
+	fixture := seedChoiceGames(t, store, "")
+	lobby := insertLobby(t, store, newLobby(fridayID, alexID, &fixture.raid.ID, fixture.raid.Name))
+	addPlayer(t, store, lobby.ID, otherID, joinedAt)
+	// The user nobody is not a member of Friday. Leaving deletes only upcoming rows, so this row in an upcoming lobby stands in for
+	// a former member's row; only the membership check in the read hides it.
+	addPlayer(t, store, lobby.ID, nobodyID, joinedAt)
+	replaceChoices(t, store, alexID, fixture.tank, fixture.fighter)
+	chooseHidden(t, store, alexID, fixture.scout)
+	replaceChoices(t, store, otherID, fixture.healer)
+	replaceChoices(t, store, nobodyID, fixture.tank)
+
+	_, players, err := store.Lobbies().Lobby(context.Background(), fridayID, lobby.ID, alexID, joinedAt)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got := map[string][]string{}
+	for _, player := range players {
+		got[player.UserID] = choiceIDs(player.PreferredGameRoles)
+	}
+	want := map[string][]string{alexID: {fixture.tank}, otherID: {fixture.healer}, nobodyID: {}}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("choices %v, want %v: the lobby's game only, no hidden role, nothing for a former member", got, want)
+	}
+	if shown := visibleTo(t, store, choicesOfLobbyPlayersSQL, lobby.ID); !slices.Equal(shown, sorted(alexID, otherID)) {
+		t.Fatalf("lobby read shows %v, want only players who are members", shown)
+	}
+}
+
+func TestOpenLobbyShowsNoChoices(t *testing.T) {
+	store := migratedStore(t)
+	seedGroups(t, store)
+	fixture := seedChoiceGames(t, store, "")
+	open := newLobby(fridayID, alexID, nil, "")
+	open.GameName = nil
+	open = insertLobby(t, store, open)
+	replaceChoices(t, store, alexID, fixture.tank, fixture.fighter)
+
+	_, players, err := store.Lobbies().Lobby(context.Background(), fridayID, open.ID, alexID, joinedAt)
+	if err != nil || len(players) != 1 || len(players[0].PreferredGameRoles) != 0 {
+		t.Fatalf("players %+v, error %v; want alex with no choices", players, err)
 	}
 }

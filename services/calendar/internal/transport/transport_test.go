@@ -40,6 +40,8 @@ type memoryGroups struct {
 	lobbies map[string]domain.Lobby
 	joined  map[string]bool     // "lobbyID/userID" of the players added through the lobby port
 	choices map[string][]string // preferred game role IDs by user
+	// visible are the preferred game roles by user that the group and lobby reads give, as the adapter filters them.
+	visible map[string][]domain.PreferredGameRole
 	err     error
 	calls   int
 	created int
@@ -100,7 +102,11 @@ func (m *memoryGroups) ListForGroup(_ context.Context, _ string) ([]application.
 
 func (m *memoryGroups) Members(_ context.Context, groupID string) ([]domain.Member, error) {
 	m.calls++
-	return append([]domain.Member(nil), m.members[groupID]...), m.err
+	members := append([]domain.Member(nil), m.members[groupID]...)
+	for i := range members {
+		members[i].PreferredGameRoles = m.visible[members[i].UserID]
+	}
+	return members, m.err
 }
 
 // fakeDirectory answers display names and counts the lookups, so a test can show that auth was not asked.

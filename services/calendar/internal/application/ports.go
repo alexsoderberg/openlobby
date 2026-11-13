@@ -43,6 +43,7 @@ type GroupReader interface {
 	MembershipReader
 	// Group returns domain.ErrGroupNotFound when the group does not exist.
 	Group(ctx context.Context, groupID string) (domain.Group, error)
+	// Members returns the members with their effective preferred game roles, read in one snapshot (ADR 0022 point 3).
 	Members(ctx context.Context, groupID string) ([]domain.Member, error)
 }
 
@@ -134,7 +135,8 @@ type LobbyReader interface {
 	// player, sorted by start time, then ID. The role slots of all lobbies are read in one query.
 	Upcoming(ctx context.Context, groupID, callerID string, now time.Time) ([]domain.Lobby, error)
 	// Lobby returns the upcoming lobby of this group with its players, or domain.ErrLobbyNotFound. The players have their
-	// game roles, no display names, and are sorted by join time, then user ID. Both are read in one snapshot.
+	// game roles, no display names, and are sorted by join time, then user ID. Each player has the effective preferred
+	// game roles of the lobby's game when still a member of the group (ADR 0022 point 6). All are read in one snapshot.
 	Lobby(ctx context.Context, groupID, lobbyID, callerID string, now time.Time) (domain.Lobby, []domain.Player, error)
 }
 

@@ -12,6 +12,7 @@ import (
 	"maps"
 	"net/url"
 	"os"
+	"reflect"
 	"testing"
 	"time"
 
@@ -310,7 +311,7 @@ func TestGroupAndMembersReadBackWithRoles(t *testing.T) {
 	}
 	// Both rows were inserted with the same joined_at, so the order falls back to user_id.
 	want := []domain.Member{{UserID: otherID, Role: domain.RoleMember}, {UserID: alexID, Role: domain.RoleMember}}
-	if len(members) != len(want) || members[0] != want[0] || members[1] != want[1] {
+	if !reflect.DeepEqual(members, want) {
 		t.Fatalf("members %+v, want %+v", members, want)
 	}
 }

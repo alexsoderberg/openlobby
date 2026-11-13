@@ -3,6 +3,7 @@ package application_test
 import (
 	"context"
 	"errors"
+	"reflect"
 	"slices"
 	"strings"
 	"testing"
@@ -247,7 +248,7 @@ func TestGetReturnsNameAndMembersWithDisplayNameAndRole(t *testing.T) {
 		{UserID: aliceID, DisplayName: "Alex", Role: domain.RoleAdmin},
 		{UserID: bobID, DisplayName: "Bo", Role: domain.RoleMember},
 	}
-	if !slices.Equal(members, want) {
+	if !reflect.DeepEqual(members, want) {
 		t.Fatalf("members %+v, want %+v", members, want)
 	}
 }

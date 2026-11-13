@@ -146,7 +146,11 @@ func playerBodies(players []domain.Player) ([]publicapi.LobbyPlayer, error) {
 		if err != nil {
 			return nil, err
 		}
-		refs = append(refs, publicapi.LobbyPlayer{UserId: userID, DisplayName: player.DisplayName, GameRoleId: roleID, PreferredGameRoles: &[]publicapi.PreferredGameRole{}}) // never nil: the contract sends [] (ADR 0022)
+		choices, err := preferredGameRoleBodies(player.PreferredGameRoles)
+		if err != nil {
+			return nil, err
+		}
+		refs = append(refs, publicapi.LobbyPlayer{UserId: userID, DisplayName: player.DisplayName, GameRoleId: roleID, PreferredGameRoles: choices})
 	}
 	return refs, nil
 }
