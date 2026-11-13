@@ -4,15 +4,20 @@ import { useMessages } from "../../i18n";
 import { Icon, type IconName } from "../../ui";
 import { SeatChoice } from "./SeatChoice";
 import { FLEX_SEAT, SEAT_FIELD } from "./lobbyInput";
+import { hasFreeSlot } from "./lobbyRoles";
 
 /**
  * The seat choice of a lobby with game roles, for joining and for changing seat. A game role with no free
  * slot is disabled and says "full"; the player's own game role stays open. `seat` is the current seat:
- * a game role ID, `null` for flex, or undefined for a player who has none yet.
+ * a game role ID, `null` for flex, or undefined for a player who has none yet. `preselected` is checked when
+ * there is no current seat. The radios are uncontrolled, so both must be known when the form mounts; a later
+ * change never replaces a seat the player has picked.
  */
 export function SeatForm({
   roleSlots,
   seat,
+  preselected,
+  hint,
   submitLabel,
   submitIcon,
   busy,
@@ -22,6 +27,8 @@ export function SeatForm({
 }: {
   roleSlots: NonNullable<Lobby["roleSlots"]>;
   seat?: string | null;
+  preselected?: string;
+  hint?: string;
   submitLabel: string;
   submitIcon: IconName;
   busy: boolean;
@@ -35,7 +42,7 @@ export function SeatForm({
   const [missing, setMissing] = useState(false);
   const errorText = missing ? m.lobbySeatMissing : error;
   const errorId = useId();
-  // The form replaces the button that opened it, so focus moves in: to the current seat, else the first choice.
+  // The form replaces the button that opened it, so focus moves in: to the checked seat, else the first choice.
   useEffect(() => {
     const form = formRef.current;
     (
@@ -63,8 +70,7 @@ export function SeatForm({
     >
       <SeatChoice
         options={roleSlots.map((slot) => {
-          const full =
-            slot.playerCount >= slot.slots && slot.gameRoleId !== seat;
+          const full = !hasFreeSlot(slot) && slot.gameRoleId !== seat;
           return {
             value: slot.gameRoleId,
             label: (full ? m.lobbyRoleSlotFull : m.lobbyRoleSlot)(
@@ -75,7 +81,8 @@ export function SeatForm({
             disabled: full,
           };
         })}
-        defaultValue={seat === null ? FLEX_SEAT : (seat ?? undefined)}
+        defaultValue={seat === null ? FLEX_SEAT : (seat ?? preselected)}
+        hint={hint}
         errorId={errorText ? errorId : undefined}
       />
       {errorText && (

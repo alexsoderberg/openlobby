@@ -1,6 +1,17 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { ApiError, ApiProvider, type ApiClient } from "../../api";
+import {
+  ApiError,
+  ApiProvider,
+  type ApiClient,
+  type PreferredGameRoleChoices,
+} from "../../api";
 import { en } from "../../i18n/messages/en";
 import { fakeApiClient, testUser } from "../../test/fakeApiClient";
 import { LobbyDetailPage } from "./LobbyDetailPage";
@@ -18,7 +29,11 @@ const lobby = {
 };
 
 function renderMembership(
-  props: { joinedByMe?: boolean; seat?: string | null } = {},
+  props: {
+    joinedByMe?: boolean;
+    seat?: string | null;
+    roleSlots?: typeof roleSlots;
+  } = {},
   overrides: Partial<ApiClient> = {},
 ) {
   const client = fakeApiClient(overrides);
@@ -27,7 +42,11 @@ function renderMembership(
     <ApiProvider client={client}>
       <LobbyMembership
         groupId="g1"
-        lobby={{ ...lobby, joinedByMe: props.joinedByMe ?? false }}
+        lobby={{
+          ...lobby,
+          joinedByMe: props.joinedByMe ?? false,
+          roleSlots: props.roleSlots ?? roleSlots,
+        }}
         seat={props.seat}
         onChanged={onChanged}
         onUnauthenticated={vi.fn()}
@@ -41,6 +60,11 @@ const radio = (name: string) =>
   screen.getByRole<HTMLInputElement>("radio", { name });
 const open = async (name: string) =>
   fireEvent.click(await screen.findByRole("button", { name }));
+/** Opens the seat form and waits for it: the join form shows once the preferred game roles are read. */
+const openSeats = async (name: string) => {
+  await open(name);
+  await screen.findByRole("group", { name: en.lobbySeatLegend });
+};
 const submit = (name: string) =>
   fireEvent.click(screen.getByRole("button", { name }));
 
@@ -48,7 +72,7 @@ describe("joining a lobby with game roles", () => {
   it("asks for a seat before it joins", async () => {
     const { client } = renderMembership();
 
-    await open(en.lobbyJoin);
+    await openSeats(en.lobbyJoin);
 
     expect(client.joinLobby).not.toHaveBeenCalled();
     expect(
@@ -59,7 +83,7 @@ describe("joining a lobby with game roles", () => {
 
   it("disables a full game role and says so in text", async () => {
     renderMembership();
-    await open(en.lobbyJoin);
+    await openSeats(en.lobbyJoin);
 
     const full = radio(en.lobbyRoleSlotFull("Tank", 1, 1));
     expect(full.disabled).toBe(true);
@@ -69,7 +93,7 @@ describe("joining a lobby with game roles", () => {
 
   it("joins with the chosen game role and loads the lobby again", async () => {
     const { client, onChanged } = renderMembership();
-    await open(en.lobbyJoin);
+    await openSeats(en.lobbyJoin);
 
     fireEvent.click(radio("Healer 0/2"));
     submit(en.lobbySeatJoin);
@@ -82,7 +106,7 @@ describe("joining a lobby with game roles", () => {
 
   it("joins as flex", async () => {
     const { client, onChanged } = renderMembership();
-    await open(en.lobbyJoin);
+    await openSeats(en.lobbyJoin);
 
     fireEvent.click(radio(en.lobbySeatFlex));
     submit(en.lobbySeatJoin);
@@ -93,7 +117,7 @@ describe("joining a lobby with game roles", () => {
 
   it("denies a join without a seat, tied to the choice", async () => {
     const { client } = renderMembership();
-    await open(en.lobbyJoin);
+    await openSeats(en.lobbyJoin);
 
     submit(en.lobbySeatJoin);
 
@@ -117,7 +141,7 @@ describe("joining a lobby with game roles", () => {
         joinLobby: vi.fn(() => Promise.reject(new ApiError(409, "lobby_full"))),
       },
     );
-    await open(en.lobbyJoin);
+    await openSeats(en.lobbyJoin);
 
     fireEvent.click(radio(en.lobbySeatFlex));
     submit(en.lobbySeatJoin);
@@ -140,7 +164,7 @@ describe("joining a lobby with game roles", () => {
         ),
       },
     );
-    await open(en.lobbyJoin);
+    await openSeats(en.lobbyJoin);
 
     fireEvent.click(radio("Healer 0/2"));
     submit(en.lobbySeatJoin);
@@ -163,7 +187,7 @@ describe("joining a lobby with game roles", () => {
         ),
       },
     );
-    await open(en.lobbyJoin);
+    await openSeats(en.lobbyJoin);
 
     fireEvent.click(radio(en.lobbySeatFlex));
     submit(en.lobbySeatJoin);
@@ -175,7 +199,7 @@ describe("joining a lobby with game roles", () => {
 
   it("closes the choice with cancel and returns focus to the join button", async () => {
     renderMembership();
-    await open(en.lobbyJoin);
+    await openSeats(en.lobbyJoin);
 
     submit(en.cancel);
 
@@ -204,6 +228,7 @@ describe("joining a lobby with game roles", () => {
 
     expect(client.joinLobby).toHaveBeenCalledWith("g1", "l1");
     expect(screen.queryByRole("radio")).toBeNull();
+    expect(client.getPreferredGameRoles).not.toHaveBeenCalled();
   });
 });
 
@@ -254,6 +279,117 @@ describe("changing seat", () => {
     await open(en.lobbySeatChange);
 
     expect(radio(en.lobbySeatFlex).checked).toBe(true);
+  });
+});
+
+/** A fake whose preferred game roles are the given IDs. */
+const preferring = (...gameRoleIds: string[]): Partial<ApiClient> => ({
+  getPreferredGameRoles: vi.fn(() =>
+    Promise.resolve({ gameRoleIds, games: [] }),
+  ),
+});
+
+describe("preselecting the seat from the preferred game roles", () => {
+  it("checks and focuses the first preferred game role with a free slot, in lobby order", async () => {
+    const { client } = renderMembership(
+      {
+        roleSlots: [
+          ...roleSlots,
+          { gameRoleId: "r-dps", name: "Damage", slots: 2, playerCount: 1 },
+        ],
+      },
+      preferring("r-dps", "r-tank"),
+    );
+    await openSeats(en.lobbyJoin);
+
+    expect(radio("Damage 1/2").checked).toBe(true);
+    expect(radio("Healer 0/2").checked).toBe(false);
+    expect(document.activeElement).toBe(radio("Damage 1/2"));
+    submit(en.lobbySeatJoin);
+    await waitFor(() =>
+      expect(client.joinLobby).toHaveBeenCalledWith("g1", "l1", {
+        gameRoleId: "r-dps",
+      }),
+    );
+  });
+
+  it("checks nothing, not even flex, when no preferred game role is free", async () => {
+    renderMembership({}, preferring("r-tank"));
+    await openSeats(en.lobbyJoin);
+
+    expect(screen.queryByRole("radio", { checked: true })).toBeNull();
+  });
+
+  it("shows a player who has joined their current seat, without reading the choice", async () => {
+    const { client } = renderMembership(
+      { joinedByMe: true, seat: null },
+      preferring("r-heal"),
+    );
+    await openSeats(en.lobbySeatChange);
+
+    expect(radio(en.lobbySeatFlex).checked).toBe(true);
+    expect(radio("Healer 0/2").checked).toBe(false);
+    expect(client.getPreferredGameRoles).not.toHaveBeenCalled();
+  });
+
+  it("joins with the seat the player picks instead", async () => {
+    const { client } = renderMembership({}, preferring("r-heal"));
+    await openSeats(en.lobbyJoin);
+    expect(radio("Healer 0/2").checked).toBe(true);
+
+    fireEvent.click(radio(en.lobbySeatFlex));
+    submit(en.lobbySeatJoin);
+
+    await waitFor(() =>
+      expect(client.joinLobby).toHaveBeenCalledWith("g1", "l1", { flex: true }),
+    );
+  });
+
+  it("shows the form once a slow read has answered, with the seat preselected", async () => {
+    let answer: (ids: string[]) => void = () => {};
+    renderMembership(
+      {},
+      {
+        getPreferredGameRoles: vi.fn(
+          () =>
+            new Promise<PreferredGameRoleChoices>((resolve) => {
+              answer = (gameRoleIds) => resolve({ gameRoleIds, games: [] });
+            }),
+        ),
+      },
+    );
+    await open(en.lobbyJoin);
+
+    expect(screen.getByRole("status").textContent).toBe(
+      en.preferredGameRoles.loading,
+    );
+    expect(screen.queryByRole("radio")).toBeNull();
+    await act(async () => answer(["r-heal"]));
+
+    expect(radio("Healer 0/2").checked).toBe(true);
+    expect(document.activeElement).toBe(radio("Healer 0/2"));
+  });
+
+  it("does not read the choice before the seat form opens", async () => {
+    const { client } = renderMembership({}, preferring("r-heal"));
+    await screen.findByRole("button", { name: en.lobbyJoin });
+
+    expect(client.getPreferredGameRoles).not.toHaveBeenCalled();
+  });
+
+  it("says no seat is chosen when the choice cannot be read", async () => {
+    renderMembership(
+      {},
+      {
+        getPreferredGameRoles: vi.fn(() =>
+          Promise.reject(new ApiError(500, "internal_error")),
+        ),
+      },
+    );
+    await openSeats(en.lobbyJoin);
+
+    expect(screen.getByText(en.lobbySeatNotPreselected)).toBeTruthy();
+    expect(screen.queryByRole("radio", { checked: true })).toBeNull();
   });
 });
 

@@ -682,6 +682,13 @@ a {
   margin-left: auto;
 }
 
+/* A person's preferred game roles beside the name: secondary text, wrapping under the name on narrow rows. */
+.person-roles {
+  color: var(--color-muted);
+  font-size: var(--font-size-small);
+  overflow-wrap: anywhere;
+}
+
 .avatar {
   flex: none;
   width: 2rem;
