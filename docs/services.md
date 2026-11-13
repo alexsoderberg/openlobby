@@ -15,7 +15,7 @@ gateway ──────────────► frontend      (/ and all n
    │  validates session, sets X-User-*
    ├──────────────► auth              (/api/auth/*)
    │                 ▲
-   └──────────────► calendar          (/api/groups*, /api/invites*, /api/games*, /api/users*)
+   └──────────────► calendar          (/api/groups*, /api/group-overviews, /api/invites*, /api/games*, /api/users*)
                      │  name lookup (internal HTTP)
                      └────────────► auth
 
@@ -40,8 +40,8 @@ All services use synchronous HTTP/JSON. The exceptions to JSON responses are the
 - **Responsibility:** routing (route table with path and method per route), session validation, sets `X-User-Id` and `X-User-System-Admin` from the session and removes the client's own `X-User-*`, forwards the `Cookie` header to `auth` only, correlation ID, answers `404 not_found` and `405 method_not_allowed`, blocks `/internal/*`, answers `503 service_unavailable` or `500 internal_error` when an upstream fails (a redirect on the two `GET` login routes, ADR 0002 review 5; a wrong method on them still gives JSON 405, review 6), access log.
 - **Owns data:** nothing.
 - **Dependencies:** `auth` (session validation), `frontend` and `calendar` (routing).
-- **Realizes:** F-001 (the session part of login), and the prerequisite for F-002–F-005, F-010, F-013, F-017, F-018, F-024, F-028, F-029, F-035 and F-036. The routes for avatars, the group feed and live updates (ADR 0018, 0019, 0020).
-- **Decisions:** ADR 0002, 0011, 0018, 0019, 0020.
+- **Realizes:** F-001 (the session part of login), and the prerequisite for F-002–F-005, F-010, F-013, F-017, F-018, F-024, F-028, F-029, F-035 and F-036. The routes for avatars, the group feed, live updates (ADR 0018, 0019, 0020) and the group overviews (ADR 0025).
+- **Decisions:** ADR 0002, 0011, 0018, 0019, 0020, 0025.
 
 ### auth
 - **Responsibility:** login with Discord, user accounts, sessions, logout, display names, and the system admin role (determined by configuration, `SYSTEM_ADMINS`). The provider name is not in any public path (ADR 0005).
@@ -53,13 +53,13 @@ All services use synchronous HTTP/JSON. The exceptions to JSON responses are the
 
 ### calendar
 - **Responsibility:** groups, membership and roles (one or more admins, at least one as long as the group has members), invite links expiring after 10 minutes, max uses per link (1–10, default 1), lobbies with game and max players, players joining and leaving lobbies, and the game list (F-024). The game list is managed by the system admin. Members see it ordered by use in their group. Authorization is checked here.
-- **Owns data (database `calendar`):** `groups`, `group_events` (the group feed, user IDs only, ADR 0020), `group_members` (with `role` and `joined_at`), `invite_links` (with `expires_at`, `max_uses`, `use_count`), `lobbies` (with `game_id`, `game_name` and `max_players`), `lobby_players`, `games` (the game list with uuid IDs and the optional `genre`, ADR 0010, ADR 0016). Added by ADR 0017 migrations 0006 and 0007 (the game list tables are used by the game list endpoints; the lobby changes are used by create lobby, join and the lobby reads): `game_modes`, `game_roles` (on a game or a mode) and `activities` in the game list; `lobby_role_slots`; on `lobbies` a nullable `game_name` (no game), `game_mode_id`, `mode_name`, `activity_id` and `activity_name`; on `lobby_players` a nullable `game_role_id` (null means flex). Proposed by ADR 0022 (migration 0008): `preferred_game_roles` (the game roles a person plays: `user_id`, `game_role_id`, no foreign key; orphans are removed in the game-list write).
+- **Owns data (database `calendar`):** `groups`, `group_events` (the group feed, user IDs only, ADR 0020), `group_members` (with `role` and `joined_at`), `invite_links` (with `expires_at`, `max_uses`, `use_count`), `lobbies` (with `game_id`, `game_name` and `max_players`), `lobby_players`, `games` (the game list with uuid IDs and the optional `genre`, ADR 0010, ADR 0016). Added by ADR 0017 migrations 0006 and 0007 (the game list tables are used by the game list endpoints; the lobby changes are used by create lobby, join and the lobby reads): `game_modes`, `game_roles` (on a game or a mode) and `activities` in the game list; `lobby_role_slots`; on `lobbies` a nullable `game_name` (no game), `game_mode_id`, `mode_name`, `activity_id` and `activity_name`; on `lobby_players` a nullable `game_role_id` (null means flex). Proposed by ADR 0022 (migration 0008): `preferred_game_roles` (the game roles a person plays: `user_id`, `game_role_id`, no foreign key; orphans are removed in the game-list write). Proposed by ADR 0024 (migration 0009): `role_icon` on `game_roles` and `lobby_role_slots` (nullable, CHECK on the seven values; `NULL` is not chosen yet). ADR 0025 adds no data.
 - **Dependencies:** `auth` (display names via internal `POST /internal/users/lookup`, from REQ-0002, with the `hasAvatar` flag of ADR 0018; no call and no Compose dependency before, ADR 0008 amendment REQ-0001 calendar), PostgreSQL.
 - **Realizes:** F-002 (REQ-0002), F-003 (REQ-0003, REQ-0009), F-004 and F-017 (REQ-0004), F-005 (REQ-0005), F-018 (REQ-0005, REQ-0009), F-024 (REQ-0009, management by system admin), F-010 (REQ-0006), F-013 (REQ-0007), F-028 (REQ-0012, data only: the group list, each group's upcoming lobbies and `joinedByMe` on each lobby, ADR 0014), F-032 (REQ-0014, data only: `games.genre` and `gameGenre` on lobbies, read live through a join on `games`, ADR 0016). Realized by ADR 0017 (PR1 to PR6): F-027 (REQ-0011), F-033 and F-034 (REQ-0015), game modes, game roles, named activities and open lobbies.
 - **Dependencies (proposed):** `auth` also for the picture of a member, read internally (`GET /internal/users/{userId}/avatar`). Calendar serves the picture only after a shared-group check on its own `group_members` (ADR 0018).
 - **Realizes (proposed):** F-029 (`hasAvatar` and `GET /api/users/{userId}/avatar` with the shared-group check, ADR 0018), F-035 (live updates signal, ADR 0019), F-036 (group feed, ADR 0020).
-- **Decisions:** ADR 0004, 0006, 0007, 0010, 0011, 0016, 0017, 0018, 0019, 0020, 0022.
-- **Realizes (proposed):** F-039 (REQ-0021, ADR 0022: a person's preferred game roles, preselected seat on join, shown to members of shared groups).
+- **Decisions:** ADR 0004, 0006, 0007, 0010, 0011, 0016, 0017, 0018, 0019, 0020, 0022, 0024, 0025.
+- **Realizes (proposed):** F-039 (REQ-0021, ADR 0022: a person's preferred game roles, preselected seat on join, shown to members of shared groups), F-042 (REQ-0023, ADR 0024: the icon of a game role, stored on game roles and role slots), F-043 (REQ-0024, ADR 0025: `GET /api/group-overviews` for the Group list).
 
 ### frontend
 - **Responsibility:** React + TypeScript (Vite). The user interface, the live updates module (EventSource, paused notice, reload on signal, ADR 0019), `PersonAvatar` (ADR 0018), the group feed section (ADR 0020), the app shell and dashboard ("Next up", "This week" computed from `calendar` and `auth` data, ADR 0014), local time, filtering of the week view, interpretation of an end time as the next day, game selection from `GET /api/groups/{groupId}/games` with the max prefilled from `defaultMaxPlayers`, player count display ("X/Y players" or "X players"), expiry time and uses of links, error messages based on error codes, 404 page for `invite_invalid`, the genre themes of lobby views and the landing hero (`frontend/src/genres`, ADR 0016), and the page `/systemadmin/games` for the system admin (shown when `isSystemAdmin` is true).
@@ -91,6 +91,7 @@ Public endpoints (via `gateway`, which receives traffic from `edge`):
 | GET | `/api/auth/me` | auth | yes | REQ-0001 (response `{userId, displayName, isSystemAdmin, hasAvatar}`, ADR 0001, 0003, 0011, 0018) |
 | POST | `/api/groups` | calendar | yes | REQ-0002 (creates the admin membership, no link. 400 `invalid_group_name` or `invalid_request`) |
 | GET | `/api/groups` | calendar | yes | REQ-0002 (groups where the caller is a member, no order required) |
+| GET | `/api/group-overviews` | calendar | yes | ADR 0025 (REQ-0024. One `GroupOverview` per group of the caller, sorted by name ignoring case, then `id`: `memberCount`, the first five `members` (`UserRef`, names from auth), `nextLobby` (the next lobby not ended, Running counts, or `null`). Two statements in one snapshot, one auth lookup. `service_unavailable` when auth gives no names) |
 | GET | `/api/groups/{groupId}` | calendar | yes, member | REQ-0002 |
 | DELETE | `/api/groups/{groupId}/membership` | calendar | yes, member | REQ-0006 (transfers the admin role when the last admin leaves) |
 | PUT | `/api/groups/{groupId}/admins/{userId}` | calendar | yes, admin | REQ-0008 (makes a member admin, idempotent, 204. Order: invalid `userId` form `member_not_found`, non-member `group_not_found`, non-admin `not_allowed`, unknown member `member_not_found`) |
