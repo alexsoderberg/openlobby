@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import { useId, type CSSProperties } from "react";
 import type { Genre, Lobby } from "../api";
 import { GenreFrame } from "../genres";
 import { formatTimeRange, useMessages } from "../i18n";
@@ -11,10 +11,11 @@ export type GridLobby = Lobby & { groupName?: string };
 /**
  * One lobby on a day column. Top and height are its true start and duration (CSS reads them from the
  * custom properties); a short block keeps its position and only grows to stay readable. The link covers
- * the whole block. A continuation marker comes right after the game name, so the two lines that fit the
- * smallest block show both when the name fits on one line. A longer name wraps and pushes the marker and
- * time out of that block: REQ-0015 wants the game name in full, and the dashed edge still shows the
- * continuation while the marker text stays readable to assistive technology.
+ * the whole block. The lines come in priority order: CSS leaves out whole lines from the end when the block
+ * is too short, so the label stays, then the continuation marker, then the time. A game name that wraps is
+ * capped at the whole lines the block holds and clipped below them (.time-block__game). Lines left out are only
+ * clipped, so they stay in the accessibility tree; aria-describedby also adds the marker, time and players to
+ * the link's description, so they are read with the link.
  */
 export function TimeBlock({
   block,
@@ -28,6 +29,16 @@ export function TimeBlock({
   const m = useMessages();
   const { item: lobby } = block;
   const detail = lobbyLabelDetail(lobby, m);
+  const id = useId();
+  const lineId = (name: string) => `${id}${name}`;
+  const describedBy = [
+    block.continuesBefore && lineId("before"),
+    block.continuesAfter && lineId("after"),
+    lineId("time"),
+    lineId("players"),
+  ]
+    .filter(Boolean)
+    .join(" ");
   const place = {
     "--start": block.startMinute,
     "--span": block.endMinute - block.startMinute,
@@ -44,7 +55,11 @@ export function TimeBlock({
       data-continues-after={block.continuesAfter || undefined}
     >
       <div className="time-block__body">
-        <a className="time-block__game" href={href}>
+        <a
+          className="time-block__game"
+          href={href}
+          aria-describedby={describedBy}
+        >
           <span>{lobbyGameLabel(lobby, m)}</span>
           {/* A real space keeps the link's accessible name "game › mode"; flex layout hides it. */}{" "}
           {detail && (
@@ -55,16 +70,22 @@ export function TimeBlock({
           )}
         </a>
         {block.continuesBefore && (
-          <span className="time-block__marker">
+          <span id={lineId("before")} className="time-block__marker">
             {m.calendarContinuesBefore}
           </span>
         )}
         {block.continuesAfter && (
-          <span className="time-block__marker">{m.calendarContinuesAfter}</span>
+          <span id={lineId("after")} className="time-block__marker">
+            {m.calendarContinuesAfter}
+          </span>
         )}
-        <span>{formatTimeRange(lobby.startsAt, lobby.endsAt)}</span>
+        <span id={lineId("time")}>
+          {formatTimeRange(lobby.startsAt, lobby.endsAt)}
+        </span>
         {lobby.groupName && <span>{lobby.groupName}</span>}
-        <span>{m.lobbyPlayers(lobby.playerCount, lobby.maxPlayers)}</span>
+        <span id={lineId("players")}>
+          {m.lobbyPlayers(lobby.playerCount, lobby.maxPlayers)}
+        </span>
       </div>
     </GenreFrame>
   );

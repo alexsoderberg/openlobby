@@ -316,7 +316,7 @@ describe("calendar view", () => {
     expect(
       within(saturday.closest("li")!).getByText("started the day before"),
     ).toBeTruthy();
-    // Right after the game name: the smallest block shows two lines.
+    // Right after the label: the smallest block shows two lines, and leaves the time out first.
     expect(friday.nextElementSibling!.textContent).toBe(
       en.calendarContinuesAfter,
     );
