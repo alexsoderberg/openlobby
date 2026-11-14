@@ -3,7 +3,7 @@ Status: Implemented
 Feature: F-028
 Priority: Must
 
-Build status (2026-11-05): all criteria are built (PRs #42, #43, #45, #46, #47, #48). The "Join lobby" and "Leave lobby" buttons on the Next up card came with REQ-0005 (`joinedByMe`, PR #50). Amendment 2026-11-07 (week view toggle) is pending implementation; the status stays Implemented.
+Build status (2026-11-05): all criteria are built (PRs #42, #43, #45, #46, #47, #48). The "Join lobby" and "Leave lobby" buttons on the Next up card came with REQ-0005 (`joinedByMe`, PR #50). Amendment 2026-11-07 (week view toggle): status stays Implemented.
 
 ## Problem
 After login a member has no overview across their groups. To see whether anyone is playing tonight, they must open each group. Group views are not part of one layout, so moving between groups and creating a group are not reachable from one place. Phones are the main way friends check in, and the app is not designed for them yet.
@@ -143,7 +143,7 @@ One user decision, recorded as DECISION, user, 2026-11-04. Status stays Decided.
 2. The "This week" criterion that lists lobbies in start-time order and the rules for which lobbies appear are unchanged. The grid shows the same set of lobbies, so a lobby that started before Monday and has not ended is shown from 00:00 in Monday's column (criterion above).
 
 ## Amendment 2026-11-07 (week view toggle)
-One user decision, recorded as DECISION, user, 2026-11-07. Status stays Implemented: the build status above covers everything before this amendment, and this amendment is pending implementation. Binding for the UI expert. The user's words (translated): "The calendar on the dashboard should be a toggle switch. Either you show the whole calendar as now, or only the days and booked sessions are shown, as it was before. Each user chooses this themselves." Where the choice is saved is decided by the user on the same date: per browser, not per account (DECISION, user, 2026-11-07).
+One user decision, recorded as DECISION, user, 2026-11-07. Status stays Implemented. The build status above covers everything before this amendment. Binding for the UI expert. The user's words (translated): "The calendar on the dashboard should be a toggle switch. Either you show the whole calendar as now, or only the days and booked sessions are shown, as it was before. Each user chooses this themselves." Where the choice is saved is decided by the user on the same date: per browser, not per account (DECISION, user, 2026-11-07).
 
 What the compact form was (from the history above): before the Fifth amendment, on a phone "This week" showed the Day pills and, below them, the Agenda, which listed the lobbies of the selected day only, each with clock time, game, group name and Spot / max players (the original criterion). On desktop it was a 7-column grid. The day list in this amendment is a different shape from the old Agenda: it shows every day of the week that has lobbies at once (ASSUMPTION; see open questions).
 
@@ -203,3 +203,6 @@ Status stays Implemented. Decided by the user on 2026-11-12, specified in REQ-00
 - Desktop: This week uses the same grid as the group view (REQ-0019): it fills the width of the main area (up to 72rem, centred) and the window height down to a small margin, at least 32rem. The other parts of the Dashboard keep their current layout. Phones are unchanged.
 - Opening scroll: the grid opens at the next lobby of the selected week or day that has not ended (a Running lobby counts), or at the current time when there is none. Later data or day changes keep the scroll position. This replaces the scroll rule of the Fifth amendment (REQ-0004 Amendment 2026-11-04, time grid).
 - A now line is shown in today's column. It is not shown in the Day list.
+
+## Amendment 2026-11-13 (week block fit)
+Status stays Implemented. DECISION, user, 2026-11-13. Implemented 2026-11-14. The This week blocks use the same block component as REQ-0004, so the block text rule of REQ-0015 (Amendment 2026-11-13, week block fit) applies: the game name may be shortened (with an ellipsis, or cut at a whole line) where the block is too short, shown in full where it has room, and no part of a line is shown cut in half.

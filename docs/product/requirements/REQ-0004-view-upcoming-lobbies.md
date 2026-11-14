@@ -130,7 +130,7 @@ Status stays Implemented. Decided by the user on 2026-11-08 (REQ-0015, F-033, F-
 
 - Given that I see a lobby in the list, the calendar or the week grid, when it has a game, then its label is "game › mode › activity", leaving out a missing mode or activity (e.g. "WoW › Dungeon › <activity>", "WoW › Dungeon" or "WoW"). When it has no game, its label is "Open". An "Other" lobby shows its free-text name only. Old wording: "each row shows game, date and clock time, creator, and Spot / max players" and "it shows the game, the time range and Spot / max players" (the criteria above, kept for reference).
 - Given that a lobby has a mode with game roles, when I see its player count, then the game role display of REQ-0011 applies in the list and in the detail view. The Spot / max players criteria above are unchanged for lobbies without game roles.
-- Given that a week block is too small for the full label, when I see it, then the game name stays as text and the mode and activity may be shortened (REQ-0015, Display).
+- Given that a week block is too small for the full label, when I see it, then the game name stays as text and the mode and activity may be shortened (REQ-0015, Display). Amended 2026-11-13: the game name may be shortened (with an ellipsis, or cut at a whole line) too, shown in full where the block has room, and no part of a line is shown cut in half (see Amendment 2026-11-13 (week block fit)). Old wording: "the game name stays as text and the mode and activity may be shortened".
 - Given that a lobby is shown, when I change nothing, then no control to change its game, mode or activity is shown in the list or the calendar. These are changed on the lobby page (REQ-0015, "Setting or changing ... later"). ASSUMPTION for the UI expert to confirm.
 
 Related features (amendment 2026-11-08): F-033 and F-034 (REQ-0015) change the label and the open lobby case only. The list, calendar and detail rules are unchanged.
@@ -147,3 +147,10 @@ Status stays Implemented. Decided by the user on 2026-11-12, specified in REQ-00
 - Replaced: the opening scroll rule of "Amendment 2026-11-04 (time grid)" (16:00 at the top, or the earliest lobby of the week) and the phone scroll criterion. The grid opens at the next lobby that has not ended, or at the current time when there is none (REQ-0019). Later data or day changes keep the scroll position.
 - Added: a now line in today's column (REQ-0019).
 - Phone layout (day pills, one day at a time) is unchanged.
+
+## Amendment 2026-11-13 (week block fit)
+Status stays Implemented. DECISION, user, 2026-11-13. Implemented 2026-11-14. Binding for the UI expert. The full rule is in REQ-0015, Amendment 2026-11-13 (week block fit).
+- Replaced: in the block criterion of the Amendment 2026-11-08 (REQ-0015), the game name stays as text. The game name may be shortened (with an ellipsis, or cut at a whole line) when the block is too short, shown in full where the block has room.
+- The block criterion "When a block is too short to show them, they stay available to assistive technology" is unchanged; the full name and label stay available to assistive technology and on the lobby page.
+- No part of a line of text in a block is ever shown cut in half.
+- Old wording (kept for reference): "then the game name stays as text and the mode and activity may be shortened (REQ-0015, Display)."

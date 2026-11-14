@@ -88,7 +88,8 @@ Display (extends REQ-0004, REQ-0011, REQ-0012 and REQ-0014):
 - Given that a lobby is an "Other" lobby, when I see it, then its label is the free-text name only (no mode and no activity).
 - Given that a lobby has a mode, when I see its player count, then it is shown as "X/Y players" with Y from the mode. For a mode with game roles, the game role display of REQ-0011 applies.
 - Given that a lobby has a mode, when I open the lobby page, then the label is shown, and the player count and the game role display of REQ-0011 are shown. The lobby page shows the mode and activity as text.
-- Given that a lobby is a block in the week view and the block is too small for the full label, when I see the block, then the game name is shown in full as text (REQ-0004, REQ-0014), the mode and activity may be truncated, and the full label is available to assistive technology (ASSUMPTION, as in REQ-0004).
+- Given that a lobby is a block in the week view and the block is too small for the full label, when I see the block, then the game name is shown in full where the block has room and may be shortened (with an ellipsis, or cut at a whole line) where it has not, the mode and activity may be shortened with an ellipsis too, and the full name and full label are available to assistive technology and on the lobby page (Amendment 2026-11-13; the assistive technology part is decided, DECISION, product owner, 2026-11-14). Old wording: "the game name is shown in full as text (REQ-0004, REQ-0014), the mode and activity may be truncated, and the full label is available to assistive technology (ASSUMPTION, as in REQ-0004)."
+- Given that a block shows text, when a line of that text does not fit the block, then no part of that line is shown cut in half (Amendment 2026-11-13, DECISION, user, 2026-11-13). How such a line is handled (ellipsis, cut at a whole line, or left out) is set in the amendment's open questions (DECISION, product owner, 2026-11-14).
 - Given that a lobby has a game with a genre, when I see it, then it shows the genre theme (REQ-0014). Modes and activities have no theme of their own. A lobby without a game shows the neutral theme.
 - Given that a lobby has a label with a mode, when I see it with the genre theme of its game, then the label is text, so it can be read without the color (REQ-0014).
 
@@ -195,6 +196,17 @@ Status stays Decided. The three decisions are written in the criteria named belo
 - DECISION (user, 2026-11-08, decision 2): A game mode is never unlimited. A mode without game roles must have a max players value (a whole number of at least 1). A cleared value is denied with an error message and nothing is saved. Criterion: "Modes and activities", the save of a mode without game roles.
 - DECISION (user, 2026-11-08, decision 4): Role slots have no upper bound of their own, beyond the normal max players limit. The sum of a mode's or game's slots is its max players and has no product cap (technical upper bound as in REQ-0009). Criterion: "Modes and activities", the role slot number of a game role of a mode.
 - DECISION (user, 2026-11-08, decision 3): Game role names are unique per owner, not per game. This is recorded in REQ-0011 (Amendment 2026-11-08, game role names per owner) and affects REQ-0015 only through "Game role" on a mode.
+
+## Amendment 2026-11-13 (week block fit)
+Status stays Implemented. DECISION, user, 2026-11-13. Implemented 2026-11-14. Binding for the UI expert. It changes the block criterion in "Display" (marked above) and REQ-0004 (its block criterion for the week view, amended the same way).
+- The game name of a block may be shortened (with an ellipsis, or cut at a whole line) when the block is too short for the full name. It is shown in full where the block has room.
+- The full name and the full label are always available to assistive technology and on the lobby page.
+- No part of a line of text in a block is ever shown cut in half.
+- Replaced: "the game name is shown in full as text, the mode and activity may be truncated" (old wording kept in "Display").
+
+Open questions:
+- DECISION (product owner, 2026-11-14): a line that does not fit may be shortened with an ellipsis, cut at a whole line, or left out. An ellipsis is allowed, not required (the user's words of 2026-11-13). A block with no room for the mode and activity span may leave that span out. No part of a line is shown cut in half, and the full name and label stay available to assistive technology and on the lobby page. This replaces the ASSUMPTION that the UI expert decides.
+- This week (REQ-0012, Amendment 2026-11-13) uses the same block component and block rule, so the rule above applies there too.
 
 ## Glossary proposal (new terms: Game mode, Named activity, Open lobby, Label; for the architect to add to CLAUDE.md, not yet added)
 - **Game mode** (`game_modes`, `gameModes`, `modeId`): a kind of play within a game, with its own limit (role slots or max players), e.g. "Dungeon" or "Raid". Entered by a system admin. Avoid: type, category, difficulty, queue, playlist.
