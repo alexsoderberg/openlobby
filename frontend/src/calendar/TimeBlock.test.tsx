@@ -64,10 +64,11 @@ it("orders the lines by priority: label, continuation, time, then the rest, so C
   renderBlock({ continuesAfter: true });
 
   const lines = [...document.querySelector(".time-block__body")!.children];
-  expect(lines.map((line) => line.textContent!.replace(/\s+/g, " "))).toEqual([
-    "Overwatch 2 › Competitive",
-    "ends next day",
-    time,
-    "3/5 players",
-  ]);
+  // Both sides collapse white space: the time range may hold thin spaces, depending on the ICU version.
+  const collapse = (text: string) => text.replace(/\s+/g, " ");
+  expect(lines.map((line) => collapse(line.textContent!))).toEqual(
+    ["Overwatch 2 › Competitive", "ends next day", time, "3/5 players"].map(
+      collapse,
+    ),
+  );
 });
