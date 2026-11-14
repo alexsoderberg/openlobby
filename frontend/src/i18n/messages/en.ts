@@ -226,8 +226,8 @@ export const en = {
   lobbyRoleSlotsLabel: "Game roles",
   lobbyRoleSlot: (name: string, count: number, slots: number) =>
     `${name} ${count}/${slots}`,
-  lobbyRoleSlotFull: (name: string, count: number, slots: number) =>
-    `${name} ${count}/${slots}, full`,
+  // Read after "Tank 1/1" by screen readers only; the screen shows full by style (a filled badge, or a disabled seat).
+  lobbyRoleSlotFullSuffix: ", full",
   // The group heading is the bare word; the list shows "Flex N".
   lobbyFlex: (count?: number) =>
     count === undefined ? "Flex" : `Flex ${count}`,

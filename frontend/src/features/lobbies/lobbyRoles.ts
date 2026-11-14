@@ -1,4 +1,5 @@
-import type { Game, GameMode, GameRole, Lobby } from "../../api";
+import type { Game, GameMode, GameRole } from "../../api";
+import { hasFreeSlot, type RoleSlot } from "../../lobby";
 
 /**
  * The game roles of the new lobby: the mode's, or the game's own when the game has no modes. A game with
@@ -8,10 +9,6 @@ export function rolesOf(game?: Game, mode?: GameMode): GameRole[] {
   if (mode) return mode.gameRoles;
   return game?.modes?.length ? [] : (game?.gameRoles ?? []);
 }
-
-type RoleSlot = NonNullable<Lobby["roleSlots"]>[number];
-
-export const hasFreeSlot = (slot: RoleSlot) => slot.playerCount < slot.slots;
 
 /**
  * ADR 0022 point 7: the first role slot, in lobby order, of a preferred game role with a free slot.

@@ -142,3 +142,20 @@ Recorded while putting icons on all screens. The amendment changes or extends th
 
 **A7. Delivery.** DECISION
 - PR2 and PR3 were shipped as one PR, because nothing else was in flight. The split in "5. Delivery plan" does not apply to them.
+
+## Amendment 2026-11-13
+Recorded for the role slot state "full" (user request, 2026-11-13). Extends point A1 of Amendment 2026-11-11; where they differ, this amendment wins.
+
+**A8. State icons are allowed.** DECISION (architect, 2026-11-13)
+- An `IconName` may name a state of something on screen, as well as an action. A1 is amended: "each `IconName` names an action" becomes "each `IconName` names an action or a state". The rest of A1 stands.
+- Each state name is listed in this amendment before code uses it. The state names are: `full` (a role slot with no free seat; Check glyph).
+- Rules for a state icon, all checkable in review:
+  1. It appears only inside a text element that shows the state in words. It is never the icon of a button, select, link, `IconButton` or tab. Those take action names only.
+  2. The icon is `aria-hidden`, as every `Icon`. The state is in words in the same element, so neither the icon nor the colour carries it alone (WCAG 1.4.1). For `full` the element reads "Tank 1/1" on screen, and the word "full" is visually hidden inside that element, so its accessible name is "Tank 1/1, full". The visible ", full" is removed as requested; the word stays for screen readers.
+  3. The accent badge is decoration. The check mark and the hidden word carry the state.
+  4. Two names may share one glyph. `full` and `save` both use the Check glyph. The name identifies the state or action, so a shared glyph is not a violation.
+- Alternatives considered:
+  - Text only, with no state icon: the user asked for the check mark and the badge. Rejected.
+  - A check drawn in CSS outside `Icon`: a second icon source, against ADR 0021 (`Icon` is the only way the frontend draws an icon). Rejected.
+  - A prefixed name such as `stateFull`: the prefix adds no rule that the list and rules above do not already give. Rejected.
+- Consequences: a new state name needs one line in this amendment and passes the rules above. A reviewer checks rules 1 to 3 on every state icon.

@@ -14,6 +14,7 @@ import {
 } from "../../api";
 import { en } from "../../i18n/messages/en";
 import { fakeApiClient, testUser } from "../../test/fakeApiClient";
+import { visibleText } from "../../test/visibleText";
 import { LobbyDetailPage } from "./LobbyDetailPage";
 
 const HOUR_MS = 60 * 60 * 1000;
@@ -84,7 +85,12 @@ describe("lobby label, role slots and seats", () => {
       }),
     ).toBeTruthy();
     const slots = screen.getByRole("list", { name: en.lobbyRoleSlotsLabel });
-    expect(slots.textContent).toBe("Tank 1/1, fullHealer 0/1Flex 1");
+    expect(visibleText(slots)).toBe("Tank 1/1Healer 0/1Flex 1");
+    // The class carries the filled accent look, which jsdom cannot see.
+    expect(
+      within(slots).getByText(en.lobbyRoleSlotFullSuffix).closest("li")
+        ?.className,
+    ).toContain("badge--full");
   });
 
   it("lists the players under their game role, flex last", async () => {
