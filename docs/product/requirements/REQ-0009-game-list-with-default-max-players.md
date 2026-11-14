@@ -87,6 +87,9 @@ Acceptance criteria (additions):
 - Given that a game has a genre, when a lobby with that game is shown, then it shows the genre theme of REQ-0014. Lobbies keep their name and max players as before; the genre follows the game (REQ-0014).
 - Given that this amendment is delivered, when I look at games that were in the list before, then each has no genre. No name, default max, identity or order changes.
 
+## Amendment 2026-11-13 (REQ-0023, icons for game roles)
+Status stays Implemented. DECISION (user, 2026-11-13, REQ-0023). The exclusion above is lifted for one field only: an icon of a game role (REQ-0011, REQ-0023), chosen from the fixed icon set. It is a field of the game role, not of the game. No other field is added to a game. Image and accent color (F-030) are still future.
+
 ## Amendment 2026-11-08 (REQ-0015, game modes and open lobbies)
 Status stays Implemented. Decided by the user on 2026-11-08 (REQ-0015, F-033). Implemented in ADR 0017 PR1 to PR6 (2026-11-11).
 

@@ -1,5 +1,5 @@
 # REQ-0020. Account settings panel on the You page
-Status: Decided
+Status: Implemented
 Feature: F-038
 Priority: Should
 

@@ -1,5 +1,5 @@
 # REQ-0021. Preferred game roles per member
-Status: Decided
+Status: Implemented
 Feature: F-039
 Priority: Should
 

@@ -1,6 +1,7 @@
 import { GROUPS_PATH } from "./groupPath";
 import { Lobbies } from "../lobbies";
 import { useMessages } from "../../i18n";
+import { PreferredGameRolesNote } from "../../lobby";
 import type { ReactNode } from "react";
 import { ErrorAlert, Panel } from "../../ui";
 import type { GroupState } from "./useGroup";
@@ -57,6 +58,10 @@ export function GroupDetails({
               <li key={member.userId} className="list-row">
                 <span className="avatar" />
                 {member.displayName}
+                <PreferredGameRolesNote
+                  roles={member.preferredGameRoles}
+                  withGame
+                />
                 {member.role === "admin" && (
                   <>
                     {" "}

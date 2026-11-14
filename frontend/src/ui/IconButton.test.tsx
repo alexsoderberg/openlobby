@@ -50,6 +50,7 @@ const everyIcon: Record<IconName, true> = {
   copy: true,
   edit: true,
   forward: true,
+  full: true,
   gameList: true,
   groups: true,
   home: true,

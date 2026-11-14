@@ -14,6 +14,7 @@ import {
 } from "../../api";
 import { en } from "../../i18n/messages/en";
 import { fakeApiClient, testUser } from "../../test/fakeApiClient";
+import { visibleText } from "../../test/visibleText";
 import { LobbyDetailPage } from "./LobbyDetailPage";
 
 const HOUR_MS = 60 * 60 * 1000;
@@ -84,7 +85,12 @@ describe("lobby label, role slots and seats", () => {
       }),
     ).toBeTruthy();
     const slots = screen.getByRole("list", { name: en.lobbyRoleSlotsLabel });
-    expect(slots.textContent).toBe("Tank 1/1, fullHealer 0/1Flex 1");
+    expect(visibleText(slots)).toBe("Tank 1/1Healer 0/1Flex 1");
+    // The class carries the filled accent look, which jsdom cannot see.
+    expect(
+      within(slots).getByText(en.lobbyRoleSlotFullSuffix).closest("li")
+        ?.className,
+    ).toContain("badge--full");
   });
 
   it("lists the players under their game role, flex last", async () => {
@@ -104,6 +110,45 @@ describe("lobby label, role slots and seats", () => {
         "Kim Berg",
       ),
     ).toBeTruthy();
+  });
+
+  it("shows each player's preferred game roles next to the name", async () => {
+    renderDetail({
+      getLobby: () =>
+        Promise.resolve({
+          ...withRoles,
+          players: [
+            {
+              ...withRoles.players[0],
+              preferredGameRoles: [
+                {
+                  gameRoleId: "r1",
+                  name: "Tank",
+                  gameName: "Catan",
+                  modeName: "Competitive",
+                },
+                {
+                  gameRoleId: "r3",
+                  name: "Support",
+                  gameName: "Catan",
+                  modeName: null,
+                },
+              ],
+            },
+            { ...withRoles.players[1], preferredGameRoles: [] },
+          ],
+        }),
+    });
+
+    const tank = await screen.findByRole("region", { name: "Tank" });
+    expect(within(tank).getByRole("listitem").textContent).toBe(
+      "Maja Lind " +
+        en.preferredGameRoles.plays([
+          { roles: ["Tank (Competitive)", "Support"] },
+        ]),
+    );
+    const flex = screen.getByRole("region", { name: "Flex" });
+    expect(within(flex).getByRole("listitem").textContent).toBe("Kim Berg");
   });
 
   it("still lists a player whose game role is unknown or missing", async () => {

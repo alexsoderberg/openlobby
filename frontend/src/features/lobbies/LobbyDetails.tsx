@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useApi, type LobbyDetail } from "../../api";
 import { GenreFrame, GenreName } from "../../genres";
 import { formatDateTimeRange, useMessages } from "../../i18n";
-import { lobbyLabel, RoleSlots } from "../../lobby";
+import { lobbyLabel, PreferredGameRolesNote, RoleSlots } from "../../lobby";
 import { Icon, Panel } from "../../ui";
 import { DeleteLobbyDialog } from "./DeleteLobbyDialog";
 import { LobbyMembership } from "./LobbyMembership";
@@ -114,6 +114,7 @@ function PlayerRows({ players }: { players: LobbyDetail["players"] }) {
         <li key={player.userId} className="list-row">
           <span className="avatar" />
           {player.displayName}
+          <PreferredGameRolesNote roles={player.preferredGameRoles} />
         </li>
       ))}
     </ul>

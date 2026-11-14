@@ -16,6 +16,7 @@ export type {
   InviteLink,
   Lobby,
   LobbyDetail,
+  PreferredGameRole,
   PreferredGameRoleChoices,
   Seat,
 } from "./client";

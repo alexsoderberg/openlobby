@@ -74,6 +74,9 @@ DECISION (user, 2026-11-10): no, A4 to A6 are not moved ahead of A2 and A3, whic
 
 | Order | Requirement | Title | Priority | Depends on |
 |---|---|---|---|---|
+| A3a | REQ-0022 | Toasts for confirmations, built with the shadcn rollout (F-041, ADR 0023) | Should | REQ-0002, REQ-0003, REQ-0006, REQ-0007, REQ-0010, REQ-0015 (the places that switch); REQ-0017 (the live update notice stays inline); ADR 0022 PR5 (built right after it); ADR 0023 point 4; shadcn build order Button → Dialog → Toasts → Tooltip → Menu → Popover (DECISION, user, 2026-11-13: Dialog before toasts, so a toast is never hidden under a dialog) |
+| A3b | REQ-0023 | Icons for game roles (F-042), built right after A3a and before A4 | Should | REQ-0011 (amended by REQ-0023), REQ-0009 (amended by REQ-0023), REQ-0010, REQ-0021 (icon also shown on preferred roles), REQ-0022 (A3a first); ADR 0024 (Proposed) for the data model and contract of the role icon |
+| A3c | REQ-0024 | Group cards on the group list: member count, member avatars (initials until A4), next lobby (F-043), built right after A3b and before A4 (DECISION, user, 2026-11-13) | Should | REQ-0012 (Group list page, next-lobby rule; its out-of-scope sentence "Only the dashboard is cross-group." and the F-028 row's "only view" sentence are amended when built), REQ-0015 and REQ-0014 (label and genre theme on the lobby line); ADR 0025 (Proposed) for the read in calendar; REQ-0016 (A4) for the avatar pictures, not a blocker |
 | A4 | REQ-0016 | Discord avatars for users (F-029) | Should | REQ-0001, REQ-0002, REQ-0004, REQ-0012 (amended by REQ-0016) |
 | A5 | REQ-0017 | Live lobby updates on open screens (F-035) | Should | REQ-0004, REQ-0005, REQ-0012 (amended by REQ-0017); needs an ADR for the transport |
 | A6 | REQ-0018 | Group feed of recent lobby events (F-036) | Should | REQ-0003, REQ-0004, REQ-0005; REQ-0017 for new entries shown live |
@@ -81,6 +84,8 @@ DECISION (user, 2026-11-10): no, A4 to A6 are not moved ahead of A2 and A3, whic
 | A7 | – (F-037, not yet a requirement) | Member availability and group heatmap ("When can everyone play?") | not yet prioritised | REQ-0002, REQ-0003 (lobby from a suggested slot) |
 
 A6a was decided by the user on 2026-11-12 and is placed after A6 by the product owner, in line with the decided order of A4 to A6. It is an extension of the week view, not a new feature, and no other requirement depends on it. The user may move it earlier at any time. Its open questions are listed in REQ-0019.
+
+Toasts (REQ-0022, A3a) are decided by the user on 2026-11-12 and placed by the user on 2026-11-13 (DECISION, user): they are built as part of the shadcn rollout (ADR 0023), right after ADR 0022 PR5 and before A4. The label A3a sorts between A3 and A4 and is not a new order number. The toasts are small: one house component, one dependency (sonner, exact pin) and the nine places of REQ-0022. Priority Should is the product owner's judgment. The fade-out and the position are DECISION, user, 2026-11-13 (REQ-0022).
 
 A7 is not a requirement yet. Parked by the user on 2026-11-10 (F-037, Proposed): it is taken up after A4 and A5 are under way. It is written after the questions below are answered.
 
@@ -104,7 +109,7 @@ Added 2026-11-12 (DECISION, user). A8 is the account settings panel on the You p
 | Order | Requirement | Title | Priority | Depends on |
 |---|---|---|---|---|
 | A8 | REQ-0020 | Account settings panel on the You page (sections Account, System admin, Log out) | Should | REQ-0001, REQ-0010, REQ-0012 (You page criteria amended by REQ-0020), REQ-0016 (avatar in Account; initials without it) |
-| A9 | REQ-0021 | Preferred game roles per member (preselect the seat; shown to group members) | Should | REQ-0005, REQ-0011, REQ-0016 (visibility rule), REQ-0020 (the You page sections; "Game roles" between "Account" and "System admin", ADR 0022); ADR 0022 (design) |
+| A9 | REQ-0021 | Preferred game roles per member (preselect the seat; shown to group members). Delivered 2026-11-13: ADR 0022 PR1 to PR5 (#99, #100, #101, #102, #104), merged to main (41993e8) | Should | REQ-0005, REQ-0011, REQ-0016 (visibility rule), REQ-0020 (the You page sections; "Game roles" between "Account" and "System admin", ADR 0022); ADR 0022 (design) |
 
 ## Could, after the MVP
 
