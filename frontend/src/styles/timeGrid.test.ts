@@ -81,3 +81,25 @@ describe("week time grid layout", () => {
     );
   });
 });
+
+// The fit of a lobby block is layout too: a short block must leave out whole lines, never squeeze them.
+describe("week time grid lobby block", () => {
+  it("wraps the lines that do not fit into a column outside the block, so they are left out whole", () => {
+    const body = rule(stylesheet, ".time-block__body");
+    expect(body).toContain("flex-flow: column wrap;");
+    expect(body).toContain("column-gap: 100%;");
+  });
+
+  it("never shrinks a line below its height", () => {
+    expect(rule(stylesheet, ".time-block__body > *")).toContain("flex: none;");
+  });
+
+  it("cuts the label at a whole line, never taller than the block", () => {
+    const game = rule(stylesheet, ".time-block__game");
+    expect(game).toContain("max-height: round(down, 100%, 1lh);");
+    // Browsers without round() or lh keep this: one whole line.
+    expect(game).toContain("max-height: calc(var(--line-time-block) * 1em);");
+    // Without the clip, lines past the cap spill out and the body cuts them mid-line.
+    expect(game).toContain("overflow: hidden;");
+  });
+});

@@ -1,5 +1,5 @@
 # REQ-0019. Larger week view on desktop and scroll to the next lobby
-Status: Decided
+Status: Implemented
 Feature: F-017 (group view week view), F-028 (This week on the Dashboard). Extends both; amends REQ-0004 and REQ-0012.
 Priority: Should
 
