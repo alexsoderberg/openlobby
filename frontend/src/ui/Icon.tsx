@@ -39,6 +39,7 @@ const icons = {
   copy: Copy,
   edit: Pencil,
   forward: ArrowRight,
+  full: Check,
   gameList: Gamepad2,
   groups: Users,
   home: House,

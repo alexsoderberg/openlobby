@@ -81,12 +81,17 @@ describe("joining a lobby with game roles", () => {
     expect(document.activeElement).toBe(radio("Healer 0/2"));
   });
 
-  it("disables a full game role and says so in text", async () => {
+  it("disables a full game role and names it full", async () => {
     renderMembership();
     await openSeats(en.lobbyJoin);
 
-    const full = radio(en.lobbyRoleSlotFull("Tank", 1, 1));
+    const full = radio(`Tank 1/1${en.lobbyRoleSlotFullSuffix}`);
     expect(full.disabled).toBe(true);
+    expect(
+      full.closest("label")?.querySelector(".visually-hidden")?.textContent,
+    ).toBe(en.lobbyRoleSlotFullSuffix);
+    // No check beside a disabled radio: it would read as selected.
+    expect(full.closest("label")?.querySelector("svg")).toBeNull();
     expect(radio("Healer 0/2").disabled).toBe(false);
     expect(radio(en.lobbySeatFlex).disabled).toBe(false);
   });

@@ -1,14 +1,14 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import type { Lobby, Seat } from "../../api";
 import { useMessages } from "../../i18n";
+import { hasFreeSlot, RoleSlotText } from "../../lobby";
 import { Icon, type IconName } from "../../ui";
 import { SeatChoice } from "./SeatChoice";
 import { FLEX_SEAT, SEAT_FIELD } from "./lobbyInput";
-import { hasFreeSlot } from "./lobbyRoles";
 
 /**
  * The seat choice of a lobby with game roles, for joining and for changing seat. A game role with no free
- * slot is disabled and says "full"; the player's own game role stays open. `seat` is the current seat:
+ * slot is disabled and marked full; the player's own game role stays open. `seat` is the current seat:
  * a game role ID, `null` for flex, or undefined for a player who has none yet. `preselected` is checked when
  * there is no current seat. The radios are uncontrolled, so both must be known when the form mounts; a later
  * change never replaces a seat the player has picked.
@@ -73,11 +73,7 @@ export function SeatForm({
           const full = !hasFreeSlot(slot) && slot.gameRoleId !== seat;
           return {
             value: slot.gameRoleId,
-            label: (full ? m.lobbyRoleSlotFull : m.lobbyRoleSlot)(
-              slot.name,
-              slot.playerCount,
-              slot.slots,
-            ),
+            label: <RoleSlotText slot={slot} full={full} />,
             disabled: full,
           };
         })}

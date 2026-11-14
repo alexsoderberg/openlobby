@@ -48,7 +48,7 @@ Lobbies without game roles:
 Display:
 - Given that a lobby has game roles, when I see it in the list, then each game role is shown with its name and "X/Y", for example "Tank 0/1, Damage 2/2, Support 1/2", next to the total "X/Y players". The total includes flex players.
 - Given that a lobby has game roles and at least one flex player, when I see it in the list, then the flex players are shown as "Flex N", for example "Flex 1". When there is no flex player, "Flex" is not shown.
-- Given that a game role has no free slot, when I see the lobby, then the game role is marked "full" in text, not only by color.
+- Given that a game role has no free slot, when I see the lobby, then the game role is shown as full without the visible word "full": its count reads "Tank 1/1" with an accent fill and a check mark after the count, and a screen reader hears "full" (Amendment 2026-11-13). Old wording: "then the game role is marked "full" in text, not only by color."
 - Given that a lobby has game roles, when I open its detail view, then the players are listed under their game role, and flex players are listed in a separate "Flex" group after the game roles.
 - Given that a lobby has no game roles, when I see it in the list or the detail view, then no game role or flex information is shown, as today.
 
@@ -122,3 +122,17 @@ Status stays Implemented. Old wording of the name criterion in "Game roles in th
 
 ## Amendment 2026-11-13 (REQ-0023, icons for game roles)
 Status stays Implemented. DECISION (user, 2026-11-13, REQ-0023): a game role may have one icon from a fixed set, chosen by the system admin in the game form (suggested from the name, changeable). The icon is shown wherever the game role is shown, and flex never has one. Images are still out of scope.
+
+## Amendment 2026-11-13 (full role slots)
+Status stays Implemented. Implemented 2026-11-14. DECISION, user, 2026-11-13. Binding for the UI expert. It replaces the full-role criterion in "Display" (kept there as Old wording).
+- Given that a game role has no free slot, when I see its count on a lobby (list or detail view), then it reads "Tank 1/1" like any other count, with an accent fill and a check mark after the count. The visible word "full" is not shown.
+- Given that a game role has no free slot, when a screen reader reads the lobby, then it announces the role with its count and "full".
+- Given that a game role has free slots, when I see its count, then it shows no check mark.
+- Given that I choose a seat (REQ-0015 create and join forms, and changing the seat), when a game role has no free slot, then it is a muted, disabled option with no check mark, and a screen reader hears "full" with it. It cannot be chosen.
+- Given that a game role is full, when it is shown on a lobby, then colour is not the only cue (WCAG 1.4.1): the accent fill and check mark on the count show it without colour.
+- Given that a game role is full, when I choose a seat, then the non-colour cue is the native disabled state (the option cannot be selected). No extra visible marker is added (DECISION, user, 2026-11-14).
+
+Decision (DECISION, user, 2026-11-14): the muted look plus the disabled, not selectable state are the accepted visible cues for a full game role in the seat form, with no check mark and no visible word. The user confirmed that this is enough for sighted users under WCAG 1.4.1. The open question is closed.
+
+Open questions:
+- None.

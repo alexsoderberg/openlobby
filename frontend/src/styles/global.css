@@ -758,6 +758,18 @@ a {
   font-weight: 600;
 }
 
+/* A full role slot: filled instead of tinted, with a check mark, so full never rests on colour alone. */
+.badge--full {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.role-slot-check {
+  margin-left: var(--space-1);
+  /* Literal, used once: drops the 1em icon onto the text baseline. */
+  vertical-align: -0.125em;
+}
+
 .eyebrow {
   margin: 0 0 var(--space-2);
   font-size: 0.75rem;
