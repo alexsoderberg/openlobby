@@ -63,10 +63,13 @@ const COLOUR_OR_RADIUS =
   /^(bg|text|border|outline|decoration|accent|caret|fill|stroke|divide|from|via|to)-|^rounded(-|$)/;
 // The only exception to the token rule (ADR 0023, B2 amendment c): these name the absence of a colour.
 const NO_COLOUR = /^(bg|border)-transparent$/;
-/** A class without its variants. */
-const utility = (name: string) => name.split(":").at(-1) ?? name;
-/** Tailwind's text sizes; size and weight live under [data-slot] in global.css (ADR 0023, B2 amendment g). */
-const TEXT_SIZE = /^text-(xs|sm|base|lg|xl|\d+xl)$/;
+/** A class without its variants; a typed value such as `(length:--x)` keeps its colon. */
+const utility = (name: string) => name.replace(/^([\w-]+:)+/, "");
+/** A `text-` utility in ui/ may only set the colour: size and weight live under [data-slot] in global.css, and
+ *  typed forms like `text-(length:--x)` build a font-size (ADR 0023, B2 amendment g). */
+const TEXT_COLOUR = /^text-\(--color-[\w-]+\)$/;
+const isTextButNoColour = (name: string) =>
+  utility(name).startsWith("text-") && !TEXT_COLOUR.test(utility(name));
 const TOKEN = /\((?:[\w-]+:)?(--[\w-]+)\)/g;
 /** The plain words that global.css keeps from being built (ADR 0023, Amendment 2026-11-15 a). */
 const excludedWords = (
@@ -84,8 +87,18 @@ describe("ui/ class lists (ADR 0023 point 2)", () => {
     ).toEqual([]);
   });
 
-  it("uses no text size class", () => {
-    expect(classes.filter((name) => TEXT_SIZE.test(utility(name)))).toEqual([]);
+  it.each([
+    ["text-sm", true],
+    ["hover:text-(length:--font-size-small)", true],
+    ["text-transparent", true],
+    ["text-(--color-text)", false],
+    ["pointer-coarse:text-(--color-muted)", false],
+  ])("flags %s as a text class that is no colour: %s", (name, flagged) => {
+    expect(isTextButNoColour(name)).toBe(flagged);
+  });
+
+  it("uses text- only for a colour token", () => {
+    expect(classes.filter(isTextButNoColour)).toEqual([]);
   });
 
   it("names a token in every colour and radius class", () => {
@@ -93,7 +106,7 @@ describe("ui/ class lists (ADR 0023 point 2)", () => {
       classes.filter(
         (name) =>
           COLOUR_OR_RADIUS.test(utility(name)) &&
-          !name.includes("(--") &&
+          !/\((?:[\w-]+:)?--/.test(name) &&
           !NO_COLOUR.test(utility(name)),
       ),
     ).toEqual([]);
@@ -108,6 +121,7 @@ describe("ui/ class lists (ADR 0023 point 2)", () => {
 
   it("uses no plain word that global.css keeps from being built", () => {
     expect(excludedWords).toContain("hidden");
+    // Exact words only: a variant form such as `not-pointer-coarse:hidden` is a class we use (amendment f).
     expect(classes.filter((name) => excludedWords.includes(name))).toEqual([]);
   });
 });

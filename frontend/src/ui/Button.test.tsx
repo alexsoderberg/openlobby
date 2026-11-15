@@ -32,4 +32,12 @@ describe("Button", () => {
     expect(remove.dataset.variant).toBe("danger");
     expect(remove.getAttribute("type")).toBe("submit");
   });
+
+  // A feature places a Button with its own class (ADR 0023 point 2, cascade b); the variant classes stay.
+  it("keeps a passed className beside its own classes", () => {
+    render(<Button className="group-form__submit">Save</Button>);
+    const { classList } = screen.getByRole("button", { name: "Save" });
+    expect(classList).toContain("group-form__submit");
+    expect(classList).toContain("bg-(--color-accent)");
+  });
 });
