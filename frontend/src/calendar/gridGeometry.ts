@@ -1,6 +1,7 @@
 import { dayAfter, type Span } from "./week";
 
-export const DAY_MINUTES = 24 * 60;
+export const MINUTES_PER_HOUR = 60;
+export const DAY_MINUTES = 24 * MINUTES_PER_HOUR;
 const HALF_HOUR = 30;
 
 /** The part of an item that falls on one day, in minutes from that day's midnight. */
