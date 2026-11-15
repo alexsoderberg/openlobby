@@ -40,19 +40,24 @@ export function LobbyDetails({
         <h1>{lobbyLabel(lobby, m)}</h1>
         <GenreName genre={lobby.gameGenre} />
       </GenreFrame>
+      {/* Settings sit between the players and the actions; from 98rem they move to the side column (REQ-0025). */}
       <div className="panel-group">
-        <Panel>
-          <p>{formatDateTimeRange(lobby.startsAt, lobby.endsAt)}</p>
-          <p>{m.lobbyPlayers(lobby.playerCount, lobby.maxPlayers)}</p>
-          <RoleSlots lobby={lobby} />
-          <h2>{m.lobbyPlayersHeading}</h2>
-          <PlayerList lobby={lobby} />
-          <LobbySettings
-            groupId={groupId}
-            lobby={lobby}
-            onChanged={onMembershipChanged}
-            onUnauthenticated={callbacks.onUnauthenticated}
-          />
+        <Panel className="side-layout side-layout--lobby">
+          <div className="lobby-summary">
+            <p>{formatDateTimeRange(lobby.startsAt, lobby.endsAt)}</p>
+            <p>{m.lobbyPlayers(lobby.playerCount, lobby.maxPlayers)}</p>
+            <RoleSlots lobby={lobby} />
+            <h2>{m.lobbyPlayersHeading}</h2>
+            <PlayerList lobby={lobby} />
+          </div>
+          <div className="side-column">
+            <LobbySettings
+              groupId={groupId}
+              lobby={lobby}
+              onChanged={onMembershipChanged}
+              onUnauthenticated={callbacks.onUnauthenticated}
+            />
+          </div>
           <div className="form-actions">
             <LobbyMembership
               groupId={groupId}

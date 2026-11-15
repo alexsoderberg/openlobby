@@ -113,8 +113,8 @@ function DashboardContent({
   const nextUp = nextUpOf(lobbies, loadedAt);
 
   return (
-    <>
-      <section aria-labelledby="next-up-heading">
+    <div className="side-layout">
+      <section aria-labelledby="next-up-heading" className="side-column">
         <h2 id="next-up-heading">{m.dashboard.nextUpHeading}</h2>
         {nextUp ? (
           <NextUpCard
@@ -128,6 +128,6 @@ function DashboardContent({
         )}
       </section>
       <ThisWeek lobbies={lobbies} now={loadedAt} />
-    </>
+    </div>
   );
 }

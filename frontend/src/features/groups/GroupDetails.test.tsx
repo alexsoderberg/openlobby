@@ -60,4 +60,28 @@ describe("the member list", () => {
       "Kim Berg",
     ]);
   });
+
+  it("puts the members in the side column, after the lobbies (REQ-0025)", async () => {
+    render(
+      <ApiProvider client={fakeApiClient()}>
+        <GroupDetails
+          state={{ status: "loaded", group }}
+          viewerId={testUser.userId}
+          onRetry={vi.fn()}
+          onRefresh={vi.fn()}
+          onUnauthenticated={vi.fn()}
+        />
+      </ApiProvider>,
+    );
+
+    const members = await screen.findByRole("heading", {
+      name: en.membersHeading,
+    });
+    const lobbies = screen.getByRole("heading", { name: en.lobbiesHeading });
+    expect(members.closest(".side-column")).not.toBeNull();
+    expect(lobbies.closest(".side-column")).toBeNull();
+    expect(lobbies.compareDocumentPosition(members)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+  });
 });

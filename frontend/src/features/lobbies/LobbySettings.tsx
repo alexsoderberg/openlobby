@@ -70,25 +70,29 @@ function LoadedSettings(props: Props) {
   const games = state.status === "loaded" ? state.value : [];
   const modes = games.find((game) => game.id === lobby.gameId)?.modes ?? [];
   const gameErrorId = errorIdOf(id, "game", change.outcome);
+  const section =
+    lobby.gameName === null
+      ? games.length > 0 && (
+          <SettingsSection heading={m.lobbyGameSetHeading}>
+            <GameForm
+              {...props}
+              {...change}
+              id={`${id}-game`}
+              games={games}
+              errorId={gameErrorId}
+            />
+          </SettingsSection>
+        )
+      : modes.length > 0 && (
+          <SettingsSection heading={m.lobbySettingsHeading}>
+            <SettingsForm {...props} {...change} modes={modes} />
+          </SettingsSection>
+        );
+  // Nothing at all when there is nothing to show, so the page gets no empty side column (REQ-0025).
+  if (!section && change.outcome?.field !== "game") return null;
   return (
     <div ref={root}>
-      {lobby.gameName === null
-        ? games.length > 0 && (
-            <SettingsSection heading={m.lobbyGameSetHeading}>
-              <GameForm
-                {...props}
-                {...change}
-                id={`${id}-game`}
-                games={games}
-                errorId={gameErrorId}
-              />
-            </SettingsSection>
-          )
-        : modes.length > 0 && (
-            <SettingsSection heading={m.lobbySettingsHeading}>
-              <SettingsForm {...props} {...change} modes={modes} />
-            </SettingsSection>
-          )}
+      {section}
       <Result field="game" outcome={change.outcome} errorId={gameErrorId} />
     </div>
   );
