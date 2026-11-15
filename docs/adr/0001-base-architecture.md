@@ -1,5 +1,6 @@
 # 0001. Base architecture
 Status: Accepted (2026-11-01)
+Amended by ADR 0026 (the 16 KiB body rule has one exception: the game image upload, `PUT /api/games/{gameId}/images/{kind}`, which reads at most 512 KiB; every other route keeps 16 KiB)
 
 ## Context
 The MVP of OpenLobby consists of the requirements REQ-0001–0010 and, from Amendment 2026-11-04, REQ-0012. They build on one core flow: login, group, lobby, overview, joining a lobby, leaving a group and revoking an invite link, plus the group admin role, the game list and the system admin role. The stack is already decided in CLAUDE.md: microservices behind an API gateway, Go for the backend, React + Vite for the frontend, Discord OAuth2, PostgreSQL, Docker Compose on Raspberry Pi 5.

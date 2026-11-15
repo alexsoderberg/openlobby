@@ -1,5 +1,6 @@
 # 0017. Game modes, game roles, named activities and open lobbies
 Status: Accepted (2026-11-09)
+Amended by ADR 0026 (the game and lobby responses get the version fields of the game logo and game cover; no rule changes)
 Amends ADR 0004 (rule 6: lobby creation, game and mode optional; the value of a lobby is no longer fixed after creation for a mode change; rule 7: join order and seat checks), ADR 0006 (lobby tables and lobby writes), ADR 0010 (game list: default max and game roles are used only by games without modes).
 Requirements: REQ-0011 (F-027, with its amendment of 2026-11-08) and REQ-0015 (F-033, F-034). Backlog A2 and A3, delivered together.
 
