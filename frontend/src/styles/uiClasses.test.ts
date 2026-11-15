@@ -57,8 +57,10 @@ const FORBIDDEN = [
 /** Colour and radius utilities, after their variants (`hover:`, `pointer-coarse:`). */
 const COLOUR_OR_RADIUS =
   /^(bg|text|border|outline|decoration|accent|caret|fill|stroke|divide|from|via|to)-|^rounded(-|$)/;
-// `transparent` is no colour value but its absence; the ghost and danger buttons need it over the UA background.
-const NO_COLOUR = /-transparent$/;
+// The only exception to the token rule (ADR 0023, B2 amendment c): these name the absence of a colour.
+const NO_COLOUR = /^(bg|border)-transparent$/;
+/** A class without its variants. */
+const utility = (name: string) => name.split(":").at(-1) ?? name;
 const TOKEN = /\((?:[\w-]+:)?(--[\w-]+)\)/g;
 /** The plain words that global.css keeps from being built (ADR 0023, Amendment 2026-11-15 a). */
 const excludedWords = (
@@ -77,13 +79,12 @@ describe("ui/ class lists (ADR 0023 point 2)", () => {
   });
 
   it("names a token in every colour and radius class", () => {
-    const utility = (name: string) => name.split(":").at(-1) ?? name;
     expect(
       classes.filter(
         (name) =>
           COLOUR_OR_RADIUS.test(utility(name)) &&
           !name.includes("(--") &&
-          !NO_COLOUR.test(name),
+          !NO_COLOUR.test(utility(name)),
       ),
     ).toEqual([]);
   });
