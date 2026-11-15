@@ -1,7 +1,7 @@
 export { Alert } from "./Alert";
-export { Button } from "./Button";
 export { Avatar } from "./Avatar";
 export { Brand } from "./Brand";
+export { Button } from "./Button";
 export { ConfirmDialog } from "./ConfirmDialog";
 export { ErrorAlert } from "./ErrorAlert";
 export { GroupIcon } from "./GroupIcon";

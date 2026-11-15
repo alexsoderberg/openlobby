@@ -580,6 +580,8 @@ a {
 /* Button (ADR 0023 1b): colour, radius and box are utilities in ui/Button.tsx; type, shadow, hover and press
    motion are here. The looks match the .button classes above, which go once the last call site has moved. */
 [data-slot="button"] {
+  /* border utility's style is a registered variable; some browsers lack it (ADR 0023 B2 amendment d) */
+  border-style: solid;
   font: inherit;
   font-weight: 600;
   transition: transform var(--duration-base) var(--ease-spring);

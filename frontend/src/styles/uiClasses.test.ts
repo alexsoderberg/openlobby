@@ -14,23 +14,27 @@ const sources = readdirSync(uiDir, { recursive: true, encoding: "utf8" })
       .replace(/^\s*\/\/.*$/gm, ""),
   );
 
-/** The expression after `start`: one string literal, or a balanced {...} block. */
+const CLOSING: Record<string, string> = { "{": "}", "(": ")" };
+
+/** The expression after `start`: one string literal, or a balanced {...} or (...) block. */
 function expressionAt(source: string, start: number): string {
-  if (source[start] === '"')
+  const open = source[start];
+  if (open === '"')
     return source.slice(start, source.indexOf('"', start + 1) + 1);
   let depth = 0;
   for (let end = start; end < source.length; end++) {
-    if (source[end] === "{") depth++;
-    if (source[end] === "}" && --depth === 0)
+    if (source[end] === open) depth++;
+    if (source[end] === CLOSING[open] && --depth === 0)
       return source.slice(start, end + 1);
   }
   return "";
 }
 
-// Class lists sit in className attributes and in shadcn's `<name>Variants` objects (ui/Button.tsx).
+// Class lists sit in className attributes, classNames(...) calls and shadcn's `<name>Variants` objects.
 const classes = sources.flatMap((source) =>
-  Array.from(source.matchAll(/className=|const \w+Variants = /g), (match) =>
-    expressionAt(source, match.index + match[0].length),
+  Array.from(
+    source.matchAll(/className=|classNames(?=\()|const \w+Variants = /g),
+    (match) => expressionAt(source, match.index + match[0].length),
   )
     .flatMap((expression) =>
       Array.from(expression.matchAll(/"([^"]*)"|`([^`]*)`/g)),
@@ -61,6 +65,8 @@ const COLOUR_OR_RADIUS =
 const NO_COLOUR = /^(bg|border)-transparent$/;
 /** A class without its variants. */
 const utility = (name: string) => name.split(":").at(-1) ?? name;
+/** Tailwind's text sizes; size and weight live under [data-slot] in global.css (ADR 0023, B2 amendment g). */
+const TEXT_SIZE = /^text-(xs|sm|base|lg|xl|\d+xl)$/;
 const TOKEN = /\((?:[\w-]+:)?(--[\w-]+)\)/g;
 /** The plain words that global.css keeps from being built (ADR 0023, Amendment 2026-11-15 a). */
 const excludedWords = (
@@ -76,6 +82,10 @@ describe("ui/ class lists (ADR 0023 point 2)", () => {
     expect(
       classes.filter((name) => FORBIDDEN.some((part) => name.includes(part))),
     ).toEqual([]);
+  });
+
+  it("uses no text size class", () => {
+    expect(classes.filter((name) => TEXT_SIZE.test(utility(name)))).toEqual([]);
   });
 
   it("names a token in every colour and radius class", () => {
