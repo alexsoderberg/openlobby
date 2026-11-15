@@ -200,9 +200,16 @@ Status stays Implemented. Decided by the user on 2026-11-08 (REQ-0015, F-033, F-
 
 ## Amendment 2026-11-12 (REQ-0019, week view width and scroll)
 Status stays Implemented. Decided by the user on 2026-11-12, specified in REQ-0019 (Should). Binding for the UI expert.
-- Desktop: This week uses the same grid as the group view (REQ-0019): it fills the width of the main area (up to 72rem, centred) and the window height down to a small margin, at least 32rem. The other parts of the Dashboard keep their current layout. Phones are unchanged.
+- Desktop: This week uses the same grid as the group view (REQ-0019): it fills the width of the main area (up to 72rem box, centred; until REQ-0025) and the window height down to a small margin, at least 32rem. The other parts of the Dashboard keep their current layout. Phones are unchanged.
 - Opening scroll: the grid opens at the next lobby of the selected week or day that has not ended (a Running lobby counts), or at the current time when there is none. Later data or day changes keep the scroll position. This replaces the scroll rule of the Fifth amendment (REQ-0004 Amendment 2026-11-04, time grid).
 - A now line is shown in today's column. It is not shown in the Day list.
 
 ## Amendment 2026-11-13 (week block fit)
 Status stays Implemented. DECISION, user, 2026-11-13. Implemented 2026-11-14. The This week blocks use the same block component as REQ-0004, so the block text rule of REQ-0015 (Amendment 2026-11-13, week block fit) applies: the game name may be shortened (with an ellipsis, or cut at a whole line) where the block is too short, shown in full where it has room, and no part of a line is shown cut in half.
+
+## Amendment 2026-11-14 (REQ-0025, wider desktop layout)
+Status stays Implemented. Decided by the user on 2026-11-14, specified in REQ-0025 (F-044, Should). Pending implementation. Binding for the UI expert.
+- Desktop: the main area box is up to 100rem wide including its padding, centred, on every logged-in page, not 72rem (REQ-0025; DECISION, user, 2026-11-14, the app's max width; DECISION, product owner, 2026-11-14, the scope: every logged-in page). Old wording: "up to 72rem".
+- From 98rem (DECISION, user, 2026-11-14), Next up is in a side column on the right and This week is in the main column. Below 98rem the layout is one column, as today. Content, rules and buttons of Next up and This week are unchanged.
+- Dashboard with no upcoming lobby in any group, but at least one group: Next up keeps its side column and shows "Nothing booked" (ASSUMPTION, REQ-0025). With no group, no side column is shown.
+- The rules of the empty and error states above are unchanged. Phones are unchanged.
