@@ -32,20 +32,22 @@ export function ThisWeek({
   const days = thisWeekOf(lobbies, now);
   return (
     <section aria-labelledby="this-week-heading">
-      <h2 id="this-week-heading">{m.dashboard.thisWeekHeading}</h2>
-      <ViewToggle
-        label={m.dashboard.viewLabel}
-        value={view}
-        options={[
-          {
-            value: "calendar",
-            label: m.dashboard.viewCalendar,
-            icon: "calendar",
-          },
-          { value: "days", label: m.dashboard.viewDays, icon: "list" },
-        ]}
-        onChange={setView}
-      />
+      <div className="panel__head">
+        <h2 id="this-week-heading">{m.dashboard.thisWeekHeading}</h2>
+        <ViewToggle
+          label={m.dashboard.viewLabel}
+          value={view}
+          options={[
+            {
+              value: "calendar",
+              label: m.dashboard.viewCalendar,
+              icon: "calendar",
+            },
+            { value: "days", label: m.dashboard.viewDays, icon: "list" },
+          ]}
+          onChange={setView}
+        />
+      </div>
       {view === "days" ? (
         <DayList days={days} />
       ) : (

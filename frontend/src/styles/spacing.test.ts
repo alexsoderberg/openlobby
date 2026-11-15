@@ -35,6 +35,15 @@ describe("Panel button rows", () => {
   });
 });
 
+describe("Heading rows beside a side column (REQ-0025)", () => {
+  // The main column's row holds the view toggle; the side column's row gets the same height, so both boxes start level.
+  it("makes every heading row in a side layout as tall as the view toggle", () => {
+    expect(declarationsFor(String.raw`\.side-layout \.panel__head`)).toMatch(
+      /min-height:\s*var\(--size-heading-row\)/,
+    );
+  });
+});
+
 describe("Settings rows (REQ-0020)", () => {
   // The Game list row gets its tap height and focus ring from these shared rules, not from rules of its own.
   it("makes a list row at least the 44px tap size", () => {

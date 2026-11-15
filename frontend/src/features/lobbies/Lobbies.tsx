@@ -48,6 +48,19 @@ export function Lobbies({
       <Panel>
         <div className="panel__head">
           <h2>{m.lobbiesHeading}</h2>
+          <ViewToggle
+            label={m.lobbyViewLabel}
+            value={view}
+            options={[
+              { value: "list", label: m.lobbyViewList, icon: "list" },
+              {
+                value: "calendar",
+                label: m.lobbyViewCalendar,
+                icon: "calendar",
+              },
+            ]}
+            onChange={setView}
+          />
           <button
             type="button"
             className="button"
@@ -62,19 +75,6 @@ export function Lobbies({
         <p role="status" className="status">
           {created && m.lobbyCreated}
         </p>
-        <ViewToggle
-          label={m.lobbyViewLabel}
-          value={view}
-          options={[
-            { value: "list", label: m.lobbyViewList, icon: "list" },
-            {
-              value: "calendar",
-              label: m.lobbyViewCalendar,
-              icon: "calendar",
-            },
-          ]}
-          onChange={setView}
-        />
         <LobbyViews
           groupId={groupId}
           members={members}

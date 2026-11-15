@@ -153,6 +153,8 @@
   /* Text blocks keep a readable line length however wide the main area grows (REQ-0025). */
   --width-measure: 48rem;
   --size-tap: 2.75rem;
+  /* The view toggle's outer height: one tap-size option, its padding and its border. */
+  --size-heading-row: calc(var(--size-tap) + 2 * var(--space-1) + 2px);
   /* Buttons (ADR 0021): compact under a mouse, the larger box is the hit area on touch. */
   --size-button: 2rem;
   --size-button-touch: 2.5rem;
@@ -630,17 +632,17 @@ a {
   margin-top: 0;
 }
 
-/* A panel heading with its action beside it. */
+/* A heading row: the heading with its view toggle and action at the right end. It keeps the margins of an h2. */
 .panel__head {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
   gap: var(--space-2);
+  margin: var(--space-4) 0 var(--space-2);
 }
 
 .panel__head h2 {
-  margin: 0;
+  margin: 0 auto 0 0;
 }
 
 /* Panels of one screen stack with a gap. The second one reveals a step later. */
@@ -668,6 +670,11 @@ a {
   .side-layout > .side-column {
     grid-column: 2;
     grid-row: 1;
+  }
+
+  /* Every heading row is as tall as one with the view toggle, so the boxes below start level in both columns. */
+  .side-layout .panel__head {
+    min-height: var(--size-heading-row);
   }
 
   /* The lobby page: settings beside both the players and the actions, inside the one panel. */
@@ -1160,10 +1167,6 @@ a {
 }
 
 /* Lobbies: the list rows, the view switch and the week calendar. */
-.view-switch {
-  margin-bottom: var(--space-3);
-}
-
 /* A pill track; the thumb slides by transform to the selected option, so nothing reflows. */
 .view-toggle {
   position: relative;
