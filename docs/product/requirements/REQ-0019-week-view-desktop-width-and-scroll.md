@@ -5,12 +5,12 @@ Priority: Should
 
 Decided by the user on 2026-11-12. The product owner set the priority (Should): it changes how an existing view looks and where it opens, and no other requirement depends on it.
 
-Corrected 2026-11-12 after review: the week grid was never limited to 40rem. On logged-in pages the main area of the app shell is up to 72rem wide and centred. The 40rem `.page` width applies only to logged-out pages. The grid looked small for two reasons: its fixed height (32rem), and, in the group view, the members panel beside the lobbies panel from 75rem.
+Corrected 2026-11-12 after review: the week grid was never limited to 40rem. On logged-in pages the main area of the app shell is up to 72rem wide and centred (the box including its 6rem padding; the grid content is 66rem) (until REQ-0025). The 40rem `.page` width applies only to logged-out pages. The grid looked small for two reasons: its fixed height (32rem), and, in the group view, the members panel beside the lobbies panel from 75rem (until REQ-0025).
 
 Amendment 2026-11-12 (user browser check): the grid ends at 24:00 and the scroll cannot go past it. The end-of-day area below 24:00 that an earlier version of the opening scroll added is removed, because the user found that it scrolled too far and left a big empty space under the calendar (DECISION, user, 2026-11-12). Changed criteria are marked "Amendment 2026-11-12".
 
 ## Problem
-The week view of the group view and the This week section of the Dashboard use the same time grid. On a desktop the grid has a fixed height (32rem), so on a tall window the space below it is unused. In the group view, from 75rem (1200 px) the members panel (19rem wide) sits beside the lobbies panel, which takes width from the week grid. A member who opens the grid sees the afternoon, or the earliest lobby of the week if that is earlier, and not the time of day they are in. The grid does not show the current time. The lobbies of the day are hard to see in one view.
+The week view of the group view and the This week section of the Dashboard use the same time grid. On a desktop the grid has a fixed height (32rem), so on a tall window the space below it is unused. In the group view, from 75rem (1200 px) the members panel (19rem wide) sits beside the lobbies panel, which takes width from the week grid (until REQ-0025). A member who opens the grid sees the afternoon, or the earliest lobby of the week if that is earlier, and not the time of day they are in. The grid does not show the current time. The lobbies of the day are hard to see in one view.
 
 ## User story
 As a member, I want the week view to use the width and height of my desktop window and to open at my next lobby with a line for the current time, so that I see when we can play without scrolling to find it.
@@ -18,18 +18,18 @@ As a member, I want the week view to use the width and height of my desktop wind
 ## Acceptance criteria
 
 Width and height (desktop, screen 760 px or wider):
-- Given that I am on a screen 760 px or wider and I see a week view (group view or This week on the Dashboard), when it is shown, then the grid fills the width of the main area of the app shell, up to 72rem (about 1150 px), and it is centred there, as the main area is today.
-- Given that the window is wider than 72rem, when I see the week view, then the grid is 72rem wide and does not grow further.
-- Given that I am on a screen 760 px or wider, when I see the rest of the group view (header, Create lobby button, list view) or the rest of the Dashboard (Next up card, headings), then they keep their current layout and width. This requirement does not change them (DECISION, user, 2026-11-12: "the rest of the page keeps its width").
+- Given that I am on a screen 760 px or wider and I see a week view (group view or This week on the Dashboard), when it is shown, then the grid fills the width of the main area of the app shell, and it is centred there. Amended 2026-11-14 (REQ-0025): below 98rem there is no side column, and the grid is the main area box minus its padding (the window width minus about 11.25rem, at most about 86.75rem just below 98rem). From 98rem the grid is the main column beside the side column: about 66.75rem at 98rem, and at most 74rem from about 105.25rem window width (REQ-0025 Week grid width; ASSUMPTION for the rail and padding figures). Old wording: "up to 72rem (about 1150 px)".
+- Given that the window is wider than about 105.25rem, when I see the week view with its side column, then the grid is 74rem wide and does not grow further. Amended 2026-11-14 (REQ-0025). Old wording: "wider than 72rem ... the grid is 72rem wide".
+- Given that I am on a screen 760 px or wider, when I see the rest of the group view (header, Create lobby button, list view) or the rest of the Dashboard (Next up card, headings), then they keep their current layout and width. This requirement does not change them (DECISION, user, 2026-11-12: "the rest of the page keeps its width"). Amended 2026-11-14 (REQ-0025): from 98rem the Next up card and the members panel move to a side column, and the page box is wider up to 100rem; their content is unchanged. Old wording: "then they keep their current layout and width."
 - Given that I am on a screen 760 px or wider and the week view is shown, when I look at the page at the top, then the bottom edge of the grid is at the bottom of the window, minus a small margin set by the UI expert, so the grid's height fills the window below its top edge (DECISION, user, 2026-11-12). The hours scroll inside the grid, not the page.
 - Given that the window is short, so that the space below the grid's top edge is less than 32rem, when I see the week view, then the grid is 32rem high, the height it has today, and the page scrolls to reach the rest (ASSUMPTION: a minimum that keeps the grid usable on short windows).
 - Given that I am on a phone (narrower than 760 px), when I see the week view, then its width and height are as they are today: the day pills and the time grid of the selected day (REQ-0004, Phone). This requirement changes nothing on phones (DECISION, user, 2026-11-12).
-- Given that I resize the window across the 760 px line or the 75rem line, when the layout changes, then the grid and the members panel take the layout of the new width without a reload.
+- Given that I resize the window across the 760 px line or the 98rem line, when the layout changes, then the grid and the members panel take the layout of the new width without a reload. Amended 2026-11-14 (REQ-0025). Old wording: "across the 760 px line or the 75rem line".
 
 Group view layout (desktop, DECISION, orchestrator, 2026-11-12, serving the user's request for a bigger calendar; the user may change it):
-- Given that I open a group view with the Calendar view shown, on a screen 75rem (1200 px) or wider, when I look at the page, then the members panel is below the lobbies panel, not beside it, so the week grid takes the full width of the main area.
-- Given that I open a group view with the List view shown, on a screen 75rem (1200 px) or wider, when I look at the page, then the lobbies panel and the members panel are side by side, as today.
-- Given that I am on a screen narrower than 75rem, when I see the group view in either view, then the members panel is below the lobbies panel, as today.
+- Given that I open a group view with the Calendar view shown, on a screen 98rem (about 1570 px) or wider, when I look at the page, then the members panel is in a side column on the right beside the week grid, with the Group feed below it (Amended 2026-11-14, REQ-0025, DECISION, user, 2026-11-14). Old wording: "the members panel is below the lobbies panel, not beside it, so the week grid takes the full width of the main area."
+- Given that I open a group view with the List view shown, on a screen 98rem (about 1570 px) or wider, when I look at the page, then the lobbies panel is in the main column and the members panel is in the side column, with the Group feed below them (Amended 2026-11-14, REQ-0025). Old wording: "on a screen 75rem (1200 px) or wider, when I look at the page, then the lobbies panel and the members panel are side by side, as today."
+- Given that I am on a screen narrower than 98rem, when I see the group view in either view, then the members panel is below the lobbies panel (Amended 2026-11-14, REQ-0025: in the List view this changes from 75rem). Old wording: "on a screen narrower than 75rem ... the members panel is below the lobbies panel, as today."
 
 Opening scroll (desktop and phone):
 - Given that the week view opens, when lobby data for the shown week (desktop) or the selected day (phone) is first shown, then the grid is scrolled once to the target described below (DECISION, user, 2026-11-12; "the scroll is still set once"). "Opens" means the view is shown with the current week (or, on a phone, today) selected: the page loads, or the Calendar view or Week calendar option is selected.
@@ -59,7 +59,7 @@ The now line:
 ## Out of scope
 - A change to the phone layout: day pills, the grid's width and the phone scroll behaviour except the target rule above (REQ-0004 and REQ-0012 phone rules stay).
 - A change to the list view, the Next up card, the Day list, the Create lobby form, or the lobby page.
-- A change to the members panel's width or content, and a layout change below 75rem.
+- A change to the members panel's width or content, and a layout change below 98rem beyond the members rule above (REQ-0025).
 - A month view, a new week navigation, or a time range selection in the grid (REQ-0004 out of scope).
 - A remembered scroll position between visits or between pages.
 - A now line on the Day list, in the list view, or in the Next up card.
@@ -67,7 +67,7 @@ The now line:
 - Any change to what a lobby block shows (REQ-0004, REQ-0015 labels).
 
 ## Related features
-F-017 (week view of the group view): the same view, larger on desktop, opening at a different place, and with the members panel below it from 75rem. Extended by this requirement; not a new feature.
+F-017 (week view of the group view): the same view, larger on desktop, opening at a different place, and with the members panel beside it from 98rem (REQ-0025). Extended by this requirement; not a new feature.
 F-028 (This week on the Dashboard): uses the same grid, so the same desktop size and opening rule apply to it. Extended by this requirement; not a new feature.
 REQ-0004 (time grid amendment, 2026-11-04): the criteria on the desktop layout ("Layout (screen 760 px or wider)", the first criterion on the scroll position of the week view) and the phone scroll criterion are replaced by this requirement, as recorded in REQ-0004 (Amendment 2026-11-12).
 REQ-0012 (Fifth amendment, 2026-11-04): This week uses the grid of REQ-0004; the same change applies to it on desktop, as recorded in REQ-0012 (Amendment 2026-11-12).
@@ -78,8 +78,14 @@ No existing feature changes the size or the opening scroll of the week view, so 
 ## Open questions
 - GLOSSARY REQUEST for the architect (not added by the product owner): the term "Now line" is used in this requirement for the thin line at the current time in today's column. Please add it to the glossary in CLAUDE.md if the term is accepted, with its technical form, or name another term.
 - ASSUMPTION (user to confirm): "Next week" in the group view keeps the scroll position, because the scroll is set once when the view opens. The alternative is to set it again for the new week.
-- ASSUMPTION (user to confirm): the 760 px breakpoint of REQ-0004 is the only breakpoint for the size of the grid; there is no separate breakpoint at 72rem.
+- ASSUMPTION (user to confirm): the 760 px breakpoint of REQ-0004 is the only breakpoint for the size of the grid; there is no separate breakpoint at 72rem (until REQ-0025, which adds the 98rem side column breakpoint and the 100rem box limit).
 - ASSUMPTION (user to confirm): on the Dashboard, the grid is also sized to the window bottom, below the Next up card and the section heading. If that makes the Dashboard hard to scan, a fixed height below those is the alternative.
 - ASSUMPTION (UI expert to confirm): the bottom margin of the grid, the minimum height 32rem, the exact offset of the hour at the top, the update interval of the now line, and that a target from 22:00 on is still visible with the grid at its end on the 32rem minimum height (Amendment 2026-11-12).
 - ASSUMPTION (user to confirm): the target lobby is the one with the earliest start, also when a later lobby is longer. The alternative is to count lobbies that are shown as Running first.
-- DECISION TO CONFIRM (user): the members panel moves below the lobbies panel in the group view's Calendar view from 75rem, and stays beside it in the List view. The user may change this. Open: if the Group feed (REQ-0018) is built, this decision does not say whether the feed moves below with the members panel or stays beside the lobbies panel.
+- DECISION TO CONFIRM (user): the members panel moves below the lobbies panel in the group view's Calendar view from 75rem, and stays beside it in the List view. Superseded 2026-11-14 by REQ-0025: from 98rem the members panel is a side column beside the week grid in both views; below 98rem it is below the lobbies panel in both views (DECISION, user, 2026-11-14, the List view included). The Group feed (REQ-0018) sits in that side column below the members (DECISION, user, 2026-11-14); the open question on the feed's place is closed.
+
+## Amendment 2026-11-14 (REQ-0025, wider desktop layout)
+Status stays Implemented. Decided by the user on 2026-11-14 (REQ-0025, F-044). Pending implementation. Binding for the UI expert.
+- The main area box is up to 100rem wide including its padding. Without a side column the grid is at most about 86.75rem (below 98rem); with the side column the grid is 66.75rem at 98rem, and at most 74rem (see REQ-0025, Week grid width). Today the box is 72rem and the grid content is 66rem (see the criteria above, marked Amended 2026-11-14).
+- From 98rem the members panel and the Group feed are a side column beside the week grid in both views, not below it in the Calendar view. Below 98rem the members panel is below the lobbies panel in both views. The side column starts at 98rem so that the week grid is never narrower than today (DECISION, user, 2026-11-14; ASSUMPTION for the arithmetic: the grid is about 66.75rem at 98rem, with the Group rail 5.25rem, the padding 6rem and the side column with its gap 20rem).
+- The phone rules and the opening scroll rules are unchanged.

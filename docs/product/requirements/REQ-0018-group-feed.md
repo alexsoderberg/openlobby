@@ -65,4 +65,5 @@ F-020 (history of past lobbies, Proposed): the feed is recent events for seven d
 - DECISION (user, 2026-11-10): no backfill. The feed starts empty at release, with no events for lobbies that existed before.
 - OPEN QUESTION: an event is not a link, and selecting it opens nothing (ASSUMPTION). A lobby of an old event may no longer exist, so the question is whether the line should link to a lobby that still exists.
 - OPEN QUESTION: the wording of the empty feed text, and the exact copy of each event, are the UI expert's within these rules (ASSUMPTION).
+- DECISION (user, 2026-11-14, REQ-0025): on a screen of 98rem (about 1570 px) or wider the Group feed sits in the Group view's side column, below the members. Below 98rem the group view is one column, and the feed comes after the members (REQ-0025).
 - OPEN QUESTION (architect): how an event keeps the label it had when it was recorded (criterion above). The product rule stays as written; the mechanism is the architect's decision.
