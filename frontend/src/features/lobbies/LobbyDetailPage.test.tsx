@@ -252,6 +252,55 @@ describe("changing the mode on the page", () => {
   });
 });
 
+describe("page order", () => {
+  it("puts the settings between the players and the actions, in one panel, as the side column (REQ-0025)", async () => {
+    const mode = {
+      id: "m1",
+      name: "Casual",
+      maxPlayers: 4,
+      gameRoles: [],
+      activities: [],
+    };
+    renderDetail({
+      getLobby: () =>
+        Promise.resolve({
+          ...lobby,
+          gameId: "game1",
+          modeId: "m1",
+          modeName: "Casual",
+        }),
+      listGroupGames: vi.fn(() =>
+        Promise.resolve([
+          {
+            id: "game1",
+            name: "Catan",
+            defaultMaxPlayers: null,
+            genre: null,
+            modes: [mode],
+          },
+        ]),
+      ),
+    });
+
+    const settings = await screen.findByRole("combobox", {
+      name: en.lobbyModeLabel,
+    });
+    const players = screen.getByRole("heading", {
+      name: en.lobbyPlayersHeading,
+    });
+    const leave = screen.getByRole("button", { name: en.lobbyLeave });
+    expect(players.compareDocumentPosition(settings)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+    expect(settings.compareDocumentPosition(leave)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+    const side = settings.closest(".side-column");
+    expect(side).not.toBeNull();
+    expect(side!.parentElement).toBe(leave.closest(".panel"));
+  });
+});
+
 describe("an open lobby on the page", () => {
   it("is labelled Open, and a player sets the game, then the page shows it and offers its modes", async () => {
     const open: LobbyDetail = { ...lobby, gameId: null, gameName: null };

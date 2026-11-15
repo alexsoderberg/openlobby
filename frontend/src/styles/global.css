@@ -142,8 +142,11 @@
   --flash-offset: 0.5rem;
   --duration-rise: 1.1s;
 
-  /* App shell. The wide layout starts at 760px (47.5rem); media queries cannot read tokens, so it is written out there. */
-  --width-app: 72rem;
+  /* App shell. The wide layout starts at 760px (47.5rem); media queries cannot read tokens, so it is written out there.
+     The main area box is at most 100rem including its padding (REQ-0025). */
+  --width-app: 100rem;
+  /* Text blocks keep a readable line length however wide the main area grows (REQ-0025). */
+  --width-measure: 48rem;
   --size-tap: 2.75rem;
   /* Buttons (ADR 0021): compact under a mouse, the larger box is the hit area on touch. */
   --size-button: 2rem;
@@ -155,6 +158,7 @@
   /* The top bar grows by the notch / status bar inset when viewport-fit=cover applies. */
   --size-top-bar-total: calc(var(--size-top-bar) + env(safe-area-inset-top));
   --size-rail: 5.25rem;
+  /* The side column. It starts at a 98rem window, written out in its media query (REQ-0025). */
   --width-aside: 19rem;
   --size-tab-bar: 5.5rem;
   --size-group-icon: 3.25rem;
@@ -616,7 +620,8 @@ a {
     transform var(--duration-slow) var(--ease-out) var(--reveal-delay);
 }
 
-.panel > :first-child {
+.panel > :first-child,
+.lobby-summary > :first-child {
   margin-top: 0;
 }
 
@@ -644,18 +649,51 @@ a {
   --reveal-delay: var(--stagger-step);
 }
 
-/* Wide screens: the second panel sits beside the first (DOM order is kept). Below 75rem the seven-day week grid
-   would get too narrow next to a side column, so it stays stacked until then. */
-@media (min-width: 75rem) {
-  .panel-group--aside {
+/* Wide windows: the side column sits on the right of the main column, which is the first track (REQ-0025).
+   DOM order is kept, so focus and reading order are those of the one-column layout. From 98rem the main column
+   is never narrower than the 66rem week grid of before. A side column with nothing in it takes no room. */
+@media (min-width: 98rem) {
+  .side-layout:has(> .side-column:not(:empty)) {
+    display: grid;
     grid-template-columns: minmax(0, 1fr) var(--width-aside);
+    gap: var(--space-3);
     align-items: start;
   }
 
-  /* The week time grid takes the whole main area (REQ-0019), so the side panel goes below it. */
-  .panel-group--aside:has(.time-grid) {
+  .side-layout > .side-column {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  /* The lobby page: settings beside both the players and the actions, inside the one panel. */
+  .side-layout--lobby:has(> .side-column:not(:empty)) {
+    row-gap: 0;
+  }
+
+  .side-layout--lobby > .side-column {
+    grid-row: 1 / span 2;
+    padding-inline-start: var(--space-4);
+    border-inline-start: 1px solid var(--color-border);
+  }
+
+  /* Next up is stacked in the narrow side column. */
+  .side-column .next-up {
     grid-template-columns: minmax(0, 1fr);
   }
+
+  .side-column .next-up__spots {
+    text-align: start;
+  }
+}
+
+/* An empty side column takes no gap in a stacked panel group either. */
+.side-column:empty {
+  display: none;
+}
+
+/* Text blocks keep their measure on every logged-in page, from the left of their column. */
+.shell__main :is(p, form, .group-form, .empty-state) {
+  max-width: var(--width-measure);
 }
 
 .crumb {

@@ -45,41 +45,43 @@ export function GroupDetails({
         <h1>{state.group.name}</h1>
         {headerAction}
       </div>
-      <div className="panel-group panel-group--aside">
+      <div className="panel-group side-layout">
         <Lobbies
           groupId={state.group.id}
           members={state.group.members}
           onUnauthenticated={onUnauthenticated}
         />
-        <Panel>
-          <h2>{m.membersHeading}</h2>
-          <ul className="row-list" role="list">
-            {state.group.members.map((member) => (
-              <li key={member.userId} className="list-row">
-                <span className="avatar" />
-                {member.displayName}
-                <PreferredGameRolesNote
-                  roles={member.preferredGameRoles}
-                  withGame
-                />
-                {member.role === "admin" && (
-                  <>
-                    {" "}
-                    <span className="badge">{m.groupAdminMarker}</span>
-                  </>
-                )}
-                {viewerIsAdmin && member.role !== "admin" && (
-                  <MakeGroupAdminAction
-                    groupId={state.group.id}
-                    member={member}
-                    onSettled={onRefresh}
-                    onUnauthenticated={onUnauthenticated}
+        <div className="side-column">
+          <Panel>
+            <h2>{m.membersHeading}</h2>
+            <ul className="row-list" role="list">
+              {state.group.members.map((member) => (
+                <li key={member.userId} className="list-row">
+                  <span className="avatar" />
+                  {member.displayName}
+                  <PreferredGameRolesNote
+                    roles={member.preferredGameRoles}
+                    withGame
                   />
-                )}
-              </li>
-            ))}
-          </ul>
-        </Panel>
+                  {member.role === "admin" && (
+                    <>
+                      {" "}
+                      <span className="badge">{m.groupAdminMarker}</span>
+                    </>
+                  )}
+                  {viewerIsAdmin && member.role !== "admin" && (
+                    <MakeGroupAdminAction
+                      groupId={state.group.id}
+                      member={member}
+                      onSettled={onRefresh}
+                      onUnauthenticated={onUnauthenticated}
+                    />
+                  )}
+                </li>
+              ))}
+            </ul>
+          </Panel>
+        </div>
       </div>
     </>
   );

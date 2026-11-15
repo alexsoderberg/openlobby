@@ -33,6 +33,7 @@ function rule(css: string, selector: string): string {
 
 const WIDE = "@media (min-width: 47.5rem)";
 const PHONE = "@media (max-width: 47.499rem)";
+const SIDE_COLUMN = "@media (min-width: 98rem)";
 
 // jsdom does no layout, so these read the rules of REQ-0019 from the stylesheet.
 describe("week time grid layout", () => {
@@ -55,17 +56,41 @@ describe("week time grid layout", () => {
     );
   });
 
-  it("is as wide as the main area: at most 72rem and centred, with the members panel below it", () => {
-    expect(token("--width-app")).toBe("72rem");
+  it("is as wide as the main area: at most 100rem and centred", () => {
+    expect(token("--width-app")).toBe("100rem");
     const main = rule(stylesheet, ".shell__main");
     expect(main).toContain("max-width: var(--width-app);");
     expect(main).toContain("margin: 0 auto;");
+  });
+
+  it("is never narrower than 66rem beside a side column from 98rem (REQ-0025)", () => {
+    const side = rule(
+      mediaText(SIDE_COLUMN),
+      ".side-layout:has(> .side-column:not(:empty))",
+    );
+    expect(side).toContain(
+      "grid-template-columns: minmax(0, 1fr) var(--width-aside);",
+    );
+    expect(side).toContain("gap: var(--space-3);");
+    const rem = (name: string) => parseFloat(token(name));
+    const mainColumn =
+      98 -
+      rem("--size-rail") -
+      2 * rem("--space-6") -
+      rem("--width-aside") -
+      rem("--space-3");
+    expect(mainColumn).toBeGreaterThanOrEqual(66);
+  });
+
+  it("hides an empty side column, so it takes no room or gap (REQ-0025)", () => {
+    expect(rule(stylesheet, ".side-column:empty")).toContain("display: none;");
+  });
+
+  it("keeps text blocks at a 48rem measure on every logged-in page (REQ-0025)", () => {
+    expect(token("--width-measure")).toBe("48rem");
     expect(
-      rule(
-        mediaText("@media (min-width: 75rem)"),
-        ".panel-group--aside:has(.time-grid)",
-      ),
-    ).toContain("grid-template-columns: minmax(0, 1fr);");
+      rule(stylesheet, ".shell__main :is(p, form, .group-form, .empty-state)"),
+    ).toContain("max-width: var(--width-measure);");
   });
 
   it("shows one day on phones and switches at 760px", () => {

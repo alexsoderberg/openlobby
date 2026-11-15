@@ -184,6 +184,18 @@ describe("Next up", () => {
 
     expect((await nextUpCard()).getByText(t.nothingBooked)).toBeTruthy();
   });
+
+  it("is the side column, read before This week (REQ-0025)", async () => {
+    renderDashboard({});
+
+    const nextUp = await screen.findByRole("region", { name: t.nextUpHeading });
+    const thisWeek = screen.getByRole("region", { name: t.thisWeekHeading });
+    expect(nextUp.classList).toContain("side-column");
+    expect(nextUp.parentElement).toBe(thisWeek.parentElement);
+    expect(nextUp.compareDocumentPosition(thisWeek)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+  });
 });
 
 describe("label and role slots", () => {

@@ -68,7 +68,7 @@ function renderSettings(
     ...overrides,
   });
   const onChanged = vi.fn();
-  render(
+  const { container } = render(
     <ApiProvider client={client}>
       <LobbySettings
         groupId="g1"
@@ -78,7 +78,7 @@ function renderSettings(
       />
     </ApiProvider>,
   );
-  return { client, onChanged };
+  return { client, onChanged, container };
 }
 
 const modeSelect = () =>
@@ -100,14 +100,15 @@ describe("who sees the mode and activity", () => {
     ["has a custom game name", { gameId: null }],
     ["has ended", { endsAt: new Date(Date.now() - HOUR_MS).toISOString() }],
   ])("shows nothing to a viewer when the lobby %s", async (_name, shown) => {
-    const { client } = renderSettings(shown);
+    const { client, container } = renderSettings(shown);
 
     expect(client.listGroupGames).not.toHaveBeenCalled();
-    expect(screen.queryByRole("combobox")).toBeNull();
+    expect(container.childElementCount).toBe(0);
   });
 
+  // An empty render leaves the lobby page without a side column (REQ-0025).
   it("shows nothing for a game without modes", async () => {
-    const { client } = renderSettings(
+    const { client, container } = renderSettings(
       {},
       {
         listGroupGames: vi.fn(() => Promise.resolve([{ ...game, modes: [] }])),
@@ -115,7 +116,7 @@ describe("who sees the mode and activity", () => {
     );
 
     await waitFor(() => expect(client.listGroupGames).toHaveBeenCalled());
-    expect(screen.queryByRole("combobox")).toBeNull();
+    expect(container.childElementCount).toBe(0);
   });
 
   it("offers the game's modes and the activities of the current mode", async () => {
