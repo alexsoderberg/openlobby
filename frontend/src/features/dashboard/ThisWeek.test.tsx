@@ -62,6 +62,18 @@ afterEach(() => {
 });
 
 describe("This week view toggle", () => {
+  it("sits in one heading row with the heading, after it (REQ-0025)", () => {
+    renderWeek();
+
+    const heading = screen.getByRole("heading", { name: t.thisWeekHeading });
+    const toggle = screen.getByRole("group", { name: t.viewLabel });
+    expect(toggle.closest(".heading-row")?.contains(heading)).toBe(true);
+    expect(
+      heading.compareDocumentPosition(toggle) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
   it("shows the calendar by default, with Week calendar pressed", () => {
     renderWeek();
 

@@ -115,7 +115,7 @@ function DashboardContent({
   return (
     <div className="side-layout">
       <section aria-labelledby="next-up-heading" className="side-column">
-        <div className="panel__head">
+        <div className="heading-row">
           <h2 id="next-up-heading">{m.dashboard.nextUpHeading}</h2>
         </div>
         {nextUp ? (

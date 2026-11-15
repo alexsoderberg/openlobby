@@ -38,7 +38,7 @@ describe("Panel button rows", () => {
 describe("Heading rows beside a side column (REQ-0025)", () => {
   // The main column's row holds the view toggle; the side column's row gets the same height, so both boxes start level.
   it("makes every heading row in a side layout as tall as the view toggle", () => {
-    expect(declarationsFor(String.raw`\.side-layout \.panel__head`)).toMatch(
+    expect(declarationsFor(String.raw`\.side-layout \.heading-row`)).toMatch(
       /min-height:\s*var\(--size-heading-row\)/,
     );
   });

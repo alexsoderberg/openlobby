@@ -32,7 +32,7 @@ export function ThisWeek({
   const days = thisWeekOf(lobbies, now);
   return (
     <section aria-labelledby="this-week-heading">
-      <div className="panel__head">
+      <div className="heading-row">
         <h2 id="this-week-heading">{m.dashboard.thisWeekHeading}</h2>
         <ViewToggle
           label={m.dashboard.viewLabel}

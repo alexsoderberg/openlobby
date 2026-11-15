@@ -46,8 +46,20 @@ export function Lobbies({
   return (
     <>
       <Panel>
-        <div className="panel__head">
-          <h2>{m.lobbiesHeading}</h2>
+        <div className="heading-row">
+          <div className="panel__head">
+            <h2>{m.lobbiesHeading}</h2>
+            <button
+              type="button"
+              className="button"
+              aria-haspopup="dialog"
+              aria-expanded={popover.open}
+              onClick={(event) => openForm(undefined, event.currentTarget)}
+            >
+              <Icon name="plus" />
+              {m.lobbyCreateButton}
+            </button>
+          </div>
           <ViewToggle
             label={m.lobbyViewLabel}
             value={view}
@@ -61,16 +73,6 @@ export function Lobbies({
             ]}
             onChange={setView}
           />
-          <button
-            type="button"
-            className="button"
-            aria-haspopup="dialog"
-            aria-expanded={popover.open}
-            onClick={(event) => openForm(undefined, event.currentTarget)}
-          >
-            <Icon name="plus" />
-            {m.lobbyCreateButton}
-          </button>
         </div>
         <p role="status" className="status">
           {created && m.lobbyCreated}

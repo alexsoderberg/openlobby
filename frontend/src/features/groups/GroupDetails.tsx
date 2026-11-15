@@ -53,7 +53,7 @@ export function GroupDetails({
         />
         <div className="side-column">
           <Panel>
-            <div className="panel__head">
+            <div className="heading-row">
               <h2>{m.membersHeading}</h2>
             </div>
             <ul className="row-list" role="list">
