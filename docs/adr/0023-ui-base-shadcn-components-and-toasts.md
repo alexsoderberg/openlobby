@@ -56,6 +56,14 @@ Why a library for behaviour, not React alone. React gives the state and the mark
   @source "../ui";
   ```
   No `theme.css` and no preflight. Tailwind's default palette, radius and spacing scale are then absent: `bg-red-500` or `rounded-lg` produce no CSS. The element resets stay in `global.css`.
+- **Amendment 2026-11-15 (B1 review).** Two findings from the B1 build, both DECISION.
+  - a. **Plain words in `ui/`.** The scanner reads all text in `ui/` (comments, `aria-hidden`, test files). B1 generated seven global utilities from plain words: `visible fixed container block hidden transform resize`. A feature class with one of those names would pick up the utility silently. Decision: the exclusion is added directly after `@source "../ui";`:
+    ```css
+    @source not inline("visible fixed container block hidden transform resize");
+    ```
+    A prefix (`tw:`) is rejected: `tailwindcss/utilities.css` takes no prefix option; a prefix needs the full `tailwindcss` import, which brings preflight and the base styles. Rule: when a word in `ui/` (comment or code) is the name of a Tailwind utility, it is added to this list in the same PR. The reviewer checks new words in `ui/` against the build's utility list. Not automated.
+  - b. **`color-mix()` fallback.** Tailwind 4.3.3 always rewrites a `color-mix()` declaration in the CSS file it compiles: it writes the first colour (for `.time-block__body` the full genre accent, for `.next-up` the full accent in the gradient) and puts the mixed value in `@supports`. This is not Lightning CSS, and `optimize: false` does not stop it; `@tailwindcss/vite` does not pass the polyfill option. In browsers without `color-mix` (Chrome before 111, Firefox before 113, Safari before 16.2), a lobby block and Next up then show the full accent as background, which can cut the contrast of the text on it. `main` showed no tint there. Decision: every `color-mix()` in `global.css` sits inside its own `@supports (color: color-mix(in lab, red, red))` block. Tailwind then writes no fallback, and older browsers get what `main` gave them. Rule: no `color-mix(` in `global.css` outside such a block. Applied in the B1 follow-up as two edits: the `.time-block__body` background and border, and the `.next-up` background, each wrapped in the block. Checked in B1 with the Tailwind compile: the output has no unconditional `background: var(--genre-accent)` fallback.
+  - c. **Build record (B1, before the follow-up).** Entry CSS 8.16 to 8.53 KB gzip; entry JS 110.61 KB, unchanged. The follow-up removes the seven utilities and the fallbacks, so the CSS is smaller (the Tailwind-level estimate is about 0.25 KB less gzip). The UI expert records the Vite build numbers in the PR.
 - **One source for tokens.** Values stay in `:root` of `global.css`. No `@theme`, no alias layer and no shadcn variables. A utility reads a token directly: `bg-(--color-bg-raised)`, `rounded-(--radius-control)`. ASSUMPTION: Tailwind 4.3.3 maps `bg-(--x)` to `background-color`. PR B2 checks it; if not, the typed form `bg-(color:--x)` is used. The test below accepts either.
 - **Cascade.** Utilities sit in a layer, so any unlayered rule in `global.css` wins over them.
   - a. A `ui/` component takes its colour, radius and box from its utilities. `global.css` does not style those on a `ui/` element.
@@ -182,6 +190,9 @@ Raspberry Pi: it serves the frontend's static files (ASSUMPTION: the frontend co
 - **Radix `radix-ui` umbrella:** rejected (point 7).
 - **Lazy loading of the Radix parts now:** not done (YAGNI). Revisit if the entry grows.
 - **A motion library:** rejected (user, 2026-11-12).
+- **Prefix for the Tailwind utilities (`tw:`), against plain words in `ui/`:** rejected (amendment a). The prefix needs the full `tailwindcss` import.
+- **Accept the `color-mix()` fallback:** rejected (amendment b). Older browsers would show the full accent behind text.
+- **Turn off the Tailwind optimise step for the fallback:** rejected (amendment b). It does not remove the fallback; the Tailwind polyfill still runs.
 
 ## Notes
 
