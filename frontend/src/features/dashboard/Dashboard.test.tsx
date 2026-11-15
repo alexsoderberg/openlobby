@@ -291,7 +291,7 @@ describe("This week", () => {
   describe("opening scroll", () => {
     const scrollTop = () =>
       screen.getByRole("region", { name: en.calendarGridLabel }).scrollTop;
-    const earlyThursday = {
+    const twoLobbies = {
       g1: [
         lobby("l1", "Catan", at(5, 9), at(5, 10)),
         lobby("l2", "Chess", at(4, 20), at(4, 22)),
@@ -299,15 +299,18 @@ describe("This week", () => {
     };
 
     beforeEach(() => {
-      // jsdom does no layout: give the grid a height of 2400 px, so a minute is 5/3 px.
-      vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockReturnValue(
-        2400,
+      // jsdom does no layout: an hour row is 100 px. As in a browser, the hours list is stretched to the grid's
+      // visible height (600 px), not to its 24 hours, so it cannot give the scale.
+      vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockImplementation(
+        function (this: HTMLElement) {
+          return this.matches(".time-grid__hours li") ? 100 : 600;
+        },
       );
     });
     afterEach(() => vi.restoreAllMocks());
 
     it("goes to the next lobby of the week that has not ended on wide screens", async () => {
-      renderDashboard(earlyThursday);
+      renderDashboard(twoLobbies);
       await nextUpCard();
 
       expect(scrollTop()).toBe(20 * 100);
@@ -323,7 +326,7 @@ describe("This week", () => {
 
     it("keeps the scroll position on phones when another Day pill is chosen", async () => {
       onPhone();
-      renderDashboard(earlyThursday);
+      renderDashboard(twoLobbies);
       await nextUpCard();
       const grid = screen.getByRole("region", { name: en.calendarGridLabel });
       grid.scrollTop = 1234;
