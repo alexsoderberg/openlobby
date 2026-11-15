@@ -1,6 +1,7 @@
 /* Tailwind utilities for ui/ only (ADR 0023): no theme and no preflight, so the tokens below stay the one source. */
 @import "tailwindcss/utilities.css" layer(utilities) source(none);
 @source "../ui";
+@source not inline("visible fixed container block hidden transform resize");
 
 /* Self-hosted fonts (OFL, Latin subset). font-display: swap keeps text visible in the fallback stack while a file loads. */
 @font-face {
@@ -1429,12 +1430,16 @@ a {
   padding: var(--space-1);
   overflow: hidden;
   padding-right: calc(var(--size-genre-icon) - var(--space-1));
-  background: color-mix(
-    in srgb,
-    var(--genre-accent) var(--genre-tint),
-    transparent
-  );
-  border: 1px solid color-mix(in srgb, var(--genre-accent) 45%, transparent);
+  /* Every color-mix() sits in @supports, so Tailwind writes no full-accent fallback for older browsers (ADR 0023,
+     amendment b). Before border-left, which must come later in the cascade than this border shorthand. */
+  @supports (color: color-mix(in lab, red, red)) {
+    background: color-mix(
+      in srgb,
+      var(--genre-accent) var(--genre-tint),
+      transparent
+    );
+    border: 1px solid color-mix(in srgb, var(--genre-accent) 45%, transparent);
+  }
   border-left: 3px solid var(--genre-accent);
   border-radius: var(--radius-control);
   font-size: 0.75rem;
@@ -2040,14 +2045,17 @@ a {
   display: grid;
   gap: var(--space-3);
   padding: var(--space-4);
-  background:
-    radial-gradient(
-      26rem 14rem at 0 0,
-      color-mix(in srgb, var(--genre-accent) var(--genre-wash), transparent),
-      transparent 70%
-    ),
-    var(--color-surface);
   border: 1px solid var(--color-border);
+  /* In @supports so Tailwind writes no full-accent fallback (ADR 0023, amendment b). */
+  @supports (color: color-mix(in lab, red, red)) {
+    background:
+      radial-gradient(
+        26rem 14rem at 0 0,
+        color-mix(in srgb, var(--genre-accent) var(--genre-wash), transparent),
+        transparent 70%
+      ),
+      var(--color-surface);
+  }
   border-radius: var(--radius-panel);
 }
 
