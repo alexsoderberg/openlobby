@@ -92,6 +92,28 @@ const dayText = (iso: string) =>
     new Date(iso),
   );
 
+describe("heading row (REQ-0025)", () => {
+  it("holds the heading, Create lobby, the status and the view toggle, in that order", async () => {
+    renderLobbies(withLobbies());
+
+    const heading = await screen.findByRole("heading", {
+      name: en.lobbiesHeading,
+    });
+    const row = heading.closest<HTMLElement>(".heading-row")!;
+    const order = [
+      heading,
+      within(row).getByRole("button", { name: en.lobbyCreateButton }),
+      within(row).getByRole("status"),
+      within(row).getByRole("group", { name: en.lobbyViewLabel }),
+    ];
+    const following = (a: Element, b: Element) =>
+      a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING;
+    expect(following(order[0], order[1])).toBeTruthy();
+    expect(following(order[1], order[2])).toBeTruthy();
+    expect(following(order[2], order[3])).toBeTruthy();
+  });
+});
+
 describe("lobby list", () => {
   it("shows game, time, creator and spots for each lobby in the server's order", async () => {
     renderLobbies(withLobbies(catan, chess));

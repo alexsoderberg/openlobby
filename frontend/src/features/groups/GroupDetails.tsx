@@ -53,7 +53,9 @@ export function GroupDetails({
         />
         <div className="side-column">
           <Panel>
-            <h2>{m.membersHeading}</h2>
+            <div className="heading-row">
+              <h2>{m.membersHeading}</h2>
+            </div>
             <ul className="row-list" role="list">
               {state.group.members.map((member) => (
                 <li key={member.userId} className="list-row">

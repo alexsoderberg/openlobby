@@ -154,6 +154,8 @@
   /* Text blocks keep a readable line length however wide the main area grows (REQ-0025). */
   --width-measure: 48rem;
   --size-tap: 2.75rem;
+  /* The view toggle's outer height: a tap-size option, the track padding (space-1) and its 1px border. */
+  --size-heading-row: calc(var(--size-tap) + 2 * var(--space-1) + 2 * 1px);
   /* Buttons (ADR 0021): compact under a mouse, the larger box is the hit area on touch. */
   --size-button: 2rem;
   --size-button-touch: 2.5rem;
@@ -708,6 +710,7 @@ a {
 }
 
 .panel > :first-child,
+.panel > .heading-row:first-child > h2:first-child,
 .lobby-summary > :first-child {
   margin-top: 0;
 }
@@ -723,6 +726,12 @@ a {
 
 .panel__head h2 {
   margin: 0;
+}
+
+/* A heading with its view toggle. Below 98rem it is a plain block, so the toggle sits on its own line under the
+   heading and the Lobbies status; beside a side column it is one row (see the side layout below). */
+.heading-row > .status + .view-switch {
+  margin-top: var(--space-3);
 }
 
 /* Panels of one screen stack with a gap. The second one reveals a step later. */
@@ -750,6 +759,42 @@ a {
   .side-layout > .side-column {
     grid-column: 2;
     grid-row: 1;
+  }
+
+  /* The heading and its toggle on one row, the toggle at the right end. Every heading row is as tall as one
+     with the toggle, so the boxes below start level in both columns. It keeps the margins of an h2. */
+  .side-layout .heading-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    column-gap: var(--space-2);
+    min-height: var(--size-heading-row);
+  }
+
+  /* The Lobbies status gets its own line under the row; empty, that line is 0 tall, so nothing moves.
+     No text measure here: a narrower basis would let it share the first line. */
+  .side-layout .heading-row > .status {
+    flex-basis: 100%;
+    max-width: none;
+    order: 1;
+  }
+
+  /* The h2's margins, at :where's zero specificity so the panel's first-child rule still removes the top margin
+     of a row at the top of a panel. */
+  .side-layout :where(.heading-row) {
+    margin: var(--space-4) 0 var(--space-2);
+  }
+
+  .side-layout .heading-row > h2 {
+    margin: 0 auto 0 0;
+  }
+
+  .side-layout .heading-row > .panel__head {
+    flex: 1;
+  }
+
+  .side-layout .heading-row > .view-switch {
+    margin: 0;
   }
 
   /* The lobby page: settings beside both the players and the actions, inside the one panel. */

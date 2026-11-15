@@ -46,35 +46,37 @@ export function Lobbies({
   return (
     <>
       <Panel>
-        <div className="panel__head">
-          <h2>{m.lobbiesHeading}</h2>
-          <button
-            type="button"
-            className="button"
-            aria-haspopup="dialog"
-            aria-expanded={popover.open}
-            onClick={(event) => openForm(undefined, event.currentTarget)}
-          >
-            <Icon name="plus" />
-            {m.lobbyCreateButton}
-          </button>
+        <div className="heading-row">
+          <div className="panel__head">
+            <h2>{m.lobbiesHeading}</h2>
+            <button
+              type="button"
+              className="button"
+              aria-haspopup="dialog"
+              aria-expanded={popover.open}
+              onClick={(event) => openForm(undefined, event.currentTarget)}
+            >
+              <Icon name="plus" />
+              {m.lobbyCreateButton}
+            </button>
+          </div>
+          <p role="status" className="status">
+            {created && m.lobbyCreated}
+          </p>
+          <ViewToggle
+            label={m.lobbyViewLabel}
+            value={view}
+            options={[
+              { value: "list", label: m.lobbyViewList, icon: "list" },
+              {
+                value: "calendar",
+                label: m.lobbyViewCalendar,
+                icon: "calendar",
+              },
+            ]}
+            onChange={setView}
+          />
         </div>
-        <p role="status" className="status">
-          {created && m.lobbyCreated}
-        </p>
-        <ViewToggle
-          label={m.lobbyViewLabel}
-          value={view}
-          options={[
-            { value: "list", label: m.lobbyViewList, icon: "list" },
-            {
-              value: "calendar",
-              label: m.lobbyViewCalendar,
-              icon: "calendar",
-            },
-          ]}
-          onChange={setView}
-        />
         <LobbyViews
           groupId={groupId}
           members={members}

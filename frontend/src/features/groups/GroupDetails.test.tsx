@@ -50,7 +50,7 @@ describe("the member list", () => {
     const members = await screen.findByRole("heading", {
       name: en.membersHeading,
     });
-    const rows = within(members.parentElement!).getAllByRole("listitem");
+    const rows = within(members.closest("section")!).getAllByRole("listitem");
     expect(rows.map((row) => row.textContent)).toEqual([
       "Maja Lind " +
         en.preferredGameRoles.plays([
