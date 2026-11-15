@@ -77,3 +77,11 @@ Acceptance criteria (additions):
 - Given that I am a group admin or a member, when I try to add, change or remove a mode or activity, then it is denied (as above for games).
 
 Out of scope addition: modes and activities of their own in the game list beyond what REQ-0015 defines (e.g. a mode with its own genre).
+
+## Amendment 2026-11-15 (REQ-0026, game logo and cover)
+Status stays Implemented. DECISION, user, 2026-11-15 (REQ-0026, ADR 0026). The game form also gets two optional images per game, a logo and a cover, each uploaded and removed on its own (REQ-0026). Saving the game does not carry them, and a new game gets the image fields after its first save, because an image needs the game's ID (ADR 0026, points 1 and 8). The management rules above stay the same: only a system admin may change an image, and the check is made in the service.
+
+Acceptance criteria (additions):
+- Given that I am a system admin, when I change a game, or after I add it and save it once, then the form shows the logo and cover fields (REQ-0026).
+- Given that I am a group admin or a member, when I try to set or remove a logo or cover, then it is denied (as above for games).
+- Given that I am a system admin, when I remove a game, then its logo and cover are removed with it (REQ-0026).

@@ -107,3 +107,6 @@ Status at the time of this amendment: Decided. Written by the product owner with
 - Given that a lobby has a game with modes, when I see it, then the genre of its game gives the theme, whatever the mode or activity (DECISION, product owner, within REQ-0015).
 - Given that a lobby has no game (an open lobby, REQ-0015), when I see it, then it shows the neutral theme and no genre name (REQ-0015).
 - Out of scope addition: a genre per mode or per activity.
+
+## Amendment 2026-11-15 (REQ-0026, game cover)
+DECISION, user, 2026-11-15 (REQ-0026, ADR 0026). On the Next up card, a game cover replaces the genre background pattern when the game has one. The genre accent border and the genre icon stay visible. A game without a cover, and a cover that fails to load, show the genre theme as before. Other views keep the genre theme. Cover art is allowed for games by REQ-0026; this requirement's exclusion of cover art stays for the genre themes themselves.

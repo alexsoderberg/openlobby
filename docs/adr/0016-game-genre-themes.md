@@ -1,5 +1,6 @@
 # 0016. Game genre: fixed list on the game, genre themes in the frontend
 Status: Accepted (2026-11-07)
+Amended by ADR 0026 (section 7: on the Next up card a game cover replaces the genre background pattern; the genre accent border and icon stay)
 Amends ADR 0010 (genre only: read live from the game, unlike name and preset max)
 Amends ADR 0015 (points 2, 4, 5, 6, 7 and 10, and a new fill cycle, section 8)
 Merge order: ADR 0015 (branch `docs/adr-0015-three-js`, PR #60) merges before this ADR, because section 8 amends it.

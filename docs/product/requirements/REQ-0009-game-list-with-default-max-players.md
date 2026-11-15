@@ -90,6 +90,15 @@ Acceptance criteria (additions):
 ## Amendment 2026-11-13 (REQ-0023, icons for game roles)
 Status stays Implemented. DECISION (user, 2026-11-13, REQ-0023). The exclusion above is lifted for one field only: an icon of a game role (REQ-0011, REQ-0023), chosen from the fixed icon set. It is a field of the game role, not of the game. No other field is added to a game. Image and accent color (F-030) are still future.
 
+## Amendment 2026-11-15 (REQ-0026, game logo and cover)
+Status stays Implemented. DECISION, user, 2026-11-15 (REQ-0026, ADR 0026). The exclusion above is lifted for two optional images per game: a logo and a cover (REQ-0026). Each image is uploaded and removed on its own by a system admin in the game form, and is not carried by the game save (ADR 0026, point 1). The game's name, default max, genre, modes and identity do not change. Accent color (F-030) is still future.
+
+Acceptance criteria (additions):
+- Given that I am a system admin, when I choose a logo or cover for a game, then the image is saved at once and the game's other fields are not changed (REQ-0026).
+- Given that a game has no logo or cover, when a member opens the game choice, then the game is shown and ordered as before. Images do not change the choice or the order.
+- Given that a game has an image removed or a new image set, when a lobby with the game is shown, then its name, max players and mode are unchanged (REQ-0026).
+- Given that this amendment is delivered, when I look at games that were in the list before, then each has no logo and no cover. No name, default max, genre, identity or order changes.
+
 ## Amendment 2026-11-08 (REQ-0015, game modes and open lobbies)
 Status stays Implemented. Decided by the user on 2026-11-08 (REQ-0015, F-033). Implemented in ADR 0017 PR1 to PR6 (2026-11-11).
 
