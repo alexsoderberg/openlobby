@@ -60,6 +60,9 @@ export function Lobbies({
               {m.lobbyCreateButton}
             </button>
           </div>
+          <p role="status" className="status">
+            {created && m.lobbyCreated}
+          </p>
           <ViewToggle
             label={m.lobbyViewLabel}
             value={view}
@@ -74,9 +77,6 @@ export function Lobbies({
             onChange={setView}
           />
         </div>
-        <p role="status" className="status">
-          {created && m.lobbyCreated}
-        </p>
         <LobbyViews
           groupId={groupId}
           members={members}

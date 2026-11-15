@@ -647,8 +647,8 @@ a {
 }
 
 /* A heading with its view toggle. Below 98rem it is a plain block, so the toggle sits on its own line under the
-   heading; beside a side column it is one row (see the side layout below). */
-.panel__head + .view-switch {
+   heading and the Lobbies status; beside a side column it is one row (see the side layout below). */
+.heading-row > .status + .view-switch {
   margin-top: var(--space-3);
 }
 
@@ -683,12 +683,22 @@ a {
      with the toggle, so the boxes below start level in both columns. It keeps the margins of an h2. */
   .side-layout .heading-row {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: var(--space-2);
+    column-gap: var(--space-2);
     min-height: var(--size-heading-row);
   }
 
-  /* :where keeps the panel's first-child rule winning, so a row at the top of a panel has no top margin. */
+  /* The Lobbies status gets its own line under the row; empty, that line is 0 tall, so nothing moves.
+     No text measure here: a narrower basis would let it share the first line. */
+  .side-layout .heading-row > .status {
+    flex-basis: 100%;
+    max-width: none;
+    order: 1;
+  }
+
+  /* The h2's margins, at :where's zero specificity so the panel's first-child rule still removes the top margin
+     of a row at the top of a panel. */
   .side-layout :where(.heading-row) {
     margin: var(--space-4) 0 var(--space-2);
   }
