@@ -1,3 +1,7 @@
+/* Tailwind utilities for ui/ only (ADR 0023): no theme and no preflight, so the tokens below stay the one source. */
+@import "tailwindcss/utilities.css" layer(utilities) source(none);
+@source "../ui";
+
 /* Self-hosted fonts (OFL, Latin subset). font-display: swap keeps text visible in the fallback stack while a file loads. */
 @font-face {
   font-family: "Cormorant Garamond";
@@ -99,9 +103,9 @@
   --space-4: 1.5rem;
   --space-6: 3rem;
 
-  --radius-panel: 16px;
-  --radius-control: 10px;
-  --radius-badge: 6px;
+  --radius-panel: 12px;
+  --radius-control: 8px;
+  --radius-badge: 4px;
   --content-width: 40rem;
 
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
@@ -168,7 +172,7 @@
   --size-avatar: 2.25rem;
   --size-avatar-large: 3.5rem;
   --width-popover: 22rem;
-  --radius-popover: 26px;
+  --radius-popover: 16px;
   --color-chrome: #0c0c10;
   --color-scrim: rgba(0, 0, 0, 0.45);
   --color-accent-line: rgba(240, 199, 94, 0.45);
