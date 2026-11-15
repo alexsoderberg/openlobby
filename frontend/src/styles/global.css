@@ -98,6 +98,7 @@
   --font-sans:
     "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 
+  --space-0: 0;
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 1rem;
@@ -576,6 +577,87 @@ a {
   cursor: not-allowed;
 }
 
+/* Button (ADR 0023 1b): colour, radius and box are utilities in ui/Button.tsx; type, shadow, hover and press
+   motion are here. The looks match the .button classes above, which go once the last call site has moved. */
+[data-slot="button"] {
+  /* border utility's style is a registered variable; some browsers lack it (ADR 0023 B2 amendment d) */
+  border-style: solid;
+  font: inherit;
+  font-weight: 600;
+  transition: transform var(--duration-base) var(--ease-spring);
+}
+
+[data-slot="button"][data-variant="primary"] {
+  box-shadow:
+    inset 0 1px 0 var(--color-highlight),
+    inset 0 -1px 0 var(--color-shade);
+}
+
+/* The primary's sweep parks off the left edge and only animates on hover-in. */
+[data-slot="button"][data-variant="primary"]::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: var(--sweep-width);
+  background: linear-gradient(
+    var(--sweep-angle),
+    transparent,
+    var(--color-sheen),
+    transparent
+  );
+  transform: translateX(var(--sweep-start)) skewX(var(--sweep-skew));
+  pointer-events: none;
+}
+
+[data-slot="button"][data-variant="primary"]:not(:disabled):hover::after {
+  transform: translateX(var(--sweep-end)) skewX(var(--sweep-skew));
+  transition: transform var(--duration-sweep) var(--ease-out);
+}
+
+/* Hover layers fade by opacity behind the content: the accent edge of secondary and danger, the ghost's wash. */
+[data-slot="button"]:is(
+    [data-variant="secondary"],
+    [data-variant="danger"]
+  )::before,
+[data-slot="button"][data-variant="ghost"]::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  z-index: -1;
+  border-radius: inherit;
+  opacity: 0;
+  pointer-events: none;
+}
+
+[data-slot="button"]:is(
+    [data-variant="secondary"],
+    [data-variant="danger"]
+  )::before {
+  border: 1px solid var(--color-accent);
+  transition: opacity var(--duration-base) var(--ease-out);
+}
+
+[data-slot="button"][data-variant="ghost"]::after {
+  background: var(--color-accent-wash);
+  transition: opacity var(--duration-fast) var(--ease-out);
+}
+
+[data-slot="button"]:not(:disabled):hover::before,
+[data-slot="button"][data-variant="ghost"]:not(:disabled):hover::after {
+  opacity: 1;
+}
+
+[data-slot="button"]:not(:disabled):hover {
+  transform: translateY(var(--lift-button));
+}
+
+[data-slot="button"]:not(:disabled):active {
+  transform: scale(var(--press-scale));
+  transition-duration: var(--duration-fast);
+}
+
 .alert {
   margin: 0 0 var(--space-3);
   padding: var(--space-3);
@@ -754,7 +836,7 @@ a {
 }
 
 /* IconButton sits in its tooltip wrapper, so the wrapper stands for the button in these sibling rules. */
-.list-row :is(.button, .tooltip),
+.list-row :is(.button, [data-slot="button"], .tooltip),
 .list-row .badge {
   margin-left: auto;
 }
@@ -2288,6 +2370,14 @@ a {
     transform: none;
   }
 
+  [data-slot="button"][data-variant="primary"]::after {
+    display: none;
+  }
+
+  [data-slot="button"]:not(:disabled):is(:hover, :active) {
+    transform: none;
+  }
+
   [data-reveal="pending"],
   [data-reveal="shown"] {
     opacity: 1;
@@ -2353,6 +2443,7 @@ a {
     .button-ghost,
     .button--secondary,
     .button--danger,
+    [data-slot="button"],
     .tooltip,
     .form-actions,
     .view-switch
@@ -2374,7 +2465,9 @@ a {
 }
 
 /* Only the first button of a row pushes right; the rest follow at the row gap. */
-.list-row :is(.button, .tooltip) + :is(.button, .tooltip) {
+.list-row
+  :is(.button, [data-slot="button"], .tooltip)
+  + :is(.button, [data-slot="button"], .tooltip) {
   margin-left: 0;
 }
 
