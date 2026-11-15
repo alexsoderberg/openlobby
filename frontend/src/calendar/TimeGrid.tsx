@@ -3,7 +3,7 @@ import { useLayoutEffect, useRef, useState } from "react";
 import { formatTime, useMessages } from "../i18n";
 import type { GridLobby } from "./TimeBlock";
 import { TimeGridDay, type CreateAt, type TitleLevel } from "./TimeGridDay";
-import { DAY_MINUTES, dayBlocks, openingMinute } from "./gridGeometry";
+import { MINUTES_PER_HOUR, dayBlocks, openingMinute } from "./gridGeometry";
 import { useGridTop } from "./useGridTop";
 import type { WeekDay } from "./week";
 
@@ -55,18 +55,16 @@ export function TimeGrid<T extends GridLobby>({
   useGridTop(scrollRef);
   useLayoutEffect(() => {
     const scroll = scrollRef.current;
-    const hours = hoursRef.current;
+    // From an hour row: the hours list is stretched to the grid's visible height, not to its 24 hours.
+    const hourRow = hoursRef.current?.firstElementChild;
     const dayList = daysRef.current;
-    if (!scroll || !hours || !dayList) return;
+    if (!scroll || !(hourRow instanceof HTMLElement) || !dayList) return;
     // CSS hides the other days on phones; then the opening follows the one day shown.
     const oneDay = [...dayList.children].some(
       (column) => getComputedStyle(column).display === "none",
     );
     const minute = oneDay ? opening.day : opening.week;
-    // From an hour row: the list itself is stretched to the grid's visible height, not to its 24 hours.
-    const dayHeight =
-      HOURS.length * (hours.firstElementChild as HTMLElement).offsetHeight;
-    scroll.scrollTop = (dayHeight * minute) / DAY_MINUTES;
+    scroll.scrollTop = (hourRow.offsetHeight * minute) / MINUTES_PER_HOUR;
   }, [opening]);
 
   return (

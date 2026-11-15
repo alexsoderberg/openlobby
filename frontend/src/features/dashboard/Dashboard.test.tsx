@@ -291,7 +291,7 @@ describe("This week", () => {
   describe("opening scroll", () => {
     const scrollTop = () =>
       screen.getByRole("region", { name: en.calendarGridLabel }).scrollTop;
-    const earlyThursday = {
+    const twoLobbies = {
       g1: [
         lobby("l1", "Catan", at(5, 9), at(5, 10)),
         lobby("l2", "Chess", at(4, 20), at(4, 22)),
@@ -310,7 +310,7 @@ describe("This week", () => {
     afterEach(() => vi.restoreAllMocks());
 
     it("goes to the next lobby of the week that has not ended on wide screens", async () => {
-      renderDashboard(earlyThursday);
+      renderDashboard(twoLobbies);
       await nextUpCard();
 
       expect(scrollTop()).toBe(20 * 100);
@@ -326,7 +326,7 @@ describe("This week", () => {
 
     it("keeps the scroll position on phones when another Day pill is chosen", async () => {
       onPhone();
-      renderDashboard(earlyThursday);
+      renderDashboard(twoLobbies);
       await nextUpCard();
       const grid = screen.getByRole("region", { name: en.calendarGridLabel });
       grid.scrollTop = 1234;

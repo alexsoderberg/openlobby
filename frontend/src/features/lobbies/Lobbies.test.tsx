@@ -57,7 +57,10 @@ beforeEach(() => {
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(NOW);
 });
-afterEach(() => vi.useRealTimers());
+afterEach(() => {
+  vi.useRealTimers();
+  vi.restoreAllMocks();
+});
 
 function renderLobbies(overrides: Partial<ApiClient> = {}) {
   const client = fakeApiClient({
@@ -420,6 +423,23 @@ describe("calendar view", () => {
     expect(
       screen.queryByRole("button", { name: /previous|back|this week/i }),
     ).toBeNull();
+  });
+
+  it("opens scrolled to the hour of the next lobby", async () => {
+    // jsdom does no layout: an hour row is 100 px, and the hours list is stretched to the grid's visible height.
+    vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockImplementation(
+      function (this: HTMLElement) {
+        return this.matches(".time-grid__hours li") ? 100 : 600;
+      },
+    );
+    renderLobbies(withLobbies(catan));
+    await screen.findByRole("link", { name: "Catan" });
+
+    fireEvent.click(calendarButton());
+
+    expect(
+      screen.getByRole("region", { name: en.calendarGridLabel }).scrollTop,
+    ).toBe(18 * 100);
   });
 
   it("keeps the scroll position and goes back to Monday when the next week is shown", async () => {
