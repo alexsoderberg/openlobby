@@ -63,7 +63,10 @@ export function TimeGrid<T extends GridLobby>({
       (column) => getComputedStyle(column).display === "none",
     );
     const minute = oneDay ? opening.day : opening.week;
-    scroll.scrollTop = (hours.offsetHeight * minute) / DAY_MINUTES;
+    // From an hour row: the list itself is stretched to the grid's visible height, not to its 24 hours.
+    const dayHeight =
+      HOURS.length * (hours.firstElementChild as HTMLElement).offsetHeight;
+    scroll.scrollTop = (dayHeight * minute) / DAY_MINUTES;
   }, [opening]);
 
   return (

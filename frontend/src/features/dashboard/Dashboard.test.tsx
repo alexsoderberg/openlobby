@@ -299,9 +299,12 @@ describe("This week", () => {
     };
 
     beforeEach(() => {
-      // jsdom does no layout: give the grid a height of 2400 px, so a minute is 5/3 px.
-      vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockReturnValue(
-        2400,
+      // jsdom does no layout: an hour row is 100 px. As in a browser, the hours list is stretched to the grid's
+      // visible height (600 px), not to its 24 hours, so it cannot give the scale.
+      vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockImplementation(
+        function (this: HTMLElement) {
+          return this.matches(".time-grid__hours li") ? 100 : 600;
+        },
       );
     });
     afterEach(() => vi.restoreAllMocks());
