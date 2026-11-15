@@ -1431,7 +1431,7 @@ a {
   overflow: hidden;
   padding-right: calc(var(--size-genre-icon) - var(--space-1));
   /* Every color-mix() sits in @supports, so Tailwind writes no full-accent fallback for older browsers (ADR 0023,
-     amendment b). Before border-left, which must come later in the cascade than this border shorthand. */
+     amendment b). border-left stays after this block: it must win over the border shorthand inside it. */
   @supports (color: color-mix(in lab, red, red)) {
     background: color-mix(
       in srgb,
