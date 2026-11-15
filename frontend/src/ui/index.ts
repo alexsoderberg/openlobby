@@ -1,4 +1,5 @@
 export { Alert } from "./Alert";
+export { Button } from "./Button";
 export { Avatar } from "./Avatar";
 export { Brand } from "./Brand";
 export { ConfirmDialog } from "./ConfirmDialog";
