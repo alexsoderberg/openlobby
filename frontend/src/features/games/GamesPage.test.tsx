@@ -24,6 +24,13 @@ const chess: Game = {
   genre: null,
 };
 
+/** A row's text as a screen reader reads it: without the game's monogram, which is hidden from it. */
+const readText = (row: HTMLElement) =>
+  Array.from(row.children)
+    .filter((cell) => cell.getAttribute("aria-hidden") !== "true")
+    .map((cell) => cell.textContent)
+    .join("");
+
 function renderPage(client: ApiClient, isSystemAdmin = true) {
   const onUnauthenticated = vi.fn();
   render(
@@ -69,7 +76,7 @@ describe("game list", () => {
     renderPage(adminClient());
 
     const rows = await screen.findAllByRole("listitem");
-    expect(rows.map((row) => row.textContent)).toEqual([
+    expect(rows.map(readText)).toEqual([
       `Catan${en.gameMaxPlayers(4)}${en.gameEdit}${en.gameRemove}`,
       `Chess${en.gameUnlimited}${en.gameEdit}${en.gameRemove}`,
     ]);
@@ -150,7 +157,7 @@ describe("modes in the list", () => {
     );
 
     const rows = await screen.findAllByRole("listitem");
-    expect(rows.map((row) => row.textContent)).toEqual([
+    expect(rows.map(readText)).toEqual([
       `Catan${en.gameModeCount(1)}${en.gameEdit}${en.gameRemove}`,
       `Duelists${en.gameModeCount(2)}${en.gameEdit}${en.gameRemove}`,
       `Plain${en.gameMaxPlayers(6)}${en.gameEdit}${en.gameRemove}`,

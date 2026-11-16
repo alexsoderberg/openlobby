@@ -5,6 +5,7 @@ export type {
   CreateLobbyInput,
   Game,
   Genre,
+  GameImageKind,
   GameInput,
   GameMode,
   GameRole,
@@ -33,6 +34,7 @@ export {
   MODE_NAME_MAX_LENGTH,
   RESERVED_GAME_NAME,
   errorCodeOf,
+  gameImageUrl,
   isUnauthenticated,
   loginUrl,
 } from "./client";

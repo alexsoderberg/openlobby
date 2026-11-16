@@ -375,6 +375,48 @@ describe("lobby theme", () => {
   });
 });
 
+describe("game logo", () => {
+  const VERSION = "d".repeat(64);
+
+  it("shows the logo before the game name in the lobby header", async () => {
+    renderDetail({
+      getLobby: () =>
+        Promise.resolve({
+          ...lobby,
+          gameId: "game1",
+          gameLogoVersion: VERSION,
+        }),
+    });
+
+    const header = (
+      await screen.findByRole("heading", { name: "Catan" })
+    ).closest("header")!;
+    const logo = header.querySelector('[data-slot="game-logo"] img');
+    expect(logo?.getAttribute("src")).toBe(
+      `/api/games/game1/images/logo?v=${VERSION}`,
+    );
+    expect(logo?.getAttribute("alt")).toBe("");
+  });
+
+  it("shows the monogram after the logo fails to load", async () => {
+    renderDetail({
+      getLobby: () =>
+        Promise.resolve({
+          ...lobby,
+          gameId: "game1",
+          gameLogoVersion: VERSION,
+        }),
+    });
+
+    const header = (
+      await screen.findByRole("heading", { name: "Catan" })
+    ).closest("header")!;
+    fireEvent.error(header.querySelector('[data-slot="game-logo"] img')!);
+    expect(within(header).getByText("C")).toBeTruthy();
+    expect(header.querySelector('[data-slot="game-logo"] img')).toBeNull();
+  });
+});
+
 describe("lobby detail", () => {
   it("shows the game, spots and the names of all players in joined order", async () => {
     renderDetail();

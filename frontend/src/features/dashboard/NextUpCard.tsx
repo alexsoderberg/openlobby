@@ -1,6 +1,6 @@
 import { GenreFrame, GenreName } from "../../genres";
 import { formatDateTime, useMessages } from "../../i18n";
-import { lobbyLabel, RoleSlots } from "../../lobby";
+import { LobbyGameLogo, lobbyLabel, RoleSlots } from "../../lobby";
 import { Meter } from "../../ui";
 import { LobbyMembership, lobbyPath } from "../lobbies";
 import { timingText } from "./countdown";
@@ -23,11 +23,14 @@ export function NextUpCard({
     <GenreFrame as="article" genre={lobby.gameGenre} className="next-up" motif>
       <div>
         <p className="next-up__timing">{timingText(m.dashboard, lobby, now)}</p>
-        <h3 className="next-up__game">
-          <a href={lobbyPath(lobby.groupId, lobby.id)}>
-            {lobbyLabel(lobby, m)}
-          </a>
-        </h3>
+        <div className="game-heading">
+          <LobbyGameLogo lobby={lobby} />
+          <h3 className="next-up__game">
+            <a href={lobbyPath(lobby.groupId, lobby.id)}>
+              {lobbyLabel(lobby, m)}
+            </a>
+          </h3>
+        </div>
         <GenreName genre={lobby.gameGenre} />
         <p className="next-up__meta">
           {formatDateTime(lobby.startsAt)} · {lobby.groupName}

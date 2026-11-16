@@ -175,6 +175,8 @@
   --size-plus-tab: 3.5rem;
   --size-avatar: 2.25rem;
   --size-avatar-large: 3.5rem;
+  /* A game logo or its monogram: one fixed box everywhere, so a loading image moves nothing (REQ-0026). */
+  --size-game-logo: 2.5rem;
   --width-popover: 22rem;
   --radius-popover: 16px;
   --color-chrome: #0c0c10;
@@ -881,7 +883,9 @@ a {
 }
 
 /* IconButton sits in its tooltip wrapper, so the wrapper stands for the button in these sibling rules. */
-.list-row :is(.button, [data-slot="button"], .tooltip),
+/* A game image field in a game being changed keeps its buttons by the image. */
+.list-row
+  :is(.button, [data-slot="button"], .tooltip):not(.image-field__row > *),
 .list-row .badge {
   margin-left: auto;
 }
@@ -1062,6 +1066,14 @@ a {
 .group-form .structure > legend {
   padding: 0 var(--space-1);
   font-weight: 600;
+}
+
+/* A game image field: the image, then its actions, wrapping under it on a narrow screen. */
+.image-field__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
 }
 
 .structure-list {
@@ -1914,6 +1926,27 @@ a {
   font-weight: 600;
 }
 
+/* GameLogo (ADR 0023 point 2): colour, radius and box are utilities in ui/GameLogo.tsx; the monogram's type is here. */
+[data-slot="game-logo"] {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-small);
+  font-weight: 600;
+}
+
+/* Only the monogram has a border: without its border utility, a solid style would draw the browser's medium width.
+   The border utility's style is a registered variable; some browsers lack it (ADR 0023 B2 amendment d). */
+[data-slot="game-logo"][data-shows="monogram"] {
+  border-style: solid;
+}
+
+/* A game name with its logo before it. The name stays the text that identifies the game. */
+.game-heading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
 /* A group icon is round; the open group, and the one under the pointer, becomes a rounded square, so the mark is not colour alone. */
 .group-icon {
   display: grid;
@@ -2194,6 +2227,13 @@ a {
   color: var(--color-accent);
   font-family: var(--font-heading);
   font-weight: 600;
+}
+
+/* The card is narrow in the side column, so the logo sits above the game name and the name keeps the full width. */
+.next-up .game-heading {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
 }
 
 .next-up__game {

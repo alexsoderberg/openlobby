@@ -42,6 +42,7 @@ type memoryGroups struct {
 	choices map[string][]string // preferred game role IDs by user
 	// visible are the preferred game roles by user that the group and lobby reads give, as the adapter filters them.
 	visible map[string][]domain.PreferredGameRole
+	images  map[string]domain.GameImage // the logo by game ID
 	err     error
 	calls   int
 	created int
@@ -149,7 +150,8 @@ func newRouter(store *memoryGroups, directory *fakeDirectory) http.Handler {
 	games := application.NewGames(store, store, memoryEditor{store}, logger)
 	invites := application.NewInviteLinks(store, store, store, fixedTokens{}, fixedClock{})
 	lobbies := application.NewLobbies(memoryLobbyRepo{store}, store, store, directory, fixedClock{})
-	return transport.NewRouter(groups, invites, games, lobbies, application.NewMemberships(memoryMemberships{store}, fixedClock{}), application.NewPreferredGameRoles(memoryChoices{store}, store), ready, logger)
+	gameImages := application.NewGameImages(memoryImages{store}, logger)
+	return transport.NewRouter(groups, invites, games, gameImages, lobbies, application.NewMemberships(memoryMemberships{store}, fixedClock{}), application.NewPreferredGameRoles(memoryChoices{store}, store), ready, logger)
 }
 
 func call(router http.Handler, method, target string, headers map[string]string, body string) *httptest.ResponseRecorder {

@@ -128,7 +128,7 @@ func lobbyDetailBody(lobby domain.Lobby, players []domain.Player) (publicapi.Lob
 		return publicapi.LobbyDetail{}, err
 	}
 	return publicapi.LobbyDetail{
-		Id: body.Id, GameId: body.GameId, GameName: body.GameName, GameGenre: body.GameGenre, MaxPlayers: body.MaxPlayers,
+		Id: body.Id, GameId: body.GameId, GameName: body.GameName, GameGenre: body.GameGenre, GameLogoVersion: body.GameLogoVersion, MaxPlayers: body.MaxPlayers,
 		ModeId: body.ModeId, ModeName: body.ModeName, ActivityId: body.ActivityId, ActivityName: body.ActivityName,
 		StartsAt: body.StartsAt, EndsAt: body.EndsAt, CreatedByUserId: body.CreatedByUserId, PlayerCount: body.PlayerCount,
 		JoinedByMe: body.JoinedByMe, FlexCount: body.FlexCount, RoleSlots: body.RoleSlots, Players: refs,
@@ -211,7 +211,7 @@ func lobbyBody(lobby domain.Lobby) (publicapi.CreateLobby201JSONResponse, error)
 	if err != nil {
 		return body, err
 	}
-	body.GameName, body.GameGenre, body.MaxPlayers = lobby.GameName, convertGenre[publicapi.Genre](lobby.GameGenre), lobby.MaxPlayers
+	body.GameName, body.GameGenre, body.GameLogoVersion, body.MaxPlayers = lobby.GameName, convertGenre[publicapi.Genre](lobby.GameGenre), lobby.GameLogoVersion, lobby.MaxPlayers
 	body.ModeName, body.ActivityName = lobby.ModeName, lobby.ActivityName
 	body.StartsAt, body.EndsAt = lobby.StartsAt.UTC(), lobby.EndsAt.UTC()
 	body.PlayerCount, body.JoinedByMe, body.FlexCount, body.RoleSlots = lobby.PlayerCount, lobby.JoinedByMe, &lobby.FlexCount, &slots

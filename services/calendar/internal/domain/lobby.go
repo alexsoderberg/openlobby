@@ -29,6 +29,7 @@ type Lobby struct {
 	GameID          *string // nil for a custom game name or no game
 	GameName        *string // nil for a lobby with no game (ADR 0017)
 	GameGenre       *Genre  // the game's genre now, read from the game list; nil for no game, a custom name or a removed game
+	GameLogoVersion *string // the version of the game's logo now, like GameGenre; nil also for a game without a logo (ADR 0026)
 	MaxPlayers      *int    // nil means unlimited
 	StartsAt        time.Time
 	EndsAt          time.Time
@@ -181,7 +182,8 @@ func (c lobbyChoices) lobby(request NewLobbyRequest, now time.Time) Lobby {
 		CreatorRoleID:   c.creatorRole,
 	}
 	if c.gameID != nil {
-		lobby.GameGenre = request.Game.Genre // chooseGame guarantees Game is set when gameID is
+		// chooseGame guarantees Game is set when gameID is.
+		lobby.GameGenre, lobby.GameLogoVersion = request.Game.Genre, request.Game.LogoVersion
 	}
 	if c.mode != nil {
 		lobby.ModeID, lobby.ModeName = &c.mode.ID, &c.mode.Name

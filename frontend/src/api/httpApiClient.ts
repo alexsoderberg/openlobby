@@ -4,6 +4,8 @@ import type { paths as calendarPaths } from "./gen/calendar";
 import { apiErrorFrom, unreachableError, type ApiClient } from "./client";
 
 type Paths = authPaths & calendarPaths;
+/** The server reads the type from the bytes; this only replaces the JSON default for a file the browser could not type. */
+const BINARY_TYPE = "application/octet-stream";
 type Settled<T> = { data?: T; error?: unknown; response: Response };
 
 /** Adapter: the only place that knows openapi-fetch. Errors leave it as ApiError. */
@@ -82,6 +84,25 @@ export function createHttpApiClient(
     deleteGame: async (gameId) => {
       await receive(
         http.DELETE("/api/games/{gameId}", { params: { path: { gameId } } }),
+      );
+    },
+    setGameImage: async (gameId, kind, image) =>
+      bodyOf(
+        await receive(
+          http.PUT("/api/games/{gameId}/images/{kind}", {
+            params: { path: { gameId, kind } },
+            // The contract types a binary body as string; the Blob is sent as it is, not as JSON.
+            body: image as unknown as string,
+            bodySerializer: (body) => body,
+            headers: { "Content-Type": image.type || BINARY_TYPE },
+          }),
+        ),
+      ),
+    removeGameImage: async (gameId, kind) => {
+      await receive(
+        http.DELETE("/api/games/{gameId}/images/{kind}", {
+          params: { path: { gameId, kind } },
+        }),
       );
     },
     listGroupGames: async (groupId) =>

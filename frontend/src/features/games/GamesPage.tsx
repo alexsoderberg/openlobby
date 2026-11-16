@@ -57,7 +57,11 @@ function GameAdmin({ onUnauthenticated }: { onUnauthenticated: () => void }) {
     <>
       <h1>{m.gameListHeading}</h1>
       <div className="panel-group">
-        <GameListPanel admin={admin} statusRef={statusRef} />
+        <GameListPanel
+          admin={admin}
+          statusRef={statusRef}
+          onUnauthenticated={onUnauthenticated}
+        />
         <Panel>
           <h2>{m.gameAddHeading}</h2>
           <GameForm
@@ -91,9 +95,11 @@ function RemoveGame({ admin }: { admin: Admin }) {
 function GameListPanel({
   admin,
   statusRef,
+  onUnauthenticated,
 }: {
   admin: Admin;
   statusRef: RefObject<HTMLParagraphElement | null>;
+  onUnauthenticated: () => void;
 }) {
   const m = useMessages();
   const { change } = admin;
@@ -109,6 +115,8 @@ function GameListPanel({
         onSave={admin.save}
         onCancelEdit={() => admin.setEditingId(undefined)}
         onRemove={admin.setRemoving}
+        onImageChanged={admin.refresh}
+        onUnauthenticated={onUnauthenticated}
       />
       <p ref={statusRef} tabIndex={-1} role="status" className="status">
         {change.status === "done" && m[CHANGE_MESSAGE[change.change]]}

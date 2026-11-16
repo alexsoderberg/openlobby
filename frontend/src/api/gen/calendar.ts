@@ -441,6 +441,37 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/games/{gameId}/images/{kind}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a game image
+         * @description Any logged-in user. Returns the stored bytes with the stored `Content-Type`. The URL carries the version, so the answer is cached for a year (ADR 0026 point 4).
+         *     Rules in this order: a `gameId` in invalid form (404 `game_not_found`), then 404 `game_image_not_found` when `kind` is unknown, the game has no image of this kind, the game does not exist, or `v` is missing or is not the current version of the image.
+         */
+        get: operations["getGameImage"];
+        /**
+         * Upload a game image (system admin)
+         * @description System admin only. The body is the raw image, at most 524288 bytes, sent with its `Content-Type` `image/png`, `image/jpeg` or `image/webp`. The image replaces the stored image of this kind, and the game gets a new version. The request's `Content-Type` is documentation only: the server decides the type from the bytes (PNG, JPEG or WebP). ADR 0026.
+         *     Rules in this order: a `gameId` in invalid form (404 `game_not_found`), an unknown `kind` (404 `game_image_not_found`), a body that cannot be read (400 `invalid_request`), permission (403 `not_allowed`), size (413 `image_too_large`), type (400 `invalid_image_type`), unknown `gameId` (404 `game_not_found`).
+         */
+        put: operations["setGameImage"];
+        post?: never;
+        /**
+         * Remove a game image (system admin)
+         * @description System admin only. Removes the image of this kind. Idempotent: a game without the image also gives 204.
+         *     Rules in this order: a `gameId` in invalid form (404 `game_not_found`), an unknown `kind` (404 `game_image_not_found`), permission (403 `not_allowed`), unknown `gameId` (404 `game_not_found`).
+         */
+        delete: operations["removeGameImage"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/users/me/preferred-game-roles": {
         parameters: {
             query?: never;
@@ -479,7 +510,7 @@ export interface components {
              * @description Machine-readable error code. The text for the user belongs to the frontend. not_found and method_not_allowed are returned by the gateway only.
              * @enum {string}
              */
-            code: "unauthenticated" | "service_unavailable" | "invalid_request" | "not_allowed" | "group_not_found" | "member_not_found" | "own_upcoming_lobbies_exist" | "invalid_group_name" | "invite_invalid" | "invalid_max_uses" | "lobby_not_found" | "lobby_in_past" | "lobby_end_not_after_start" | "lobby_too_long" | "lobby_has_ended" | "lobby_full" | "invalid_game" | "invalid_capacity" | "invalid_genre" | "invalid_mode" | "invalid_activity" | "invalid_game_role" | "game_role_full" | "lobby_game_set" | "lobby_changed" | "lobby_has_more_players" | "game_taken" | "mode_taken" | "activity_taken" | "game_role_taken" | "game_not_found" | "internal_error" | "not_found" | "method_not_allowed";
+            code: "unauthenticated" | "service_unavailable" | "invalid_request" | "not_allowed" | "group_not_found" | "member_not_found" | "own_upcoming_lobbies_exist" | "invalid_group_name" | "invite_invalid" | "invalid_max_uses" | "lobby_not_found" | "lobby_in_past" | "lobby_end_not_after_start" | "lobby_too_long" | "lobby_has_ended" | "lobby_full" | "invalid_game" | "invalid_capacity" | "invalid_genre" | "invalid_mode" | "invalid_activity" | "invalid_game_role" | "game_role_full" | "lobby_game_set" | "lobby_changed" | "lobby_has_more_players" | "game_taken" | "mode_taken" | "activity_taken" | "game_role_taken" | "game_not_found" | "invalid_image_type" | "image_too_large" | "game_image_not_found" | "internal_error" | "not_found" | "method_not_allowed";
             /** @description Same value as `X-Request-Id` in the response. Used to match logs. */
             requestId: string;
         };
@@ -566,6 +597,8 @@ export interface components {
             gameName: (string & components["schemas"]["GameName"]) | null;
             /** @description Genre of the lobby's game as it is in the game list now. `null` for a lobby with no game, a custom name ("Other"), a game without a genre, or a game that was removed. Not stored in the lobby, so a genre change shows at the next read. */
             gameGenre: (string & components["schemas"]["Genre"]) | null;
+            /** @description Version of the logo of the lobby's game as it is in the game list now, for the image URL (ADR 0026). `null` for a lobby with no game, a custom name ("Other"), a game without a logo, or a game that was removed. Not in `required` so that existing fixtures stay valid, but the server always sends it. */
+            gameLogoVersion?: string | null;
             maxPlayers: components["schemas"]["MaxPlayers"];
             /**
              * Format: date-time
@@ -699,11 +732,18 @@ export interface components {
             defaultMaxPlayers: components["schemas"]["DefaultMaxPlayers"];
             /** @description The game's genre, or `null` for no genre. */
             genre: (string & components["schemas"]["Genre"]) | null;
+            /** @description Version of the game's logo, the hex SHA-256 of its bytes, for the image URL `/api/games/{gameId}/images/logo?v={logoVersion}` (ADR 0026). `null` when the game has no logo. Not in `required` so that existing fixtures stay valid, but the server always sends it. */
+            logoVersion?: string | null;
             /** @description The game roles of the game itself, in the order entered. Not used while the game has modes. Not in `required` so that existing fixtures stay valid, but the server always sends it (ADR 0017). */
             gameRoles?: components["schemas"]["GameRole"][];
             /** @description The modes of the game, in the order entered. Not in `required` so that existing fixtures stay valid, but the server always sends it (ADR 0017). */
             modes?: components["schemas"]["GameMode"][];
         };
+        /**
+         * @description The kind of a game image (REQ-0026, ADR 0026).
+         * @enum {string}
+         */
+        GameImageKind: "logo";
         CreateGameRequest: {
             /** @description Game name. Omitted or `null` gives `invalid_game`. The name `Other` (ignoring case, after trim) is reserved for the client's free-text choice and gives `invalid_game` (ADR 0010). */
             name?: (string & components["schemas"]["GameName"]) | null;
@@ -859,6 +899,8 @@ export interface components {
         InviteToken: string;
         /** @description The game's ID (uuid). An invalid form gives `game_not_found`. */
         GameIdPath: string;
+        /** @description The kind of game image. An unknown kind gives `game_image_not_found`. */
+        GameImageKindPath: components["schemas"]["GameImageKind"];
     };
     requestBodies: never;
     headers: never;
@@ -2073,6 +2115,171 @@ export interface operations {
                 };
             };
             /** @description `game_not_found`: the game does not exist, or the ID in the path has an invalid form. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            500: components["responses"]["InternalError"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    getGameImage: {
+        parameters: {
+            query?: {
+                /** @description The current version of the image (`logoVersion` of the game, `gameLogoVersion` of a lobby). A missing or older value gives `game_image_not_found`. */
+                v?: string;
+            };
+            header?: {
+                /** @description Correlation ID (ADR 0001). A valid value is kept and passed on. A missing or invalid value is replaced by a new one. The response always contains `X-Request-Id`. */
+                "X-Request-Id"?: components["parameters"]["RequestIdHeader"];
+            };
+            path: {
+                /** @description The game's ID (uuid). An invalid form gives `game_not_found`. */
+                gameId: components["parameters"]["GameIdPath"];
+                /** @description The kind of game image. An unknown kind gives `game_image_not_found`. */
+                kind: components["parameters"]["GameImageKindPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The image as it was uploaded, with its stored `Content-Type`, one of `image/png`, `image/jpeg` and `image/webp`. */
+            200: {
+                headers: {
+                    /** @description `private, max-age=31536000, immutable`. */
+                    "Cache-Control"?: string;
+                    /** @description `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/*": string;
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            /** @description `game_not_found` (the ID in the path has an invalid form) or `game_image_not_found` (see the rules above). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            500: components["responses"]["InternalError"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    setGameImage: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Correlation ID (ADR 0001). A valid value is kept and passed on. A missing or invalid value is replaced by a new one. The response always contains `X-Request-Id`. */
+                "X-Request-Id"?: components["parameters"]["RequestIdHeader"];
+            };
+            path: {
+                /** @description The game's ID (uuid). An invalid form gives `game_not_found`. */
+                gameId: components["parameters"]["GameIdPath"];
+                /** @description The kind of game image. An unknown kind gives `game_image_not_found`. */
+                kind: components["parameters"]["GameImageKindPath"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "image/*": string;
+            };
+        };
+        responses: {
+            /** @description The image is stored. The game as it is after the write, with its new version. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Game"];
+                };
+            };
+            /** @description `invalid_image_type` (the bytes are not PNG, JPEG or WebP, including an empty body) or `invalid_request` (the body could not be read). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            /** @description `not_allowed`: the caller is not a system admin. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `game_not_found` (the game does not exist, or the ID in the path has an invalid form) or `game_image_not_found` (unknown `kind`). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `image_too_large`: the body has more than 524288 bytes. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            500: components["responses"]["InternalError"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    removeGameImage: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Correlation ID (ADR 0001). A valid value is kept and passed on. A missing or invalid value is replaced by a new one. The response always contains `X-Request-Id`. */
+                "X-Request-Id"?: components["parameters"]["RequestIdHeader"];
+            };
+            path: {
+                /** @description The game's ID (uuid). An invalid form gives `game_not_found`. */
+                gameId: components["parameters"]["GameIdPath"];
+                /** @description The kind of game image. An unknown kind gives `game_image_not_found`. */
+                kind: components["parameters"]["GameImageKindPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The game has no image of this kind. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthenticated"];
+            /** @description `not_allowed`: the caller is not a system admin. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `game_not_found` (the game does not exist, or the ID in the path has an invalid form) or `game_image_not_found` (unknown `kind`). */
             404: {
                 headers: {
                     [name: string]: unknown;

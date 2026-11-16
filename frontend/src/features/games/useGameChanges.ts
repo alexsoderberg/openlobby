@@ -4,6 +4,7 @@ import {
   isUnauthenticated,
   useApi,
   type ChangeResult,
+  type Game,
   type GameInput,
 } from "../../api";
 import { GAME_NOT_FOUND } from "./gameErrors";
@@ -51,7 +52,8 @@ export function useGameChanges(
   );
 
   const add = useCallback(
-    (input: GameInput) => change("added", () => api.createGame(input)),
+    (input: GameInput, onAdded: (game: Game) => void) =>
+      change("added", async () => onAdded(await api.createGame(input))),
     [api, change],
   );
   const replace = useCallback(

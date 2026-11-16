@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { ApiError, type ApiClient } from "./client";
+import { ApiError, gameImageUrl, type ApiClient } from "./client";
 import { createHttpApiClient } from "./httpApiClient";
 
 const BASE_URL = "http://gateway.test";
@@ -32,6 +32,8 @@ const failingCalls: Array<[string, (api: ApiClient) => Promise<unknown>]> = [
       }),
   ],
   ["deleteGame", (api) => api.deleteGame("g1")],
+  ["setGameImage", (api) => api.setGameImage("g1", "logo", new Blob(["x"]))],
+  ["removeGameImage", (api) => api.removeGameImage("g1", "logo")],
   ["listGroupGames", (api) => api.listGroupGames("g1")],
   ["listUpcomingLobbies", (api) => api.listUpcomingLobbies("g1")],
   ["getLobby", (api) => api.getLobby("g1", "l1")],
@@ -87,6 +89,56 @@ describe("createHttpApiClient", () => {
       createHttpApiClient(fetchImpl, BASE_URL).logout(),
     ).resolves.toBeUndefined();
     expect(sent[0]).toMatchObject({ method: "POST" });
+  });
+
+  it("puts the image bytes unchanged with their own type and returns the game", async () => {
+    const game = { id: "g1", name: "Catan", logoVersion: "a".repeat(64) };
+    const image = new File(
+      [new Uint8Array([0x89, 0x50, 0x4e, 0x47])],
+      "logo.png",
+      {
+        type: "image/png",
+      },
+    );
+    const sent: Request[] = [];
+    const fetchImpl = vi.fn<typeof fetch>(async (input) => {
+      sent.push(new Request(input));
+      return Response.json(game);
+    });
+
+    await expect(
+      createHttpApiClient(fetchImpl, BASE_URL).setGameImage(
+        "g1",
+        "logo",
+        image,
+      ),
+    ).resolves.toEqual(game);
+    expect(sent[0]).toMatchObject({ method: "PUT" });
+    expect(new URL(sent[0].url).pathname).toBe("/api/games/g1/images/logo");
+    expect(sent[0].headers.get("Content-Type")).toBe("image/png");
+    expect(new Uint8Array(await sent[0].arrayBuffer())).toEqual(
+      new Uint8Array([0x89, 0x50, 0x4e, 0x47]),
+    );
+  });
+
+  it("deletes a game image and resolves on 204", async () => {
+    const sent: Request[] = [];
+    const fetchImpl = vi.fn<typeof fetch>(async (input) => {
+      sent.push(new Request(input));
+      return new Response(null, { status: 204 });
+    });
+
+    await expect(
+      createHttpApiClient(fetchImpl, BASE_URL).removeGameImage("g1", "logo"),
+    ).resolves.toBeUndefined();
+    expect(sent[0]).toMatchObject({ method: "DELETE" });
+    expect(new URL(sent[0].url).pathname).toBe("/api/games/g1/images/logo");
+  });
+
+  it("builds the game image URL with its version", () => {
+    expect(gameImageUrl("g1", "logo", "abc")).toBe(
+      "/api/games/g1/images/logo?v=abc",
+    );
   });
 
   it("posts the name to create a group and returns the created group", async () => {
