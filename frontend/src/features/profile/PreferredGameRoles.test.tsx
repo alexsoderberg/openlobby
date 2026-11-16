@@ -73,6 +73,32 @@ const save = () =>
   fireEvent.click(screen.getByRole("button", { name: m.save }));
 
 describe("PreferredGameRoles", () => {
+  it("shows each game's logo before its name, and the monogram without one", async () => {
+    const version = "a".repeat(64);
+    renderSection({
+      getPreferredGameRoles: () =>
+        Promise.resolve({
+          ...choices,
+          games: [
+            { ...choices.games[0], logoVersion: version },
+            choices.games[1],
+          ],
+        }),
+    });
+
+    const withLogo = await screen.findByRole("group", {
+      name: "Deep Rock Galactic",
+    });
+    const without = screen.getByRole("group", { name: "Overwatch" });
+    expect(
+      withLogo
+        .querySelector('[data-slot="game-logo"] img')
+        ?.getAttribute("src"),
+    ).toBe(`/api/games/drg/images/logo?v=${version}`);
+    expect(without.querySelector('[data-slot="game-logo"] img')).toBeNull();
+    expect(within(without).getByText("O")).toBeTruthy();
+  });
+
   it("names the form after the section heading", async () => {
     renderSection();
 
