@@ -1,7 +1,11 @@
-import { gameImageUrl } from "../../api";
 import { GenreFrame, GenreName } from "../../genres";
 import { formatDateTime, useMessages } from "../../i18n";
-import { LobbyGameLogo, lobbyLabel, RoleSlots } from "../../lobby";
+import {
+  LobbyGameLogo,
+  lobbyCoverUrl,
+  lobbyLabel,
+  RoleSlots,
+} from "../../lobby";
 import { Meter } from "../../ui";
 import { LobbyMembership, lobbyPath } from "../lobbies";
 import { timingText } from "./countdown";
@@ -20,17 +24,13 @@ export function NextUpCard({
   onUnauthenticated: () => void;
 }) {
   const m = useMessages();
-  const coverUrl =
-    lobby.gameId && lobby.gameCoverVersion
-      ? gameImageUrl(lobby.gameId, "cover", lobby.gameCoverVersion)
-      : undefined;
   return (
     <GenreFrame
       as="article"
       genre={lobby.gameGenre}
       className="next-up"
       motif
-      coverUrl={coverUrl}
+      coverUrl={lobbyCoverUrl(lobby)}
     >
       <div>
         <p className="next-up__timing">{timingText(m.dashboard, lobby, now)}</p>

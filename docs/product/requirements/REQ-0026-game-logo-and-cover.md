@@ -102,6 +102,33 @@ Game choice and game headings (wherever there is a list of game titles):
 
 Not changed: the mode, activity, genre and max uses lists have no game titles and show no logo.
 
+## Amendment 2026-11-16 (cover places)
+Status stays Decided. Feature F-030 (EXTEND, not a new feature). DECISION, user, 2026-11-16: the game cover is also shown on the lobby page and on the lobby rows of the group view's list (REQ-0004). Replaced wording: "Images in the lobby list, the week calendar blocks and the lobby labels" (Out of scope, DECISION, user, 2026-11-15), now only the week calendar blocks, the labels and the Dashboard lists stay out (see Not changed below).
+
+Places:
+- Given that I am logged in, when a lobby's game has a cover and I open its lobby page, then the cover fills the page header behind its content, in place of the genre background pattern. DECISION, user, 2026-11-16.
+- Given that I am logged in, when a lobby's game has a cover and the lobby is a row in the group view's list (REQ-0004), then the cover fills the row behind its content, in place of the genre background pattern. DECISION, user, 2026-11-16 ("listvyn i gruppen").
+- Given that a cover is shown on a lobby page header or a list row, when I look at it, then the genre accent border and the genre icon of REQ-0014 stay visible, as on the Next up card (line 35). ASSUMPTION (product owner): the Next up rule applied to the new places.
+- Given that a cover is shown on a lobby page header or a list row, when I read its text (the label, the genre name, the time, the creator, the player count, the role slot badges, and in the header the monogram), then each text has a contrast of at least 4.5:1 against what is behind it, or 3:1 for large text, as WCAG defines it (the scrim is allowed). The check uses the lightest and the busiest cover of the test fixtures. DECISION, orchestrator, 2026-11-16, the rule of line 36 for the new places.
+- Given that a cover is shown on a lobby page header or a list row, when it is shown, then it is cropped to fill, not stretched, as on the Next up card (line 34). ASSUMPTION (product owner).
+- Given that a cover is shown on the lobby page header, when the page shows the logo of Amendment 2026-11-16, then the logo stays beside the game name at `--size-game-logo-large`, on top of the cover. ASSUMPTION (product owner).
+- Given that a game has no cover, or its cover cannot be loaded, when its lobby page header or list row is shown, then the genre theme is shown as today (REQ-0014), with no error. DECISION, user, 2026-11-15 (line 37), extended to the new places.
+- Given that a cover is shown on a lobby page header or a list row, when a screen reader reads the page, then the cover is decorative (empty text alternative), as on the Next up card (line 42).
+- Given that a lobby row shows its cover, when the row shows its label, then the label stays text-only. The cover is a background behind the row, not a logo or monogram, so the rule of Amendment 2026-11-16 (no logo or monogram in a lobby list) still holds.
+- Given that a lobby is "Other" or an open lobby with no game (line 40), when I see its page header or row, then it shows no cover. Unchanged.
+
+Not changed (ASSUMPTION (product owner), the user did not say otherwise):
+- The week calendar blocks of the group view and of the Dashboard: no cover.
+- The Dashboard lists (This week, Day list) and the Next up card's other places: no cover on the list rows. The Next up card keeps its cover (line 34).
+- The group list page and its Group cards (REQ-0024): no cover.
+- Labels, the game list, the game form, the game choice and the mode, activity and genre lists: no cover.
+
+Delivery: a follow-up to PR 2 (the cover on Next up), ASSUMPTION; the orchestrator sets the PR split.
+
+Questions for the user (recommended answer):
+- Should the cover also show on the Dashboard's Day list (REQ-0012)? Recommended: no, not now. The user asked for the group's list view. It can be added later as one short amendment.
+- Should the cover show on the week calendar blocks? Recommended: no. The blocks are too small for the text and the contrast rule.
+
 ## Assumptions (not decided by the user; the architect may refine the limits)
 - Limits: PNG, JPEG or WebP only; at most 512 KiB (524288 bytes) per image (ADR 0026, points 3 and 6).
 - The image follows the game and changes at the next view (as REQ-0014).

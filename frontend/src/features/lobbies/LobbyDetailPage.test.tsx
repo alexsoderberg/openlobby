@@ -417,6 +417,46 @@ describe("game logo", () => {
   });
 });
 
+describe("game cover", () => {
+  const VERSION = "c".repeat(64);
+  const withCover = { ...lobby, gameId: "game1", gameCoverVersion: VERSION };
+  const header = async () =>
+    (await screen.findByRole("heading", { name: "Catan" })).closest("header")!;
+  const coverOf = (element: HTMLElement) =>
+    element.querySelector(".genre-frame__cover");
+
+  it("fills the lobby header behind its content", async () => {
+    renderDetail({ getLobby: () => Promise.resolve(withCover) });
+
+    const head = await header();
+    expect(coverOf(head)?.getAttribute("src")).toBe(
+      `/api/games/game1/images/cover?v=${VERSION}`,
+    );
+    expect(coverOf(head)?.getAttribute("alt")).toBe("");
+    expect(document.querySelectorAll(".genre-frame__cover")).toHaveLength(1);
+  });
+
+  it("shows the genre theme for a game without a cover", async () => {
+    renderDetail({
+      getLobby: () =>
+        Promise.resolve({ ...lobby, gameId: "game1", gameGenre: "survival" }),
+    });
+
+    const head = await header();
+    expect(coverOf(head)).toBeNull();
+    expect(head.dataset.genre).toBe("survival");
+  });
+
+  it("shows the genre theme after the cover fails to load", async () => {
+    renderDetail({ getLobby: () => Promise.resolve(withCover) });
+
+    const head = await header();
+    fireEvent.error(coverOf(head)!);
+    expect(coverOf(head)).toBeNull();
+    expect(head.hasAttribute("data-cover")).toBe(false);
+  });
+});
+
 describe("lobby detail", () => {
   it("shows the game, spots and the names of all players in joined order", async () => {
     renderDetail();
