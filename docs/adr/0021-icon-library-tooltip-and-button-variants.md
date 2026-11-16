@@ -2,7 +2,7 @@
 
 Status: Accepted (2026-11-11)
 Requirement: none. Visual improvement requested by the user, decided by the orchestrator on 2026-11-11.
-Amended by ADR 0023 (points 2, 3 and 4; the A3 amendment is superseded). ADR 0023 overturns two rejected alternatives below: "Radix or another tooltip library" (line 104) and "A `Button` component with `variant` and `size` props" (line 107). Replaces the button sizes and colour rules in `frontend/src/styles/global.css` (section "Primary button is solid accent").
+Amended by ADR 0023 (points 2, 3 and 4; the A3 amendment is superseded) and by ADR 0027 (A9, the native select choice for dropdown lists). ADR 0023 overturns two rejected alternatives below: "Radix or another tooltip library" (line 104) and "A `Button` component with `variant` and `size` props" (line 107). Replaces the button sizes and colour rules in `frontend/src/styles/global.css` (section "Primary button is solid accent").
 
 ## Context
 - Buttons share three classes in `frontend/src/styles/global.css`: `.button` (primary), `.button-ghost` and `.button--secondary`. Ghost and secondary look the same. Every button is at least `--size-tap` (2.75rem, 44px) high.
@@ -159,3 +159,11 @@ Recorded for the role slot state "full" (user request, 2026-11-13). Extends poin
   - A check drawn in CSS outside `Icon`: a second icon source, against ADR 0021 (`Icon` is the only way the frontend draws an icon). Rejected.
   - A prefixed name such as `stateFull`: the prefix adds no rule that the list and rules above do not already give. Rejected.
 - Consequences: a new state name needs one line in this amendment and passes the rules above. A reviewer checks rules 1 to 3 on every state icon.
+
+## Amendment 2026-11-16
+Recorded with ADR 0027 (REQ-0027). Where it differs from the Decision above or from Amendment 2026-11-11 and 2026-11-13, this amendment wins.
+
+**A9. Dropdown lists use a custom control; the native select choice is reversed for the look.** DECISION (architect, after user decision 2026-11-16)
+- The Decision above, and ADR 0023's "Select: Not adopted" row, kept the native `<select>` on purpose, because of keyboard, screen readers and the phone pickers. This amendment reverses that choice for the look. The behaviour is kept: ADR 0027 uses Radix Select, which gives the same keyboard and screen reader behaviour, and a bottom sheet on phones replaces the OS picker.
+- The chevron stays an `Icon` (`chevronDown`, point A1), drawn by `ui/Select.tsx`.
+- New `Icon` state name: `selected` (the check mark of the selected option in a dropdown list). **Exception to A8 for option rows:** A8 rule 1 allows a state icon only inside text that states the state in words. An option row does not state "selected" in words, and REQ-0027 requires that the check mark alone show the selection. So, for option rows only, the state is carried by `aria-selected` on the option (which screen readers read), and the check mark is the visible cue (WCAG 1.4.1). The check mark sits only inside an option row, never on a button, link or trigger (A8 rule 1 still holds for its placement). For option rows, rule 2's "state in words" is replaced by `aria-selected` (above). Rule 1 applies as written to the check mark's placement, rule 3 applies with the check mark as the state carrier, and rule 4 applies as written. No other state icon uses this exception.
