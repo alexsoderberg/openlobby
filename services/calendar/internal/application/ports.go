@@ -112,6 +112,15 @@ type GameCatalogEditor interface {
 	Delete(ctx context.Context, id string) error
 }
 
+// GameImageRepository stores the images of the games (ADR 0026 point 7). Save and Delete give ErrGameNotFound when no game
+// has the ID; Delete succeeds whether or not an image was there. Save returns the game as stored, read in the same
+// transaction as the write. Find gives false when there is no image of the kind at the version.
+type GameImageRepository interface {
+	Save(ctx context.Context, gameID string, image domain.GameImage) (domain.Game, error)
+	Delete(ctx context.Context, gameID, kind string) error
+	Find(ctx context.Context, gameID, kind, version string) (domain.GameImage, bool, error)
+}
+
 // UserDirectory gives the display names of users. The names are read from auth and never stored (ADR 0003, 0004).
 type UserDirectory interface {
 	DisplayNames(ctx context.Context, userIDs []string) (map[string]string, error)

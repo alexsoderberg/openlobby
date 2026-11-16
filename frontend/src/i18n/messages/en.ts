@@ -5,6 +5,7 @@ import {
   INVITE_MAX_USES_LIMIT,
   RESERVED_GAME_NAME,
   type ApiErrorCode,
+  type GameImageKind,
   type Genre,
 } from "../../api";
 
@@ -208,7 +209,21 @@ export const en = {
     "The game leaves the game list for everyone. Lobbies that already use it keep their game name and max players.",
   gameRemoveSubmit: "Yes, remove game",
   gameRemoveKeep: "Keep game",
-  gameAdded: "Game added.",
+  gameAdded:
+    "Game added. Its form is open in the list, where you can add a logo.",
+  gameImage: { logo: "Logo" } satisfies Record<GameImageKind, string>,
+  gameImageHint:
+    "PNG, JPEG or WebP. The image is saved as soon as you choose it.",
+  gameImageChoose: "Choose image",
+  gameImageRemove: "Remove image",
+  gameImageSaving: "Saving the image.",
+  gameImageSaved: "Image saved.",
+  gameImageRemoved: "Image removed.",
+  gameImageRemoveHeading: (game: string) => `Remove the image of ${game}?`,
+  gameImageRemoveConfirm:
+    "Its lobbies show the game's initials instead. You can choose a new image at any time.",
+  gameImageRemoveSubmit: "Yes, remove image",
+  gameImageRemoveKeep: "Keep image",
   gameChanged: "Game changed.",
   gameRemoved: "Game removed.",
 
@@ -448,6 +463,10 @@ export const en = {
     game_role_taken:
       "A game role with this name already exists for this game or mode.",
     game_not_found: "This game does not exist anymore.",
+    invalid_image_type:
+      "This file is not a PNG, JPEG or WebP image. Choose a file of one of those types.",
+    image_too_large: "This image is too large. Choose a smaller file.",
+    game_image_not_found: "This image does not exist anymore.",
   } satisfies Record<ApiErrorCode, string>,
 };
 

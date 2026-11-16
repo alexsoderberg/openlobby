@@ -39,12 +39,12 @@ const (
 	selectCreatorSQL        = `SELECT created_by_user_id FROM lobbies WHERE id = $1 AND group_id = $2`
 	deleteLobbySQL          = `DELETE FROM lobbies WHERE id = $1 AND group_id = $2`
 
-	// The genre is joined from games by id; a removed game or a custom name has no row, so it is NULL (ADR 0016). The player count and the caller check are subqueries on the primary key (lobby_id, user_id); lobbies_group_id_game_id_idx serves group_id.
-	selectLobbiesSQL = `SELECT l.id, l.created_by_user_id, l.game_id, l.game_name, g.genre, l.max_players, l.starts_at, l.ends_at, l.created_at,
+	// The genre and the logo version are joined from games by id; a removed game or a custom name has no row, so they are NULL (ADR 0016, ADR 0026). The player count and the caller check are subqueries on the primary key (lobby_id, user_id); lobbies_group_id_game_id_idx serves group_id.
+	selectLobbiesSQL = `SELECT l.id, l.created_by_user_id, l.game_id, l.game_name, g.genre, logo.version, l.max_players, l.starts_at, l.ends_at, l.created_at,
 		l.game_mode_id, l.mode_name, l.activity_id, l.activity_name,
 		(SELECT count(*) FROM lobby_players p WHERE p.lobby_id = l.id),
 		EXISTS (SELECT 1 FROM lobby_players p WHERE p.lobby_id = l.id AND p.user_id = $3)
-		FROM lobbies l LEFT JOIN games g ON g.id = l.game_id WHERE l.group_id = $1 AND l.ends_at > $2`
+		FROM lobbies l LEFT JOIN games g ON g.id = l.game_id` + joinLogoSQL + ` WHERE l.group_id = $1 AND l.ends_at > $2`
 	listUpcomingSQL  = selectLobbiesSQL + ` ORDER BY l.starts_at, l.id`
 	selectLobbySQL   = selectLobbiesSQL + ` AND l.id = $4`
 	selectPlayersSQL = `SELECT user_id, game_role_id FROM lobby_players WHERE lobby_id = $1 ORDER BY joined_at, user_id`
@@ -235,7 +235,7 @@ type scanner interface{ Scan(dest ...any) error }
 
 func scanLobby(row scanner, groupID string) (domain.Lobby, error) {
 	lobby := domain.Lobby{GroupID: groupID}
-	err := row.Scan(&lobby.ID, &lobby.CreatedByUserID, &lobby.GameID, &lobby.GameName, &lobby.GameGenre, &lobby.MaxPlayers,
+	err := row.Scan(&lobby.ID, &lobby.CreatedByUserID, &lobby.GameID, &lobby.GameName, &lobby.GameGenre, &lobby.GameLogoVersion, &lobby.MaxPlayers,
 		&lobby.StartsAt, &lobby.EndsAt, &lobby.CreatedAt, &lobby.ModeID, &lobby.ModeName, &lobby.ActivityID, &lobby.ActivityName,
 		&lobby.PlayerCount, &lobby.JoinedByMe)
 	return lobby, err

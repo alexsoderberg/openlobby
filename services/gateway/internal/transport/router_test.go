@@ -54,7 +54,9 @@ func validSessions() fakeSessions {
 // received is one request that a stub upstream got.
 type received struct {
 	path   string
+	query  string
 	header http.Header
+	body   []byte
 }
 
 // upstream is a stub service that records what it receives and answers 200.
@@ -104,7 +106,11 @@ func newUpstream(t *testing.T) (*upstream, *url.URL) {
 	t.Helper()
 	stub := &upstream{}
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		stub.record(received{path: r.URL.Path, header: r.Header.Clone()})
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			t.Errorf("read upstream body: %v", err)
+		}
+		stub.record(received{path: r.URL.Path, query: r.URL.RawQuery, header: r.Header.Clone(), body: body})
 		if _, err := io.WriteString(w, "upstream"); err != nil {
 			t.Errorf("write upstream body: %v", err)
 		}
@@ -516,7 +522,7 @@ func upstreamByName(s stubs, name upstreamName) *upstream {
 // concretePath fills the path parameters of a route with fixed values.
 func concretePath(path string) string {
 	return strings.NewReplacer("{groupId}", "g1", "{lobbyId}", "l1", "{userId}", "u1",
-		"{linkId}", "k1", "{token}", "t1", "{gameId}", "ga1").Replace(path)
+		"{linkId}", "k1", "{token}", "t1", "{gameId}", "ga1", "{kind}", "logo").Replace(path)
 }
 
 // TestEveryRouteIsForwardedToItsUpstream pins the route table: method, path, session rule and upstream.
@@ -661,5 +667,26 @@ func TestErrorAnswersHaveOneRequestID(t *testing.T) {
 				t.Errorf("response X-Request-Id = %v, want exactly err-123", got)
 			}
 		})
+	}
+}
+
+// A game image upload reaches calendar whole, without a gateway body limit, and the version query is kept (ADR 0026 point 9).
+func TestGameImageUploadAndVersionReachCalendar(t *testing.T) {
+	s := newStubs(t)
+	handler, _ := newRouter(validSessions(), s.urls)
+	image := bytes.Repeat([]byte{0xff}, 100<<10)
+	request := httptest.NewRequest(http.MethodPut, "/api/games/ga1/images/logo", bytes.NewReader(image))
+	request.Header = cookieHeader(adminToken)
+	request.Header.Set("Content-Type", "image/png")
+	handler.ServeHTTP(httptest.NewRecorder(), request)
+
+	upload := s.calendar.last(t)
+	if !bytes.Equal(upload.body, image) || upload.header.Get("Content-Type") != "image/png" {
+		t.Fatalf("calendar got %d bytes of %q, want the whole image", len(upload.body), upload.header.Get("Content-Type"))
+	}
+
+	send(handler, http.MethodGet, "/api/games/ga1/images/logo?v=abc", cookieHeader(goodToken))
+	if got := s.calendar.last(t).query; got != "v=abc" {
+		t.Fatalf("calendar got query %q, want v=abc", got)
 	}
 }

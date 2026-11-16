@@ -17,6 +17,7 @@ import (
 type publicHandler struct {
 	groups      *application.Groups
 	games       *application.Games
+	gameImages  *application.GameImages
 	invites     *application.InviteLinks
 	lobbies     *application.Lobbies
 	memberships *application.Memberships

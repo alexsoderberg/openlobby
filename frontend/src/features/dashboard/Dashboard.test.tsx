@@ -198,6 +198,60 @@ describe("Next up", () => {
   });
 });
 
+describe("game logo", () => {
+  const VERSION = "c".repeat(64);
+
+  it("shows the logo before the game name on Next up, and not in This week", async () => {
+    renderDashboard({
+      g1: [
+        lobby("l1", "Overwatch 2", at(4, 20), at(4, 22), {
+          gameId: "game1",
+          gameLogoVersion: VERSION,
+        }),
+      ],
+    });
+
+    const card = await nextUpCard();
+    const logo = card
+      .getByRole("article")
+      .querySelector('[data-slot="game-logo"] img');
+    expect(logo?.getAttribute("src")).toBe(
+      `/api/games/game1/images/logo?v=${VERSION}`,
+    );
+    expect(logo?.getAttribute("alt")).toBe("");
+    expect(card.getByRole("link", { name: "Overwatch 2" })).toBeTruthy();
+    // The same lobby is in This week, as text only.
+    expect(document.querySelectorAll('[data-slot="game-logo"]')).toHaveLength(
+      1,
+    );
+  });
+
+  it("shows the monogram for a game without a logo", async () => {
+    renderDashboard({
+      g1: [
+        lobby("l1", "Overwatch 2", at(4, 20), at(4, 22), { gameId: "game1" }),
+      ],
+    });
+
+    const card = await nextUpCard();
+    expect(card.getByText("O2")).toBeTruthy();
+    expect(
+      card.getByRole("article").querySelector('[data-slot="game-logo"] img'),
+    ).toBeNull();
+  });
+
+  it("shows neither logo nor monogram for Other", async () => {
+    renderDashboard({
+      g1: [lobby("l1", "Chess", at(4, 20), at(4, 22), { gameId: null })],
+    });
+
+    const card = await nextUpCard();
+    expect(
+      card.getByRole("article").querySelector('[data-slot="game-logo"]'),
+    ).toBeNull();
+  });
+});
+
 describe("label and role slots", () => {
   const overwatch = lobby("l1", "Overwatch 2", at(4, 20), at(4, 22), {
     modeName: "Competitive",

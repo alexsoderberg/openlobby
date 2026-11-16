@@ -77,7 +77,7 @@ These replace the inline success status of the place, which is removed. Each is 
 | 3 | Invite popover, after a link is copied | `features/invites/InviteLinks.tsx` | `inviteLinkCopied` | "Link copied." |
 | 4 | Create group form, after the group is created | `features/groups/CreateGroupForm.tsx` | `groupCreated` | the same text |
 | 5 | Group list, after leaving a group | `app/LoggedInApp.tsx` | `groupLeft` | the same text, with the group name |
-| 6 | Game list (system admin), after a game is added, changed or removed | `features/games/GamesPage.tsx` | `gameAdded`, `gameChanged`, `gameRemoved` | the same texts |
+| 6 | Game list (system admin), after a game is added, changed or removed | `features/games/GamesPage.tsx` | `gameAdded`, `gameChanged`, `gameRemoved` | the same texts, except after a game is added: "Game added. Its form is open in the list, where you can add a logo." (Amendment 2026-11-15, REQ-0026) |
 | 7 | Group view, after a lobby is created, only when the lobby is not visible (criteria above) | `features/lobbies/Lobbies.tsx` | `lobbyCreated` | "Lobby created. You are the first player." |
 | 8 | Lobby page, mode or activity saved | `features/lobbies/LobbySettings.tsx` (`Result`) | `lobbySettingsSaved` | "Saved." |
 | 9 | Lobby page, game set | `features/lobbies/LobbySettings.tsx` (`Result`) | `lobbyGameSaved` | "Game set." |

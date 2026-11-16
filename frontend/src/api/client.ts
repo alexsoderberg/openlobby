@@ -6,6 +6,7 @@ export type GroupSummary = calendarComponents["schemas"]["GroupSummary"];
 export type Group = calendarComponents["schemas"]["Group"];
 export type Genre = calendarComponents["schemas"]["Genre"];
 export type Game = calendarComponents["schemas"]["Game"];
+export type GameImageKind = calendarComponents["schemas"]["GameImageKind"];
 export type InviteLink = calendarComponents["schemas"]["InviteLink"];
 export type InviteInfo = calendarComponents["schemas"]["InviteInfo"];
 export type Lobby = calendarComponents["schemas"]["Lobby"];
@@ -77,6 +78,10 @@ export interface ApiClient {
   createGame(input: GameInput): Promise<Game>;
   replaceGame(gameId: string, input: GameInput): Promise<Game>;
   deleteGame(gameId: string): Promise<void>;
+  /** Stores the image as it is; the server checks its type and size. Answers the game with its new version. */
+  setGameImage(gameId: string, kind: GameImageKind, image: Blob): Promise<Game>;
+  /** Removes the image. No image is a success. */
+  removeGameImage(gameId: string, kind: GameImageKind): Promise<void>;
   /** The group's games, most used first. The free-text "Other" choice is not in the list. */
   listGroupGames(groupId: string): Promise<Game[]>;
   listUpcomingLobbies(groupId: string): Promise<Lobby[]>;
@@ -150,6 +155,15 @@ export function isUnauthenticated(error: unknown): boolean {
 
 export function errorCodeOf(error: unknown): string {
   return error instanceof ApiError ? error.code : UNKNOWN_CODE;
+}
+
+/** The one place that builds a game image's URL. The version names the bytes, so the browser may cache it for good (ADR 0026). */
+export function gameImageUrl(
+  gameId: string,
+  kind: GameImageKind,
+  version: string,
+): string {
+  return `/api/games/${gameId}/images/${kind}?${new URLSearchParams({ v: version })}`;
 }
 
 /** Full-page navigation target. The server handles Discord; the browser never sees Discord tokens. */

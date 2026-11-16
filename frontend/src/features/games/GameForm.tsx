@@ -5,6 +5,7 @@ import {
   useState,
   type ComponentProps,
   type Dispatch,
+  type ReactNode,
   type Ref,
   type RefObject,
   type SetStateAction,
@@ -44,6 +45,7 @@ type SubmitGame = (input: GameInput) => ChangeResult;
  * mounted while a mode is open, so what was typed is kept. The default max players is not shown while the game has
  * modes or game roles. A failure, local or from the server, is shown next to the field or section it is about and
  * focus moves there; a local failure in a mode opens that mode. `onSubmit` resolves to the error code of a failed save.
+ * `imageFields` are shown in the game view after the genre; they save on their own, not with the form.
  */
 export function GameForm({
   game,
@@ -52,8 +54,10 @@ export function GameForm({
   busy,
   onSubmit,
   onCancel,
+  imageFields,
 }: {
   game?: Game;
+  imageFields?: ReactNode;
   submitLabel: string;
   submitIcon: IconName;
   busy: boolean;
@@ -113,6 +117,7 @@ export function GameForm({
           maxRef={maxRef}
           genreRef={genreRef}
         />
+        {imageFields}
         <GameStructureFields
           id={id}
           draft={draft}

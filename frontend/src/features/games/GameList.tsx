@@ -1,8 +1,9 @@
 import type { ChangeResult, Game, GameInput } from "../../api";
 import { GenreName } from "../../genres";
 import { useMessages } from "../../i18n";
-import { ErrorAlert, Icon, IconButton } from "../../ui";
+import { ErrorAlert, GameLogo, Icon, IconButton } from "../../ui";
 import { GameForm } from "./GameForm";
+import { GameImageField } from "./GameImageField";
 import type { GamesState } from "./useGames";
 
 /** Shows the games as the server orders them. A game being changed shows its form in place of its row. */
@@ -15,6 +16,8 @@ export function GameList({
   onSave,
   onCancelEdit,
   onRemove,
+  onImageChanged,
+  onUnauthenticated,
 }: {
   state: GamesState;
   editingId?: string;
@@ -24,6 +27,8 @@ export function GameList({
   onSave: (gameId: string, input: GameInput) => ChangeResult;
   onCancelEdit: () => void;
   onRemove: (game: Game) => void;
+  onImageChanged: () => void;
+  onUnauthenticated: () => void;
 }) {
   const m = useMessages();
 
@@ -42,6 +47,8 @@ export function GameList({
             busy={busy}
             onSave={(input) => onSave(game.id, input)}
             onCancel={onCancelEdit}
+            onImageChanged={onImageChanged}
+            onUnauthenticated={onUnauthenticated}
           />
         ) : (
           <GameRow
@@ -68,6 +75,7 @@ function GameRow({
   const m = useMessages();
   return (
     <li className="list-row">
+      <GameLogo gameId={game.id} name={game.name} version={game.logoVersion} />
       <span>{game.name}</span>
       <GenreName genre={game.genre} />
       <span className="badge">
@@ -101,11 +109,15 @@ function GameEditRow({
   busy,
   onSave,
   onCancel,
+  onImageChanged,
+  onUnauthenticated,
 }: {
   game: Game;
   busy: boolean;
   onSave: (input: GameInput) => ChangeResult;
   onCancel: () => void;
+  onImageChanged: () => void;
+  onUnauthenticated: () => void;
 }) {
   const m = useMessages();
   return (
@@ -117,6 +129,14 @@ function GameEditRow({
         busy={busy}
         onSubmit={onSave}
         onCancel={onCancel}
+        imageFields={
+          <GameImageField
+            game={game}
+            kind="logo"
+            onChanged={onImageChanged}
+            onUnauthenticated={onUnauthenticated}
+          />
+        }
       />
     </li>
   );

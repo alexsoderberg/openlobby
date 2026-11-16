@@ -2,7 +2,12 @@ import { useState } from "react";
 import { useApi, type LobbyDetail } from "../../api";
 import { GenreFrame, GenreName } from "../../genres";
 import { formatDateTimeRange, useMessages } from "../../i18n";
-import { lobbyLabel, PreferredGameRolesNote, RoleSlots } from "../../lobby";
+import {
+  LobbyGameLogo,
+  lobbyLabel,
+  PreferredGameRolesNote,
+  RoleSlots,
+} from "../../lobby";
 import { Icon, Panel } from "../../ui";
 import { DeleteLobbyDialog } from "./DeleteLobbyDialog";
 import { LobbyMembership } from "./LobbyMembership";
@@ -37,7 +42,10 @@ export function LobbyDetails({
         className="lobby-head"
         motif
       >
-        <h1>{lobbyLabel(lobby, m)}</h1>
+        <div className="game-heading">
+          <LobbyGameLogo lobby={lobby} />
+          <h1>{lobbyLabel(lobby, m)}</h1>
+        </div>
         <GenreName genre={lobby.gameGenre} />
       </GenreFrame>
       {/* Settings sit between the players and the actions; from 98rem they move to the side column (REQ-0025). */}

@@ -19,6 +19,7 @@ import {
   Shield,
   Trash,
   User,
+  Upload,
   UserMinus,
   UserPlus,
   Users,
@@ -55,6 +56,7 @@ const icons = {
   retry: RotateCcw,
   revoke: Ban,
   save: Check,
+  upload: Upload,
   you: User,
 } satisfies Record<string, LucideIcon>;
 
