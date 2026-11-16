@@ -210,18 +210,30 @@ export const en = {
   gameRemoveSubmit: "Yes, remove game",
   gameRemoveKeep: "Keep game",
   gameAdded:
-    "Game added. Its form is open in the list, where you can add a logo.",
-  gameImage: { logo: "Logo" } satisfies Record<GameImageKind, string>,
-  gameImageHint:
-    "PNG, JPEG or WebP. The image is saved as soon as you choose it.",
+    "Game added. Its form is open in the list, where you can add a logo and a cover.",
+  gameImage: { logo: "Logo", cover: "Cover" } satisfies Record<
+    GameImageKind,
+    string
+  >,
+  gameImageHint: {
+    logo: "PNG, JPEG or WebP. The image is saved as soon as you choose it.",
+    cover:
+      "PNG, JPEG or WebP. Shown darkened behind the Next up card and cropped to fit it. The image is saved as soon as you choose it.",
+  } satisfies Record<GameImageKind, string>,
   gameImageChoose: "Choose image",
   gameImageRemove: "Remove image",
   gameImageSaving: "Saving the image.",
   gameImageSaved: "Image saved.",
   gameImageRemoved: "Image removed.",
-  gameImageRemoveHeading: (game: string) => `Remove the image of ${game}?`,
-  gameImageRemoveConfirm:
-    "Its lobbies show the game's initials instead. You can choose a new image at any time.",
+  gameImageRemoveHeading: {
+    logo: (game: string) => `Remove the logo of ${game}?`,
+    cover: (game: string) => `Remove the cover of ${game}?`,
+  } satisfies Record<GameImageKind, (game: string) => string>,
+  gameImageRemoveConfirm: {
+    logo: "Its lobbies show the game's initials instead. You can choose a new image at any time.",
+    cover:
+      "The Next up card shows the genre pattern instead. You can choose a new image at any time.",
+  } satisfies Record<GameImageKind, string>,
   gameImageRemoveSubmit: "Yes, remove image",
   gameImageRemoveKeep: "Keep image",
   gameChanged: "Game changed.",

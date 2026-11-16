@@ -14,6 +14,9 @@ var (
 	webpHeader = []byte("RIFF\x24\x00\x00\x00WEBPVP8 ")
 )
 
+// gameImageKinds are both kinds; every rule is the same for both (ADR 0026).
+var gameImageKinds = []string{"logo", "cover"}
+
 // The type comes from the first bytes only (ADR 0026 point 6). SVG, GIF, HTML and text are refused.
 func TestNewGameImageSniffsTheTypeFromTheBytes(t *testing.T) {
 	tests := []struct {
@@ -25,14 +28,16 @@ func TestNewGameImageSniffsTheTypeFromTheBytes(t *testing.T) {
 		{name: "jpeg", data: jpegHeader, want: "image/jpeg"},
 		{name: "webp", data: webpHeader, want: "image/webp"},
 	}
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			image, err := domain.NewGameImage("logo", tc.data)
+	for _, kind := range gameImageKinds {
+		for _, tc := range tests {
+			t.Run(kind+" "+tc.name, func(t *testing.T) {
+				image, err := domain.NewGameImage(kind, tc.data)
 
-			if err != nil || image.MediaType != tc.want || image.Kind != "logo" {
-				t.Fatalf("image %+v, error %v; want %s", image, err, tc.want)
-			}
-		})
+				if err != nil || image.MediaType != tc.want || image.Kind != kind {
+					t.Fatalf("image %+v, error %v; want %s", image, err, tc.want)
+				}
+			})
+		}
 	}
 }
 
@@ -49,24 +54,28 @@ func TestNewGameImageRefusesOtherBytes(t *testing.T) {
 		{name: "truncated png signature", data: pngHeader[:7]},
 		{name: "riff that is not webp", data: []byte("RIFF\x24\x00\x00\x00WAVEfmt ")},
 	}
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			if _, err := domain.NewGameImage("logo", tc.data); !errors.Is(err, domain.ErrImageType) {
-				t.Fatalf("error %v; want ErrImageType", err)
-			}
-		})
+	for _, kind := range gameImageKinds {
+		for _, tc := range tests {
+			t.Run(kind+" "+tc.name, func(t *testing.T) {
+				if _, err := domain.NewGameImage(kind, tc.data); !errors.Is(err, domain.ErrImageType) {
+					t.Fatalf("error %v; want ErrImageType", err)
+				}
+			})
+		}
 	}
 }
 
 // The size is checked before the type, so a large file of any kind is too large (ADR 0026 point 6).
 func TestNewGameImageSizeLimit(t *testing.T) {
 	atLimit := append(bytes.Clone(pngHeader), make([]byte, 524288-len(pngHeader))...)
-	if _, err := domain.NewGameImage("logo", atLimit); err != nil {
-		t.Fatalf("524288 bytes: error %v; want none", err)
-	}
-	for name, data := range map[string][]byte{"png": append(atLimit, 0), "text": make([]byte, 524289)} {
-		if _, err := domain.NewGameImage("logo", data); !errors.Is(err, domain.ErrImageTooLarge) {
-			t.Fatalf("524289 bytes of %s: error %v; want ErrImageTooLarge", name, err)
+	for _, kind := range gameImageKinds {
+		if _, err := domain.NewGameImage(kind, atLimit); err != nil {
+			t.Fatalf("524288 bytes of %s: error %v; want none", kind, err)
+		}
+		for name, data := range map[string][]byte{"png": append(bytes.Clone(atLimit), 0), "text": make([]byte, 524289)} {
+			if _, err := domain.NewGameImage(kind, data); !errors.Is(err, domain.ErrImageTooLarge) {
+				t.Fatalf("524289 bytes of %s %s: error %v; want ErrImageTooLarge", name, kind, err)
+			}
 		}
 	}
 }
@@ -86,7 +95,7 @@ func TestNewGameImageVersionIsTheSHA256OfTheBytes(t *testing.T) {
 
 // Only the kinds of the API are game images; an unknown kind is game_image_not_found, before the bytes are checked.
 func TestNewGameImageRefusesAnUnknownKind(t *testing.T) {
-	for _, kind := range []string{"", "banner", "Logo", "cover"} {
+	for _, kind := range []string{"", "banner", "Logo", "Cover", "icon"} {
 		if _, err := domain.NewGameImage(kind, []byte("text")); !errors.Is(err, domain.ErrGameImageNotFound) {
 			t.Fatalf("kind %q: error %v; want ErrGameImageNotFound", kind, err)
 		}

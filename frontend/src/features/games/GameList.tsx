@@ -130,12 +130,20 @@ function GameEditRow({
         onSubmit={onSave}
         onCancel={onCancel}
         imageFields={
-          <GameImageField
-            game={game}
-            kind="logo"
-            onChanged={onImageChanged}
-            onUnauthenticated={onUnauthenticated}
-          />
+          <>
+            <GameImageField
+              game={game}
+              kind="logo"
+              onChanged={onImageChanged}
+              onUnauthenticated={onUnauthenticated}
+            />
+            <GameImageField
+              game={game}
+              kind="cover"
+              onChanged={onImageChanged}
+              onUnauthenticated={onUnauthenticated}
+            />
+          </>
         }
       />
     </li>

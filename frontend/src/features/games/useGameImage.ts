@@ -16,6 +16,7 @@ export type GameImageStatus =
 /** The `Game` field that holds the version of each kind. */
 const VERSION_FIELD = {
   logo: "logoVersion",
+  cover: "coverVersion",
 } as const satisfies Record<GameImageKind, keyof Game>;
 
 /**

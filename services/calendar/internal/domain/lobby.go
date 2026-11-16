@@ -23,19 +23,20 @@ const maxLobbyDuration = 24 * time.Hour
 
 // Lobby is a bookable slot in a group (ADR 0006). The game name is a copy, so the lobby is independent of the game list.
 type Lobby struct {
-	ID              string
-	GroupID         string
-	CreatedByUserID string
-	GameID          *string // nil for a custom game name or no game
-	GameName        *string // nil for a lobby with no game (ADR 0017)
-	GameGenre       *Genre  // the game's genre now, read from the game list; nil for no game, a custom name or a removed game
-	GameLogoVersion *string // the version of the game's logo now, like GameGenre; nil also for a game without a logo (ADR 0026)
-	MaxPlayers      *int    // nil means unlimited
-	StartsAt        time.Time
-	EndsAt          time.Time
-	CreatedAt       time.Time
-	PlayerCount     int
-	JoinedByMe      bool // whether the caller is a player; set by the reader, true for a new lobby
+	ID               string
+	GroupID          string
+	CreatedByUserID  string
+	GameID           *string // nil for a custom game name or no game
+	GameName         *string // nil for a lobby with no game (ADR 0017)
+	GameGenre        *Genre  // the game's genre now, read from the game list; nil for no game, a custom name or a removed game
+	GameLogoVersion  *string // the version of the game's logo now, like GameGenre; nil also for a game without a logo (ADR 0026)
+	GameCoverVersion *string // the version of the game's cover now, like GameLogoVersion
+	MaxPlayers       *int    // nil means unlimited
+	StartsAt         time.Time
+	EndsAt           time.Time
+	CreatedAt        time.Time
+	PlayerCount      int
+	JoinedByMe       bool // whether the caller is a player; set by the reader, true for a new lobby
 	// The mode and activity are copies, like GameName (ADR 0017 section 3). All nil for a lobby without them.
 	ModeID       *string
 	ModeName     *string
@@ -183,7 +184,7 @@ func (c lobbyChoices) lobby(request NewLobbyRequest, now time.Time) Lobby {
 	}
 	if c.gameID != nil {
 		// chooseGame guarantees Game is set when gameID is.
-		lobby.GameGenre, lobby.GameLogoVersion = request.Game.Genre, request.Game.LogoVersion
+		lobby.GameGenre, lobby.GameLogoVersion, lobby.GameCoverVersion = request.Game.Genre, request.Game.LogoVersion, request.Game.CoverVersion
 	}
 	if c.mode != nil {
 		lobby.ModeID, lobby.ModeName = &c.mode.ID, &c.mode.Name
