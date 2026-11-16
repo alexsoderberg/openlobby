@@ -2,6 +2,7 @@
 
 Status: Accepted (2026-11-13)
 Requirement: REQ-0022 (product owner, Decided) covers the toasts: placement, duration, pause, the nine places and the layering. This ADR implements it.
+Amended by ADR 0027 (Select, dropdown lists, Amendment 2026-11-16 at the end of this file): the "Not adopted" row for Select (line 36) and the "Not adopted" list (line 140) are overridden there, and the z-index rule of point 4 ("below 60") is amended there too. Where they differ, the amendment wins.
 Amends ADR 0021:
 - point 2 (Tooltip): the Tooltip is Radix Tooltip wrapped in `ui/Tooltip.tsx`. The reason "a new dependency for a small component" no longer holds (see 1a). The A3 amendment (top-layer popover) is superseded. The touch rule and "used by `IconButton` only" stay. The rejected alternative "Radix or another tooltip library" (ADR 0021, line 104) is overturned.
 - point 3 (`IconButton`): its API stays; it is built on `Button`.
@@ -33,7 +34,7 @@ Why a library for behaviour, not React alone. React gives the state and the mark
 | Tooltip (Radix) | Adopt, PR E | the hand-built positioning and dismiss logic of `Tooltip.tsx` | the `label` prop; touch hides the bubble |
 | DropdownMenu (Radix) | Adopt, PR F | `GroupContextMenu` (hand-built, one item) | nothing else |
 | Popover (Radix) | Adopt, PR G | the hand-built frame of `ui/Popover.tsx` | the scrim and the scale from the "+" (`--origin-x`, `--origin-y`) |
-| Select | Not adopted | nothing | native select keeps the OS pickers on phones |
+| Select (Radix Select) | Adopt, after the B series (ADR 0027, PR A) | the native `<select>` of `ui/Select.tsx` | the chevron icon |
 | Checkbox, RadioGroup, Tabs | Not adopted now | nothing | native inputs already have the keyboard behaviour; no tabs in the app. Their own ADR if a requirement needs them |
 | Avatar | Not adopted | nothing | initials and image fallback are ours (ADR 0018) |
 
@@ -137,7 +138,7 @@ Rollout order (user, 2026-11-13): the shadcn rollout starts right after ADR 0022
 | G | Popover family (point 5): `ui/Popover.tsx` on Radix Popover | ui-ux-expert | `popover.test.ts` and the create form tests green; scale from the "+" unchanged in the screenshots |
 | H | Signature details (point 3), one page at a time, each after the user approves the page's list | ui-ux-expert | `motion.test.ts` green; the reviewer counts `signature:` markers per page; screenshots |
 
-Not adopted: Select, Checkbox, RadioGroup, Tabs, Avatar (point 1). Each gets its own ADR and a requirement first.
+Not adopted: Checkbox, RadioGroup, Tabs, Avatar (point 1). Select is adopted (ADR 0027). Each gets its own ADR and a requirement first.
 
 ### 7. Pins, dependencies and bundle size
 
@@ -150,6 +151,7 @@ Exact pins for the packages added by this ADR (existing caret ranges in `package
 | `@radix-ui/react-tooltip` | 1.4.1 | dependency | Tooltip (PR E) |
 | `@radix-ui/react-dropdown-menu` | 2.2.1 | dependency | DropdownMenu (PR F) |
 | `@radix-ui/react-popover` | 1.3.1 | dependency | Popover (PR G) |
+| `@radix-ui/react-select` | 2.4.1 | dependency | Dropdown lists (PR A, ADR 0027) |
 | `tailwindcss` | 4.3.3 | devDependency | CSS utilities in `ui/` (build only) (PR B1) |
 | `@tailwindcss/vite` | 4.3.3 | devDependency | Tailwind in the Vite build (PR B1) |
 
@@ -210,3 +212,14 @@ Raspberry Pi: it serves the frontend's static files (ASSUMPTION: the frontend co
 ## Open questions
 
 1. REQ-0022 open question 1 (the list view). Owned by the product owner; this ADR does not depend on it.
+
+## Amendment 2026-11-16 (Select, ADR 0027)
+This amendment wins over the rows and lists it names (line 36, line 140).
+Recorded with ADR 0027 (REQ-0027). Amends points 1, 6 and 7 of this ADR and ADR 0021 A9.
+- **Point 1 (table).** The row "Select | Not adopted" becomes "Select (Radix Select) | Adopt, PR A (ADR 0027)", replacing the native select in `ui/Select.tsx`. The reason "native select keeps the OS pickers on phones" is overturned: the user decided a custom bottom sheet on phones (REQ-0027, 2026-11-16).
+- **Point 6 (rollout).** DECISION, user, 2026-11-16: the order is cover PR2 (REQ-0026), B3, then PR A (Select), then C and the rest in their order. Select comes after B3 (the user's words, 2026-11-16) and before C. It does not wait for the Dialog, Tooltip, Menu and Popover families, because it is a portal and no Select sits in a native dialog (ADR 0027 point 6).
+- **Point 7 (pins).** One row added, exact pin: `@radix-ui/react-select` **2.4.1**, dependency, PR A, dropdown lists (ADR 0027). Individual package, not the umbrella, as in point 7. Its runtime dependencies are shared with the other Radix packages.
+- **Point 5 and the "Not adopted" list.** Select is removed from the "Not adopted" list. Its wrapper is `ui/Select.tsx`; the phone sheet is CSS in `global.css`, not a second component. The one `!important` group in ADR 0027 point 4 is the only exception to the `!important` rule of this ADR.
+- **Tailwind exclusion list (Amendment 2026-11-15 a, `@source not inline`).** `fixed` is removed from the list in `global.css`, because `Select.tsx` uses it as a class (ADR 0027 point 4), and a word used as a class is never on the list. Plain uses of "fixed" in `ui/` comments (`GameLogo.tsx`, `Tooltip.tsx`) then build one `.fixed` utility that no feature uses. Rule: a feature class named `fixed` is a reviewer BLOCKER. The removal is made in PR A.
+- **Point 4 (z-index, "below 60").** The sentence "every overlay ... z-index values below 60 (the highest in `global.css` today)" is amended: the Dropdown list sheet is above the tab bar (60) and the floating "+" (55) so that it covers them (REQ-0027). Its token is `--z-dropdown-list: 70`, below 1000 and above both; the zIndex test asserts this (ADR 0027 point 4). The other overlays keep values below 60.
+- **Point 8 (modularity).** `@radix-ui/react-select` is imported only in `ui/Select.tsx`, as the other Radix packages are only in `ui/`.

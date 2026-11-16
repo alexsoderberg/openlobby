@@ -30,7 +30,7 @@ Setting the images (system admin, extends the game form of REQ-0010):
 - Given that a game was in the list before this feature, when I view it, then it has no images and shows as it does today; no game, lobby or name changes.
 
 Showing the images (members):
-- Given that I am logged in, when a lobby's game has a logo, and the lobby is shown on the Next up card (REQ-0012) or on its lobby page, then the logo is shown at a fixed size next to the game name, and the name is still shown as text. DECISION, user, 2026-11-15: the logo appears in the game form, the game list, the Next up card and the lobby page only.
+- Given that I am logged in, when a lobby's game has a logo, and the lobby is shown on the Next up card (REQ-0012) or on its lobby page, then the logo is shown next to the game name at the size of Amendment 2026-11-16, and the name is still shown as text. DECISION, user, 2026-11-15: the logo appears in the game form, the game list, the Next up card and the lobby page, and in the game choice (Amendment 2026-11-16). Old wording: "at a fixed size"; "only" in the places list.
 - Given that I am logged in, when a lobby's game has a cover, and the lobby is shown on the Next up card, then the cover replaces the genre background pattern of the card and fills it behind the card's content, cropped and not stretched (ASSUMPTION for the crop; the replacement is DECISION, user, 2026-11-15).
 - Given that a cover is shown on the Next up card, when I look at it, then the genre accent border and the genre icon of REQ-0014 stay visible. DECISION, user, 2026-11-15.
 - Given that a cover is shown on the Next up card, when I read the card's text (game name, time, "X/Y players", the Join and Leave buttons), then each text has a contrast of at least 4.5:1 against what is behind it, or 3:1 for large text, as WCAG defines it (the scrim on the cover is allowed). The check uses the lightest and the busiest cover of the test fixtures.
@@ -77,6 +77,30 @@ DECISION, user, 2026-11-15: built in two small PRs, logo first. PR 1: the logo (
 7. DECISION, user, 2026-11-15: priority Should, start now, before avatars (REQ-0016) and the rest of the backlog.
 8. DECISION, user, 2026-11-15 (ADR 0026, point 1): each image is uploaded and removed by its own action, saved when the file is chosen. Saving the game does not carry images.
 9. DECISION, user, 2026-11-15 (ADR 0026, point 4): any logged-in user may load a game logo or cover.
+
+## Amendment 2026-11-16 (game choice and logo size)
+Status stays Decided. Feature F-030 (EXTEND, not a new feature). Two parts, both DECISION, user, 2026-11-16. The game choice part needs the Dropdown list of REQ-0027, because a native option cannot show an image, so it is built after REQ-0027.
+
+Sizes (design tokens, ADR 0023): the game logo in the game list, the game form and the game choice is `--size-game-logo` (2.5rem); on the Next up card and the lobby page it is `--size-game-logo-large` (4rem).
+
+Replaced wording (kept for the record): "the logo appears in the game form, the game list, the Next up card and the lobby page only" (DECISION, user, 2026-11-15) and "shown at a fixed size" (REQ-0026, Showing the images).
+
+Size:
+- Given that I am logged in, when a lobby's game has a logo and the lobby is shown on the Next up card or on its lobby page, then the logo is `--size-game-logo-large` (4rem) high, next to the game name, and the name is still shown as text. DECISION, user, 2026-11-16: the game is central on these two places.
+- Given that I am a system admin, when I look at the game list or the game form, then the logo is `--size-game-logo` (2.5rem), as before. DECISION, user, 2026-11-16.
+- Given that a place shows the monogram because the game has no logo, when I see it, then the monogram takes the size its logo would have in that place, so the layout does not change when a logo is added. ASSUMPTION (product owner).
+- Given that I view the lobby page on a phone (window under 760 px) with a 4rem logo, when the page is shown, then the logo and the name wrap, no line of text is cut, and the page does not scroll sideways. ASSUMPTION (product owner).
+
+Game choice and game headings (wherever there is a list of game titles):
+- Given that I am a member, when I open the game choice of the create lobby form, or the game choice of an open lobby in the lobby settings, then each game row shows its logo at `--size-game-logo`, or its monogram without a logo, and its name as text. DECISION, user, 2026-11-16.
+- Given that a game is chosen in the game choice, when I look at the closed field, then it shows the chosen game's logo or monogram before its name, as its row does. DECISION, product owner, 2026-11-16 (REQ-0027; the user may change it).
+- Given that the game choice shows "Other" or "no game", when I look at that row or the closed field, then it shows neither a logo nor a monogram. ASSUMPTION (product owner): "Other" has no logo (REQ-0026, Other).
+- Given that I am logged in, when I see the Game roles section of the You page (REQ-0021), then each game heading shows the game's logo or monogram before its name, at `--size-game-logo`. DECISION, user, 2026-11-16 (REQ-0027).
+- Given that a lobby is shown in a lobby list, in the week view or as a label, then no logo or monogram is shown, because labels stay text-only. DECISION, user, 2026-11-16 (confirmed; REQ-0027).
+- Given that the game choice is shown on a phone, when I open it, then its rows show the logos too, in the full-width sheet of REQ-0027. DECISION, user, 2026-11-16.
+- Given that a logo fails to load in the game choice, when the list is shown, then the monogram is shown and no error is shown (the rule above).
+
+Not changed: the mode, activity, genre and max uses lists have no game titles and show no logo.
 
 ## Assumptions (not decided by the user; the architect may refine the limits)
 - Limits: PNG, JPEG or WebP only; at most 512 KiB (524288 bytes) per image (ADR 0026, points 3 and 6).
