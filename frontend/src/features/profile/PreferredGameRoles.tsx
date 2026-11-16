@@ -5,7 +5,7 @@ import {
   type PreferredGameRoleChoices,
 } from "../../api";
 import { useMessages } from "../../i18n";
-import { Alert, ErrorAlert, Icon, Panel } from "../../ui";
+import { Alert, ErrorAlert, GameLogo, Icon, Panel } from "../../ui";
 import {
   usePreferredGameRoles,
   type SaveOutcome,
@@ -95,7 +95,7 @@ function ChoiceForm({
   return (
     <form
       ref={formRef}
-      className="group-form"
+      className="group-form game-roles-form"
       aria-labelledby={headingId}
       aria-describedby={hintId}
       onSubmit={(event) => {
@@ -106,7 +106,14 @@ function ChoiceForm({
     >
       {choices.games.map((game) => (
         <fieldset key={game.id} className="structure">
-          <legend>{game.name}</legend>
+          <legend className="game-legend">
+            <GameLogo
+              gameId={game.id}
+              name={game.name}
+              version={game.logoVersion}
+            />
+            {game.name}
+          </legend>
           {offeredRolesOf(game).map(({ role, modeName }) => (
             <label key={role.id} className="choice-option">
               <input

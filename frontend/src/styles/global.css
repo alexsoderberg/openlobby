@@ -1077,6 +1077,20 @@ a {
   font-weight: 600;
 }
 
+/* Room above the first game's legend, whose logo rises above the fieldset border (REQ-0026). */
+.game-roles-form {
+  margin-top: var(--space-3);
+}
+
+/* A game's legend on the You page: its logo or monogram before the name (REQ-0026). */
+.group-form .structure > legend.game-legend {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 /* A game image field: the image, then its actions, wrapping under it on a narrow screen. */
 .image-field__row {
   display: flex;
