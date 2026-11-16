@@ -44,4 +44,17 @@ describe("GameLogo", () => {
     );
     expect(logoOf(container)).not.toBeNull();
   });
+
+  it.each([
+    [undefined, "size-(--size-game-logo)"],
+    ["large" as const, "size-(--size-game-logo-large)"],
+  ])("draws the box of size %s", (size, sizeClass) => {
+    const { container } = render(
+      <GameLogo gameId="g1" name="Deep Rock" size={size} />,
+    );
+
+    const box = container.querySelector('[data-slot="game-logo"]')!;
+    expect(box.classList).toContain(sizeClass);
+    expect(box.getAttribute("data-size")).toBe(size ?? "regular");
+  });
 });

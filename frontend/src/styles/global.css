@@ -175,8 +175,10 @@
   --size-plus-tab: 3.5rem;
   --size-avatar: 2.25rem;
   --size-avatar-large: 3.5rem;
-  /* A game logo or its monogram: one fixed box everywhere, so a loading image moves nothing (REQ-0026). */
+  /* A game logo or its monogram: one fixed box per place, so a loading image moves nothing (REQ-0026). */
   --size-game-logo: 2.5rem;
+  /* Where the game is central: Next up and the lobby page (REQ-0026). */
+  --size-game-logo-large: 4rem;
   --width-popover: 22rem;
   --radius-popover: 16px;
   --color-chrome: #0c0c10;
@@ -1931,6 +1933,10 @@ a {
   font-family: var(--font-heading);
   font-size: var(--font-size-small);
   font-weight: 600;
+}
+
+[data-slot="game-logo"][data-size="large"] {
+  font-size: var(--font-size-heading);
 }
 
 /* Only the monogram has a border: without its border utility, a solid style would draw the browser's medium width.
