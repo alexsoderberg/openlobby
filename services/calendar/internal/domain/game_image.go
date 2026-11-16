@@ -20,8 +20,8 @@ var ErrImageType = errors.New("invalid image type")
 // ErrGameImageNotFound means the kind is unknown, or the game has no image of the kind at the asked version (ADR 0026 points 3, 4).
 var ErrGameImageNotFound = errors.New("game image not found")
 
-// gameImageKinds are the kinds the API accepts. The database also allows "cover", which PR2 adds here (ADR 0026).
-var gameImageKinds = []string{"logo"}
+// gameImageKinds are the kinds the API accepts, the same as the database check (ADR 0026).
+var gameImageKinds = []string{"logo", "cover"}
 
 // CheckGameImageKind gives ErrGameImageNotFound for a kind that is not a game image kind (ADR 0026 point 3).
 func CheckGameImageKind(kind string) error {

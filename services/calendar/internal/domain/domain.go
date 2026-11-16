@@ -112,6 +112,7 @@ type Game struct {
 	DefaultMaxPlayers *int
 	Genre             *Genre
 	LogoVersion       *string // the version of the game's logo, read only; nil for no logo (ADR 0026)
+	CoverVersion      *string // the version of the game's cover, like LogoVersion
 	GameRoles         []GameRole
 	Modes             []GameMode
 }

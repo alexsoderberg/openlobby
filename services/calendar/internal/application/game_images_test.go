@@ -32,7 +32,14 @@ func (f *fakeImages) Save(_ context.Context, id string, image domain.GameImage) 
 		return domain.Game{}, application.ErrGameNotFound
 	}
 	f.images[id+image.Kind] = image
-	return domain.Game{ID: id, Name: chessName, LogoVersion: &image.Version}, nil
+	return domain.Game{ID: id, Name: chessName, LogoVersion: f.version(id, "logo"), CoverVersion: f.version(id, "cover")}, nil
+}
+
+func (f *fakeImages) version(id, kind string) *string {
+	if image, ok := f.images[id+kind]; ok {
+		return &image.Version
+	}
+	return nil
 }
 
 func (f *fakeImages) Delete(_ context.Context, id, kind string) error {
@@ -171,5 +178,41 @@ func TestUnknownKindIsGameImageNotFound(t *testing.T) {
 	}
 	if _, err := images.Image(ctx, gameID, "banner", ""); !errors.Is(err, domain.ErrGameImageNotFound) {
 		t.Fatalf("image: error %v; want ErrGameImageNotFound", err)
+	}
+}
+
+// The cover follows the same rules as the logo and is kept apart from it: each kind has its own version (ADR 0026).
+func TestCoverIsAGameImageBesideTheLogo(t *testing.T) {
+	var logged bytes.Buffer
+	images := newFakeImages()
+	gameImages := newGameImages(images, slog.New(slog.NewTextHandler(&logged, nil)))
+	ctx := context.Background()
+	if _, err := gameImages.Set(ctx, admin, gameID, "logo", jpegBytes); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := gameImages.Set(ctx, nonAdmin, gameID, "cover", jpegBytes); !errors.Is(err, domain.ErrNotAllowed) {
+		t.Fatalf("non-admin: error %v; want ErrNotAllowed", err)
+	}
+
+	game, err := gameImages.Set(ctx, admin, gameID, "cover", append(bytes.Clone(jpegBytes), 2))
+
+	logo, cover := images.images[gameID+"logo"], images.images[gameID+"cover"]
+	if err != nil || game.CoverVersion == nil || *game.CoverVersion != cover.Version || game.LogoVersion == nil || *game.LogoVersion != logo.Version || cover.Version == logo.Version {
+		t.Fatalf("game %+v, error %v; want the cover beside the logo", game, err)
+	}
+	if !strings.Contains(logged.String(), "kind=cover") {
+		t.Fatalf("log %q, want kind=cover", logged.String())
+	}
+	if image, err := gameImages.Image(ctx, gameID, "cover", cover.Version); err != nil || !bytes.Equal(image.Data, cover.Data) {
+		t.Fatalf("cover %+v, error %v", image, err)
+	}
+	if _, err := gameImages.Image(ctx, gameID, "cover", logo.Version); !errors.Is(err, domain.ErrGameImageNotFound) {
+		t.Fatalf("cover at the logo version: error %v; want ErrGameImageNotFound", err)
+	}
+	if err := gameImages.Remove(ctx, admin, gameID, "cover"); err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := images.images[gameID+"logo"]; !ok || len(images.images) != 1 {
+		t.Fatalf("images %+v; want only the logo left", images.images)
 	}
 }

@@ -226,6 +226,13 @@
   --genre-motif-opacity: 0.12;
   --size-genre-icon: 1.5rem;
   --size-genre-motif: 6rem;
+  /* Over a game cover: the lowest alpha at which the Next up text passes AA over a pure white image, the
+     brightest any cover can be. The gold role slot badge on its tint sets 0.83; the other texts pass from about
+     0.76, with muted text, the genre name and field errors in the text colour (ADR 0026 point 8, pinned by
+     genres/genreContrast.test.ts). */
+  --color-cover-scrim: rgba(10, 10, 13, 0.83);
+  --ratio-cover-preview: 16 / 9;
+  --width-cover-preview: 16rem;
 
   /* Scrollbars: a dim thumb that still stands out at 3:1 on the page, panels and the popover card. */
   --color-scrollbar-thumb: #63646d;
@@ -1090,6 +1097,14 @@ a {
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2);
+}
+
+/* A game cover's preview: the Next up look in a fixed wide box, so a loading image moves nothing. */
+.cover-preview {
+  width: min(100%, var(--width-cover-preview));
+  aspect-ratio: var(--ratio-cover-preview);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
 }
 
 .structure-list {
@@ -2595,6 +2610,31 @@ a {
   border-radius: inherit;
   background-image: var(--genre-pattern);
   pointer-events: none;
+}
+
+/* A game cover fills the frame under the scrim, which takes the place of the pattern (ADR 0026 point 8). Muted
+   text, the genre name and field errors turn to the text colour, the one the scrim is measured against. */
+.genre-frame__cover {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.genre-frame[data-cover] {
+  --color-muted: var(--color-text);
+}
+
+.genre-frame[data-cover]::before {
+  background: var(--color-cover-scrim);
+}
+
+.genre-frame[data-cover] :is(.genre-name, .field-error) {
+  color: var(--color-text);
 }
 
 .genre-frame__icon {

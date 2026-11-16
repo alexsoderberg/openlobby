@@ -252,6 +252,61 @@ describe("game logo", () => {
   });
 });
 
+describe("game cover", () => {
+  const VERSION = "d".repeat(64);
+  const coverOf = (card: ReturnType<typeof within>) =>
+    card.getByRole("article").querySelector(".genre-frame__cover");
+
+  it("fills the Next up card behind its content, and not in This week", async () => {
+    renderDashboard({
+      g1: [
+        lobby("l1", "Overwatch 2", at(4, 20), at(4, 22), {
+          gameId: "game1",
+          gameGenre: "shooter",
+          gameCoverVersion: VERSION,
+        }),
+      ],
+    });
+
+    const card = await nextUpCard();
+    expect(coverOf(card)?.getAttribute("src")).toBe(
+      `/api/games/game1/images/cover?v=${VERSION}`,
+    );
+    expect(document.querySelectorAll(".genre-frame__cover")).toHaveLength(1);
+  });
+
+  it("shows the genre theme for a game without a cover", async () => {
+    renderDashboard({
+      g1: [
+        lobby("l1", "Overwatch 2", at(4, 20), at(4, 22), {
+          gameId: "game1",
+          gameGenre: "shooter",
+        }),
+      ],
+    });
+
+    const card = await nextUpCard();
+    expect(coverOf(card)).toBeNull();
+    expect(card.getByRole("article").dataset.genre).toBe("shooter");
+  });
+
+  it("shows the genre theme after the cover fails to load", async () => {
+    renderDashboard({
+      g1: [
+        lobby("l1", "Overwatch 2", at(4, 20), at(4, 22), {
+          gameId: "game1",
+          gameGenre: "shooter",
+          gameCoverVersion: VERSION,
+        }),
+      ],
+    });
+
+    const card = await nextUpCard();
+    fireEvent.error(coverOf(card)!);
+    expect(coverOf(card)).toBeNull();
+  });
+});
+
 describe("label and role slots", () => {
   const overwatch = lobby("l1", "Overwatch 2", at(4, 20), at(4, 22), {
     modeName: "Competitive",

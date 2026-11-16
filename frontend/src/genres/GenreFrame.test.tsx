@@ -1,4 +1,4 @@
-import { render } from "@testing-library/react";
+import { fireEvent, render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { GenreFrame } from "./GenreFrame";
 import { GENRE_THEMES } from "./genreThemes";
@@ -43,5 +43,47 @@ describe("GenreFrame", () => {
       expect(image.getAttribute("alt")).toBe("");
       expect(image.getAttribute("aria-hidden")).toBe("true");
     }
+  });
+
+  describe("with a game cover", () => {
+    const COVER = "/api/games/g1/images/cover?v=abc";
+    const coverOf = (frame: HTMLElement) =>
+      frame.querySelector<HTMLImageElement>(".genre-frame__cover");
+
+    it("draws the cover behind the content as a decorative image, and keeps the icon", () => {
+      const frame = frameOf(
+        <GenreFrame genre="moba" coverUrl={COVER}>
+          x
+        </GenreFrame>,
+      );
+
+      const cover = coverOf(frame);
+      expect(cover?.getAttribute("src")).toBe(COVER);
+      expect(cover?.getAttribute("alt")).toBe("");
+      expect(frame.hasAttribute("data-cover")).toBe(true);
+      expect(frame.querySelector(".genre-frame__icon")).not.toBeNull();
+      expect(frame.style.getPropertyValue("--genre-accent")).toBe(
+        `var(${GENRE_THEMES.moba.accentVar})`,
+      );
+    });
+
+    it("has no cover without a cover URL", () => {
+      const frame = frameOf(<GenreFrame genre="moba">x</GenreFrame>);
+      expect(coverOf(frame)).toBeNull();
+      expect(frame.hasAttribute("data-cover")).toBe(false);
+    });
+
+    it("falls back to the genre pattern when the cover fails to load", () => {
+      const frame = frameOf(
+        <GenreFrame genre="moba" coverUrl={COVER}>
+          x
+        </GenreFrame>,
+      );
+
+      fireEvent.error(coverOf(frame)!);
+
+      expect(coverOf(frame)).toBeNull();
+      expect(frame.hasAttribute("data-cover")).toBe(false);
+    });
   });
 });

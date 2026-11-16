@@ -18,9 +18,9 @@ type Layer = readonly [colour: string, alpha: number];
 const channels = (hex: string) =>
   [1, 3, 5].map((start) => Number.parseInt(hex.slice(start, start + 2), 16));
 
-/** Paints the layers in order over the page, the way the browser stacks them, and returns the plate the text sits on. */
-function plate(layers: Layer[]): string {
-  let current = channels(solid("--color-bg"));
+/** Paints the layers in order over the page (or another backdrop), the way the browser stacks them, and returns the plate the text sits on. */
+function plate(layers: Layer[], backdrop = solid("--color-bg")): string {
+  let current = channels(backdrop);
   for (const [colour, alpha] of layers)
     current = channels(colour).map((over, index) =>
       Math.round(over * alpha + current[index] * (1 - alpha)),
@@ -144,5 +144,75 @@ describe("genre theme contrast (WCAG AA)", () => {
     for (const [, selector, body] of rules)
       if (!selector.includes(":root"))
         expect(body, selector).not.toMatch(/animation|transition/);
+  });
+});
+
+/**
+ * A game cover can be any image, so the bound is the brightest one: pure white. The scrim over white, then the
+ * motif, is the plate every text of a covered Next up card sits on (ADR 0026 point 8).
+ */
+const WHITE_COVER = "#ffffff";
+const coverPlate = (accent: string, ...over: Layer[]) =>
+  plate(
+    [rgbaLayer("--color-cover-scrim"), [accent, MOTIF_ALPHA], ...over],
+    WHITE_COVER,
+  );
+/** The rules of a covered frame, joined: they swap the muted text and the genre name to the text colour. */
+const coverRules = [
+  ...stylesheet.matchAll(/([^{}]*\[data-cover\][^{}]*)\{([^}]*)\}/g),
+]
+  .map(([, selector, body]) => `${selector.trim()} {${body}}`)
+  .join(" ");
+
+describe("game cover contrast (WCAG AA, worst case: a white cover)", () => {
+  it.each(accents)(
+    "$key: the text colour and the accent read at 4.5:1 or more",
+    ({ accent }) => {
+      for (const text of [solid("--color-text"), solid("--color-accent")])
+        expect(
+          contrastRatio(text, coverPlate(accent)),
+          text,
+        ).toBeGreaterThanOrEqual(WCAG_AA_TEXT);
+    },
+  );
+
+  it.each(accents)(
+    "$key: a role slot badge reads at 4.5:1 or more on its tint",
+    ({ accent }) => {
+      expect(
+        contrastRatio(
+          solid("--color-accent"),
+          coverPlate(accent, rgbaLayer("--color-accent-tint")),
+        ),
+      ).toBeGreaterThanOrEqual(WCAG_AA_TEXT);
+    },
+  );
+
+  it.each(accents)(
+    "$key: the Leave button reads at 4.5:1 or more on its own surface",
+    ({ accent }) => {
+      expect(
+        contrastRatio(
+          solid("--color-text"),
+          coverPlate(accent, rgbaLayer("--color-surface")),
+        ),
+      ).toBeGreaterThanOrEqual(WCAG_AA_TEXT);
+    },
+  );
+
+  it("the Join button and a full slot read on their solid accent, whatever is behind", () => {
+    expect(
+      contrastRatio(solid("--color-on-accent"), solid("--color-accent")),
+    ).toBeGreaterThanOrEqual(WCAG_AA_TEXT);
+  });
+
+  it("gives the muted text, the genre name and a field error the tested text colour on a cover", () => {
+    expect(coverRules).toMatch(/--color-muted:\s*var\(--color-text\)/);
+    for (const name of ["genre-name", "field-error"])
+      expect(coverRules, name).toMatch(
+        new RegExp(
+          String.raw`\.${name}[^{]*\{[^}]*color:\s*var\(--color-text\)`,
+        ),
+      );
   });
 });

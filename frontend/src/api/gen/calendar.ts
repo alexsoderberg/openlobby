@@ -599,6 +599,8 @@ export interface components {
             gameGenre: (string & components["schemas"]["Genre"]) | null;
             /** @description Version of the logo of the lobby's game as it is in the game list now, for the image URL (ADR 0026). `null` for a lobby with no game, a custom name ("Other"), a game without a logo, or a game that was removed. Not in `required` so that existing fixtures stay valid, but the server always sends it. */
             gameLogoVersion?: string | null;
+            /** @description Version of the cover of the lobby's game as it is in the game list now, for the image URL (ADR 0026). `null` for a lobby with no game, a custom name ("Other"), a game without a cover, or a game that was removed. Not in `required` so that existing fixtures stay valid, but the server always sends it. */
+            gameCoverVersion?: string | null;
             maxPlayers: components["schemas"]["MaxPlayers"];
             /**
              * Format: date-time
@@ -734,6 +736,8 @@ export interface components {
             genre: (string & components["schemas"]["Genre"]) | null;
             /** @description Version of the game's logo, the hex SHA-256 of its bytes, for the image URL `/api/games/{gameId}/images/logo?v={logoVersion}` (ADR 0026). `null` when the game has no logo. Not in `required` so that existing fixtures stay valid, but the server always sends it. */
             logoVersion?: string | null;
+            /** @description Version of the game's cover, the hex SHA-256 of its bytes, for the image URL `/api/games/{gameId}/images/cover?v={coverVersion}` (ADR 0026). `null` when the game has no cover. Not in `required` so that existing fixtures stay valid, but the server always sends it. */
+            coverVersion?: string | null;
             /** @description The game roles of the game itself, in the order entered. Not used while the game has modes. Not in `required` so that existing fixtures stay valid, but the server always sends it (ADR 0017). */
             gameRoles?: components["schemas"]["GameRole"][];
             /** @description The modes of the game, in the order entered. Not in `required` so that existing fixtures stay valid, but the server always sends it (ADR 0017). */
@@ -743,7 +747,7 @@ export interface components {
          * @description The kind of a game image (REQ-0026, ADR 0026).
          * @enum {string}
          */
-        GameImageKind: "logo";
+        GameImageKind: "logo" | "cover";
         CreateGameRequest: {
             /** @description Game name. Omitted or `null` gives `invalid_game`. The name `Other` (ignoring case, after trim) is reserved for the client's free-text choice and gives `invalid_game` (ADR 0010). */
             name?: (string & components["schemas"]["GameName"]) | null;
@@ -2130,7 +2134,7 @@ export interface operations {
     getGameImage: {
         parameters: {
             query?: {
-                /** @description The current version of the image (`logoVersion` of the game, `gameLogoVersion` of a lobby). A missing or older value gives `game_image_not_found`. */
+                /** @description The current version of the image (`logoVersion` or `coverVersion` of the game, `gameLogoVersion` or `gameCoverVersion` of a lobby). A missing or older value gives `game_image_not_found`. */
                 v?: string;
             };
             header?: {

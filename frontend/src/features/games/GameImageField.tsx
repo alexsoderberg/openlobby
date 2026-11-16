@@ -1,7 +1,8 @@
 import { flushSync } from "react-dom";
 import { useId, useRef, useState } from "react";
-import type { Game, GameImageKind } from "../../api";
+import { gameImageUrl, type Game, type GameImageKind } from "../../api";
 import { toUserMessage, useMessages } from "../../i18n";
+import { GenreFrame } from "../../genres";
 import { Button, ConfirmDialog, GameLogo, Icon } from "../../ui";
 import { useGameImage } from "./useGameImage";
 
@@ -9,7 +10,7 @@ import { useGameImage } from "./useGameImage";
 const ACCEPTED_TYPES = "image/png,image/jpeg,image/webp";
 
 /**
- * One image of a saved game: the current image or the monogram, a file choice that saves at once, and a removal
+ * One image of a saved game: the current image or its fallback, a file choice that saves at once, and a removal
  * after confirmation. The outcome is an inline status, not a toast (ADR 0026, REQ-0022).
  */
 export function GameImageField({
@@ -44,7 +45,21 @@ export function GameImageField({
     <fieldset className="structure" aria-describedby={hintId}>
       <legend>{m.gameImage[kind]}</legend>
       <div className="image-field__row">
-        <GameLogo gameId={game.id} name={game.name} version={image.version} />
+        {kind === "logo" ? (
+          <GameLogo gameId={game.id} name={game.name} version={image.version} />
+        ) : (
+          // The cover as Next up shows it: under the scrim, or the genre theme without one.
+          <GenreFrame
+            genre={game.genre}
+            className="cover-preview"
+            aria-hidden="true"
+            coverUrl={
+              image.version
+                ? gameImageUrl(game.id, "cover", image.version)
+                : undefined
+            }
+          />
+        )}
         <Button
           type="button"
           variant="secondary"
@@ -79,7 +94,7 @@ export function GameImageField({
         }}
       />
       <p id={hintId} className="form-hint">
-        {m.gameImageHint}
+        {m.gameImageHint[kind]}
       </p>
       <p ref={statusRef} tabIndex={-1} role="status" className="status">
         {state.status === "saving" && m.gameImageSaving}
@@ -93,8 +108,8 @@ export function GameImageField({
       )}
       {confirming && (
         <ConfirmDialog
-          heading={m.gameImageRemoveHeading(game.name)}
-          body={m.gameImageRemoveConfirm}
+          heading={m.gameImageRemoveHeading[kind](game.name)}
+          body={m.gameImageRemoveConfirm[kind]}
           submitLabel={m.gameImageRemoveSubmit}
           submitIcon="remove"
           danger
