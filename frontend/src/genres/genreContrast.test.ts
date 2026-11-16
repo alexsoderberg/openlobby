@@ -148,15 +148,29 @@ describe("genre theme contrast (WCAG AA)", () => {
 });
 
 /**
- * A game cover can be any image, so the bound is the brightest one: pure white. The scrim over white, then the
- * motif, is the plate every text of a covered Next up card sits on (ADR 0026 point 8).
+ * A game cover can be any image, so the bound is the brightest one: pure white. The scrim over white is the plate
+ * every text on a cover sits on: Next up and the lobby head add the motif, a hovered lobby row its hover tint, which
+ * a covered row draws over the scrim so the hover stays visible (ADR 0026 point 8).
  */
 const WHITE_COVER = "#ffffff";
-const coverPlate = (accent: string, ...over: Layer[]) =>
-  plate(
-    [rgbaLayer("--color-cover-scrim"), [accent, MOTIF_ALPHA], ...over],
-    WHITE_COVER,
-  );
+const coverViews: Record<string, (accent: string) => Layer[]> = {
+  "Next up card and lobby head": (accent) => [
+    rgbaLayer("--color-cover-scrim"),
+    [accent, MOTIF_ALPHA],
+  ],
+  "lobby row": () => [rgbaLayer("--color-cover-scrim")],
+  "lobby row on hover": () => [
+    rgbaLayer("--color-cover-scrim"),
+    rgbaLayer("--color-row-hover"),
+  ],
+};
+const coverStacks = accents.flatMap(({ key, accent }) =>
+  Object.entries(coverViews).map(
+    ([view, layers]) => [`${key} ${view}`, accent, layers(accent)] as const,
+  ),
+);
+const coverPlate = (layers: Layer[], ...over: Layer[]) =>
+  plate([...layers, ...over], WHITE_COVER);
 /** The rules of a covered frame, joined: they swap the muted text and the genre name to the text colour. */
 const coverRules = [
   ...stylesheet.matchAll(/([^{}]*\[data-cover\][^{}]*)\{([^}]*)\}/g),
@@ -165,36 +179,38 @@ const coverRules = [
   .join(" ");
 
 describe("game cover contrast (WCAG AA, worst case: a white cover)", () => {
-  it.each(accents)(
-    "$key: the text colour and the accent read at 4.5:1 or more",
-    ({ accent }) => {
+  it.each(coverStacks)(
+    "%s: the text colour and the accent read at 4.5:1 or more",
+    (_, _accent, layers) => {
       for (const text of [solid("--color-text"), solid("--color-accent")])
         expect(
-          contrastRatio(text, coverPlate(accent)),
+          contrastRatio(text, coverPlate(layers)),
           text,
         ).toBeGreaterThanOrEqual(WCAG_AA_TEXT);
     },
   );
 
-  it.each(accents)(
-    "$key: a role slot badge reads at 4.5:1 or more on its tint",
-    ({ accent }) => {
-      expect(
-        contrastRatio(
-          solid("--color-accent"),
-          coverPlate(accent, rgbaLayer("--color-accent-tint")),
-        ),
-      ).toBeGreaterThanOrEqual(WCAG_AA_TEXT);
+  it.each(coverStacks)(
+    "%s: a badge and a game monogram read at 4.5:1 or more on their tint",
+    (_, _accent, layers) => {
+      for (const text of [solid("--color-accent"), solid("--color-text")])
+        expect(
+          contrastRatio(
+            text,
+            coverPlate(layers, rgbaLayer("--color-accent-tint")),
+          ),
+          text,
+        ).toBeGreaterThanOrEqual(WCAG_AA_TEXT);
     },
   );
 
-  it.each(accents)(
-    "$key: the Leave button reads at 4.5:1 or more on its own surface",
-    ({ accent }) => {
+  it.each(coverStacks)(
+    "%s: the Leave button reads at 4.5:1 or more on its own surface",
+    (_, _accent, layers) => {
       expect(
         contrastRatio(
           solid("--color-text"),
-          coverPlate(accent, rgbaLayer("--color-surface")),
+          coverPlate(layers, rgbaLayer("--color-surface")),
         ),
       ).toBeGreaterThanOrEqual(WCAG_AA_TEXT);
     },
@@ -214,5 +230,9 @@ describe("game cover contrast (WCAG AA, worst case: a white cover)", () => {
           String.raw`\.${name}[^{]*\{[^}]*color:\s*var\(--color-text\)`,
         ),
       );
+  });
+
+  it("draws a covered row's hover tint over the scrim, as tested", () => {
+    expect(coverRules).toMatch(/\.row-list[^{]*::after\s*\{[^}]*z-index:\s*-1/);
   });
 });

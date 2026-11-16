@@ -4,6 +4,7 @@ import { GenreFrame, GenreName } from "../../genres";
 import { formatDateTimeRange, useMessages } from "../../i18n";
 import {
   LobbyGameLogo,
+  lobbyCoverUrl,
   lobbyLabel,
   PreferredGameRolesNote,
   RoleSlots,
@@ -41,6 +42,7 @@ export function LobbyDetails({
         genre={lobby.gameGenre}
         className="lobby-head"
         motif
+        coverUrl={lobbyCoverUrl(lobby)}
       >
         <div className="game-heading">
           <LobbyGameLogo lobby={lobby} />
