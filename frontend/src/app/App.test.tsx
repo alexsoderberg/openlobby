@@ -120,7 +120,16 @@ describe("logged in", () => {
   it("shows the group list at /groups", async () => {
     renderAt(
       loggedInClient({
-        listGroups: () => Promise.resolve([{ id: "g1", name: "Friday crew" }]),
+        listGroupOverviews: () =>
+          Promise.resolve([
+            {
+              id: "g1",
+              name: "Friday crew",
+              memberCount: 1,
+              members: [{ userId: "u1", displayName: "Maja Lind" }],
+              nextLobby: null,
+            },
+          ]),
       }),
       "/groups",
     );
@@ -129,7 +138,7 @@ describe("logged in", () => {
       await screen.findByRole("heading", { level: 1, name: en.groupsHeading }),
     ).toBeTruthy();
     const link = await within(screen.getByRole("main")).findByRole("link", {
-      name: "Friday crew",
+      name: /^Friday crew/,
     });
     expect(link.getAttribute("href")).toBe("/groups/g1");
   });

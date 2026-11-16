@@ -29,6 +29,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/group-overviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List my group overviews
+         * @description One Group overview for each group where the caller is a member, for the Group list (REQ-0024, ADR 0025). Sorted by name ignoring case, then ID. An empty array when the caller is in no group.
+         *     The member names come from `auth`; when `auth` does not answer the response is `503 service_unavailable`.
+         */
+        get: operations["listGroupOverviews"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/groups/{groupId}": {
         parameters: {
             query?: never;
@@ -524,6 +545,37 @@ export interface components {
         Group: components["schemas"]["GroupSummary"] & {
             members: components["schemas"]["Member"][];
         };
+        GroupOverview: components["schemas"]["GroupSummary"] & {
+            /** @description Number of members of the group, the caller included. */
+            memberCount: number;
+            /** @description The five members who joined first (by join time, then user ID), in that order. Fewer when the group has fewer members. */
+            members: components["schemas"]["UserRef"][];
+            /** @description The Next lobby of the group, `null` when every lobby of the group has ended or it has none. */
+            nextLobby: components["schemas"]["NextLobby"] | null;
+        };
+        /** @description The lobby of one group that starts first (by start time, then ID) among its lobbies that have not ended. Running lobbies count, also lobbies the caller has not joined (ADR 0025). It has no lobby ID; the Group card opens the Group view. */
+        NextLobby: {
+            /** @description As `gameName` on `Lobby`. `null` for a lobby with no game, shown as "Open". */
+            gameName: (string & components["schemas"]["GameName"]) | null;
+            /** @description As `modeName` on `Lobby`. `null` for a lobby without a mode. */
+            modeName: string | null;
+            /** @description As `activityName` on `Lobby`. `null` for a lobby without a named activity. */
+            activityName: string | null;
+            /** @description As `gameGenre` on `Lobby`. `null` for no game, a custom name ("Other"), a game without a genre, or a removed game. */
+            gameGenre: (string & components["schemas"]["Genre"]) | null;
+            /**
+             * Format: date-time
+             * @description Start time in UTC.
+             */
+            startsAt: string;
+            /**
+             * Format: date-time
+             * @description End time in UTC.
+             */
+            endsAt: string;
+            playerCount: number;
+            maxPlayers: components["schemas"]["MaxPlayers"];
+        };
         CreateGroupRequest: {
             /** @description Group name. Omitted or `null` gives `invalid_group_name`. */
             name?: (string & components["schemas"]["GroupName"]) | null;
@@ -973,6 +1025,32 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            500: components["responses"]["InternalError"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    listGroupOverviews: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Correlation ID (ADR 0001). A valid value is kept and passed on. A missing or invalid value is replaced by a new one. The response always contains `X-Request-Id`. */
+                "X-Request-Id"?: components["parameters"]["RequestIdHeader"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The Group overviews of the caller's groups. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GroupOverview"][];
                 };
             };
             401: components["responses"]["Unauthenticated"];

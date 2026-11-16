@@ -195,7 +195,7 @@ func TestFormerMemberCannotReadTheGroupOrItsLobbies(t *testing.T) {
 	}
 	ctx := context.Background()
 
-	_, _, groupErr := application.NewGroups(store.Groups(), store.Groups(), store.Groups(), nil, systemclock.Clock{}).Get(ctx, otherID, fridayID)
+	_, _, groupErr := application.NewGroups(store.Groups(), store.Groups(), store.Groups(), store.Groups(), nil, systemclock.Clock{}).Get(ctx, otherID, fridayID)
 	_, lobbiesErr := application.NewLobbies(store.Lobbies(), store.Lobbies(), nil, nil, systemclock.Clock{}).Upcoming(ctx, fridayID, otherID)
 
 	if !errors.Is(groupErr, domain.ErrGroupNotFound) || !errors.Is(lobbiesErr, domain.ErrGroupNotFound) {

@@ -64,7 +64,7 @@ Mobile first (cross-cutting, applies to all UI requirements):
 - Given that I use a phone 390 px wide, when I use any page, then the page does not scroll sideways (except the Group strip), every tap target is at least 44 px, and input text is 16 px so the browser does not zoom (DECISION, user).
 
 ## Out of scope
-- Lobbies of several groups together in a group view. Only the dashboard is cross-group.
+- Lobbies of several groups together in a group view. The cross-group views are the dashboard and the Group list cards (Amendment 2026-11-16).
 - Month view and week navigation on the dashboard.
 - Discord avatars (F-029): see REQ-0016 (Decided 2026-11-10, after the MVP). The MVP showed initials only.
 - Game accent colors (F-030): Decided, backlog B1, after the MVP.
@@ -213,3 +213,8 @@ Status stays Implemented. Decided by the user on 2026-11-14, specified in REQ-00
 - From 98rem (DECISION, user, 2026-11-14), Next up is in a side column on the right and This week is in the main column. Below 98rem the layout is one column, as today. Content, rules and buttons of Next up and This week are unchanged.
 - Dashboard with no upcoming lobby in any group, but at least one group: Next up keeps its side column and shows "Nothing booked" (ASSUMPTION, REQ-0025). With no group, no side column is shown.
 - The rules of the empty and error states above are unchanged. Phones are unchanged.
+
+## Amendment 2026-11-16 (REQ-0024, group cards)
+Status stays Implemented. Recorded 2026-11-16 as the Group list cards are built. DECISION, user, 2026-11-13 (REQ-0024, question 9). Binding for the UI expert.
+- The out-of-scope line "Only the dashboard is cross-group." is replaced by "The cross-group views are the dashboard and the Group list cards." Old wording: "Only the dashboard is cross-group."
+- The Group list cards (F-043, REQ-0024) show one next lobby per group, with the same next-lobby rule as Next up. They show no list of lobbies, so the rule "no list of several groups' lobbies in a group view" is unchanged.

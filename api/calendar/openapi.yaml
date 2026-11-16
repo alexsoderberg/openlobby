@@ -96,6 +96,32 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
+  /api/group-overviews:
+    get:
+      operationId: listGroupOverviews
+      tags: [Groups]
+      summary: List my group overviews
+      description: |
+        One Group overview for each group where the caller is a member, for the Group list (REQ-0024, ADR 0025). Sorted by name ignoring case, then ID. An empty array when the caller is in no group.
+        The member names come from `auth`; when `auth` does not answer the response is `503 service_unavailable`.
+      parameters:
+        - $ref: '#/components/parameters/RequestIdHeader'
+      responses:
+        '200':
+          description: The Group overviews of the caller's groups.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GroupOverview'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
   /api/groups/{groupId}:
     get:
       operationId: getGroup
@@ -1420,6 +1446,68 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/Member'
+
+    GroupOverview:
+      allOf:
+        - $ref: '#/components/schemas/GroupSummary'
+        - type: object
+          required: [memberCount, members, nextLobby]
+          properties:
+            memberCount:
+              type: integer
+              minimum: 1
+              description: Number of members of the group, the caller included.
+            members:
+              type: array
+              maxItems: 5
+              items:
+                $ref: '#/components/schemas/UserRef'
+              description: The five members who joined first (by join time, then user ID), in that order. Fewer when the group has fewer members.
+            nextLobby:
+              nullable: true
+              x-omitempty: false
+              allOf:
+                - $ref: '#/components/schemas/NextLobby'
+              description: The Next lobby of the group, `null` when every lobby of the group has ended or it has none.
+
+    NextLobby:
+      type: object
+      description: The lobby of one group that starts first (by start time, then ID) among its lobbies that have not ended. Running lobbies count, also lobbies the caller has not joined (ADR 0025). It has no lobby ID; the Group card opens the Group view.
+      required: [gameName, modeName, activityName, gameGenre, startsAt, endsAt, playerCount, maxPlayers]
+      properties:
+        gameName:
+          type: string
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/GameName'
+          description: As `gameName` on `Lobby`. `null` for a lobby with no game, shown as "Open".
+        modeName:
+          type: string
+          nullable: true
+          description: As `modeName` on `Lobby`. `null` for a lobby without a mode.
+        activityName:
+          type: string
+          nullable: true
+          description: As `activityName` on `Lobby`. `null` for a lobby without a named activity.
+        gameGenre:
+          type: string
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/Genre'
+          description: As `gameGenre` on `Lobby`. `null` for no game, a custom name ("Other"), a game without a genre, or a removed game.
+        startsAt:
+          type: string
+          format: date-time
+          description: Start time in UTC.
+        endsAt:
+          type: string
+          format: date-time
+          description: End time in UTC.
+        playerCount:
+          type: integer
+          minimum: 0
+        maxPlayers:
+          $ref: '#/components/schemas/MaxPlayers'
 
     CreateGroupRequest:
       type: object

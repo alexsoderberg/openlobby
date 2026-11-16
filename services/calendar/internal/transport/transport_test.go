@@ -43,9 +43,11 @@ type memoryGroups struct {
 	// visible are the preferred game roles by user that the group and lobby reads give, as the adapter filters them.
 	visible map[string][]domain.PreferredGameRole
 	images  map[string]domain.GameImage // the logo by game ID
-	err     error
-	calls   int
-	created int
+	// overviews are the Group overviews the overview reader answers to any caller.
+	overviews []domain.GroupOverview
+	err       error
+	calls     int
+	created   int
 }
 
 func (m *memoryGroups) ListForUser(_ context.Context, userID string) ([]domain.Group, error) {
@@ -59,6 +61,11 @@ func (m *memoryGroups) ListForUser(_ context.Context, userID string) ([]domain.G
 		}
 	}
 	return groups, m.err
+}
+
+func (m *memoryGroups) Overviews(_ context.Context, _ string, _ time.Time) ([]domain.GroupOverview, error) {
+	m.calls++
+	return m.overviews, m.err
 }
 
 func (m *memoryGroups) Create(_ context.Context, name, creatorID string, _ time.Time) (domain.Group, error) {
@@ -146,7 +153,7 @@ func fridayDirectory() *fakeDirectory {
 func newRouter(store *memoryGroups, directory *fakeDirectory) http.Handler {
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	ready := func(context.Context) error { return store.err }
-	groups := application.NewGroups(store, store, store, directory, fixedClock{})
+	groups := application.NewGroups(store, store, store, store, directory, fixedClock{})
 	games := application.NewGames(store, store, memoryEditor{store}, logger)
 	invites := application.NewInviteLinks(store, store, store, fixedTokens{}, fixedClock{})
 	lobbies := application.NewLobbies(memoryLobbyRepo{store}, store, store, directory, fixedClock{})
