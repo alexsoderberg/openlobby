@@ -230,6 +230,43 @@ const blockStyle = (element: HTMLElement) => {
 };
 const listButton = () => screen.getByRole("button", { name: en.lobbyViewList });
 
+describe("game cover", () => {
+  const VERSION = "c".repeat(64);
+  const covered = { ...catan, gameId: "game1", gameCoverVersion: VERSION };
+  const coverOf = (row: HTMLElement) =>
+    row.querySelector(".genre-frame__cover");
+
+  it("fills each lobby row with its game's cover, and only rows with one", async () => {
+    renderLobbies(withLobbies(covered, { ...chess, gameId: "game2" }));
+
+    const [withCover, without] = await screen.findAllByRole("listitem");
+    expect(coverOf(withCover)?.getAttribute("src")).toBe(
+      `/api/games/game1/images/cover?v=${VERSION}`,
+    );
+    expect(coverOf(withCover)?.getAttribute("alt")).toBe("");
+    expect(coverOf(without)).toBeNull();
+    expect(without.dataset.genre).toBe("neutral");
+  });
+
+  it("shows the genre theme after the cover fails to load", async () => {
+    renderLobbies(withLobbies(covered));
+
+    const [row] = await screen.findAllByRole("listitem");
+    fireEvent.error(coverOf(row)!);
+    expect(coverOf(row)).toBeNull();
+    expect(row.hasAttribute("data-cover")).toBe(false);
+  });
+
+  it("draws no cover in the week calendar", async () => {
+    renderLobbies(withLobbies(covered));
+    await screen.findAllByRole("listitem");
+    fireEvent.click(screen.getByRole("button", { name: en.lobbyViewCalendar }));
+
+    await screen.findByRole("link", { name: "Catan" });
+    expect(document.querySelector(".genre-frame__cover")).toBeNull();
+  });
+});
+
 describe("label and role slots", () => {
   const overwatch = lobby({
     id: "l9",

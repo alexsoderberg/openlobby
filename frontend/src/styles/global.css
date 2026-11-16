@@ -2623,6 +2623,11 @@ a {
   color: var(--color-text);
 }
 
+/* Under the scrim the hover tint of a covered row would not show, so it is drawn over the scrim. */
+.row-list > .genre-frame[data-cover]::after {
+  z-index: -1;
+}
+
 .genre-frame__icon {
   position: absolute;
   top: var(--space-2);
