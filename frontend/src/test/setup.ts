@@ -50,3 +50,8 @@ if (!window.ResizeObserver) {
     disconnect() {}
   };
 }
+
+// Radix Select (ADR 0027 point 7) captures the pointer on the field and scrolls the chosen option into view.
+Element.prototype.hasPointerCapture ??= () => false;
+Element.prototype.releasePointerCapture ??= () => undefined;
+Element.prototype.scrollIntoView ??= () => undefined;

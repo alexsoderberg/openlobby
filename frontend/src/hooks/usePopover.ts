@@ -55,6 +55,8 @@ export function usePopover() {
   useEffect(() => {
     if (!open) return undefined;
     const onKeyDown = (event: KeyboardEvent) => {
+      // A layer inside the form (an open dropdown list) has handled the key already, e.g. closed itself on Escape.
+      if (event.defaultPrevented) return;
       if (event.key === ESCAPE) close();
       if (event.key === TAB) wrapTab(event, popoverRef.current);
     };

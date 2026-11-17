@@ -178,7 +178,7 @@ function GameFormFields({
   hideMax: boolean;
   nameRef: Ref<HTMLInputElement>;
   maxRef: Ref<HTMLInputElement>;
-  genreRef: Ref<HTMLSelectElement>;
+  genreRef: Ref<HTMLButtonElement>;
 }) {
   const m = useMessages();
   const describing = (about: ErrorSection) =>
@@ -294,7 +294,7 @@ function focusError(
   refs: {
     name: RefObject<HTMLInputElement | null>;
     max: RefObject<HTMLInputElement | null>;
-    genre: RefObject<HTMLSelectElement | null>;
+    genre: RefObject<HTMLButtonElement | null>;
   },
 ) {
   if (isStructureSection(section))
@@ -324,7 +324,7 @@ function useGameFormSubmit(
   const [failure, setFailure] = useState<FormFailure>();
   const nameRef = useRef<HTMLInputElement>(null);
   const maxRef = useRef<HTMLInputElement>(null);
-  const genreRef = useRef<HTMLSelectElement>(null);
+  const genreRef = useRef<HTMLButtonElement>(null);
 
   async function submit(form: HTMLFormElement) {
     const parsed = parseGameInput(

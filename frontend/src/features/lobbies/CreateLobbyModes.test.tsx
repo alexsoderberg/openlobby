@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError, ApiProvider, type ApiClient, type Game } from "../../api";
 import { en } from "../../i18n/messages/en";
+import { chooseOption, optionNames } from "../../test/chooseOption";
 import { fakeApiClient } from "../../test/fakeApiClient";
 import { CreateLobby } from "./CreateLobby";
 
@@ -100,59 +101,59 @@ const seat = (name: string) =>
 
 /** Fills the times and picks WoW, then the mode when one is given. */
 async function fillWow(mode?: string) {
-  set(await field(en.lobbyGameLabel), "g-wow");
+  await chooseOption(await field(en.lobbyGameLabel), "WoW");
   set(await field(en.lobbyDateLabel), "2026-11-05");
   set(await field(en.lobbyStartLabel), "18:00");
   set(await field(en.lobbyEndLabel), "20:00");
-  if (mode) set(await field(en.lobbyModeLabel), mode);
+  if (mode) await chooseOption(await field(en.lobbyModeLabel), mode);
 }
 
 describe("mode and activity", () => {
   it("offers modes only for a game with modes, and activities only for the chosen mode", async () => {
     renderForm();
-    set(await field(en.lobbyGameLabel), "g-catan");
+    await chooseOption(await field(en.lobbyGameLabel), "Catan");
     expect(screen.queryByLabelText(en.lobbyModeLabel)).toBeNull();
 
-    set(await field(en.lobbyGameLabel), "g-wow");
+    await chooseOption(await field(en.lobbyGameLabel), "WoW");
     const mode = await field(en.lobbyModeLabel);
-    expect(Array.from(mode.options, (option) => option.text)).toEqual([
+    expect(await optionNames(mode)).toEqual([
       en.lobbyModeNone,
       "Raid",
       "Arena",
     ]);
     expect(screen.queryByLabelText(en.lobbyActivityLabel)).toBeNull();
 
-    set(mode, "m-raid");
+    await chooseOption(mode, "Raid");
     const activity = await field(en.lobbyActivityLabel);
-    expect(Array.from(activity.options, (option) => option.text)).toEqual([
+    expect(await optionNames(activity)).toEqual([
       en.lobbyActivityNone,
       "Citadel",
     ]);
-    set(mode, "m-arena");
+    await chooseOption(mode, "Arena");
     expect(screen.queryByLabelText(en.lobbyActivityLabel)).toBeNull();
   });
 
   it("forgets the mode when the game changes", async () => {
     renderForm();
-    set(await field(en.lobbyGameLabel), "g-wow");
-    set(await field(en.lobbyModeLabel), "m-raid");
+    await chooseOption(await field(en.lobbyGameLabel), "WoW");
+    await chooseOption(await field(en.lobbyModeLabel), "Raid");
 
-    set(await field(en.lobbyGameLabel), "g-catan");
-    set(await field(en.lobbyGameLabel), "g-wow");
+    await chooseOption(await field(en.lobbyGameLabel), "Catan");
+    await chooseOption(await field(en.lobbyGameLabel), "WoW");
 
-    expect((await field(en.lobbyModeLabel)).value).toBe("");
+    expect((await field(en.lobbyModeLabel)).textContent).toBe(en.lobbyModeNone);
   });
 
   it("fills max players from a mode without game roles", async () => {
     renderForm();
-    await fillWow("m-arena");
+    await fillWow("Arena");
 
     expect((await field(en.lobbyMaxPlayersLabel)).value).toBe("3");
   });
 
   it("sends the mode and no activity for a mode without game roles", async () => {
     const { client, onCreated } = renderForm();
-    await fillWow("m-arena");
+    await fillWow("Arena");
 
     submit();
 
@@ -177,7 +178,7 @@ describe("max players with modes", () => {
 
   it("refuses an empty max players for a mode and does not send", async () => {
     const { client } = renderForm();
-    await fillWow("m-arena");
+    await fillWow("Arena");
     set(await field(en.lobbyMaxPlayersLabel), "");
 
     submit();
@@ -195,7 +196,7 @@ describe("max players with modes", () => {
         Promise.reject(new ApiError(400, "invalid_capacity")),
       ),
     });
-    await fillWow("m-arena");
+    await fillWow("Arena");
 
     submit();
 
@@ -210,7 +211,7 @@ describe("max players with modes", () => {
 describe("game roles", () => {
   it("prefills the role slots from the mode and shows their total instead of max players", async () => {
     renderForm();
-    await fillWow("m-raid");
+    await fillWow("Raid");
 
     expect((await field("Tank, slots")).value).toBe("1");
     expect((await field("Damage, slots")).value).toBe("3");
@@ -223,7 +224,7 @@ describe("game roles", () => {
 
   it("prefills the role slots from a game without modes", async () => {
     renderForm();
-    set(await field(en.lobbyGameLabel), "g-dungeon");
+    await chooseOption(await field(en.lobbyGameLabel), "Dungeon");
 
     expect((await field("Healer, slots")).value).toBe("1");
     expect(screen.queryByLabelText(en.lobbyModeLabel)).toBeNull();
@@ -238,8 +239,8 @@ describe("game roles", () => {
 
   it("sends the mode, activity, changed slots and the creator's game role", async () => {
     const { client, onCreated } = renderForm();
-    await fillWow("m-raid");
-    set(await field(en.lobbyActivityLabel), "a-citadel");
+    await fillWow("Raid");
+    await chooseOption(await field(en.lobbyActivityLabel), "Citadel");
     set(await field("Damage, slots"), "2");
     fireEvent.click(seat("Healer"));
 
@@ -263,7 +264,7 @@ describe("game roles", () => {
 
   it("sends flex as the creator's seat", async () => {
     const { client, onCreated } = renderForm();
-    await fillWow("m-raid");
+    await fillWow("Raid");
     fireEvent.click(seat(en.lobbySeatFlex));
 
     submit();
@@ -277,7 +278,7 @@ describe("game roles", () => {
 
   it("denies a missing seat next to the seat choice and focuses it", async () => {
     const { client } = renderForm();
-    await fillWow("m-raid");
+    await fillWow("Raid");
 
     submit();
 
@@ -296,7 +297,7 @@ describe("game roles", () => {
 
   it("disables the seat of a game role with 0 slots and sends the 0", async () => {
     const { client, onCreated } = renderForm();
-    await fillWow("m-raid");
+    await fillWow("Raid");
     set(await field("Tank, slots"), "0");
     expect(seat("Tank").disabled).toBe(true);
     fireEvent.click(seat("Healer"));
@@ -314,7 +315,7 @@ describe("game roles", () => {
 
   it("clears the seat when its game role goes to 0 slots", async () => {
     renderForm();
-    await fillWow("m-raid");
+    await fillWow("Raid");
     fireEvent.click(seat("Tank"));
 
     set(await field("Tank, slots"), "0");
@@ -324,7 +325,7 @@ describe("game roles", () => {
 
   it("denies slots that are not whole numbers, with the slots text", async () => {
     const { client } = renderForm();
-    await fillWow("m-raid");
+    await fillWow("Raid");
     set(await field("Damage, slots"), "-1");
     fireEvent.click(seat("Healer"));
 
@@ -343,7 +344,7 @@ describe("server errors of mode, activity and seat", () => {
     renderForm({
       createLobby: vi.fn(() => Promise.reject(new ApiError(400, code))),
     });
-    await fillWow("m-raid");
+    await fillWow("Raid");
     fireEvent.click(seat("Tank"));
     submit();
     return screen.findByRole("alert");
