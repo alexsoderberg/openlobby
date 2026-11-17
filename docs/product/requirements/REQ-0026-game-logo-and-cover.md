@@ -159,6 +159,23 @@ Decisions (DECISION, user, 2026-11-16):
 - Logo above the cover in covered rows: DECISION, product owner, 2026-11-16 (kept).
 
 Order: not decided. The change has no dependency on REQ-0027. Proposed: one PR after the cover (PR 2 of the cover amendment) and before A4. The product owner suggests this, the user may change it.
+## Amendment 2026-11-17 (cover side gradient)
+Status stays Decided. Feature F-030 (EXTEND, not a new feature). DECISION, user, 2026-11-17: the cover is no longer under an even dark layer, which hid it. It has a side gradient instead: dark on the text side (the left), fading to almost full cover strength toward the right. The contrast rule of lines 36 and 112 stays. Replaced wording: "the scrim on the cover is allowed" now means this gradient.
+
+Places: the same look on the Next up card (line 34), the lobby page header and the group view's lobby rows (Amendment 2026-11-16, cover places). Not on the week calendar blocks or the Dashboard Day list (unchanged).
+
+Criteria:
+- Given that a cover is shown on one of these places, when I read its text on the left, including the logo or monogram and the button labels, then each text has a contrast of at least 4.5:1 against what is behind it, or 3:1 for large text, as WCAG defines it. The dark part covers the text up to its right end. The check uses the lightest and the busiest cover of the test fixtures. DECISION, user, 2026-11-17.
+- Given that a cover is shown on one of these places, when I look at its right edge, then the dark layer is at most 20% opaque there, so the cover is clearly visible. ASSUMPTION (product owner): the figure; the architect may refine the gradient.
+- Given that a cover is shown, when I look from its left edge to its right edge, then the darkness decreases steadily, with no hard edge or band. ASSUMPTION (product owner).
+- Given that a cover is shown on a phone (window under 760 px), when I read its text, then the dark layer covers the text column, so all text keeps the contrast of line 1. A narrow strip at the right edge, where there is no text (e.g. beside the player count), shows the cover clearly, under the right-edge rule above. DECISION, user, 2026-11-17.
+- Given that a game has no cover, or its cover cannot be loaded, then no gradient is drawn and the genre theme is shown as before (lines 115 and 118).
+
+Out of scope:
+- A gradient per game or per genre. One look for all covers.
+- Any change to the week calendar blocks, the Dashboard Day list or the group list: no cover there.
+
+Answered (DECISION, user, 2026-11-17): on phones the text column keeps the dark layer, and a narrow strip at the right edge shows the cover clearly. Not above the text.
 
 ## Assumptions (not decided by the user; the architect may refine the limits)
 - Limits: PNG, JPEG or WebP only; at most 512 KiB (524288 bytes) per image (ADR 0026, points 3 and 6).
