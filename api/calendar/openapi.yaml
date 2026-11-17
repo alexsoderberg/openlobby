@@ -1464,6 +1464,7 @@ components:
                 $ref: '#/components/schemas/UserRef'
               description: The five members who joined first (by join time, then user ID), in that order. Fewer when the group has fewer members.
             nextLobby:
+              type: object
               nullable: true
               x-omitempty: false
               allOf:
