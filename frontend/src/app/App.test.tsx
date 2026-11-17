@@ -323,10 +323,10 @@ describe("group page", () => {
         name: en.inviteHeading("Friday crew"),
       }),
     ).toBeTruthy();
-    const uses = (await screen.findByRole("combobox", {
+    const uses = await screen.findByRole("combobox", {
       name: en.inviteMaxUsesLabel,
-    })) as HTMLSelectElement;
-    expect(uses.value).toBe("1");
+    });
+    expect(uses.textContent).toBe("1");
     fireEvent.keyDown(document, { key: "Escape" });
     expect(document.activeElement).toBe(button);
   });

@@ -218,3 +218,7 @@ Status stays Implemented. Decided by the user on 2026-11-14, specified in REQ-00
 Status stays Implemented. Recorded 2026-11-16 as the Group list cards are built. DECISION, user, 2026-11-13 (REQ-0024, question 9). Binding for the UI expert.
 - The out-of-scope line "Only the dashboard is cross-group." is replaced by "The cross-group views are the dashboard and the Group list cards." Old wording: "Only the dashboard is cross-group."
 - The Group list cards (F-043, REQ-0024) show one next lobby per group, with the same next-lobby rule as Next up. They show no list of lobbies, so the rule "no list of several groups' lobbies in a group view" is unchanged.
+## Amendment 2026-11-17 (phone day selection) - Decided
+Status stays Implemented. Decided by the user on 2026-11-17; the details are in REQ-0004, Amendment 2026-11-17 (phone day selection). Not built yet.
+- Decided: the day pills of This week on a phone follow REQ-0004 Amendment 2026-11-17, including the pill row rule and the swipe between days on the day grid. The swipe stops at Monday and Sunday (DECISION, user, 2026-11-17). This week shows the current week only, so a swipe never shows a day of another week.
+- Desktop and the Day list are not changed by this amendment.

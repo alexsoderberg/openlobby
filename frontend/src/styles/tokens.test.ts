@@ -129,10 +129,11 @@ describe("design tokens", () => {
   });
 
   it("uses only tokens that are defined in :root", () => {
+    // Radix sets its --radix-* values on the element at run time (the side the dropdown list grew from).
     const used = Array.from(
       stylesheet.matchAll(/var\((--[\w-]+)\)/g),
       ([, name]) => name,
-    );
+    ).filter((name) => !name.startsWith("--radix-"));
     for (const name of used) {
       expect(declarations.has(name), `undefined token ${name}`).toBe(true);
     }

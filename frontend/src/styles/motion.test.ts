@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { stylesheet } from "../test/cssTokens";
+import { cssRules, stylesheet } from "../test/cssTokens";
 
 // The compositor runs transform and opacity off the main thread; anything else repaints every frame.
 // visibility is a discrete switch (the create popover's delayed hide), so it never repaints mid-way.
@@ -7,24 +7,11 @@ const COMPOSITED = new Set(["transform", "opacity", "visibility", "none"]);
 
 // A field's border repaints one small box for 0.1 s, and inputs cannot host a fading layer, so it stays.
 const ALLOWED = new Set([
-  `.group-form :is(input, select):where(:not([type="radio"], [type="checkbox"])), .invite-link__url border-color`,
+  `.group-form input:where(:not([type="radio"], [type="checkbox"])), .invite-link__url border-color`,
 ]);
 
-/** Each rule as [selector, declarations]; at-rule wrappers fall away because only innermost blocks match. */
-const rules = Array.from(
-  stylesheet.matchAll(/([^{}]+)\{([^{}]*)\}/g),
-  ([, selector, body]) =>
-    [
-      selector
-        .replace(/\/\*[\s\S]*?\*\//g, "")
-        .replace(/\s+/g, " ")
-        .trim(),
-      body,
-    ] as const,
-);
-
 /** "selector property" for each transitioned property; items split on commas outside parentheses only. */
-const transitions = rules.flatMap(([selector, body]) =>
+const transitions = cssRules.flatMap(({ selector, body }) =>
   Array.from(
     body.matchAll(/transition(?:-property)?:\s*([^;]+);/g),
     ([, value]) =>
@@ -58,9 +45,9 @@ describe("motion cost", () => {
   // A blur must be recomputed every frame its element or anything around it moves. Panels reveal and ride
   // the page transition, so only the sticky top bar, which stays put, keeps one.
   it("keeps backdrop-filter on the top bar only", () => {
-    const blurred = rules
-      .filter(([, body]) => /backdrop-filter\s*:/.test(body))
-      .map(([selector]) => selector);
+    const blurred = cssRules
+      .filter(({ body }) => /backdrop-filter\s*:/.test(body))
+      .map(({ selector }) => selector);
     expect(blurred).toEqual([".topbar::before"]);
   });
 });
