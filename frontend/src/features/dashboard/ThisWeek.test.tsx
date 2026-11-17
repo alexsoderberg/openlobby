@@ -189,7 +189,13 @@ describe("Day list", () => {
         modeName: "Competitive",
         flexCount: 1,
         roleSlots: [
-          { gameRoleId: "r1", name: "Tank", slots: 1, playerCount: 0 },
+          {
+            gameRoleId: "r1",
+            name: "Tank",
+            slots: 1,
+            playerCount: 0,
+            roleIcon: "shield",
+          },
         ],
       },
     ]);
@@ -197,8 +203,13 @@ describe("Day list", () => {
     const row = screen
       .getByRole("link", { name: "Overwatch 2 › Competitive" })
       .closest("li")!;
-    expect(within(row).getByText("Tank 0/1")).toBeTruthy();
-    expect(within(row).getByText("Flex 1")).toBeTruthy();
+    expect(
+      within(row)
+        .getByText("Tank 0/1")
+        .closest("li")!
+        .querySelector('[data-icon="shield"]'),
+    ).not.toBeNull();
+    expect(within(row).getByText("Flex 1").querySelector("svg")).toBeNull();
   });
 
   it("says so when nothing is booked this week", () => {

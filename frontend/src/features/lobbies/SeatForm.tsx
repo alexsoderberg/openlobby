@@ -73,7 +73,9 @@ export function SeatForm({
           const full = !hasFreeSlot(slot) && slot.gameRoleId !== seat;
           return {
             value: slot.gameRoleId,
-            label: <RoleSlotText slot={slot} full={full} />,
+            label: (
+              <RoleSlotText slot={slot} full={full} icon={slot.roleIcon} />
+            ),
             disabled: full,
           };
         })}

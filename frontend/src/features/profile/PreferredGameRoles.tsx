@@ -5,7 +5,14 @@ import {
   type PreferredGameRoleChoices,
 } from "../../api";
 import { useMessages } from "../../i18n";
-import { Alert, ErrorAlert, GameLogo, Icon, Panel } from "../../ui";
+import {
+  Alert,
+  ErrorAlert,
+  GameLogo,
+  GameRoleName,
+  Icon,
+  Panel,
+} from "../../ui";
 import {
   usePreferredGameRoles,
   type SaveOutcome,
@@ -122,7 +129,9 @@ function ChoiceForm({
                 value={role.id}
                 defaultChecked={choices.gameRoleIds.includes(role.id)}
               />
-              {modeName ? m.roleWithMode(role.name, modeName) : role.name}
+              <GameRoleName icon={role.roleIcon}>
+                {modeName ? m.roleWithMode(role.name, modeName) : role.name}
+              </GameRoleName>
             </label>
           ))}
         </fieldset>

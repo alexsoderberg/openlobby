@@ -75,4 +75,26 @@ describe("RoleSlots", () => {
     const { container } = render(<RoleSlots lobby={{ roleSlots: [] }} />);
     expect(container.textContent).toBe("");
   });
+
+  const tankAndFlex = {
+    flexCount: 1,
+    roleSlots: [
+      {
+        gameRoleId: "r1",
+        name: "Tank",
+        slots: 1,
+        playerCount: 0,
+        roleIcon: "shield" as const,
+      },
+    ],
+  };
+
+  it("puts each role icon before its name, never on Flex", () => {
+    render(<RoleSlots lobby={tankAndFlex} />);
+
+    const [tank, flex] = screen.getAllByRole("listitem");
+    expect(tank.querySelector('[data-icon="shield"]')).not.toBeNull();
+    expect(visibleText(tank)).toBe("Tank 0/1");
+    expect(flex.querySelector("svg")).toBeNull();
+  });
 });

@@ -18,7 +18,13 @@ import { LobbyDetailPage } from "./LobbyDetailPage";
 import { LobbyMembership } from "./LobbyMembership";
 
 const roleSlots = [
-  { gameRoleId: "r-tank", name: "Tank", slots: 1, playerCount: 1 },
+  {
+    gameRoleId: "r-tank",
+    name: "Tank",
+    slots: 1,
+    playerCount: 1,
+    roleIcon: "shield" as const,
+  },
   { gameRoleId: "r-heal", name: "Healer", slots: 2, playerCount: 0 },
 ];
 const lobby = {
@@ -81,6 +87,17 @@ describe("joining a lobby with game roles", () => {
     expect(document.activeElement).toBe(radio("Healer 0/2"));
   });
 
+  it("shows the role icon from the role slots before each seat, none on Flex", async () => {
+    renderMembership();
+    await openSeats(en.lobbyJoin);
+
+    const label = (name: RegExp) =>
+      screen.getByRole("radio", { name }).closest("label")!;
+    expect(label(/^Tank/).querySelector('[data-icon="shield"]')).not.toBeNull();
+    expect(label(/^Healer/).querySelector("svg")).toBeNull();
+    expect(label(/^Flex/).querySelector("svg")).toBeNull();
+  });
+
   it("disables a full game role and names it full", async () => {
     renderMembership();
     await openSeats(en.lobbyJoin);
@@ -91,7 +108,9 @@ describe("joining a lobby with game roles", () => {
       full.closest("label")?.querySelector(".visually-hidden")?.textContent,
     ).toBe(en.lobbyRoleSlotFullSuffix);
     // No check beside a disabled radio: it would read as selected.
-    expect(full.closest("label")?.querySelector("svg")).toBeNull();
+    expect(
+      full.closest("label")?.querySelector('[data-icon="full"]'),
+    ).toBeNull();
     expect(radio("Healer 0/2").disabled).toBe(false);
     expect(radio(en.lobbySeatFlex).disabled).toBe(false);
   });

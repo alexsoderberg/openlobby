@@ -5,6 +5,7 @@ export { Button } from "./Button";
 export { ConfirmDialog } from "./ConfirmDialog";
 export { ErrorAlert } from "./ErrorAlert";
 export { GameLogo } from "./GameLogo";
+export { GameRoleName } from "./GameRoleName";
 export { GroupIcon } from "./GroupIcon";
 export { Icon, type IconName } from "./Icon";
 export { IconButton } from "./IconButton";

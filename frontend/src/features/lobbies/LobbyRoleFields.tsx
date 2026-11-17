@@ -1,6 +1,7 @@
 import { useId, useState } from "react";
 import type { GameRole } from "../../api";
 import { useMessages } from "../../i18n";
+import { GameRoleName } from "../../ui";
 import { LobbyField, fieldProps } from "./LobbyField";
 import { SeatChoice } from "./SeatChoice";
 import { SEAT_FIELD, parseSlot, slotInputName } from "./lobbyInput";
@@ -74,7 +75,7 @@ export function LobbyRoleFields({
       <SeatChoice
         options={roles.map((role) => ({
           value: role.id,
-          label: role.name,
+          label: <GameRoleName icon={role.roleIcon}>{role.name}</GameRoleName>,
           disabled: !parseSlot(slots[role.id]),
         }))}
         hint={m.lobbySeatCreateHint}
