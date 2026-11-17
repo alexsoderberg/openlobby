@@ -24,8 +24,8 @@ Option A is chosen. ADR 0023 rejected hand-building overlay behaviour for the sa
 
 **1. Control: Radix Select, one package, exact pin.**
 - Add `@radix-ui/react-select` **2.4.1** (exact, no caret) to `frontend/package.json` `dependencies`. Its runtime dependencies (popper, portal, presence, collection, dismissable layer, focus scope, remove-scroll, visually hidden and the small utility packages) are already needed by the Dialog, Popover, DropdownMenu and Tooltip of ADR 0023 and are pinned by the lockfile, not by us.
-- Bundle: the package is 372 KB unpacked. Its own gzip cost is an estimate of 6 to 9 KB, because most of its code is shared. PR A records the real figure in its handover, as the Vite build numbers of ADR 0023 point 7 do.
-- The only import of `@radix-ui/*` for this control is in `frontend/src/ui/Select.tsx` (ADR 0023 point 8 lint rule already covers the package scope).
+- Bundle: the package is 372 KB unpacked. Its gzip cost was estimated at 6 to 9 KB. PR A measured +30.6 KB gzip JS (see Amendment 2026-11-17, PR A findings), because this is the first `@radix-ui` package and carries the parts the others share.
+- The only import of `@radix-ui/*` for this control is in `frontend/src/ui/Select.tsx` (ADR 0023 point 8; the ESLint rule that enforces it is added in PR A).
 
 **2. API of `ui/Select.tsx`: the same file and export name, a new props shape.**
 
@@ -45,9 +45,9 @@ export function Select(props: {
   placeholder?: string;             // shown when `value` matches no option; not an option, not choosable
   name?: string;                    // when set, a hidden input carries the saved value to the form
   disabled?: boolean;
-  invalid?: boolean;                // aria-invalid on the trigger; the error look as the other fields
-  required?: boolean;               // aria-required on the trigger; the form still shows its own error text
+  "aria-invalid"?: boolean;         // on the trigger; the error look as the other fields
   "aria-describedby"?: string;
+  ref?: Ref<HTMLButtonElement>;     // the trigger: focus for the genre error and the invite autofocus
 });
 ```
 
@@ -56,7 +56,7 @@ export function Select(props: {
 - **The placeholder.** The disabled "choose" option of `LobbySettings.tsx` (line 187) is not an option. It becomes the `placeholder` prop, shown while `value` is `""` and no option has that value.
 - **Empty value.** Radix forbids an empty string as an item value. `Select.tsx` maps `""` to one internal sentinel (`NO_CHOICE = "__none__"`) and back. This is the only place that knows the sentinel. The sentinel can never equal a saved value: every saved game, mode, activity and role ID is a UUID, and the genre and max uses values are fixed words and numbers. Feature code and saved values never see it.
 - **Form values.** Radix's own form bubble would write the sentinel into a form, so the wrapper does not pass `name` to Radix. When `name` is set, `Select.tsx` renders `<input type="hidden" name={name} value={value}>` with the real value. The forms keep their current reading of values (`FormData` or state, as today).
-- `required` and `invalid` are app-level, as they are for the other fields today: the field's error text is shown by the form, not by the browser's constraint validation. The trigger carries `aria-required` and `aria-invalid`.
+- `aria-invalid` is app-level, as it is for the other fields today: the field's error text is shown by the form, not by the browser's constraint validation. There is no `required` prop, because no call site uses it. The trigger carries `aria-invalid`.
 - `leading` is rendered inside Radix's `Select.ItemText`. Radix copies `ItemText` into the closed trigger, so a game row and the closed field show the same logo and name, from one render. The option's `textValue` is the `label` only, so type-ahead and the accessible name read the name, not the logo. (ASSUMPTION for the product owner: the closed field shows the logo too. REQ-0027 names only the rows. Remove `leading` from the trigger if the product owner wants the rows only.)
 - The mode, activity, genre and max uses lists pass no `leading`.
 
@@ -68,17 +68,18 @@ export function Select(props: {
 
 **4. Bottom sheet on phones: the same content, the box in utilities, one inline override.**
 - Phone is a window under 760 px (`47.5rem`, the app's breakpoint) or a touch pointer (`pointer: coarse`). A touch tablet at 800 px therefore gets the sheet on purpose: the sheet is the touch form of the control, not a width rule only.
-- **Positioning.** The content uses `position="popper"`, never `item-aligned`: the popper mode writes fewer inline styles. On phones, the wrapper Radix creates (`[data-radix-popper-content-wrapper]` around the content, the only element that gets inline styles) has its `transform` set to `none` by one rule in `global.css`. Without it, a transformed ancestor would be the containing block of the sheet. That single `transform` is the whole inline override. Its other inline values (`top`, `left`, `position`, `min-width`, the available-height variables) are left alone: the sheet is fixed to the bottom by its own classes, and the wrapper is empty because its content is out of flow.
+- **Positioning.** The content uses `position="popper"`, never `item-aligned`: the popper mode writes fewer inline styles. On phones, the wrapper Radix creates (`[data-radix-popper-content-wrapper]` around the content, the only element that gets inline styles) has its inline `transform` and `will-change` overridden by one rule in `global.css`. Without it, a transformed ancestor would be the containing block of the sheet. Those two declarations are the whole inline override (Amendment 2026-11-17, PR A findings). Its other inline values (`top`, `left`, `position`, `min-width`, the available-height variables) are left alone: the sheet is fixed to the bottom by its own classes, and the wrapper is empty because its content is out of flow.
 - **The box is in utilities.** The sheet's classes are in `ui/Select.tsx`, using a Tailwind variant `phone:` defined in `global.css` (`@custom-variant phone (@media (width < 47.5rem), (pointer: coarse))`, the same mechanism as `pointer-coarse:` of ADR 0023 point 4). The classes set, with tokens only: `fixed` (produced once it is off the exclusion list, ADR 0023 Amendment 2026-11-16), `inset-x-(--space-0)` and `bottom-(--space-0)` (zero is the token `--space-0`, ADR 0023 Amendment 2026-11-15 a; `inset-x-0` builds nothing, because `--spacing` is not in the build), `w-full`, the top radius (`rounded-t-(--radius-panel)`), the surface, border and shadow tokens, `max-h-(--size-sheet-max)`, `pb-(--sheet-safe-bottom)`, the z-index `z-(--z-dropdown-list)`, and the row height `min-h-(--size-tap)` on the rows (44 px) with `phone:` on each. This follows ADR 0023 Cascade a: the box stays in utilities. The `phone:` variant is a comma-list `@custom-variant`; PR A checks on the compiled CSS that every sheet class sits inside both conditions of the media list.
-- **Tokens added in `:root` of `global.css`:** `--z-dropdown-list: 70` (above the tab bar at 60 and the floating "+" at 55, below the toaster); `--size-sheet-max: 70dvh`; `--sheet-safe-bottom: env(safe-area-inset-bottom)`. The zIndex test (ADR 0023 point 4) asserts that `--z-dropdown-list` is above both and below 1000.
+- **Tokens added in `:root` of `global.css`:** `--z-dropdown-list: 70` (above the tab bar at 60 and the floating "+" at 55, below the toaster); `--size-sheet-max: 70dvh`; `--sheet-safe-bottom: calc(var(--space-2) + env(safe-area-inset-bottom))`. The zIndex test (ADR 0023 point 4) asserts that `--z-dropdown-list` is above both and below 1000.
 - **Typography and motion** stay in `global.css` under `[data-slot="select-content"]` and `[data-slot="select-item"]` (ADR 0023 point 2 allows type and motion there). The row text is at least 16 px (the font token that gives 16 px, so no zoom on focus), and the open and close motion is transform and opacity only, under `[data-state]`. Reduced motion shows the final state (the existing block).
 - **The one `!important`.** The wrapper override in `global.css` is the only `!important` in this design:
 
   ```css
-  /* Radix writes the wrapper's transform inline; on phones the sheet must sit on the viewport (ADR 0027 point 4). */
+  /* Radix writes the wrapper's transform and will-change inline; on phones the sheet must sit on the viewport (ADR 0027 point 4). */
   @media (width < 47.5rem), (pointer: coarse) {
     [data-radix-popper-content-wrapper]:has(> [data-slot="select-content"]) {
       transform: none !important;
+      will-change: auto !important;
     }
   }
   ```
@@ -105,6 +106,17 @@ export function Select(props: {
 
 **8. Rollout (ADR 0023 point 6, amended).** DECISION, user, 2026-11-16: the order is cover PR2 (REQ-0026), then B3 (the rest of the Button call-site migration), then Select (PR A), then Dialog (PR C) and the rest of ADR 0023 in its order. The reason for the place: the Select touches the same six feature files as the Button migration, and two agents must not change one file at once. Select does not need the Dialog, Tooltip, Menu or Popover families, because it is a portal and no Select sits in a native dialog. The game-choice logos (REQ-0026 Amendment 2026-11-16) come after PR A, in PR B2 below.
 
+**Amendment 2026-11-17.** DECISION, user, 2026-11-17: Select (PR A) is built now, before B3, because the dropdowns still look stock and the user wants them first. B3 is not running, so the reason above is kept by building them one after the other: PR A first, then B3. The order is now cover PR2 (REQ-0026), then Select (PR A), then B3, then Dialog (PR C) and the rest of ADR 0023 in its order.
+
+**Amendment 2026-11-17 (PR A findings).** The UI expert built PR A and found the deviations below. Points 1, 2, 4 and Consequences are corrected in place to match; this amendment records why.
+- **Point 2 (API).** The invalid prop is `"aria-invalid"`, not `invalid`, so that `fieldProps()` spreads unchanged. `required` is left out, because no call site uses it. `ref` is added: the genre error focus and the invite form's autofocus need the trigger. Radix 2.4.1's `SelectValue` drops `className`, so `Select.tsx` wraps the value in its own span, which carries the classes.
+- **Point 4 (wrapper).** Besides `transform`, floating-ui writes `will-change: transform` inline on the wrapper at 1.5 dppx or more. Every phone is at that density (measured at DPR 3). `will-change: transform` makes the wrapper the containing block of the fixed sheet, as a transform does. The `!important` block therefore has two declarations, `transform: none !important; will-change: auto !important;`, verified at DPR 3. The `selectSheet` test checks both.
+- **Point 4 (safe area).** `--sheet-safe-bottom` is `calc(var(--space-2) + env(safe-area-inset-bottom))`: the space token plus the inset, not the inset alone.
+- **Point 7 (test rules).** `uiClasses.test.ts` and `tokens.test.ts` accept `--radix-*` variables. Radix sets them at run time; they are not tokens and are not in `:root`.
+- **Point 7 (focus lookups).** A test or a browser check finds a dropdown list's trigger by `[role="combobox"][id$="-<field>"]`, because `name` is on the hidden input (point 2), not on the trigger.
+- **Point 1 and Consequences (bundle).** Vite build, PR A: JS +30.6 KB gzip (113.26 to 143.82 KB), CSS +0.54 KB gzip. The first `@radix-ui` package brings the shared parts (popper, floating-ui, remove-scroll, focus-scope, dismissable-layer). Each later Radix package is measured in its own PR.
+- **Point 1 (lint).** The ESLint `no-restricted-imports` rule for `@radix-ui/*` and `sonner` outside `frontend/src/ui/` is added in PR A. It enforces ADR 0023 point 8.
+
 PR slices:
 
 | PR | Content | Owner | Checks |
@@ -118,7 +130,7 @@ Each PR is reviewed on its own, after its own work. The reviewer checks A and B2
 
 ## Consequences
 
-- One new direct dependency, exact pin, and about 6 to 9 KB gzip more (estimate, to be measured in PR A).
+- One new direct dependency, exact pin. Measured in PR A: +30.6 KB gzip JS and +0.54 KB gzip CSS, far above the 6 to 9 KB estimate (see Amendment 2026-11-17, PR A findings). Later Radix packages share these parts, so they cost less.
 - Every dropdown list changes look and keyboard behaviour at once, in PR A. The reviewer checks all six lists, not one.
 - One `!important` is allowed (point 4), named and tested. It is the only exception.
 - **Dependency on Radix internals.** The phone sheet relies on Radix 2.4.1 writing the popper wrapper with an inline `transform` and on `position="popper"`. A Radix upgrade is a separate PR that re-checks point 4 and the Tab handler (point 3); the `selectSheet` test catches a change in the `!important` block.

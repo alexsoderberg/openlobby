@@ -58,3 +58,12 @@ describe("Settings rows (REQ-0020)", () => {
     expect(rule?.[1]).toMatch(/outline:\s*3px solid var\(--color-focus\)/);
   });
 });
+
+describe("Action rows", () => {
+  // Bug 2026-11-16: the default stretch made Delete lobby as tall as the open seat form beside it.
+  it("keeps each item of an action row at its own height", () => {
+    expect(declarationsFor(String.raw`\.form-actions\s*`)).toMatch(
+      /align-items:\s*(flex-)?start/,
+    );
+  });
+});

@@ -4,6 +4,9 @@ import type { components as calendarComponents } from "./gen/calendar";
 export type AuthUser = authComponents["schemas"]["AuthUser"];
 export type GroupSummary = calendarComponents["schemas"]["GroupSummary"];
 export type Group = calendarComponents["schemas"]["Group"];
+/** One group of the Group list with its member count, first members and Next lobby (ADR 0025). */
+export type GroupOverview = calendarComponents["schemas"]["GroupOverview"];
+export type NextLobby = calendarComponents["schemas"]["NextLobby"];
 export type Genre = calendarComponents["schemas"]["Genre"];
 export type Game = calendarComponents["schemas"]["Game"];
 export type GameImageKind = calendarComponents["schemas"]["GameImageKind"];
@@ -67,6 +70,8 @@ export interface ApiClient {
   getCurrentUser(): Promise<AuthUser>;
   logout(): Promise<void>;
   listGroups(): Promise<GroupSummary[]>;
+  /** The caller's groups for the Group list, sorted by the server. */
+  listGroupOverviews(): Promise<GroupOverview[]>;
   createGroup(name: string): Promise<GroupSummary>;
   getGroup(groupId: string): Promise<Group>;
   listInviteLinks(groupId: string): Promise<InviteLink[]>;

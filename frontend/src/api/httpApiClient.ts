@@ -21,6 +21,8 @@ export function createHttpApiClient(
       await receive(http.POST("/api/auth/logout"));
     },
     listGroups: async () => bodyOf(await receive(http.GET("/api/groups"))),
+    listGroupOverviews: async () =>
+      bodyOf(await receive(http.GET("/api/group-overviews"))),
     createGroup: async (name) =>
       bodyOf(await receive(http.POST("/api/groups", { body: { name } }))),
     getGroup: async (groupId) =>

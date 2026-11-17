@@ -116,7 +116,12 @@ describe("ui/ class lists (ADR 0023 point 2)", () => {
     const tokens = classes.flatMap((name) =>
       Array.from(name.matchAll(TOKEN), ([, token]) => token),
     );
-    expect(tokens.filter((token) => !declarations.has(token))).toEqual([]);
+    // Radix sets its --radix-* sizes on the element at run time (the trigger width, the room in the window).
+    expect(
+      tokens.filter(
+        (token) => !declarations.has(token) && !token.startsWith("--radix-"),
+      ),
+    ).toEqual([]);
   });
 
   it("uses no plain word that global.css keeps from being built", () => {

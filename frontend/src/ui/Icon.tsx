@@ -56,6 +56,7 @@ const icons = {
   retry: RotateCcw,
   revoke: Ban,
   save: Check,
+  selected: Check,
   upload: Upload,
   you: User,
 } satisfies Record<string, LucideIcon>;

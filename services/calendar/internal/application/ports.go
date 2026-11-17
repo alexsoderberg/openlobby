@@ -13,6 +13,12 @@ type GroupsOfUser interface {
 	ListForUser(ctx context.Context, userID string) ([]domain.Group, error)
 }
 
+// GroupOverviewReader reads the Group overviews of the groups where a user is a member, sorted by name ignoring case,
+// then ID, in one snapshot (ADR 0025). Display names are not set.
+type GroupOverviewReader interface {
+	Overviews(ctx context.Context, userID string, now time.Time) ([]domain.GroupOverview, error)
+}
+
 // GroupCreator stores a new group and the creator's admin membership in one transaction. The row is new, so no lock
 // is needed (ADR 0004, amendment 2026-11-02).
 type GroupCreator interface {

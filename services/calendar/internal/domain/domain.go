@@ -37,6 +37,9 @@ var ErrInvalidActivity = errors.New("invalid activity")
 // ErrInvalidGameRole means a game role name is empty after trim or longer than maxGameRoleNameLength (ADR 0017).
 var ErrInvalidGameRole = errors.New("invalid game role")
 
+// ErrInvalidRoleIcon means a game role icon is not in the fixed set (REQ-0023, ADR 0024).
+var ErrInvalidRoleIcon = errors.New("invalid role icon")
+
 // ErrInvalidID means an ID in a game list write is repeated or is not a current ID of the same owner (ADR 0017 section 6).
 var ErrInvalidID = errors.New("invalid id")
 
@@ -88,6 +91,19 @@ const (
 type Group struct {
 	ID   string
 	Name string
+}
+
+// MaxOverviewMembers is the number of members a GroupOverview shows (REQ-0024, ADR 0025).
+const MaxOverviewMembers = 5
+
+// GroupOverview is one group of the Group list (ADR 0025). Members are the MaxOverviewMembers who joined first; only
+// their UserID and DisplayName are set. NextLobby is the group's lobby that starts first among those that have not ended,
+// or nil; only its names, genre, times, player count and max players are set.
+type GroupOverview struct {
+	Group       Group
+	MemberCount int
+	Members     []Member
+	NextLobby   *Lobby
 }
 
 // Genre is the genre of a game from a fixed list (REQ-0014, ADR 0016). A nil *Genre means no genre.

@@ -10,6 +10,7 @@ const networkFailure = async (): Promise<Response> => {
 
 const failingCalls: Array<[string, (api: ApiClient) => Promise<unknown>]> = [
   ["createGroup", (api) => api.createGroup("Friday crew")],
+  ["listGroupOverviews", (api) => api.listGroupOverviews()],
   ["getGroup", (api) => api.getGroup("g1")],
   ["listInviteLinks", (api) => api.listInviteLinks("g1")],
   ["createInviteLink", (api) => api.createInviteLink("g1", 10)],
@@ -76,6 +77,28 @@ describe("createHttpApiClient", () => {
     await expect(
       createHttpApiClient(fetchImpl, BASE_URL).listGroups(),
     ).resolves.toEqual(groups);
+  });
+
+  it("gets the Group overviews from their own route", async () => {
+    const overviews = [
+      {
+        id: "g1",
+        name: "Friday crew",
+        memberCount: 1,
+        members: [{ userId: "u1", displayName: "Maja" }],
+        nextLobby: null,
+      },
+    ];
+    const sent: Request[] = [];
+    const fetchImpl = vi.fn<typeof fetch>(async (input) => {
+      sent.push(new Request(input));
+      return Response.json(overviews);
+    });
+
+    await expect(
+      createHttpApiClient(fetchImpl, BASE_URL).listGroupOverviews(),
+    ).resolves.toEqual(overviews);
+    expect(sent[0].url).toBe(`${BASE_URL}/api/group-overviews`);
   });
 
   it("posts the logout and resolves on 204", async () => {

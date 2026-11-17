@@ -40,6 +40,7 @@ const (
 	ErrorBodyCodeInvalidMaxUses          ErrorBodyCode = "invalid_max_uses"
 	ErrorBodyCodeInvalidMode             ErrorBodyCode = "invalid_mode"
 	ErrorBodyCodeInvalidRequest          ErrorBodyCode = "invalid_request"
+	ErrorBodyCodeInvalidRoleIcon         ErrorBodyCode = "invalid_role_icon"
 	ErrorBodyCodeInviteInvalid           ErrorBodyCode = "invite_invalid"
 	ErrorBodyCodeLobbyChanged            ErrorBodyCode = "lobby_changed"
 	ErrorBodyCodeLobbyEndNotAfterStart   ErrorBodyCode = "lobby_end_not_after_start"
@@ -100,6 +101,8 @@ func (e ErrorBodyCode) Valid() bool {
 	case ErrorBodyCodeInvalidMode:
 		return true
 	case ErrorBodyCodeInvalidRequest:
+		return true
+	case ErrorBodyCodeInvalidRoleIcon:
 		return true
 	case ErrorBodyCodeInviteInvalid:
 		return true
@@ -208,6 +211,39 @@ func (e MemberRole) Valid() bool {
 	case MemberRoleAdmin:
 		return true
 	case MemberRoleMember:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for RoleIcon.
+const (
+	Crosshair    RoleIcon = "crosshair"
+	Dagger       RoleIcon = "dagger"
+	MedicalCross RoleIcon = "medical-cross"
+	None         RoleIcon = "none"
+	Shield       RoleIcon = "shield"
+	Star         RoleIcon = "star"
+	Wrench       RoleIcon = "wrench"
+)
+
+// Valid indicates whether the value is a known member of the RoleIcon enum.
+func (e RoleIcon) Valid() bool {
+	switch e {
+	case Crosshair:
+		return true
+	case Dagger:
+		return true
+	case MedicalCross:
+		return true
+	case None:
+		return true
+	case Shield:
+		return true
+	case Star:
+		return true
+	case Wrench:
 		return true
 	default:
 		return false
@@ -388,6 +424,9 @@ type GameRole struct {
 	// Name Game role name, 1–30 characters after trim. Unique ignoring case among the roles of the same owner (the game, or the mode).
 	Name string `json:"name"`
 
+	// RoleIcon The game role's icon. Not in `required` so that existing fixtures stay valid, but the server always sends it. `null` means not chosen yet, `none` means "No icon" (ADR 0024).
+	RoleIcon *RoleIcon `json:"roleIcon"`
+
 	// Slots How many players the role takes in a lobby.
 	Slots int `json:"slots"`
 }
@@ -399,6 +438,9 @@ type GameRoleInput struct {
 
 	// Name Game role name. Empty after trim or longer than 30 characters gives `invalid_game_role`.
 	Name string `json:"name"`
+
+	// RoleIcon The game role's icon. Omitted or `null` is stored as `none`. A value outside the set gives `invalid_role_icon`, checked after the name (`invalid_game_role`) and the slots (`invalid_capacity`) of the role (ADR 0024).
+	RoleIcon *RoleIcon `json:"roleIcon,omitempty"`
 
 	// Slots An integer from 1 to 2147483647, otherwise `invalid_capacity`. The sum of the slots of one owner must also be within that range.
 	Slots int `json:"slots"`
@@ -418,6 +460,23 @@ type Group struct {
 
 // GroupName Group name, 1–50 characters after trim.
 type GroupName = string
+
+// GroupOverview defines model for GroupOverview.
+type GroupOverview struct {
+	Id openapi_types.UUID `json:"id"`
+
+	// MemberCount Number of members of the group, the caller included.
+	MemberCount int `json:"memberCount"`
+
+	// Members The five members who joined first (by join time, then user ID), in that order. Fewer when the group has fewer members.
+	Members []UserRef `json:"members"`
+
+	// Name Group name, 1–50 characters after trim.
+	Name GroupName `json:"name"`
+
+	// NextLobby The Next lobby of the group, `null` when every lobby of the group has ended or it has none.
+	NextLobby *NextLobby `json:"nextLobby"`
+}
 
 // GroupSummary defines model for GroupSummary.
 type GroupSummary struct {
@@ -605,6 +664,31 @@ type Member struct {
 // MemberRole defines model for Member.Role.
 type MemberRole string
 
+// NextLobby The lobby of one group that starts first (by start time, then ID) among its lobbies that have not ended. Running lobbies count, also lobbies the caller has not joined (ADR 0025). It has no lobby ID; the Group card opens the Group view.
+type NextLobby struct {
+	// ActivityName As `activityName` on `Lobby`. `null` for a lobby without a named activity.
+	ActivityName *string `json:"activityName"`
+
+	// EndsAt End time in UTC.
+	EndsAt time.Time `json:"endsAt"`
+
+	// GameGenre As `gameGenre` on `Lobby`. `null` for no game, a custom name ("Other"), a game without a genre, or a removed game.
+	GameGenre *Genre `json:"gameGenre"`
+
+	// GameName As `gameName` on `Lobby`. `null` for a lobby with no game, shown as "Open".
+	GameName *GameName `json:"gameName"`
+
+	// MaxPlayers Max players, an integer from 1 to 2147483647. `null` or omitted means unlimited. Set at creation and not changed.
+	MaxPlayers *MaxPlayers `json:"maxPlayers"`
+
+	// ModeName As `modeName` on `Lobby`. `null` for a lobby without a mode.
+	ModeName    *string `json:"modeName"`
+	PlayerCount int     `json:"playerCount"`
+
+	// StartsAt Start time in UTC.
+	StartsAt time.Time `json:"startsAt"`
+}
+
 // PreferredGameRole A game role that a person usually plays (ADR 0022). Order in a list - game name ignoring case, then mode order, then role order, as entered by the system admin.
 type PreferredGameRole struct {
 	// GameName The name of the game role's game.
@@ -616,6 +700,9 @@ type PreferredGameRole struct {
 
 	// Name The game role's name.
 	Name string `json:"name"`
+
+	// RoleIcon The game role's icon as it is now, read like its name. Not in `required` so that existing fixtures stay valid, but the server always sends it. `null` means not chosen yet, `none` means "No icon" (ADR 0024).
+	RoleIcon *RoleIcon `json:"roleIcon"`
 }
 
 // PreferredGameRoleChoices defines model for PreferredGameRoleChoices.
@@ -645,6 +732,9 @@ type ReplaceGameRequest struct {
 	Name *GameName `json:"name,omitempty"`
 }
 
+// RoleIcon The icon of a game role from a fixed set (REQ-0023, ADR 0024). `none` means the system admin chose "No icon"; `null` where the field is nullable means not chosen yet. Both are shown as no icon.
+type RoleIcon string
+
 // RoleSlot defines model for RoleSlot.
 type RoleSlot struct {
 	GameRoleId openapi_types.UUID `json:"gameRoleId"`
@@ -654,7 +744,10 @@ type RoleSlot struct {
 
 	// PlayerCount Number of players in the role. Shown as "Tank 0/1".
 	PlayerCount int `json:"playerCount"`
-	Slots       int `json:"slots"`
+
+	// RoleIcon The game role's icon as it was when the lobby got the role slot (a copy). Not in `required` so that existing fixtures stay valid, but the server always sends it. `null` means not chosen yet, `none` means "No icon" (ADR 0024).
+	RoleIcon *RoleIcon `json:"roleIcon"`
+	Slots    int       `json:"slots"`
 }
 
 // RoleSlotInput defines model for RoleSlotInput.
@@ -773,6 +866,12 @@ type GetGameImageParams struct {
 
 // SetGameImageParams defines parameters for SetGameImage.
 type SetGameImageParams struct {
+	// XRequestId Correlation ID (ADR 0001). A valid value is kept and passed on. A missing or invalid value is replaced by a new one. The response always contains `X-Request-Id`.
+	XRequestId *RequestIdHeader `json:"X-Request-Id,omitempty"`
+}
+
+// ListGroupOverviewsParams defines parameters for ListGroupOverviews.
+type ListGroupOverviewsParams struct {
 	// XRequestId Correlation ID (ADR 0001). A valid value is kept and passed on. A missing or invalid value is replaced by a new one. The response always contains `X-Request-Id`.
 	XRequestId *RequestIdHeader `json:"X-Request-Id,omitempty"`
 }
@@ -968,6 +1067,9 @@ type ServerInterface interface {
 	// SetGameImage Upload a game image (system admin)
 	// (PUT /api/games/{gameId}/images/{kind})
 	SetGameImage(w http.ResponseWriter, r *http.Request, gameId GameIdPath, kind GameImageKindPath, params SetGameImageParams)
+	// ListGroupOverviews List my group overviews
+	// (GET /api/group-overviews)
+	ListGroupOverviews(w http.ResponseWriter, r *http.Request, params ListGroupOverviewsParams)
 	// ListGroups List my groups
 	// (GET /api/groups)
 	ListGroups(w http.ResponseWriter, r *http.Request, params ListGroupsParams)
@@ -1411,6 +1513,47 @@ func (siw *ServerInterfaceWrapper) SetGameImage(w http.ResponseWriter, r *http.R
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.SetGameImage(w, r, gameId, kind, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListGroupOverviews operation middleware
+func (siw *ServerInterfaceWrapper) ListGroupOverviews(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListGroupOverviewsParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "X-Request-Id" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-Request-Id")]; found {
+		var XRequestId RequestIdHeader
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Request-Id", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-Request-Id", valueList[0], &XRequestId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Request-Id", Err: err})
+			return
+		}
+
+		params.XRequestId = &XRequestId
+
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListGroupOverviews(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2746,6 +2889,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/groups", wrapper.ListGroups)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/groups", wrapper.CreateGroup)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/group-overviews", wrapper.ListGroupOverviews)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/groups/{groupId}", wrapper.GetGroup)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/groups/{groupId}/membership", wrapper.LeaveGroup)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/api/groups/{groupId}/admins/{userId}", wrapper.MakeGroupAdmin)
@@ -3478,6 +3622,70 @@ func (response SetGameImage500JSONResponse) VisitSetGameImageResponse(w http.Res
 type SetGameImage503JSONResponse struct{ ServiceUnavailableJSONResponse }
 
 func (response SetGameImage503JSONResponse) VisitSetGameImageResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListGroupOverviewsRequestObject struct {
+	Params ListGroupOverviewsParams
+}
+
+type ListGroupOverviewsResponseObject interface {
+	VisitListGroupOverviewsResponse(w http.ResponseWriter) error
+}
+
+type ListGroupOverviews200JSONResponse []GroupOverview
+
+func (response ListGroupOverviews200JSONResponse) VisitListGroupOverviewsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListGroupOverviews401JSONResponse struct{ UnauthenticatedJSONResponse }
+
+func (response ListGroupOverviews401JSONResponse) VisitListGroupOverviewsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListGroupOverviews500JSONResponse struct{ InternalErrorJSONResponse }
+
+func (response ListGroupOverviews500JSONResponse) VisitListGroupOverviewsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListGroupOverviews503JSONResponse struct{ ServiceUnavailableJSONResponse }
+
+func (response ListGroupOverviews503JSONResponse) VisitListGroupOverviewsResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -5575,6 +5783,9 @@ type StrictServerInterface interface {
 	// SetGameImage Upload a game image (system admin)
 	// (PUT /api/games/{gameId}/images/{kind})
 	SetGameImage(ctx context.Context, request SetGameImageRequestObject) (SetGameImageResponseObject, error)
+	// ListGroupOverviews List my group overviews
+	// (GET /api/group-overviews)
+	ListGroupOverviews(ctx context.Context, request ListGroupOverviewsRequestObject) (ListGroupOverviewsResponseObject, error)
 	// ListGroups List my groups
 	// (GET /api/groups)
 	ListGroups(ctx context.Context, request ListGroupsRequestObject) (ListGroupsResponseObject, error)
@@ -5885,6 +6096,32 @@ func (sh *strictHandler) SetGameImage(w http.ResponseWriter, r *http.Request, ga
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(SetGameImageResponseObject); ok {
 		if err := validResponse.VisitSetGameImageResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListGroupOverviews operation middleware
+func (sh *strictHandler) ListGroupOverviews(w http.ResponseWriter, r *http.Request, params ListGroupOverviewsParams) {
+	var request ListGroupOverviewsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListGroupOverviews(ctx, request.(ListGroupOverviewsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListGroupOverviews")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListGroupOverviewsResponseObject); ok {
+		if err := validResponse.VisitListGroupOverviewsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

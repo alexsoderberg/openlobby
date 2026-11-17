@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { formatTimeRange } from "../i18n";
 import { TimeBlock, type GridLobby } from "./TimeBlock";
 
@@ -18,12 +18,15 @@ const short: GridLobby = {
 };
 const time = formatTimeRange(short.startsAt, short.endsAt);
 
-function renderBlock(block: Partial<Parameters<typeof TimeBlock>[0]["block"]>) {
+function renderBlock(
+  block: Partial<Parameters<typeof TimeBlock>[0]["block"]>,
+  lobby: GridLobby = short,
+) {
   render(
     <ul>
       <TimeBlock
         block={{
-          item: short,
+          item: lobby,
           startMinute: 18 * 60,
           endMinute: 18 * 60 + 15,
           continuesBefore: false,
@@ -71,4 +74,37 @@ it("orders the lines by priority: label, continuation, time, then the rest, so C
       collapse,
     ),
   );
+});
+
+describe("game logo", () => {
+  const VERSION = "e".repeat(64);
+  const logo = () => document.querySelector('[data-slot="game-logo"]');
+
+  // The logo sits in the label's first line, which every block shows, even the shortest (REQ-0026).
+  it("shows the small logo inside the first line of the shortest block, outside the link's name", () => {
+    renderBlock({}, { ...short, gameId: "g1", gameLogoVersion: VERSION });
+
+    const firstLine = document.querySelector(".time-block__game > span")!;
+    expect(firstLine.contains(logo())).toBe(true);
+    expect(logo()?.getAttribute("data-size")).toBe("small");
+    expect(logo()?.querySelector("img")?.getAttribute("src")).toBe(
+      `/api/games/g1/images/logo?v=${VERSION}`,
+    );
+    expect(
+      screen.getByRole("link", { name: "Overwatch 2 › Competitive" }),
+    ).toBeTruthy();
+  });
+
+  it("shows the monogram in the same slot when the game has no logo", () => {
+    renderBlock({}, { ...short, gameId: "g1" });
+
+    expect(logo()?.textContent).toBe("O2");
+    expect(logo()?.getAttribute("data-size")).toBe("small");
+  });
+
+  it("shows no logo on a lobby with no game from the game list", () => {
+    renderBlock({}, { ...short, gameId: null });
+
+    expect(logo()).toBeNull();
+  });
 });

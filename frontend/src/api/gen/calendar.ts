@@ -29,6 +29,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/group-overviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List my group overviews
+         * @description One Group overview for each group where the caller is a member, for the Group list (REQ-0024, ADR 0025). Sorted by name ignoring case, then ID. An empty array when the caller is in no group.
+         *     The member names come from `auth`; when `auth` does not answer the response is `503 service_unavailable`.
+         */
+        get: operations["listGroupOverviews"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/groups/{groupId}": {
         parameters: {
             query?: never;
@@ -400,7 +421,7 @@ export interface paths {
          * Add game (system admin)
          * @description System admin only. The server generates the game's ID (uuid). The change takes effect immediately, without a new version.
          *     Rules in this order: invalid JSON or wrong JSON type (400 `invalid_request`), permission (403 `not_allowed`, before any domain validation),
-         *     name (400 `invalid_game`, including `Other`), default max (400 `invalid_capacity`), genre (400 `invalid_genre`), then the game roles and modes (400 `invalid_game_role`, `invalid_capacity`, `invalid_mode`, `invalid_activity`),
+         *     name (400 `invalid_game`, including `Other`), default max (400 `invalid_capacity`), genre (400 `invalid_genre`), then the game roles and modes (400 `invalid_game_role`, `invalid_capacity`, `invalid_role_icon`, `invalid_mode`, `invalid_activity`),
          *     then the conflicts (409 `game_taken`, `mode_taken`, `game_role_taken`, `activity_taken`). Names are unique ignoring case: games in the list, modes in a game, game roles of one owner (the game or the mode), activities in a mode. ADR 0017.
          */
         post: operations["createGame"];
@@ -424,7 +445,7 @@ export interface paths {
          *     Replaces the whole game: an omitted or `null` `defaultMaxPlayers` makes the game unlimited, an omitted or `null` `genre` gives the game no genre, and an omitted `name` gives `invalid_game`. Lobbies that were already created are not changed.
          *     An omitted or `null` `gameRoles` or `modes` leaves the stored entries unchanged, so a client that does not know them cannot remove them. An empty array removes all entries. An array with entries replaces them: an entry with an `id` keeps its identity, an entry without gets a new one, and the order is kept. A game without modes and with game roles has the sum of the slots as its default max (a given `defaultMaxPlayers` must be omitted, `null` or equal to the sum, otherwise `invalid_capacity`). ADR 0017.
          *     Rules in this order: a `gameId` in invalid form (404 `game_not_found`), invalid JSON or wrong JSON type (400 `invalid_request`), permission (403 `not_allowed`),
-         *     name (400 `invalid_game`, including `Other`), default max (400 `invalid_capacity`) and genre (400 `invalid_genre`), the game roles and modes (400 `invalid_game_role`, `invalid_capacity`, `invalid_mode`, `invalid_activity`), unknown `gameId` (404 `game_not_found`), an `id` that is repeated or not of the same owner (400 `invalid_request`),
+         *     name (400 `invalid_game`, including `Other`), default max (400 `invalid_capacity`) and genre (400 `invalid_genre`), the game roles and modes (400 `invalid_game_role`, `invalid_capacity`, `invalid_role_icon`, `invalid_mode`, `invalid_activity`), unknown `gameId` (404 `game_not_found`), an `id` that is repeated or not of the same owner (400 `invalid_request`),
          *     name used by another game, mode, game role or activity (409 `game_taken`, `mode_taken`, `game_role_taken`, `activity_taken`).
          */
         put: operations["replaceGame"];
@@ -510,7 +531,7 @@ export interface components {
              * @description Machine-readable error code. The text for the user belongs to the frontend. not_found and method_not_allowed are returned by the gateway only.
              * @enum {string}
              */
-            code: "unauthenticated" | "service_unavailable" | "invalid_request" | "not_allowed" | "group_not_found" | "member_not_found" | "own_upcoming_lobbies_exist" | "invalid_group_name" | "invite_invalid" | "invalid_max_uses" | "lobby_not_found" | "lobby_in_past" | "lobby_end_not_after_start" | "lobby_too_long" | "lobby_has_ended" | "lobby_full" | "invalid_game" | "invalid_capacity" | "invalid_genre" | "invalid_mode" | "invalid_activity" | "invalid_game_role" | "game_role_full" | "lobby_game_set" | "lobby_changed" | "lobby_has_more_players" | "game_taken" | "mode_taken" | "activity_taken" | "game_role_taken" | "game_not_found" | "invalid_image_type" | "image_too_large" | "game_image_not_found" | "internal_error" | "not_found" | "method_not_allowed";
+            code: "unauthenticated" | "service_unavailable" | "invalid_request" | "not_allowed" | "group_not_found" | "member_not_found" | "own_upcoming_lobbies_exist" | "invalid_group_name" | "invite_invalid" | "invalid_max_uses" | "lobby_not_found" | "lobby_in_past" | "lobby_end_not_after_start" | "lobby_too_long" | "lobby_has_ended" | "lobby_full" | "invalid_game" | "invalid_capacity" | "invalid_genre" | "invalid_mode" | "invalid_activity" | "invalid_game_role" | "invalid_role_icon" | "game_role_full" | "lobby_game_set" | "lobby_changed" | "lobby_has_more_players" | "game_taken" | "mode_taken" | "activity_taken" | "game_role_taken" | "game_not_found" | "invalid_image_type" | "image_too_large" | "game_image_not_found" | "internal_error" | "not_found" | "method_not_allowed";
             /** @description Same value as `X-Request-Id` in the response. Used to match logs. */
             requestId: string;
         };
@@ -523,6 +544,37 @@ export interface components {
         };
         Group: components["schemas"]["GroupSummary"] & {
             members: components["schemas"]["Member"][];
+        };
+        GroupOverview: components["schemas"]["GroupSummary"] & {
+            /** @description Number of members of the group, the caller included. */
+            memberCount: number;
+            /** @description The five members who joined first (by join time, then user ID), in that order. Fewer when the group has fewer members. */
+            members: components["schemas"]["UserRef"][];
+            /** @description The Next lobby of the group, `null` when every lobby of the group has ended or it has none. */
+            nextLobby: components["schemas"]["NextLobby"] | null;
+        };
+        /** @description The lobby of one group that starts first (by start time, then ID) among its lobbies that have not ended. Running lobbies count, also lobbies the caller has not joined (ADR 0025). It has no lobby ID; the Group card opens the Group view. */
+        NextLobby: {
+            /** @description As `gameName` on `Lobby`. `null` for a lobby with no game, shown as "Open". */
+            gameName: (string & components["schemas"]["GameName"]) | null;
+            /** @description As `modeName` on `Lobby`. `null` for a lobby without a mode. */
+            modeName: string | null;
+            /** @description As `activityName` on `Lobby`. `null` for a lobby without a named activity. */
+            activityName: string | null;
+            /** @description As `gameGenre` on `Lobby`. `null` for no game, a custom name ("Other"), a game without a genre, or a removed game. */
+            gameGenre: (string & components["schemas"]["Genre"]) | null;
+            /**
+             * Format: date-time
+             * @description Start time in UTC.
+             */
+            startsAt: string;
+            /**
+             * Format: date-time
+             * @description End time in UTC.
+             */
+            endsAt: string;
+            playerCount: number;
+            maxPlayers: components["schemas"]["MaxPlayers"];
         };
         CreateGroupRequest: {
             /** @description Group name. Omitted or `null` gives `invalid_group_name`. */
@@ -585,6 +637,11 @@ export interface components {
          * @enum {string}
          */
         Genre: "shooter" | "moba" | "racing" | "strategy" | "survival" | "party" | "rpg" | "sports";
+        /**
+         * @description The icon of a game role from a fixed set (REQ-0023, ADR 0024). `none` means the system admin chose "No icon"; `null` where the field is nullable means not chosen yet. Both are shown as no icon.
+         * @enum {string}
+         */
+        RoleIcon: "shield" | "medical-cross" | "dagger" | "crosshair" | "wrench" | "star" | "none";
         Lobby: {
             /** Format: uuid */
             id: string;
@@ -642,6 +699,8 @@ export interface components {
             gameRoleId: string;
             /** @description Game role name as it was when the lobby was created (a copy). */
             name: string;
+            /** @description The game role's icon as it was when the lobby got the role slot (a copy). Not in `required` so that existing fixtures stay valid, but the server always sends it. `null` means not chosen yet, `none` means "No icon" (ADR 0024). */
+            roleIcon?: (string & components["schemas"]["RoleIcon"]) | null;
             slots: number;
             /** @description Number of players in the role. Shown as "Tank 0/1". */
             playerCount: number;
@@ -775,6 +834,8 @@ export interface components {
             id: string;
             /** @description Game role name, 1–30 characters after trim. Unique ignoring case among the roles of the same owner (the game, or the mode). */
             name: string;
+            /** @description The game role's icon. Not in `required` so that existing fixtures stay valid, but the server always sends it. `null` means not chosen yet, `none` means "No icon" (ADR 0024). */
+            roleIcon?: (string & components["schemas"]["RoleIcon"]) | null;
             /** @description How many players the role takes in a lobby. */
             slots: number;
         };
@@ -784,6 +845,8 @@ export interface components {
             gameRoleId: string;
             /** @description The game role's name. */
             name: string;
+            /** @description The game role's icon as it is now, read like its name. Not in `required` so that existing fixtures stay valid, but the server always sends it. `null` means not chosen yet, `none` means "No icon" (ADR 0024). */
+            roleIcon?: (string & components["schemas"]["RoleIcon"]) | null;
             /** @description The name of the game role's game. */
             gameName: string;
             /** @description The name of the game role's mode, or `null` for a role of a game with no modes. */
@@ -807,6 +870,8 @@ export interface components {
             id?: string;
             /** @description Game role name. Empty after trim or longer than 30 characters gives `invalid_game_role`. */
             name: string;
+            /** @description The game role's icon. Omitted or `null` is stored as `none`. A value outside the set gives `invalid_role_icon`, checked after the name (`invalid_game_role`) and the slots (`invalid_capacity`) of the role (ADR 0024). */
+            roleIcon?: (string & components["schemas"]["RoleIcon"]) | null;
             /** @description An integer from 1 to 2147483647, otherwise `invalid_capacity`. The sum of the slots of one owner must also be within that range. */
             slots: number;
         };
@@ -973,6 +1038,32 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            500: components["responses"]["InternalError"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    listGroupOverviews: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Correlation ID (ADR 0001). A valid value is kept and passed on. A missing or invalid value is replaced by a new one. The response always contains `X-Request-Id`. */
+                "X-Request-Id"?: components["parameters"]["RequestIdHeader"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The Group overviews of the caller's groups. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GroupOverview"][];
                 };
             };
             401: components["responses"]["Unauthenticated"];
@@ -1980,7 +2071,7 @@ export interface operations {
             /**
              * @description `invalid_game` (the name is omitted, `null`, empty after trim, longer than 50 characters, or `Other`),
              *     `invalid_capacity` (default max is not `null` or an integer from 1 to 2147483647, or a slot, a sum or a mode max is out of range), `invalid_genre` (genre is not in the list),
-             *     `invalid_game_role`, `invalid_mode`, `invalid_activity` (the name is empty after trim or too long), or `invalid_request` (invalid JSON or a wrong JSON type, or an `id` that is repeated or not of the same owner).
+             *     `invalid_game_role`, `invalid_mode`, `invalid_activity` (the name is empty after trim or too long), `invalid_role_icon` (a game role's icon is not in the set), or `invalid_request` (invalid JSON or a wrong JSON type, or an `id` that is repeated or not of the same owner).
              */
             400: {
                 headers: {
@@ -2043,7 +2134,7 @@ export interface operations {
             };
             /**
              * @description `invalid_game` (name omitted, `null`, empty after trim, too long, or `Other`), `invalid_capacity` (default max, a slot, a sum or a mode max), `invalid_genre` (genre is not in the list),
-             *     `invalid_game_role`, `invalid_mode`, `invalid_activity` (the name is empty after trim or too long),
+             *     `invalid_game_role`, `invalid_mode`, `invalid_activity` (the name is empty after trim or too long), `invalid_role_icon` (a game role's icon is not in the set),
              *     or `invalid_request` (invalid JSON or a wrong JSON type, or an `id` that is repeated or not of the same owner).
              */
             400: {

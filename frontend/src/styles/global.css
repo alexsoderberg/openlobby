@@ -1,7 +1,13 @@
 /* Tailwind utilities for ui/ only (ADR 0023): no theme and no preflight, so the tokens below stay the one source. */
 @import "tailwindcss/utilities.css" layer(utilities) source(none);
 @source "../ui";
-@source not inline("visible fixed container block hidden transform resize");
+@source not inline("visible container block hidden transform resize");
+/* Phone: a narrow window or a touch pointer, so a touch tablet gets the phone form too (ADR 0027 point 4). */
+@custom-variant phone {
+  @media (width < 47.5rem), (pointer: coarse) {
+    @slot;
+  }
+}
 
 /* Self-hosted fonts (OFL, Latin subset). font-display: swap keeps text visible in the fallback stack while a file loads. */
 @font-face {
@@ -92,6 +98,8 @@
   --color-shade: rgba(0, 0, 0, 0.18);
   --color-sheen: rgba(255, 255, 255, 0.45);
   --color-row-hover: rgba(255, 255, 255, 0.04);
+  /* The lit top edge of a raised card, so it reads as a plate above the page. */
+  --color-card-edge: rgba(255, 255, 255, 0.06);
 
   --font-display: "Cormorant Garamond", Georgia, serif;
   --font-heading: "Space Grotesk", system-ui, sans-serif;
@@ -142,6 +150,9 @@
   --rise-offset: 110%;
   --stagger-fade: 0.15s;
   --stagger-step: 0.1s;
+  /* Group cards fade up one after another; from the limit on they start together, so a long list is not slow. */
+  --stagger-card: 0.04s;
+  --stagger-card-limit: 8;
   --reveal-delay: 0s;
   --duration-meter: 1.6s;
   --duration-flash: 1.8s;
@@ -170,15 +181,20 @@
   --width-aside: 19rem;
   --size-tab-bar: 5.5rem;
   --size-group-icon: 3.25rem;
+  --font-size-time-block: 0.75rem;
   --line-time-block: 1.3; /* unitless, so a block label can also be limited to one line in em */
   --size-plus: 3.25rem;
   --size-plus-tab: 3.5rem;
   --size-avatar: 2.25rem;
   --size-avatar-large: 3.5rem;
-  /* A game logo or its monogram: one fixed box per place, so a loading image moves nothing (REQ-0026). */
+  /* A game logo or its monogram: one fixed box per size, so a loading image moves nothing (REQ-0026). */
   --size-game-logo: 2.5rem;
   /* Where the game is central: Next up and the lobby page (REQ-0026). */
   --size-game-logo-large: 4rem;
+  /* One text line of a week block, so the logo sits in the label's first line and costs no height (REQ-0026). */
+  --size-game-logo-small: calc(
+    var(--font-size-time-block) * var(--line-time-block)
+  );
   --width-popover: 22rem;
   --radius-popover: 16px;
   --color-chrome: #0c0c10;
@@ -186,6 +202,12 @@
   --color-accent-line: rgba(240, 199, 94, 0.45);
   --color-popover-top: #18181e;
   --shadow-popover: 0 30px 80px rgba(0, 0, 0, 0.55);
+  /* Dropdown list (ADR 0027 point 4): above the tab bar (60) and the floating "+" (55), below the toaster. */
+  --z-dropdown-list: 70;
+  --width-accent-edge: 2px;
+  --size-scrim-spread: 100vmax; /* a shadow this wide covers any window */
+  --size-sheet-max: 70dvh;
+  --sheet-safe-bottom: calc(var(--space-2) + env(safe-area-inset-bottom));
   --ease-overshoot: cubic-bezier(0.3, 1.35, 0.5, 1);
   --ease-in: cubic-bezier(0.55, 0, 0.75, 0);
   --scale-closed: 0.08;
@@ -256,6 +278,11 @@
     }
 
     * {
+      scrollbar-width: thin;
+    }
+
+    /* Radix hides the dropdown list's scrollbar in its own style tag; (0,2,0) wins over its one attribute. */
+    [data-slot="select-content"] [data-radix-select-viewport] {
       scrollbar-width: thin;
     }
   }
@@ -671,6 +698,93 @@ a {
   transition-duration: var(--duration-fast);
 }
 
+/* Dropdown list (ADR 0027): colour, radius and box are utilities in ui/Select.tsx; type, shadow and motion are
+   here. The panel grows from the field; on phones it is a sheet that rises from the bottom edge. */
+[data-slot="select-trigger"],
+[data-slot="select-content"] {
+  /* border utility's style is a registered variable; some browsers lack it (ADR 0023 B2 amendment d) */
+  border-style: solid;
+}
+
+[data-slot="select-trigger"] {
+  font: inherit;
+  text-align: start;
+}
+
+[data-slot="select-content"] {
+  box-shadow: var(--shadow-popover);
+  transform-origin: var(--radix-select-content-transform-origin);
+}
+
+[data-slot="select-content"][data-state="open"] {
+  animation: dropdown-in var(--duration-page) var(--ease-out);
+}
+
+[data-slot="select-content"][data-state="closed"] {
+  animation: dropdown-out var(--duration-page-out) var(--ease-in) forwards;
+}
+
+/* The highlighted row is the keyboard focus: the wash and an accent edge mark it in place of the outline. */
+[data-slot="select-item"]:focus-visible {
+  outline: none;
+}
+
+[data-slot="select-item"][data-highlighted] {
+  box-shadow: inset var(--width-accent-edge) 0 0 var(--color-accent);
+}
+
+@keyframes dropdown-in {
+  from {
+    opacity: 0;
+    transform: scale(var(--press-scale));
+  }
+}
+
+@keyframes dropdown-out {
+  to {
+    opacity: 0;
+    transform: scale(var(--press-scale));
+  }
+}
+
+@keyframes sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(var(--rise-offset));
+  }
+}
+
+@keyframes sheet-out {
+  to {
+    opacity: 0;
+    transform: translateY(var(--rise-offset));
+  }
+}
+
+@media (width < 47.5rem), (pointer: coarse) {
+  /* The spread shadow dims the page behind the sheet, so a tap outside reads as "close". */
+  [data-slot="select-content"] {
+    box-shadow:
+      var(--shadow-popover),
+      0 0 0 var(--size-scrim-spread) var(--color-scrim);
+  }
+
+  [data-slot="select-content"][data-state="open"] {
+    animation-name: sheet-in;
+  }
+
+  [data-slot="select-content"][data-state="closed"] {
+    animation-name: sheet-out;
+  }
+
+  /* Radix writes the wrapper's transform inline, and will-change on screens of 1.5 dppx and up; either makes
+     the wrapper the sheet's containing block. On phones the sheet must sit on the viewport (ADR 0027 point 4). */
+  [data-radix-popper-content-wrapper]:has(> [data-slot="select-content"]) {
+    transform: none !important;
+    will-change: auto !important;
+  }
+}
+
 .alert {
   margin: 0 0 var(--space-3);
   padding: var(--space-3);
@@ -972,9 +1086,9 @@ a {
   font-weight: 600;
 }
 
-/* Fields share the button heights (ADR 0021), so a field and a button in one row line up. Native controls
-   are kept for the keyboard, screen readers and mobile pickers; :root's color-scheme makes the pickers dark. */
-.group-form :is(input, select):where(:not([type="radio"], [type="checkbox"])),
+/* Fields share the button heights (ADR 0021), so a field and a button in one row line up. Date and time inputs
+   stay native; :root's color-scheme makes their pickers dark. Dropdown lists are ui/Select.tsx (ADR 0027). */
+.group-form input:where(:not([type="radio"], [type="checkbox"])),
 .invite-link__url {
   min-height: var(--size-button);
   padding: 0 var(--space-2);
@@ -987,58 +1101,24 @@ a {
 }
 
 @media (pointer: coarse) {
-  .group-form :is(input, select):where(:not([type="radio"], [type="checkbox"])),
+  .group-form input:where(:not([type="radio"], [type="checkbox"])),
   .invite-link__url {
     min-height: var(--size-button-touch);
   }
 }
 
-.group-form
-  :is(input, select):where(
-    :not([type="radio"], [type="checkbox"])
-  ):enabled:hover,
+.group-form input:where(:not([type="radio"], [type="checkbox"])):enabled:hover,
 .invite-link__url:hover {
   border-color: var(--color-text);
 }
 
-.group-form
-  :is(input, select):where(:not([type="radio"], [type="checkbox"])):disabled {
+.group-form input:where(:not([type="radio"], [type="checkbox"])):disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
 .group-form input {
   width: 100%;
-}
-
-/* The select's own arrow gives way to the Select component's chevron icon (ADR 0021). Date and time inputs
-   keep their native look, so their picker icon stays. */
-.group-form select {
-  appearance: none;
-  padding-inline-end: calc(var(--space-2) * 2 + 1em);
-  cursor: pointer;
-}
-
-.select {
-  position: relative;
-  display: inline-grid;
-  align-items: center;
-}
-
-.select__chevron {
-  position: absolute;
-  right: var(--space-2);
-  color: var(--color-muted);
-  pointer-events: none;
-}
-
-.select:has(select:disabled) .select__chevron {
-  opacity: 0.5;
-}
-
-.group-form option {
-  background-color: var(--color-bg-raised);
-  color: var(--color-text);
 }
 
 /* WebKit only, in rules of their own so Firefox, which does not know these, keeps the rest. */
@@ -1050,14 +1130,15 @@ a {
   text-align: start;
 }
 
-.group-form .select,
 .group-form .button {
   justify-self: start;
 }
 
+/* Items keep their own height: the default stretch made Delete lobby as tall as the open seat form beside it. */
 .form-actions {
   display: flex;
   flex-wrap: wrap;
+  align-items: flex-start;
   gap: var(--space-2);
 }
 
@@ -1432,6 +1513,177 @@ a {
   overflow-wrap: anywhere;
 }
 
+/* The Group list (REQ-0024, REQ-0025): one column on phones, two from 760px, three on wide main areas. */
+.group-cards {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 47.5rem) {
+  .group-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 75rem) {
+  .group-cards {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* The cards of a row are one height, so the lobby lines line up at the bottom.
+   signature: groups. When the cards appear they fade up in order (--card-index from MyGroups), opacity and
+   transform only; prefers-reduced-motion turns the animation off, so they show at once. */
+.group-cards > li {
+  display: grid;
+  animation: page-in var(--duration-page) var(--ease-out) both;
+  animation-delay: calc(
+    min(var(--card-index, 0), var(--stagger-card-limit)) * var(--stagger-card)
+  );
+}
+
+/* A Group card is one link. The global focus ring draws around the whole card. */
+.group-card {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-height: var(--size-tap);
+  padding: var(--space-4);
+  color: var(--color-text);
+  text-decoration: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-panel);
+  background:
+    radial-gradient(
+      22rem 10rem at 100% 0,
+      var(--color-accent-wash),
+      transparent 70%
+    ),
+    var(--color-surface);
+  box-shadow: inset 0 1px 0 var(--color-card-edge);
+}
+
+/* Hover: an accent edge and a faint tint fade in on a layer, so only opacity moves. */
+.group-card::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  z-index: -1;
+  border: 1px solid var(--color-accent-line);
+  border-radius: inherit;
+  background: var(--color-row-hover);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-base) var(--ease-out);
+}
+
+.group-card:hover::after {
+  opacity: 1;
+}
+
+.group-card__head {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.group-card__name {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-heading);
+  font-weight: 600;
+  letter-spacing: var(--tracking-snug);
+  overflow-wrap: anywhere;
+}
+
+.group-card__count {
+  color: var(--color-muted);
+  font-size: var(--font-size-small);
+}
+
+/* Overlapping initials. Each sits on a solid plate with a ring in the card's colour, so the overlap stays crisp. */
+.group-card__people {
+  display: flex;
+  align-items: center;
+}
+
+.group-card__people > .initials-icon {
+  background:
+    linear-gradient(var(--color-accent-tint), var(--color-accent-tint)),
+    var(--color-bg-raised);
+  box-shadow: 0 0 0 2px var(--color-bg-raised);
+}
+
+.group-card__people > .initials-icon + .initials-icon {
+  margin-left: calc(-1 * var(--space-1));
+}
+
+.group-card__more {
+  margin-left: var(--space-2);
+  color: var(--color-muted);
+  font-family: var(--font-heading);
+  font-size: var(--font-size-small);
+  font-weight: 600;
+}
+
+/* The lobby line sits at the bottom of the card, with its genre's edge, wash and icon (ADR 0016). */
+.group-card__lobby {
+  display: grid;
+  gap: var(--space-1);
+  margin-top: auto;
+  padding: var(--space-2) var(--space-3);
+  padding-right: calc(var(--size-genre-icon) + var(--space-3));
+  border-left: 3px solid var(--genre-accent);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+  @supports (color: color-mix(in lab, red, red)) {
+    background: color-mix(
+      in srgb,
+      var(--genre-accent) var(--genre-wash),
+      transparent
+    );
+  }
+}
+
+.group-card__lobby--none {
+  color: var(--color-muted);
+  border-left-color: var(--color-border);
+  background: none;
+}
+
+.group-card__label {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+/* The start and the player count wrap as wholes, so "3/4 players" never breaks apart. The dot sits in the gap
+   before the count; where the count starts a line, the dot falls left of the box and is clipped, so no line
+   ends or starts with it. */
+.group-card__when {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+  overflow: hidden;
+  color: var(--color-muted);
+  font-size: var(--font-size-small);
+}
+
+.group-card__when > * {
+  white-space: nowrap;
+}
+
+.group-card__dot {
+  display: inline-block;
+  width: var(--space-3);
+  margin-left: calc(-1 * var(--space-3));
+  text-align: center;
+}
+
 .calendar__bar {
   display: flex;
   flex-wrap: wrap;
@@ -1612,7 +1864,7 @@ a {
   }
   border-left: 3px solid var(--genre-accent);
   border-radius: var(--radius-control);
-  font-size: 0.75rem;
+  font-size: var(--font-size-time-block);
   line-height: var(--line-time-block);
 }
 
@@ -1662,6 +1914,28 @@ a {
   max-width: 100%;
   overflow-wrap: anywhere;
   white-space: normal;
+}
+
+/* The game logo flows inline before the game name, at the top of its first line and exactly one line tall, so it
+   never adds or cuts a line. A block too narrow to spare its width for the name hides it (REQ-0026). */
+.time-block {
+  container-type: inline-size;
+}
+
+.time-block__logo {
+  display: inline-block;
+  vertical-align: top;
+  margin-inline-end: var(--space-1);
+}
+
+.time-block__logo:empty {
+  display: none;
+}
+
+@container (width < 6rem) {
+  .time-block__logo {
+    display: none;
+  }
 }
 
 .time-block__detail {
@@ -1966,6 +2240,11 @@ a {
 
 [data-slot="game-logo"][data-size="large"] {
   font-size: var(--font-size-heading);
+}
+
+[data-slot="game-logo"][data-size="small"] {
+  font-size: var(--font-size-caption);
+  letter-spacing: var(--tracking-tight);
 }
 
 /* Only the monogram has a border: without its border utility, a solid style would draw the browser's medium width.

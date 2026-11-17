@@ -5,7 +5,7 @@ import { Icon, Select } from "../../ui";
 
 const MAX_USES_OPTIONS = Array.from(
   { length: INVITE_MAX_USES_LIMIT },
-  (_, index) => index + 1,
+  (_, index) => ({ value: String(index + 1), label: String(index + 1) }),
 );
 const HINT_ID = "invite-max-uses-hint";
 
@@ -19,7 +19,7 @@ export function CreateInviteLinkForm({
 }) {
   const m = useMessages();
   const [maxUses, setMaxUses] = useState(INVITE_MAX_USES_DEFAULT);
-  const selectRef = useRef<HTMLSelectElement>(null);
+  const selectRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     selectRef.current?.focus({ preventScroll: true });
@@ -37,16 +37,11 @@ export function CreateInviteLinkForm({
       <Select
         ref={selectRef}
         id="invite-max-uses"
-        value={maxUses}
+        value={String(maxUses)}
         aria-describedby={HINT_ID}
-        onChange={(event) => setMaxUses(Number(event.target.value))}
-      >
-        {MAX_USES_OPTIONS.map((count) => (
-          <option key={count} value={count}>
-            {count}
-          </option>
-        ))}
-      </Select>
+        onValueChange={(value) => setMaxUses(Number(value))}
+        options={MAX_USES_OPTIONS}
+      />
       <p id={HINT_ID} className="form-hint">
         {m.inviteMaxUsesHint}
       </p>

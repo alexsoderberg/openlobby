@@ -36,7 +36,9 @@ export function CreateLobbyForm(props: CreateLobbyFormProps) {
   const form = useLobbyFormSubmit(gameValue, reset, onSubmit);
   // The form opens in a popover, so focus moves in; the first field is the game.
   useEffect(() => {
-    formRef.current?.querySelector("select")?.focus({ preventScroll: true });
+    formRef.current
+      ?.querySelector<HTMLElement>('[role="combobox"]')
+      ?.focus({ preventScroll: true });
   }, []);
   const errorId = `${id}-error`;
   const errorFor = (name: string) =>
