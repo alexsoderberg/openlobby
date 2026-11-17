@@ -1055,9 +1055,11 @@ a {
   justify-self: start;
 }
 
+/* Items keep their own height: the default stretch made Delete lobby as tall as the open seat form beside it. */
 .form-actions {
   display: flex;
   flex-wrap: wrap;
+  align-items: flex-start;
   gap: var(--space-2);
 }
 
