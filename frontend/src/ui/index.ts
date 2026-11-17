@@ -11,5 +11,5 @@ export { IconButton } from "./IconButton";
 export { Meter } from "./Meter";
 export { Panel } from "./Panel";
 export { Popover } from "./Popover";
-export { Select } from "./Select";
+export { Select, type DropdownOption } from "./Select";
 export { ViewToggle } from "./ViewToggle";

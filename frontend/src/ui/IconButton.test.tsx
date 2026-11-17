@@ -66,6 +66,7 @@ const everyIcon: Record<IconName, true> = {
   retry: true,
   revoke: true,
   save: true,
+  selected: true,
   upload: true,
   you: true,
 };
