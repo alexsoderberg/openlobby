@@ -127,3 +127,107 @@ func TestRoleIconsDownDropsTheColumns(t *testing.T) {
 		t.Fatal("down of 0011 left a role_icon column")
 	}
 }
+
+// setRoleIcon changes a game role's icon as an admin save would.
+func setRoleIcon(t *testing.T, store *Store, gameRoleID, icon string) {
+	t.Helper()
+	if _, err := store.db.Exec(`UPDATE game_roles SET role_icon = $2 WHERE id = $1`, gameRoleID, icon); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// slotIcons returns the icon of each role slot, "" for none copied.
+func slotIcons(slots []domain.RoleSlot) []string {
+	icons := make([]string, 0, len(slots))
+	for _, slot := range slots {
+		icon := ""
+		if slot.RoleIcon != nil {
+			icon = string(*slot.RoleIcon)
+		}
+		icons = append(icons, icon)
+	}
+	return icons
+}
+
+// A lobby copies each role slot's icon at create and keeps it when the game role's icon, name or the role itself
+// changes later (ADR 0024 section 3).
+func TestLobbyCopiesTheRoleIconsAndKeepsThem(t *testing.T) {
+	store := migratedStore(t)
+	ctx := context.Background()
+	seedGroups(t, store)
+	game := createRaidGame(t, store)
+	tank, healer := game.Modes[1].GameRoles[0].ID, game.Modes[1].GameRoles[1].ID
+	setRoleIcon(t, store, tank, "shield")
+	setRoleIcon(t, store, healer, "medical-cross")
+	lobby, err := seatLobbies(store).Create(ctx, raidRequest(game, 1, 2, healerSeat(game)))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := store.db.Exec(`UPDATE game_roles SET role_icon = 'star', name = 'Guard' WHERE id = $1`, tank); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := store.db.Exec(`DELETE FROM game_roles WHERE id = $1`, healer); err != nil {
+		t.Fatal(err)
+	}
+	single, _, err := store.Lobbies().Lobby(ctx, fridayID, lobby.ID, alexID, joinedAt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	listed, err := store.Lobbies().Upcoming(ctx, fridayID, alexID, joinedAt)
+	if err != nil || len(listed) != 1 {
+		t.Fatalf("%d lobbies, error %v; want 1", len(listed), err)
+	}
+
+	want := []string{"shield", "medical-cross"}
+	for name, got := range map[string]domain.Lobby{"lobby": single, "upcoming": listed[0]} {
+		if icons := slotIcons(got.RoleSlots); !slices.Equal(icons, want) || got.RoleSlots[0].Name != "Tank" {
+			t.Fatalf("%s: slots %+v icons %v, want Tank and Healer with %v as copied", name, got.RoleSlots, icons, want)
+		}
+	}
+}
+
+// A mode change copies the new mode's icons as they are at the change (ADR 0024 section 3).
+func TestModeChangeCopiesTheNewModesRoleIcons(t *testing.T) {
+	store := migratedStore(t)
+	game, lobby := raidLobby(t, store, 1, 2, healerSeat)
+	ranked, raid := game.Modes[0], game.Modes[1]
+	setRoleIcon(t, store, raid.GameRoles[0].ID, "shield")
+	if err := setMode(store, lobby.ID, alexID, ranked.ID, &raid.ID); err != nil {
+		t.Fatal(err)
+	}
+
+	back, err := seatLobbies(store).SetMode(context.Background(), fridayID, lobby.ID, alexID, raid.ID, &ranked.ID)
+
+	// The healer was never saved with an icon, so its copy has none.
+	if icons := slotIcons(back.RoleSlots); err != nil || !slices.Equal(icons, []string{"shield", ""}) {
+		t.Fatalf("icons %v, error %v; want shield for Tank and none for Healer", icons, err)
+	}
+}
+
+// A preferred game role shows the current icon of its game role, on members and on lobby players (ADR 0024 section 2).
+func TestPreferredGameRoleShowsTheCurrentRoleIcon(t *testing.T) {
+	store := migratedStore(t)
+	ctx := context.Background()
+	seedGroups(t, store)
+	fixture := seedChoiceGames(t, store, "")
+	lobby := insertLobby(t, store, newLobby(fridayID, alexID, &fixture.raid.ID, fixture.raid.Name))
+	replaceChoices(t, store, alexID, fixture.tank)
+	setRoleIcon(t, store, fixture.tank, "wrench") // after the choice: the read is live, not a copy
+
+	members, err := store.Groups().Members(ctx, fridayID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, players, err := store.Lobbies().Lobby(ctx, fridayID, lobby.ID, alexID, joinedAt)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	member := members[slices.IndexFunc(members, func(m domain.Member) bool { return m.UserID == alexID })]
+	for name, roles := range map[string][]domain.PreferredGameRole{"member": member.PreferredGameRoles, "player": players[0].PreferredGameRoles} {
+		if len(roles) != 1 || roles[0].RoleIcon == nil || *roles[0].RoleIcon != "wrench" {
+			t.Fatalf("%s: choices %+v, want the tank with its current icon wrench", name, roles)
+		}
+	}
+}

@@ -14,7 +14,7 @@ const (
 	insertLobbySQL = `INSERT INTO lobbies (group_id, created_by_user_id, game_id, game_name, max_players, starts_at, ends_at, created_at,
 		game_mode_id, mode_name, activity_id, activity_name)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id`
-	insertRoleSlotSQL = `INSERT INTO lobby_role_slots (lobby_id, game_role_id, name, slots, sort_order) VALUES ($1, $2, $3, $4, $5)`
+	insertRoleSlotSQL = `INSERT INTO lobby_role_slots (lobby_id, game_role_id, name, slots, role_icon, sort_order) VALUES ($1, $2, $3, $4, $5, $6)`
 	// One statement adds a player and moves an existing one; the join time of a player who moves stays.
 	savePlayerSQL = `INSERT INTO lobby_players (lobby_id, user_id, joined_at, game_role_id) VALUES ($1, $2, $3, $4)
 		ON CONFLICT (lobby_id, user_id) DO UPDATE SET game_role_id = EXCLUDED.game_role_id`
@@ -51,7 +51,7 @@ const (
 
 	// The role slots with the players in each role: one query for all lobbies of a read, never one per lobby (ADR 0017
 	// Consequences). The count reads lobby_players by the prefix lobby_id of its primary key.
-	selectRoleSlotsSQL = `SELECT s.lobby_id, s.game_role_id, s.name, s.slots,
+	selectRoleSlotsSQL = `SELECT s.lobby_id, s.game_role_id, s.name, s.slots, s.role_icon,
 		(SELECT count(*) FROM lobby_players p WHERE p.lobby_id = s.lobby_id AND p.game_role_id = s.game_role_id)
 		FROM lobby_role_slots s`
 	upcomingRoleSlotsSQL = selectRoleSlotsSQL + ` JOIN lobbies l ON l.id = s.lobby_id WHERE l.group_id = $1 AND l.ends_at > $2 ORDER BY s.lobby_id, s.sort_order`
@@ -94,7 +94,7 @@ func (t lobbyTx) InsertLobby(ctx context.Context, lobby domain.Lobby) (domain.Lo
 	}
 	// The slots come first: the creator's row refers to one of them.
 	for order, slot := range lobby.RoleSlots {
-		if _, err := t.tx.ExecContext(ctx, insertRoleSlotSQL, lobby.ID, slot.GameRoleID, slot.Name, slot.Slots, order); err != nil {
+		if _, err := t.tx.ExecContext(ctx, insertRoleSlotSQL, lobby.ID, slot.GameRoleID, slot.Name, slot.Slots, slot.RoleIcon, order); err != nil {
 			return domain.Lobby{}, err
 		}
 	}
@@ -223,7 +223,7 @@ func roleSlotsByLobby(ctx context.Context, q queryer, query string, args ...any)
 	err := eachRow(ctx, q, func(rows *sql.Rows) error {
 		var lobbyID string
 		var slot domain.RoleSlot
-		err := rows.Scan(&lobbyID, &slot.GameRoleID, &slot.Name, &slot.Slots, &slot.PlayerCount)
+		err := rows.Scan(&lobbyID, &slot.GameRoleID, &slot.Name, &slot.Slots, &slot.RoleIcon, &slot.PlayerCount)
 		slots[lobbyID] = append(slots[lobbyID], slot)
 		return err
 	}, query, args...)
@@ -342,7 +342,7 @@ func (t lobbyTx) SetLobbyMode(ctx context.Context, lobbyID string, change domain
 		return err
 	}
 	for order, slot := range change.Slots {
-		if _, err := t.tx.ExecContext(ctx, insertRoleSlotSQL, lobbyID, slot.GameRoleID, slot.Name, slot.Slots, order); err != nil {
+		if _, err := t.tx.ExecContext(ctx, insertRoleSlotSQL, lobbyID, slot.GameRoleID, slot.Name, slot.Slots, slot.RoleIcon, order); err != nil {
 			return err
 		}
 	}

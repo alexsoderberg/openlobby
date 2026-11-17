@@ -53,6 +53,7 @@ type RoleSlot struct {
 	GameRoleID  string
 	Name        string
 	Slots       int
+	RoleIcon    *RoleIcon // copied with the name; nil when the game role had no icon chosen at the copy (ADR 0024)
 	PlayerCount int
 }
 
@@ -289,7 +290,7 @@ func storedSlots(roles []GameRole) []RoleSlot {
 	var slots []RoleSlot
 	for _, role := range roles {
 		if role.Slots > 0 {
-			slots = append(slots, RoleSlot{GameRoleID: role.ID, Name: role.Name, Slots: role.Slots})
+			slots = append(slots, RoleSlot{GameRoleID: role.ID, Name: role.Name, Slots: role.Slots, RoleIcon: role.RoleIcon})
 		}
 	}
 	return slots
@@ -301,9 +302,9 @@ func askedRoles(owned []GameRole, asked []RoleSlotInput) ([]GameRole, error) {
 	if asked == nil {
 		return owned, nil
 	}
-	roles := make([]GameRole, len(owned))
-	for i, role := range owned {
-		roles[i] = GameRole{ID: role.ID, Name: role.Name}
+	roles := slices.Clone(owned)
+	for i := range roles {
+		roles[i].Slots = 0
 	}
 	seen := map[string]bool{}
 	for _, input := range asked {

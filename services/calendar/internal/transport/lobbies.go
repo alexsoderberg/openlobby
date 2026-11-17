@@ -183,7 +183,8 @@ func roleSlotBodies(slots []domain.RoleSlot) ([]publicapi.RoleSlot, error) {
 		if err != nil {
 			return nil, err
 		}
-		bodies = append(bodies, publicapi.RoleSlot{GameRoleId: id, Name: slot.Name, Slots: slot.Slots, PlayerCount: slot.PlayerCount})
+		bodies = append(bodies, publicapi.RoleSlot{GameRoleId: id, Name: slot.Name, Slots: slot.Slots, PlayerCount: slot.PlayerCount,
+			RoleIcon: convertEnum[publicapi.RoleIcon](slot.RoleIcon)})
 	}
 	return bodies, nil
 }

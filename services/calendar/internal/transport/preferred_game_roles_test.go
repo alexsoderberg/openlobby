@@ -191,9 +191,9 @@ func TestReplacePreferredGameRolesRefusalsKeepTheChoices(t *testing.T) {
 
 // visibleChoices gives alex a mode role and a role of a game with no modes, in the adapter's order; other has none.
 func visibleChoices() map[string][]domain.PreferredGameRole {
-	raid := "Raid"
+	raid, shield := "Raid", domain.RoleIcon("shield")
 	return map[string][]domain.PreferredGameRole{alexID: {
-		{GameRoleID: choiceTankID, Name: "Tank", GameName: "Raid", ModeName: &raid},
+		{GameRoleID: choiceTankID, Name: "Tank", GameName: "Raid", ModeName: &raid, RoleIcon: &shield},
 		{GameRoleID: choiceScoutID, Name: "Scout", GameName: "Scout"},
 	}}
 }
@@ -236,9 +236,9 @@ func TestGroupAndLobbyShowTheVisibleChoicesInTheContractShape(t *testing.T) {
 		{name: "getGroup", path: "/api/groups/" + fridayID, decode: groupChoices},
 		{name: "getLobby", path: lobbiesPath + "/" + otherLobby, decode: lobbyChoices},
 	}
-	raid := "Raid"
+	raid, shield := "Raid", publicapi.Shield
 	wantAlex := []publicapi.PreferredGameRole{
-		{GameRoleId: uuid.MustParse(choiceTankID), Name: "Tank", GameName: "Raid", ModeName: &raid},
+		{GameRoleId: uuid.MustParse(choiceTankID), Name: "Tank", GameName: "Raid", ModeName: &raid, RoleIcon: &shield},
 		{GameRoleId: uuid.MustParse(choiceScoutID), Name: "Scout", GameName: "Scout", ModeName: nil},
 	}
 	for _, tc := range tests {
