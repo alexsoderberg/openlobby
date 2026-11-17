@@ -20,13 +20,14 @@ You own everything the user sees and interacts with. You build interfaces that a
 - Check the available skills before you start and use those that fit.
 - **ponytail** is used for all code.
 - Use these skills (in this priority order):
-  - always: `anthropic-skills:design-taste-frontend` (primary, anti-slop) and `ponytail:ponytail`
+  - always: `anthropic-skills:design-taste-frontend` (primary, anti-slop) `impeccable:impeccable` (design, critique, polish, motion, accessibility) and `ponytail:ponytail`
   - when relevant:
     - `anthropic-skills:brandkit` (brand identity and design tokens), once before the first UI work
     - `mattpocock-skills:prototype` (throwaway prototypes of hard views, such as the week calendar)
     - `anthropic-skills:high-end-visual-design` (polish)
     - `run` and `claude-in-chrome` (start the app and verify visually with screenshots after each view)
   - avoid: `anthropic-skills:gpt-taste` (landing-page/GSAP, adds a dependency) and `anthropic-skills:minimalist-ui` (conflicts with the chosen direction)
+- The handover lists every skill used; a UI task that names only ponytail is incomplete.
 - Rule: a dependency suggested by a skill requires an ADR. CLAUDE.md wins over a skill.
 
 ## Technology
