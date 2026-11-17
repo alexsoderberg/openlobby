@@ -2,7 +2,7 @@ import { useId, type CSSProperties } from "react";
 import type { Genre, Lobby } from "../api";
 import { GenreFrame } from "../genres";
 import { formatTimeRange, useMessages } from "../i18n";
-import { lobbyGameLabel, lobbyLabelDetail } from "../lobby";
+import { LobbyGameLogo, lobbyGameLabel, lobbyLabelDetail } from "../lobby";
 import type { Block } from "./gridGeometry";
 
 /** A lobby to draw, with the name of its group when the grid spans several groups. */
@@ -60,7 +60,14 @@ export function TimeBlock({
           href={href}
           aria-describedby={describedBy}
         >
-          <span>{lobbyGameLabel(lobby, m)}</span>
+          <span>
+            {/* In the first line, which every block shows: the logo costs no height (REQ-0026). */}
+            {/* shortcut: the logo may push a long game name onto one more line, cut off in the shortest blocks (DECISION, user, 2026-11-17); measure the name if users miss it. */}
+            <span className="time-block__logo">
+              <LobbyGameLogo lobby={lobby} size="small" />
+            </span>
+            {lobbyGameLabel(lobby, m)}
+          </span>
           {/* A real space keeps the link's accessible name "game › mode"; flex layout hides it. */}{" "}
           {detail && (
             <span className="time-block__detail">
