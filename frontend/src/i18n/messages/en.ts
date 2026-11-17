@@ -7,6 +7,7 @@ import {
   type ApiErrorCode,
   type GameImageKind,
   type Genre,
+  type RoleIcon,
 } from "../../api";
 
 export const en = {
@@ -155,6 +156,16 @@ export const en = {
   gameRoleLegend: (position: number) => `Game role ${position}`,
   gameRoleNameLabel: "Game role name",
   gameRoleSlotsLabel: "Slots",
+  gameRoleIconLabel: "Icon",
+  roleIcon: {
+    none: "No icon",
+    shield: "Shield",
+    "medical-cross": "Medical cross",
+    dagger: "Dagger",
+    crosshair: "Crosshair",
+    wrench: "Wrench",
+    star: "Star",
+  } satisfies Record<RoleIcon, string>,
   gameRoleAdd: "Add game role",
   gameRoleRemove: "Remove game role",
   gameModesLegend: "Modes",

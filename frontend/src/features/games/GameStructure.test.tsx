@@ -8,6 +8,7 @@ import {
 import { describe, expect, it, vi } from "vitest";
 import { ApiError, ApiProvider, type ApiClient, type Game } from "../../api";
 import { en } from "../../i18n/messages/en";
+import { chooseOption, optionNames } from "../../test/chooseOption";
 import { fakeApiClient } from "../../test/fakeApiClient";
 import { GamesPage } from "./GamesPage";
 
@@ -163,7 +164,7 @@ describe("add with modes", () => {
             {
               name: "Raid",
               maxPlayers: null,
-              gameRoles: [{ name: "Tank", slots: 2 }],
+              gameRoles: [{ name: "Tank", slots: 2, roleIcon: "shield" }],
               activities: [{ name: "Crypt" }],
             },
           ],
@@ -187,7 +188,7 @@ describe("add with modes", () => {
         name: "Azul",
         defaultMaxPlayers: null,
         genre: null,
-        gameRoles: [{ name: "Scout", slots: 1 }],
+        gameRoles: [{ name: "Scout", slots: 1, roleIcon: "none" }],
         modes: [],
       }),
     );
@@ -342,7 +343,7 @@ describe("remove a mode or an activity", () => {
         "g1",
         expect.objectContaining({
           defaultMaxPlayers: null,
-          gameRoles: [{ id: "r9", name: "Scout", slots: 6 }],
+          gameRoles: [{ id: "r9", name: "Scout", slots: 6, roleIcon: "none" }],
           modes: [],
         }),
       ),
@@ -440,8 +441,8 @@ describe("edit with modes", () => {
         name: "Raid",
         maxPlayers: null,
         gameRoles: [
-          { id: "r1", name: "Tank", slots: 1 },
-          { id: "r2", name: "Medic", slots: 3 },
+          { id: "r1", name: "Tank", slots: 1, roleIcon: "shield" },
+          { id: "r2", name: "Medic", slots: 3, roleIcon: "none" },
         ],
         activities: [{ id: "a1", name: "Crypt" }],
       },
@@ -473,6 +474,7 @@ describe("errors", () => {
     ["activity_taken", en.errors.activity_taken],
     ["invalid_game_role", en.errors.invalid_game_role],
     ["game_role_taken", en.errors.game_role_taken],
+    ["invalid_role_icon", en.errors.invalid_role_icon],
     ["invalid_capacity", en.gameStructureCapacityInvalid],
   ])("shows %s tied to the modes", async (code, text) => {
     renderPage({
@@ -595,5 +597,172 @@ describe("errors", () => {
       within(modeView(form)).getByLabelText(en.gameModeMaxLabel),
     );
     expect(client.createGame).not.toHaveBeenCalled();
+  });
+});
+
+describe("role icon", () => {
+  const iconField = (role: HTMLElement) =>
+    within(role).getByLabelText(en.gameRoleIconLabel);
+  const iconShown = (role: HTMLElement) => iconField(role).textContent;
+  const rename = (role: HTMLElement, name: string) =>
+    type(within(role).getByLabelText(en.gameRoleNameLabel), name);
+  const roleRow = (scope: HTMLElement, position: number) =>
+    within(scope).getByRole("group", { name: en.gameRoleLegend(position) });
+
+  /** A new game with one game role named `name`, without modes. */
+  async function newRole(name: string) {
+    const client = renderPage();
+    const form = await addForm();
+    fillName(form, "Azul");
+    click(form, en.gameRoleAdd);
+    const role = roleRow(form, 1);
+    rename(role, name);
+    return { client, form, role };
+  }
+
+  const sentIcons = (client: ApiClient) =>
+    vi
+      .mocked(client.createGame)
+      .mock.calls[0][0].gameRoles?.map((role) => role.roleIcon);
+
+  it("offers No icon first, then the fixed set, as text", async () => {
+    const { role } = await newRole("");
+    expect(await optionNames(iconField(role))).toEqual(
+      Object.values(en.roleIcon),
+    );
+  });
+
+  it("follows the typed name until an icon is picked by hand, and saves the pick", async () => {
+    const { client, form, role } = await newRole("Tank");
+    expect(iconShown(role)).toBe(en.roleIcon.shield);
+    rename(role, " healer ");
+    expect(iconShown(role)).toBe(en.roleIcon["medical-cross"]);
+
+    await chooseOption(iconField(role), en.roleIcon.wrench);
+    rename(role, "DPS");
+    expect(iconShown(role)).toBe(en.roleIcon.wrench);
+
+    click(form, en.gameAddSubmit);
+    await waitFor(() => expect(sentIcons(client)).toEqual(["wrench"]));
+  });
+
+  it("stops following once No icon is picked, and saves it as none", async () => {
+    const { client, form, role } = await newRole("Tank");
+    await chooseOption(iconField(role), en.roleIcon.none);
+    rename(role, "Healer");
+    expect(iconShown(role)).toBe(en.roleIcon.none);
+
+    click(form, en.gameAddSubmit);
+    await waitFor(() => expect(sentIcons(client)).toEqual(["none"]));
+  });
+
+  it("stops following when No icon is picked while it is shown", async () => {
+    const { client, form, role } = await newRole("");
+    expect(iconShown(role)).toBe(en.roleIcon.none);
+    await chooseOption(iconField(role), en.roleIcon.none);
+    rename(role, "Tank");
+    expect(iconShown(role)).toBe(en.roleIcon.none);
+
+    click(form, en.gameAddSubmit);
+    await waitFor(() => expect(sentIcons(client)).toEqual(["none"]));
+  });
+
+  it("keeps a suggested icon that is picked by hand when the name changes", async () => {
+    const { client, form, role } = await newRole("Tank");
+    await chooseOption(iconField(role), en.roleIcon.shield);
+    rename(role, "Main tank");
+    expect(iconShown(role)).toBe(en.roleIcon.shield);
+
+    click(form, en.gameAddSubmit);
+    await waitFor(() => expect(sentIcons(client)).toEqual(["shield"]));
+  });
+
+  it("saves an unchanged suggestion as that icon, and a name without one as none", async () => {
+    const { client, form } = await newRole("Sniper");
+    click(form, en.gameRoleAdd);
+    rename(roleRow(form, 2), "Scout");
+
+    click(form, en.gameAddSubmit);
+    await waitFor(() =>
+      expect(sentIcons(client)).toEqual(["crosshair", "none"]),
+    );
+  });
+
+  it("suggests only for a stored role without an icon, and keeps a stored No icon or icon", async () => {
+    const client = renderPage({
+      listGames: () =>
+        Promise.resolve([
+          {
+            ...catan,
+            defaultMaxPlayers: null,
+            gameRoles: [
+              { id: "r1", name: "Tank", slots: 1, roleIcon: null },
+              { id: "r2", name: "Healer", slots: 1, roleIcon: "none" },
+              { id: "r3", name: "Engineer", slots: 1, roleIcon: "star" },
+            ],
+          },
+        ]),
+    });
+    const form = await editForm("Catan");
+    expect(iconShown(roleRow(form, 1))).toBe(en.roleIcon.shield);
+    expect(iconShown(roleRow(form, 2))).toBe(en.roleIcon.none);
+    expect(iconShown(roleRow(form, 3))).toBe(en.roleIcon.star);
+    rename(roleRow(form, 2), "Support");
+    expect(iconShown(roleRow(form, 2))).toBe(en.roleIcon.none);
+
+    click(form, en.gameEditSubmit);
+    await waitFor(() =>
+      expect(
+        vi
+          .mocked(client.replaceGame)
+          .mock.calls[0][1].gameRoles?.map((role) => role.roleIcon),
+      ).toEqual(["shield", "none", "star"]),
+    );
+  });
+
+  it("offers the icon on a mode's game roles too", async () => {
+    renderPage();
+    const form = await editForm("Dungeons");
+    const mode = openMode(form, "Raid");
+    expect(iconShown(roleRow(mode, 1))).toBe(en.roleIcon.shield);
+    expect(iconShown(roleRow(mode, 2))).toBe(en.roleIcon["medical-cross"]);
+  });
+
+  it("shows the saved icon when the form opens again after save", async () => {
+    const stored: Game = {
+      ...catan,
+      defaultMaxPlayers: null,
+      gameRoles: [{ id: "r1", name: "Tank", slots: 1, roleIcon: null }],
+    };
+    let games = [stored];
+    renderPage({
+      listGames: vi.fn(() => Promise.resolve(games)),
+      replaceGame: vi.fn((_gameId: string, input) => {
+        games = [
+          {
+            ...stored,
+            gameRoles: [
+              {
+                ...stored.gameRoles![0],
+                roleIcon: input.gameRoles![0].roleIcon,
+              },
+            ],
+          },
+        ];
+        return Promise.resolve(games[0]);
+      }),
+    });
+    const form = await editForm("Catan");
+    await chooseOption(iconField(roleRow(form, 1)), en.roleIcon.wrench);
+    click(form, en.gameEditSubmit);
+    await waitFor(() =>
+      expect(
+        screen.queryByRole("button", { name: en.gameEditSubmit }),
+      ).toBeNull(),
+    );
+
+    expect(iconShown(roleRow(await editForm("Catan"), 1))).toBe(
+      en.roleIcon.wrench,
+    );
   });
 });

@@ -7,6 +7,8 @@ import {
   ChevronDown,
   ChevronRight,
   Copy,
+  Cross,
+  Crosshair,
   Gamepad2,
   House,
   Link,
@@ -17,15 +19,30 @@ import {
   Plus,
   RotateCcw,
   Shield,
+  Star,
+  Sword,
   Trash,
   User,
   Upload,
   UserMinus,
   UserPlus,
   Users,
+  Wrench,
   X,
   type LucideIcon,
 } from "lucide-react";
+import type { RoleIcon } from "../api";
+
+/** The role icons are the contract's own names (ADR 0024): a new contract value fails to compile until it has a glyph. */
+const roleIcons = {
+  shield: Shield,
+  "medical-cross": Cross,
+  // The library has no dagger; a sword is the closest blade.
+  dagger: Sword,
+  crosshair: Crosshair,
+  wrench: Wrench,
+  star: Star,
+} satisfies Record<Exclude<RoleIcon, "none">, LucideIcon>;
 
 /**
  * The only map from our icon names to the icon library (ADR 0021): swapping the library rewrites this file alone.
@@ -59,6 +76,7 @@ const icons = {
   selected: Check,
   upload: Upload,
   you: User,
+  ...roleIcons,
 } satisfies Record<string, LucideIcon>;
 
 export type IconName = keyof typeof icons;

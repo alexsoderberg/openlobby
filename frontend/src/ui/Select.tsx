@@ -2,7 +2,13 @@
 // Edited per ADR 0023 point 2: class lists read our tokens; type, shadow and motion live in global.css under
 // [data-slot="select-*"], and the phone sheet is the `phone:` variant plus one wrapper rule there.
 import * as RadixSelect from "@radix-ui/react-select";
-import { useRef, useState, type ReactNode, type Ref } from "react";
+import {
+  useRef,
+  useState,
+  type ReactNode,
+  type Ref,
+  type SyntheticEvent,
+} from "react";
 import { classNames } from "./classNames";
 import { Icon } from "./Icon";
 
@@ -72,6 +78,7 @@ export function Select({
   placeholder,
   name,
   disabled,
+  reportRepick,
   "aria-invalid": invalid,
   "aria-describedby": describedBy,
 }: {
@@ -85,6 +92,9 @@ export function Select({
   placeholder?: string;
   name?: string;
   disabled?: boolean;
+  /** Calls `onValueChange` also when the shown value is picked again, for a field that shows a default until a
+   *  person picks (ADR 0024 section 4). Radix reports only changes. */
+  reportRepick?: boolean;
   /** The error look and state, as on the other fields; the form shows the error text. */
   "aria-invalid"?: boolean;
   "aria-describedby"?: string;
@@ -92,6 +102,12 @@ export function Select({
   const [open, setOpen] = useState(false);
   // +1 or -1 while the list closes on Tab or Shift+Tab, so focus moves on instead of back to the field.
   const tabStep = useRef(0);
+  // Set while the shown option is being picked; the list then closes without a change from Radix.
+  const repicked = useRef(false);
+  // Radix prevents the pointer up that opened the list, and then picks nothing.
+  const markRepick = (event: SyntheticEvent) => {
+    if (!event.defaultPrevented) repicked.current = true;
+  };
 
   function focusAfterTab(event: Event) {
     const step = tabStep.current;
@@ -111,7 +127,11 @@ export function Select({
       }
       onValueChange={(next) => onValueChange(fromRadix(next))}
       open={open}
-      onOpenChange={setOpen}
+      onOpenChange={(next) => {
+        if (!next && reportRepick && repicked.current) onValueChange(value);
+        repicked.current = false;
+        setOpen(next);
+      }}
       disabled={disabled}
     >
       <RadixSelect.Trigger
@@ -144,6 +164,9 @@ export function Select({
             setOpen(false);
           }}
           onCloseAutoFocus={focusAfterTab}
+          onEscapeKeyDown={() => {
+            repicked.current = false;
+          }}
         >
           <RadixSelect.Viewport>
             {options.map((option) => (
@@ -152,6 +175,15 @@ export function Select({
                 value={toRadix(option.value)}
                 textValue={option.label}
                 disabled={option.disabled}
+                // The ways Radix picks an item; a pick of another option is a change Radix reports itself.
+                {...(option.value === value && {
+                  onPointerUp: markRepick,
+                  onClick: markRepick,
+                  onKeyDown: (event) => {
+                    if (event.key === "Enter" || event.key === " ")
+                      markRepick(event);
+                  },
+                })}
                 data-slot="select-item"
                 className={classNames(
                   selectVariants.item,
@@ -159,7 +191,12 @@ export function Select({
                 )}
               >
                 <RadixSelect.ItemText>
-                  {option.leading}
+                  {/* Its own box, so the label stays plain text and still truncates in the field. */}
+                  {option.leading && (
+                    <span className="inline-flex align-middle me-(--space-2)">
+                      {option.leading}
+                    </span>
+                  )}
                   {option.label}
                 </RadixSelect.ItemText>
                 <RadixSelect.ItemIndicator className="ms-auto">

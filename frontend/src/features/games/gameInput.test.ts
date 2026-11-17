@@ -104,8 +104,10 @@ describe("parseGameInput with modes and game roles", () => {
     });
   });
 
-  it("sends a mode with game roles without a max, keeping ids", () => {
-    const roles = [{ key: "r1", id: "r1", name: " Tank ", slots: "1" }];
+  it("sends a mode with game roles without a max, keeping ids, and saves the suggested icon of a role without one", () => {
+    const roles = [
+      { key: "r1", id: "r1", name: " Tank ", slots: "1", roleIcon: null },
+    ];
     const result = parse({
       gameRoles: [],
       modes: [mode({ id: "m1", gameRoles: roles, maxPlayers: "8" })],
@@ -117,7 +119,9 @@ describe("parseGameInput with modes and game roles", () => {
           {
             id: "m1",
             maxPlayers: null,
-            gameRoles: [{ id: "r1", name: "Tank", slots: 1 }],
+            gameRoles: [
+              { id: "r1", name: "Tank", slots: 1, roleIcon: "shield" },
+            ],
           },
         ],
       },
@@ -125,19 +129,23 @@ describe("parseGameInput with modes and game roles", () => {
   });
 
   it("keeps the stored default max and leaves the game roles out while the game has modes", () => {
-    const hidden = [{ key: "r1", id: "r1", name: "Tank", slots: "1" }];
+    const hidden = [
+      { key: "r1", id: "r1", name: "Tank", slots: "1", roleIcon: null },
+    ];
     const result = parse({ gameRoles: hidden, modes: [mode({})] }, "", 6);
     expect(result).toMatchObject({ ok: true, input: { defaultMaxPlayers: 6 } });
     expect(result).toHaveProperty("input.gameRoles", undefined);
   });
 
-  it("sends the game roles and no default max for a game without modes", () => {
-    const roles = [{ key: "r1", name: "Tank", slots: "2" }];
+  it("sends the game roles and no default max for a game without modes, keeping a stored No icon", () => {
+    const roles = [
+      { key: "r1", name: "Tank", slots: "2", roleIcon: "none" as const },
+    ];
     expect(parse({ gameRoles: roles, modes: [] }, "9")).toMatchObject({
       ok: true,
       input: {
         defaultMaxPlayers: null,
-        gameRoles: [{ name: "Tank", slots: 2 }],
+        gameRoles: [{ name: "Tank", slots: 2, roleIcon: "none" }],
         modes: [],
       },
     });
@@ -159,13 +167,17 @@ describe("parseGameInput with modes and game roles", () => {
     ],
     [
       "a game role name",
-      mode({ gameRoles: [{ key: "r1", name: "", slots: "1" }] }),
+      mode({
+        gameRoles: [{ key: "r1", name: "", slots: "1", roleIcon: null }],
+      }),
       "invalid_game_role",
       "r1-name",
     ],
     [
       "game role slots",
-      mode({ gameRoles: [{ key: "r1", name: "Tank", slots: "0" }] }),
+      mode({
+        gameRoles: [{ key: "r1", name: "Tank", slots: "0", roleIcon: null }],
+      }),
       "invalid_capacity",
       "r1-slots",
     ],

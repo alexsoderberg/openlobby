@@ -7,8 +7,10 @@ import {
   type ReactNode,
   type SetStateAction,
 } from "react";
+import type { RoleIcon } from "../../api";
 import { useMessages } from "../../i18n";
-import { ConfirmDialog, Icon, IconButton } from "../../ui";
+import { ConfirmDialog, Icon, IconButton, Select } from "../../ui";
+import { ROLE_ICONS } from "./roleIcons";
 import {
   emptyActivity,
   emptyMode,
@@ -17,6 +19,7 @@ import {
   patchItem,
   removeActivity,
   removeItem,
+  roleIconOf,
   sumSlots,
   usesOwnLimit,
   type ModeDraft,
@@ -445,6 +448,13 @@ function RoleFieldset({
                       )
                     }
                   />
+                  <RoleIconField
+                    id={`${id}-${role.key}-icon`}
+                    value={roleIconOf(role)}
+                    onChange={(roleIcon) =>
+                      onChange(patchItem(roles, role.key, { roleIcon }))
+                    }
+                  />
                 </StructureRow>
               </li>
             ))}
@@ -496,6 +506,38 @@ function StructureRow({
         {m.gameRemove}
       </button>
     </fieldset>
+  );
+}
+
+/** A game role's icon: the fixed set with text labels, "No icon" first. A pick here stops the name's suggestion. */
+function RoleIconField({
+  id,
+  value,
+  onChange,
+}: {
+  id: string;
+  value: RoleIcon;
+  onChange: (roleIcon: RoleIcon) => void;
+}) {
+  const m = useMessages();
+  return (
+    <div className="structure-field">
+      <label htmlFor={id}>{m.gameRoleIconLabel}</label>
+      <Select
+        id={id}
+        value={value}
+        reportRepick
+        onValueChange={(next) => {
+          const picked = ROLE_ICONS.find((icon) => icon === next);
+          if (picked) onChange(picked);
+        }}
+        options={ROLE_ICONS.map((icon) => ({
+          value: icon,
+          label: m.roleIcon[icon],
+          leading: icon === "none" ? undefined : <Icon name={icon} />,
+        }))}
+      />
+    </div>
   );
 }
 

@@ -18,6 +18,7 @@ export type CreateLobbyInput =
   calendarComponents["schemas"]["CreateLobbyRequest"];
 /** A game role and a mode as the game list sends them. */
 export type GameRole = calendarComponents["schemas"]["GameRole"];
+export type RoleIcon = calendarComponents["schemas"]["RoleIcon"];
 export type GameMode = calendarComponents["schemas"]["GameMode"];
 /** What a player chooses when joining a lobby with game roles: `{gameRoleId}` or `{flex: true}`. */
 export type Seat = calendarComponents["schemas"]["JoinLobbyRequest"];

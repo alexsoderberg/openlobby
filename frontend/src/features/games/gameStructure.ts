@@ -13,8 +13,15 @@ import {
   type Game,
   type GameModeInput,
   type GameRoleInput,
+  type RoleIcon,
 } from "../../api";
-import { ACTIVITY_TAKEN, GAME_ROLE_TAKEN, MODE_TAKEN } from "./gameErrors";
+import {
+  ACTIVITY_TAKEN,
+  GAME_ROLE_TAKEN,
+  INVALID_ROLE_ICON,
+  MODE_TAKEN,
+} from "./gameErrors";
+import { suggestRoleIcon } from "./roleIcons";
 
 /** What the admin is typing: the entries of a game, with text for every number so a half-typed value is kept. */
 export type RoleDraft = {
@@ -22,6 +29,8 @@ export type RoleDraft = {
   id?: string;
   name: string;
   slots: string;
+  /** `null` until the admin picks an icon by hand: the icon then follows the name's suggestion (ADR 0024 section 4). */
+  roleIcon: RoleIcon | null;
 };
 export type ActivityDraft = { key: string; id?: string; name: string };
 export type ModeDraft = {
@@ -54,6 +63,7 @@ export const emptyRole = (): RoleDraft => ({
   key: newKey(),
   name: "",
   slots: "1",
+  roleIcon: null,
 });
 export const emptyActivity = (): ActivityDraft => ({ key: newKey(), name: "" });
 export const emptyMode = (): ModeDraft => ({
@@ -71,6 +81,7 @@ export function draftFromGame(game?: Game): StructureDraft {
       id: role.id,
       name: role.name,
       slots: String(role.slots),
+      roleIcon: role.roleIcon ?? null,
     }));
   return {
     gameRoles: roles(game?.gameRoles),
@@ -101,6 +112,10 @@ export function patchItem<T extends { key: string }>(
 export const removeItem = <T extends { key: string }>(list: T[], key: string) =>
   list.filter((item) => item.key !== key);
 
+/** The icon the role's field shows and the form saves: the one picked, or the name's suggestion. */
+export const roleIconOf = (role: RoleDraft) =>
+  role.roleIcon ?? suggestRoleIcon(role.name);
+
 /** A whole number in the max players range. Empty is not a number here: slots and a mode's max are required. */
 function parseWhole(text: string): number | undefined {
   return parseMaxPlayers(text) ?? undefined;
@@ -128,7 +143,7 @@ function parseRoles(roles: RoleDraft[]): Parsed<GameRoleInput[]> {
       return fail(INVALID_GAME_ROLE, `${role.key}-name`);
     const slots = parseWhole(role.slots);
     if (slots === undefined) return fail(INVALID_CAPACITY, `${role.key}-slots`);
-    value.push({ id: role.id, name, slots });
+    value.push({ id: role.id, name, slots, roleIcon: roleIconOf(role) });
   }
   return { ok: true, value };
 }
@@ -237,7 +252,11 @@ const MODE_CODES: readonly string[] = [
   INVALID_ACTIVITY,
   ACTIVITY_TAKEN,
 ];
-const ROLE_CODES: readonly string[] = [INVALID_GAME_ROLE, GAME_ROLE_TAKEN];
+const ROLE_CODES: readonly string[] = [
+  INVALID_GAME_ROLE,
+  GAME_ROLE_TAKEN,
+  INVALID_ROLE_ICON,
+];
 
 /** Which part of the form an error code is about. Roles are on the modes while the game has modes. */
 export function errorSection(

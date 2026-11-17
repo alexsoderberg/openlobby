@@ -66,6 +66,12 @@ const everyIcon: Record<IconName, true> = {
   selected: true,
   upload: true,
   you: true,
+  shield: true,
+  "medical-cross": true,
+  dagger: true,
+  crosshair: true,
+  wrench: true,
+  star: true,
 };
 
 describe("Icon", () => {

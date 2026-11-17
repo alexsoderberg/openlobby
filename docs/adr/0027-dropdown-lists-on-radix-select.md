@@ -128,6 +128,8 @@ PR slices:
 
 Each PR is reviewed on its own, after its own work. The reviewer checks A and B2 against this ADR.
 
+**Amendment 2026-11-17 (ADR 0024 PR2).** Point 2 gains one optional prop, `reportRepick?: boolean`. With it on, picking the option that is already shown also calls `onValueChange`, because Radix reports only changes. The role icon field uses it, so a pick by hand of the shown icon (including "No icon") stops the name suggestion (ADR 0024 point 4). It is opt-in because other lists act on a change (`onChoose`, `onModeChange`) and must not run again on a repick. Radix stays inside `ui/Select.tsx`.
+
 ## Consequences
 
 - One new direct dependency, exact pin. Measured in PR A: +30.6 KB gzip JS and +0.54 KB gzip CSS, far above the 6 to 9 KB estimate (see Amendment 2026-11-17, PR A findings). Later Radix packages share these parts, so they cost less.
