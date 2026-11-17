@@ -201,7 +201,7 @@ describe("Next up", () => {
 describe("game logo", () => {
   const VERSION = "c".repeat(64);
 
-  it("shows the logo before the game name on Next up, and not in This week", async () => {
+  it("shows the logo on Next up, small in the This week grid, and not in the Day list", async () => {
     renderDashboard({
       g1: [
         lobby("l1", "Overwatch 2", at(4, 20), at(4, 22), {
@@ -220,10 +220,17 @@ describe("game logo", () => {
     );
     expect(logo?.getAttribute("alt")).toBe("");
     expect(card.getByRole("link", { name: "Overwatch 2" })).toBeTruthy();
-    // The same lobby is in This week, as text only.
-    expect(document.querySelectorAll('[data-slot="game-logo"]')).toHaveLength(
-      1,
-    );
+    const sizes = () =>
+      [...document.querySelectorAll('[data-slot="game-logo"]')].map((box) =>
+        box.getAttribute("data-size"),
+      );
+    expect(sizes()).toEqual(["large", "small"]);
+    const view = (name: string) =>
+      fireEvent.click(screen.getByRole("button", { name }));
+    view(en.dashboard.viewDays);
+    expect(sizes()).toEqual(["large"]);
+    // The view choice is remembered; later tests expect the calendar.
+    view(en.dashboard.viewCalendar);
   });
 
   it("shows the monogram for a game without a logo", async () => {
