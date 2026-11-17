@@ -1,10 +1,13 @@
-import type { Ref } from "react";
+import { useState, type Ref } from "react";
 import type { Game } from "../../api";
 import { GENRE_OPTIONS } from "../../genres";
 import { useMessages } from "../../i18n";
 import { Select } from "../../ui";
 
-/** The genre choice: "No genre" first (empty value), then the fixed list. `errorId` is set when the form's error is about this field. */
+/**
+ * The genre choice: "No genre" first (empty value), then the fixed list. `errorId` is set when the form's error is
+ * about this field. A form reset puts back the game's genre.
+ */
 export function GameGenreField({
   id,
   ref,
@@ -12,11 +15,12 @@ export function GameGenreField({
   errorId,
 }: {
   id: string;
-  ref: Ref<HTMLSelectElement>;
+  ref: Ref<HTMLButtonElement>;
   genre: Game["genre"];
   errorId?: string;
 }) {
   const m = useMessages();
+  const [value, setValue] = useState<string>(genre ?? "");
   return (
     <>
       <label htmlFor={id}>{m.gameGenreLabel}</label>
@@ -24,17 +28,18 @@ export function GameGenreField({
         id={id}
         ref={ref}
         name="genre"
-        defaultValue={genre ?? ""}
+        value={value}
+        onValueChange={setValue}
         aria-invalid={errorId !== undefined || undefined}
         aria-describedby={errorId}
-      >
-        <option value="">{m.genre.none}</option>
-        {GENRE_OPTIONS.map((option) => (
-          <option key={option} value={option}>
-            {m.genre[option]}
-          </option>
-        ))}
-      </Select>
+        options={[
+          { value: "", label: m.genre.none },
+          ...GENRE_OPTIONS.map((option) => ({
+            value: option,
+            label: m.genre[option],
+          })),
+        ]}
+      />
     </>
   );
 }

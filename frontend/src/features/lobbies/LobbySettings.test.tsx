@@ -14,6 +14,7 @@ import {
   type LobbyDetail,
 } from "../../api";
 import { en } from "../../i18n/messages/en";
+import { chooseOption, optionNames } from "../../test/chooseOption";
 import { fakeApiClient } from "../../test/fakeApiClient";
 import { LobbySettings } from "./LobbySettings";
 
@@ -82,11 +83,9 @@ function renderSettings(
 }
 
 const modeSelect = () =>
-  screen.findByRole<HTMLSelectElement>("combobox", { name: en.lobbyModeLabel });
+  screen.findByRole("combobox", { name: en.lobbyModeLabel });
 const chooseMode = async (name: string) =>
-  fireEvent.change(await modeSelect(), {
-    target: { value: name === "Duo" ? "m-duo" : "m-raid" },
-  });
+  chooseOption(await modeSelect(), name);
 const confirm = async () =>
   fireEvent.click(
     within(await screen.findByRole("dialog")).getByRole("button", {
@@ -122,29 +121,28 @@ describe("who sees the mode and activity", () => {
   it("offers the game's modes and the activities of the current mode", async () => {
     renderSettings();
 
-    expect(
-      within(await modeSelect())
-        .getAllByRole("option")
-        .map((o) => o.textContent),
-    ).toEqual(["Raid", "Duo"]);
+    expect(await optionNames(await modeSelect())).toEqual(["Raid", "Duo"]);
     const activity = screen.getByRole("combobox", {
       name: en.lobbyActivityLabel,
     });
-    expect(
-      within(activity)
-        .getAllByRole("option")
-        .map((o) => o.textContent),
-    ).toEqual([en.lobbyActivityNone, "Vault", "Keep"]);
+    expect(await optionNames(activity)).toEqual([
+      en.lobbyActivityNone,
+      "Vault",
+      "Keep",
+    ]);
   });
 
   it("shows the saved name of a mode that is no longer offered", async () => {
     renderSettings({ modeId: "m-gone", modeName: "Old raid" });
 
     const select = await modeSelect();
-    expect(select.value).toBe("m-gone");
+    expect(select.textContent).toBe("Old raid");
+    fireEvent.keyDown(select, { key: "Enter" });
     expect(
-      within(select).getByRole("option", { name: "Old raid" }),
-    ).toBeTruthy();
+      screen
+        .getByRole("option", { name: "Old raid" })
+        .getAttribute("aria-disabled"),
+    ).toBe("true");
   });
 
   it("explains a failed game list and shows the section after a retry", async () => {
@@ -297,9 +295,9 @@ describe("the activity", () => {
   it("sets the chosen activity and loads the lobby again", async () => {
     const { client, onChanged } = renderSettings();
 
-    fireEvent.change(
+    await chooseOption(
       await screen.findByRole("combobox", { name: en.lobbyActivityLabel }),
-      { target: { value: "a-vault" } },
+      "Vault",
     );
 
     await waitFor(() => expect(onChanged).toHaveBeenCalled());
@@ -310,9 +308,9 @@ describe("the activity", () => {
   it("clears the activity and keeps the mode", async () => {
     const { client, onChanged } = renderSettings({ activityId: "a-vault" });
 
-    fireEvent.change(
+    await chooseOption(
       await screen.findByRole("combobox", { name: en.lobbyActivityLabel }),
-      { target: { value: "" } },
+      en.lobbyActivityNone,
     );
 
     await waitFor(() => expect(onChanged).toHaveBeenCalled());
@@ -333,7 +331,7 @@ describe("the activity", () => {
       name: en.lobbyActivityLabel,
     });
 
-    fireEvent.change(select, { target: { value: "a-keep" } });
+    await chooseOption(select, "Keep");
 
     const alert = await screen.findByRole("alert");
     expect(alert.textContent).toBe(en.lobbyErrors.invalid_activity);
@@ -345,11 +343,9 @@ describe("the activity", () => {
 describe("setting the game of an open lobby", () => {
   const open = { gameId: null, gameName: null, modeId: null, modeName: null };
   const gameSelect = () =>
-    screen.findByRole<HTMLSelectElement>("combobox", {
-      name: en.lobbyGameLabel,
-    });
+    screen.findByRole("combobox", { name: en.lobbyGameLabel });
   const setGame = async () => {
-    fireEvent.change(await gameSelect(), { target: { value: "game1" } });
+    await chooseOption(await gameSelect(), "Destiny");
     fireEvent.click(
       screen.getByRole("button", { name: en.lobbyGameSetSubmit }),
     );
@@ -366,11 +362,8 @@ describe("setting the game of an open lobby", () => {
     const { client } = renderSettings(open);
 
     const select = await gameSelect();
-    expect(
-      within(select)
-        .getAllByRole("option")
-        .map((o) => o.textContent),
-    ).toEqual([en.lobbyGameSetChoose, "Destiny"]);
+    expect(select.textContent).toBe(en.lobbyGameSetChoose);
+    expect(await optionNames(select)).toEqual(["Destiny"]);
     expect(
       (
         screen.getByRole("button", {

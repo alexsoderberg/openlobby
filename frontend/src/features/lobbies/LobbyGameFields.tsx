@@ -61,16 +61,13 @@ function GameSelect({
         {...fieldProps(`${id}-game`, true, errorId)}
         name="game"
         value={value}
-        onChange={(event) => onChange(event.target.value)}
-      >
-        <option value="">{m.lobbyGameNone}</option>
-        {games.map((game) => (
-          <option key={game.id} value={game.id}>
-            {game.name}
-          </option>
-        ))}
-        <option value={OTHER_GAME}>{m.lobbyGameOther}</option>
-      </Select>
+        onValueChange={onChange}
+        options={[
+          { value: "", label: m.lobbyGameNone },
+          ...games.map((game) => ({ value: game.id, label: game.name })),
+          { value: OTHER_GAME, label: m.lobbyGameOther },
+        ]}
+      />
     </LobbyField>
   );
 }

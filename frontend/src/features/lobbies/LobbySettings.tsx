@@ -132,7 +132,9 @@ function useSettingChange(
     const toResult = outcome.field === "game" && reloads(outcome.code);
     root.current
       ?.querySelector<HTMLElement>(
-        toResult ? `[data-result="game"]` : `[name="${outcome.field}"]`,
+        toResult
+          ? `[data-result="game"]`
+          : `[role="combobox"][id$="-${outcome.field}"]`,
       )
       ?.focus();
   }, [outcome, root]);
@@ -179,20 +181,12 @@ function GameForm({
       <LobbyField id={id} label={m.lobbyGameLabel} hint={m.lobbyGameSetHint}>
         <Select
           {...fieldProps(id, true, errorId)}
-          name="game"
           value={gameId}
           disabled={busy}
-          onChange={(event) => setGameId(event.target.value)}
-        >
-          <option value="" disabled>
-            {m.lobbyGameSetChoose}
-          </option>
-          {games.map((game) => (
-            <option key={game.id} value={game.id}>
-              {game.name}
-            </option>
-          ))}
-        </Select>
+          onValueChange={setGameId}
+          placeholder={m.lobbyGameSetChoose}
+          options={games.map((game) => ({ value: game.id, label: game.name }))}
+        />
       </LobbyField>
       <div className="form-actions">
         <button
@@ -305,25 +299,26 @@ function ModeSelect({
     <LobbyField id={id} label={m.lobbyModeLabel} hint={m.lobbyModeChangeHint}>
       <Select
         {...fieldProps(id, true, errorId)}
-        name="mode"
         value={lobby.modeId ?? ""}
         disabled={disabled}
-        onChange={(event) =>
-          onChoose(modes.find((mode) => mode.id === event.target.value))
+        onValueChange={(value) =>
+          onChoose(modes.find((mode) => mode.id === value))
         }
-      >
-        {/* A mode the admin has removed stays with the lobby under its saved name, but is not offered. */}
-        {!known && (
-          <option value={lobby.modeId ?? ""} disabled>
-            {lobby.modeName ?? m.lobbyModeChoose}
-          </option>
-        )}
-        {modes.map((mode) => (
-          <option key={mode.id} value={mode.id}>
-            {mode.name}
-          </option>
-        ))}
-      </Select>
+        placeholder={m.lobbyModeChoose}
+        options={[
+          // A mode the admin has removed stays with the lobby under its saved name, but is not offered.
+          ...(lobby.modeId && !known
+            ? [
+                {
+                  value: lobby.modeId,
+                  label: lobby.modeName ?? m.lobbyModeChoose,
+                  disabled: true,
+                },
+              ]
+            : []),
+          ...modes.map((mode) => ({ value: mode.id, label: mode.name })),
+        ]}
+      />
     </LobbyField>
   );
 }
@@ -349,18 +344,17 @@ function ActivitySelect({
     <LobbyField id={id} label={m.lobbyActivityLabel}>
       <Select
         {...fieldProps(id, false, errorId)}
-        name="activity"
         value={value}
         disabled={disabled}
-        onChange={(event) => onChoose(event.target.value)}
-      >
-        <option value="">{m.lobbyActivityNone}</option>
-        {activities.map((activity) => (
-          <option key={activity.id} value={activity.id}>
-            {activity.name}
-          </option>
-        ))}
-      </Select>
+        onValueChange={onChoose}
+        options={[
+          { value: "", label: m.lobbyActivityNone },
+          ...activities.map((activity) => ({
+            value: activity.id,
+            label: activity.name,
+          })),
+        ]}
+      />
     </LobbyField>
   );
 }

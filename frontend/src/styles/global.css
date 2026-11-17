@@ -1,7 +1,13 @@
 /* Tailwind utilities for ui/ only (ADR 0023): no theme and no preflight, so the tokens below stay the one source. */
 @import "tailwindcss/utilities.css" layer(utilities) source(none);
 @source "../ui";
-@source not inline("visible fixed container block hidden transform resize");
+@source not inline("visible container block hidden transform resize");
+/* Phone: a narrow window or a touch pointer, so a touch tablet gets the phone form too (ADR 0027 point 4). */
+@custom-variant phone {
+  @media (width < 47.5rem), (pointer: coarse) {
+    @slot;
+  }
+}
 
 /* Self-hosted fonts (OFL, Latin subset). font-display: swap keeps text visible in the fallback stack while a file loads. */
 @font-face {
@@ -191,6 +197,12 @@
   --color-accent-line: rgba(240, 199, 94, 0.45);
   --color-popover-top: #18181e;
   --shadow-popover: 0 30px 80px rgba(0, 0, 0, 0.55);
+  /* Dropdown list (ADR 0027 point 4): above the tab bar (60) and the floating "+" (55), below the toaster. */
+  --z-dropdown-list: 70;
+  --width-accent-edge: 2px;
+  --size-scrim-spread: 100vmax; /* a shadow this wide covers any window */
+  --size-sheet-max: 70dvh;
+  --sheet-safe-bottom: calc(var(--space-2) + env(safe-area-inset-bottom));
   --ease-overshoot: cubic-bezier(0.3, 1.35, 0.5, 1);
   --ease-in: cubic-bezier(0.55, 0, 0.75, 0);
   --scale-closed: 0.08;
@@ -261,6 +273,11 @@
     }
 
     * {
+      scrollbar-width: thin;
+    }
+
+    /* Radix hides the dropdown list's scrollbar in its own style tag; (0,2,0) wins over its one attribute. */
+    [data-slot="select-content"] [data-radix-select-viewport] {
       scrollbar-width: thin;
     }
   }
@@ -676,6 +693,93 @@ a {
   transition-duration: var(--duration-fast);
 }
 
+/* Dropdown list (ADR 0027): colour, radius and box are utilities in ui/Select.tsx; type, shadow and motion are
+   here. The panel grows from the field; on phones it is a sheet that rises from the bottom edge. */
+[data-slot="select-trigger"],
+[data-slot="select-content"] {
+  /* border utility's style is a registered variable; some browsers lack it (ADR 0023 B2 amendment d) */
+  border-style: solid;
+}
+
+[data-slot="select-trigger"] {
+  font: inherit;
+  text-align: start;
+}
+
+[data-slot="select-content"] {
+  box-shadow: var(--shadow-popover);
+  transform-origin: var(--radix-select-content-transform-origin);
+}
+
+[data-slot="select-content"][data-state="open"] {
+  animation: dropdown-in var(--duration-page) var(--ease-out);
+}
+
+[data-slot="select-content"][data-state="closed"] {
+  animation: dropdown-out var(--duration-page-out) var(--ease-in) forwards;
+}
+
+/* The highlighted row is the keyboard focus: the wash and an accent edge mark it in place of the outline. */
+[data-slot="select-item"]:focus-visible {
+  outline: none;
+}
+
+[data-slot="select-item"][data-highlighted] {
+  box-shadow: inset var(--width-accent-edge) 0 0 var(--color-accent);
+}
+
+@keyframes dropdown-in {
+  from {
+    opacity: 0;
+    transform: scale(var(--press-scale));
+  }
+}
+
+@keyframes dropdown-out {
+  to {
+    opacity: 0;
+    transform: scale(var(--press-scale));
+  }
+}
+
+@keyframes sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(var(--rise-offset));
+  }
+}
+
+@keyframes sheet-out {
+  to {
+    opacity: 0;
+    transform: translateY(var(--rise-offset));
+  }
+}
+
+@media (width < 47.5rem), (pointer: coarse) {
+  /* The spread shadow dims the page behind the sheet, so a tap outside reads as "close". */
+  [data-slot="select-content"] {
+    box-shadow:
+      var(--shadow-popover),
+      0 0 0 var(--size-scrim-spread) var(--color-scrim);
+  }
+
+  [data-slot="select-content"][data-state="open"] {
+    animation-name: sheet-in;
+  }
+
+  [data-slot="select-content"][data-state="closed"] {
+    animation-name: sheet-out;
+  }
+
+  /* Radix writes the wrapper's transform inline, and will-change on screens of 1.5 dppx and up; either makes
+     the wrapper the sheet's containing block. On phones the sheet must sit on the viewport (ADR 0027 point 4). */
+  [data-radix-popper-content-wrapper]:has(> [data-slot="select-content"]) {
+    transform: none !important;
+    will-change: auto !important;
+  }
+}
+
 .alert {
   margin: 0 0 var(--space-3);
   padding: var(--space-3);
@@ -977,9 +1081,9 @@ a {
   font-weight: 600;
 }
 
-/* Fields share the button heights (ADR 0021), so a field and a button in one row line up. Native controls
-   are kept for the keyboard, screen readers and mobile pickers; :root's color-scheme makes the pickers dark. */
-.group-form :is(input, select):where(:not([type="radio"], [type="checkbox"])),
+/* Fields share the button heights (ADR 0021), so a field and a button in one row line up. Date and time inputs
+   stay native; :root's color-scheme makes their pickers dark. Dropdown lists are ui/Select.tsx (ADR 0027). */
+.group-form input:where(:not([type="radio"], [type="checkbox"])),
 .invite-link__url {
   min-height: var(--size-button);
   padding: 0 var(--space-2);
@@ -992,58 +1096,24 @@ a {
 }
 
 @media (pointer: coarse) {
-  .group-form :is(input, select):where(:not([type="radio"], [type="checkbox"])),
+  .group-form input:where(:not([type="radio"], [type="checkbox"])),
   .invite-link__url {
     min-height: var(--size-button-touch);
   }
 }
 
-.group-form
-  :is(input, select):where(
-    :not([type="radio"], [type="checkbox"])
-  ):enabled:hover,
+.group-form input:where(:not([type="radio"], [type="checkbox"])):enabled:hover,
 .invite-link__url:hover {
   border-color: var(--color-text);
 }
 
-.group-form
-  :is(input, select):where(:not([type="radio"], [type="checkbox"])):disabled {
+.group-form input:where(:not([type="radio"], [type="checkbox"])):disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
 .group-form input {
   width: 100%;
-}
-
-/* The select's own arrow gives way to the Select component's chevron icon (ADR 0021). Date and time inputs
-   keep their native look, so their picker icon stays. */
-.group-form select {
-  appearance: none;
-  padding-inline-end: calc(var(--space-2) * 2 + 1em);
-  cursor: pointer;
-}
-
-.select {
-  position: relative;
-  display: inline-grid;
-  align-items: center;
-}
-
-.select__chevron {
-  position: absolute;
-  right: var(--space-2);
-  color: var(--color-muted);
-  pointer-events: none;
-}
-
-.select:has(select:disabled) .select__chevron {
-  opacity: 0.5;
-}
-
-.group-form option {
-  background-color: var(--color-bg-raised);
-  color: var(--color-text);
 }
 
 /* WebKit only, in rules of their own so Firefox, which does not know these, keeps the rest. */
@@ -1055,7 +1125,6 @@ a {
   text-align: start;
 }
 
-.group-form .select,
 .group-form .button {
   justify-self: start;
 }

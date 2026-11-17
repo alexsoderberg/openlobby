@@ -8,6 +8,7 @@ import {
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ApiError, ApiProvider, type ApiClient } from "../../api";
 import { en } from "../../i18n/messages/en";
+import { chooseOption } from "../../test/chooseOption";
 import { fakeApiClient } from "../../test/fakeApiClient";
 import { InviteLinks } from "./InviteLinks";
 
@@ -169,11 +170,7 @@ describe("create invite link", () => {
     await screen.findByText(en.inviteLinksEmpty);
 
     expect(
-      (
-        screen.getByRole("combobox", {
-          name: en.inviteMaxUsesLabel,
-        }) as HTMLSelectElement
-      ).value,
+      screen.getByRole("combobox", { name: en.inviteMaxUsesLabel }).textContent,
     ).toBe("1");
     fireEvent.click(
       screen.getByRole("button", { name: en.createInviteLinkSubmit }),
@@ -193,9 +190,9 @@ describe("create invite link", () => {
     renderLinks(client);
     await screen.findByText(en.inviteLinksEmpty);
 
-    fireEvent.change(
+    await chooseOption(
       screen.getByRole("combobox", { name: en.inviteMaxUsesLabel }),
-      { target: { value: "3" } },
+      "3",
     );
     fireEvent.click(
       screen.getByRole("button", { name: en.createInviteLinkSubmit }),

@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError, ApiProvider, type ApiClient } from "../../api";
 import { en } from "../../i18n/messages/en";
+import { chooseOption, optionNames } from "../../test/chooseOption";
 import { fakeApiClient } from "../../test/fakeApiClient";
 import { CreateLobby } from "./CreateLobby";
 
@@ -59,7 +60,7 @@ const submit = () =>
 
 /** Fills the form for tomorrow, 18:00 to 20:00, with a listed game. */
 async function fillValid(times: { start?: string; end?: string } = {}) {
-  set(await field(en.lobbyGameLabel), "g-catan");
+  await chooseOption(await field(en.lobbyGameLabel), "Catan");
   set(await field(en.lobbyDateLabel), "2026-11-05");
   set(await field(en.lobbyStartLabel), times.start ?? "18:00");
   set(await field(en.lobbyEndLabel), times.end ?? "20:00");
@@ -70,7 +71,7 @@ describe("game choice", () => {
     renderForm();
 
     const select = await field(en.lobbyGameLabel);
-    expect(Array.from(select.options, (option) => option.text)).toEqual([
+    expect(await optionNames(select)).toEqual([
       en.lobbyGameNone,
       "Chess",
       "Catan",
@@ -83,10 +84,10 @@ describe("game choice", () => {
     const select = await field(en.lobbyGameLabel);
     const max = await field(en.lobbyMaxPlayersLabel);
 
-    set(select, "g-catan");
+    await chooseOption(select, "Catan");
     expect((await field(en.lobbyMaxPlayersLabel)).value).toBe("4");
     set(await field(en.lobbyMaxPlayersLabel), "6");
-    set(select, "g-chess");
+    await chooseOption(select, "Chess");
     expect((await field(en.lobbyMaxPlayersLabel)).value).toBe("");
     expect(max.isConnected).toBe(false);
   });
@@ -95,7 +96,7 @@ describe("game choice", () => {
     renderForm();
     expect(screen.queryByLabelText(en.lobbyCustomGameLabel)).toBeNull();
 
-    set(await field(en.lobbyGameLabel), "other");
+    await chooseOption(await field(en.lobbyGameLabel), "Other");
 
     expect(await field(en.lobbyCustomGameLabel)).toBeTruthy();
     expect((await field(en.lobbyMaxPlayersLabel)).value).toBe("");
@@ -135,7 +136,7 @@ describe("saving a lobby", () => {
   it("sends a free-text game with the unlimited max as null", async () => {
     const { client } = renderForm();
     await fillValid();
-    set(await field(en.lobbyGameLabel), "other");
+    await chooseOption(await field(en.lobbyGameLabel), "Other");
     set(await field(en.lobbyCustomGameLabel), "  Dominion ");
 
     submit();
@@ -153,7 +154,7 @@ describe("saving a lobby", () => {
   it("creates an open lobby with no game when none is chosen", async () => {
     const { client, onCreated } = renderForm();
     await fillValid();
-    set(await field(en.lobbyGameLabel), "");
+    await chooseOption(await field(en.lobbyGameLabel), en.lobbyGameNone);
 
     submit();
 
@@ -219,7 +220,7 @@ describe("local checks", () => {
     async (name) => {
       const { client } = renderForm();
       await fillValid();
-      set(await field(en.lobbyGameLabel), "other");
+      await chooseOption(await field(en.lobbyGameLabel), "Other");
       set(await field(en.lobbyCustomGameLabel), name);
 
       await expectDenied(en.errors.invalid_game, en.lobbyCustomGameLabel);
