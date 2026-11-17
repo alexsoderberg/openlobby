@@ -90,6 +90,19 @@ type Group struct {
 	Name string
 }
 
+// MaxOverviewMembers is the number of members a GroupOverview shows (REQ-0024, ADR 0025).
+const MaxOverviewMembers = 5
+
+// GroupOverview is one group of the Group list (ADR 0025). Members are the MaxOverviewMembers who joined first; only
+// their UserID and DisplayName are set. NextLobby is the group's lobby that starts first among those that have not ended,
+// or nil; only its names, genre, times, player count and max players are set.
+type GroupOverview struct {
+	Group       Group
+	MemberCount int
+	Members     []Member
+	NextLobby   *Lobby
+}
+
 // Genre is the genre of a game from a fixed list (REQ-0014, ADR 0016). A nil *Genre means no genre.
 type Genre string
 

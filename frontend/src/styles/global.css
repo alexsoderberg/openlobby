@@ -92,6 +92,8 @@
   --color-shade: rgba(0, 0, 0, 0.18);
   --color-sheen: rgba(255, 255, 255, 0.45);
   --color-row-hover: rgba(255, 255, 255, 0.04);
+  /* The lit top edge of a raised card, so it reads as a plate above the page. */
+  --color-card-edge: rgba(255, 255, 255, 0.06);
 
   --font-display: "Cormorant Garamond", Georgia, serif;
   --font-heading: "Space Grotesk", system-ui, sans-serif;
@@ -142,6 +144,9 @@
   --rise-offset: 110%;
   --stagger-fade: 0.15s;
   --stagger-step: 0.1s;
+  /* Group cards fade up one after another; from the limit on they start together, so a long list is not slow. */
+  --stagger-card: 0.04s;
+  --stagger-card-limit: 8;
   --reveal-delay: 0s;
   --duration-meter: 1.6s;
   --duration-flash: 1.8s;
@@ -1060,9 +1065,11 @@ a {
   justify-self: start;
 }
 
+/* Items keep their own height: the default stretch made Delete lobby as tall as the open seat form beside it. */
 .form-actions {
   display: flex;
   flex-wrap: wrap;
+  align-items: flex-start;
   gap: var(--space-2);
 }
 
@@ -1435,6 +1442,177 @@ a {
 .lobby-row__game,
 .lobby-row__meta {
   overflow-wrap: anywhere;
+}
+
+/* The Group list (REQ-0024, REQ-0025): one column on phones, two from 760px, three on wide main areas. */
+.group-cards {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 47.5rem) {
+  .group-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 75rem) {
+  .group-cards {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* The cards of a row are one height, so the lobby lines line up at the bottom.
+   signature: groups. When the cards appear they fade up in order (--card-index from MyGroups), opacity and
+   transform only; prefers-reduced-motion turns the animation off, so they show at once. */
+.group-cards > li {
+  display: grid;
+  animation: page-in var(--duration-page) var(--ease-out) both;
+  animation-delay: calc(
+    min(var(--card-index, 0), var(--stagger-card-limit)) * var(--stagger-card)
+  );
+}
+
+/* A Group card is one link. The global focus ring draws around the whole card. */
+.group-card {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-height: var(--size-tap);
+  padding: var(--space-4);
+  color: var(--color-text);
+  text-decoration: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-panel);
+  background:
+    radial-gradient(
+      22rem 10rem at 100% 0,
+      var(--color-accent-wash),
+      transparent 70%
+    ),
+    var(--color-surface);
+  box-shadow: inset 0 1px 0 var(--color-card-edge);
+}
+
+/* Hover: an accent edge and a faint tint fade in on a layer, so only opacity moves. */
+.group-card::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  z-index: -1;
+  border: 1px solid var(--color-accent-line);
+  border-radius: inherit;
+  background: var(--color-row-hover);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-base) var(--ease-out);
+}
+
+.group-card:hover::after {
+  opacity: 1;
+}
+
+.group-card__head {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.group-card__name {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-heading);
+  font-weight: 600;
+  letter-spacing: var(--tracking-snug);
+  overflow-wrap: anywhere;
+}
+
+.group-card__count {
+  color: var(--color-muted);
+  font-size: var(--font-size-small);
+}
+
+/* Overlapping initials. Each sits on a solid plate with a ring in the card's colour, so the overlap stays crisp. */
+.group-card__people {
+  display: flex;
+  align-items: center;
+}
+
+.group-card__people > .initials-icon {
+  background:
+    linear-gradient(var(--color-accent-tint), var(--color-accent-tint)),
+    var(--color-bg-raised);
+  box-shadow: 0 0 0 2px var(--color-bg-raised);
+}
+
+.group-card__people > .initials-icon + .initials-icon {
+  margin-left: calc(-1 * var(--space-1));
+}
+
+.group-card__more {
+  margin-left: var(--space-2);
+  color: var(--color-muted);
+  font-family: var(--font-heading);
+  font-size: var(--font-size-small);
+  font-weight: 600;
+}
+
+/* The lobby line sits at the bottom of the card, with its genre's edge, wash and icon (ADR 0016). */
+.group-card__lobby {
+  display: grid;
+  gap: var(--space-1);
+  margin-top: auto;
+  padding: var(--space-2) var(--space-3);
+  padding-right: calc(var(--size-genre-icon) + var(--space-3));
+  border-left: 3px solid var(--genre-accent);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+  @supports (color: color-mix(in lab, red, red)) {
+    background: color-mix(
+      in srgb,
+      var(--genre-accent) var(--genre-wash),
+      transparent
+    );
+  }
+}
+
+.group-card__lobby--none {
+  color: var(--color-muted);
+  border-left-color: var(--color-border);
+  background: none;
+}
+
+.group-card__label {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+/* The start and the player count wrap as wholes, so "3/4 players" never breaks apart. The dot sits in the gap
+   before the count; where the count starts a line, the dot falls left of the box and is clipped, so no line
+   ends or starts with it. */
+.group-card__when {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+  overflow: hidden;
+  color: var(--color-muted);
+  font-size: var(--font-size-small);
+}
+
+.group-card__when > * {
+  white-space: nowrap;
+}
+
+.group-card__dot {
+  display: inline-block;
+  width: var(--space-3);
+  margin-left: calc(-1 * var(--space-3));
+  text-align: center;
 }
 
 .calendar__bar {

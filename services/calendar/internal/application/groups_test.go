@@ -35,6 +35,10 @@ type fakeStore struct {
 	groupErr   error
 	membersErr error
 
+	// overviews is what the overview reader answers; overviewsAt is the time it was asked with.
+	overviews   []domain.GroupOverview
+	overviewsAt time.Time
+
 	created     int
 	createdName string
 	creatorID   string
@@ -44,6 +48,11 @@ type fakeStore struct {
 func (f *fakeStore) ListForUser(_ context.Context, userID string) ([]domain.Group, error) {
 	f.asked = userID
 	return f.listed, f.err
+}
+
+func (f *fakeStore) Overviews(_ context.Context, userID string, at time.Time) ([]domain.GroupOverview, error) {
+	f.asked, f.overviewsAt = userID, at
+	return f.overviews, f.err
 }
 
 func (f *fakeStore) Create(_ context.Context, name, creatorID string, joinedAt time.Time) (domain.Group, error) {
@@ -78,10 +87,12 @@ type fakeDirectory struct {
 	names map[string]string
 	err   error
 	calls int
+	asked []string
 }
 
-func (f *fakeDirectory) DisplayNames(_ context.Context, _ []string) (map[string]string, error) {
+func (f *fakeDirectory) DisplayNames(_ context.Context, userIDs []string) (map[string]string, error) {
 	f.calls++
+	f.asked = userIDs
 	return f.names, f.err
 }
 
@@ -90,7 +101,7 @@ type fixedClock struct{ at time.Time }
 func (c fixedClock) Now() time.Time { return c.at }
 
 func newGroups(store *fakeStore, directory *fakeDirectory) *application.Groups {
-	return application.NewGroups(store, store, store, directory, fixedClock{at: now})
+	return application.NewGroups(store, store, store, store, directory, fixedClock{at: now})
 }
 
 func TestListMineAsksRepositoryForTheCaller(t *testing.T) {

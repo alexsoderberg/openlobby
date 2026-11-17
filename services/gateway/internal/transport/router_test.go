@@ -361,6 +361,7 @@ func TestSessionIsRequired(t *testing.T) {
 	assertError(t, send(handler, http.MethodGet, "/api/groups", nil), http.StatusUnauthorized, "unauthenticated")
 	assertError(t, send(handler, http.MethodGet, "/api/groups", cookieHeader("unknown")), http.StatusUnauthorized, "unauthenticated")
 	assertError(t, send(handler, http.MethodGet, "/api/groups", cookieHeader("")), http.StatusUnauthorized, "unauthenticated")
+	assertError(t, send(handler, http.MethodGet, "/api/group-overviews", nil), http.StatusUnauthorized, "unauthenticated")
 	assertNoUpstreamCalls(t, s)
 }
 
