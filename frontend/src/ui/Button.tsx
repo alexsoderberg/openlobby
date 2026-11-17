@@ -1,22 +1,22 @@
 // Copied from shadcn/ui `button` (https://ui.shadcn.com/docs/components/button). Edited per ADR 0023 1b: class
 // lists read our tokens, the variant names are the glossary's, no asChild and no class-variance-authority.
-// Type, shadow, hover and press motion live in global.css under [data-slot="button"].
-import type { ComponentProps } from "react";
+// Type, shadow, hover and press motion live in global.css under [data-slot="button"]; the light span holds the
+// light that follows the pointer and the press shade.
+import type { ComponentProps, PointerEvent } from "react";
 import { classNames } from "./classNames";
 
 type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
 type ButtonSize = "default" | "icon";
 
 const buttonVariants = {
-  base: "relative inline-flex items-center justify-center gap-(--space-2) min-h-(--size-button) pointer-coarse:min-h-(--size-button-touch) border cursor-pointer disabled:cursor-not-allowed disabled:opacity-50",
+  base: "relative isolate inline-flex items-center justify-center gap-(--space-2) min-h-(--size-button) pointer-coarse:min-h-(--size-button-touch) border cursor-pointer disabled:cursor-not-allowed disabled:opacity-50",
   variant: {
     primary:
-      "overflow-hidden border-(--color-accent) bg-(--color-accent) text-(--color-on-accent)",
+      "border-(--color-accent) bg-(--color-accent) text-(--color-on-accent)",
     secondary:
-      "isolate border-(--color-border) bg-(--color-surface) text-(--color-text)",
-    ghost: "isolate border-transparent bg-transparent text-(--color-text)",
-    danger:
-      "isolate border-(--color-danger) bg-transparent text-(--color-danger)",
+      "border-(--color-border) bg-(--color-surface) text-(--color-text)",
+    ghost: "border-transparent bg-transparent text-(--color-text)",
+    danger: "border-(--color-danger) bg-transparent text-(--color-danger)",
   },
   size: {
     default: "rounded-(--radius-control) py-(--space-0) px-(--space-3)",
@@ -34,6 +34,8 @@ export function Button({
   className,
   variant = "primary",
   size = "default",
+  onPointerMove,
+  children,
   ...props
 }: ComponentProps<"button"> & { variant?: ButtonVariant; size?: ButtonSize }) {
   return (
@@ -47,7 +49,22 @@ export function Button({
         buttonVariants.size[size],
         className,
       )}
+      onPointerMove={(event) => {
+        placeLight(event);
+        onPointerMove?.(event);
+      }}
       {...props}
-    />
+    >
+      <span data-slot="button-light" aria-hidden="true" />
+      {children}
+    </button>
   );
+}
+
+/** Puts the pointer position in two CSS variables, so the light moves by transform and never by layout. */
+function placeLight(event: PointerEvent<HTMLButtonElement>) {
+  const button = event.currentTarget;
+  const box = button.getBoundingClientRect();
+  button.style.setProperty("--pointer-x", `${event.clientX - box.left}px`);
+  button.style.setProperty("--pointer-y", `${event.clientY - box.top}px`);
 }

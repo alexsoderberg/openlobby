@@ -62,7 +62,7 @@ Variant set (one variant per text button; `IconButton` always uses the ghost loo
   - Coarse pointers (`@media (pointer: coarse)`): height `--size-button-touch: 2.5rem` (40px) for every button, which is the hit area on touch.
 - Icon + text (any variant): `Icon` inside the button, gap `--space-2`.
 - Colour contrast: icons take the button's text colour, which must meet 3:1 against the background (WCAG 1.4.11). The existing text colours already do; PR1 checks the danger text.
-- Hover lift, sweep and disabled styles stay as they are.
+- Disabled styles stay as they are. Hover and press styles are set by ADR 0023 Amendment 2026-11-17.
 
 **5. Delivery plan (small PRs).**
 Every file in the frontend that uses a button class or an icon is assigned below. Files that render a plain `<button>` without these classes do not change. Test files move with the component they test.
@@ -105,7 +105,7 @@ Each PR is reviewed on its own. The reviewer reviews PR1 against this ADR as the
 - **Native `title` attribute as tooltip.** Not shown on keyboard focus or on touch, not dismissable, and not stylable. Rejected for WCAG 1.4.13.
 - **Tooltip sets `aria-label` on its child by cloning it.** Works, but needs `cloneElement` and hides the coupling. `IconButton` sets the label itself, in one place. Rejected.
 - **A `Button` component with `variant` and `size` props.** Clearer API, but every call site would change at once, and the migration would be one large PR. CSS classes allow the screen-by-screen migration. Reconsider when a third size or state logic appears in more than one place.
-- **Hit area via `::before` pseudo-element.** The primary button's hover sweep needs `overflow: hidden`, which clips the extra area. Rejected; the 2.5rem box on coarse pointers is used instead.
+- **Hit area via `::before` pseudo-element.** The primary button's hover sweep needed `overflow: hidden`, which clipped the extra area. The sweep is replaced (ADR 0023 Amendment 2026-11-17), but the option stays rejected: the 2.5rem box on coarse pointers is used instead.
 - **Transparent border to extend the hit area.** Works, but adds a hidden trick for one case. Rejected.
 - **Tooltip on touch via long press.** Adds gesture logic and a hidden feature; the visible label solves the same need. Rejected.
 

@@ -14,9 +14,7 @@ describe("IconButton", () => {
     expect(onClick).toHaveBeenCalledOnce();
 
     fireEvent.pointerEnter(button);
-    const bubble = button.parentElement!.querySelector(
-      '[aria-hidden="true"]:not(svg)',
-    );
+    const bubble = button.parentElement!.querySelector(".tooltip__bubble");
     expect(bubble?.textContent).toBe(button.getAttribute("aria-label"));
   });
 
@@ -26,8 +24,7 @@ describe("IconButton", () => {
     const button = screen.getByRole("button", { name: "Edit, Chess" });
     fireEvent.pointerEnter(button);
     expect(
-      button.parentElement!.querySelector('[aria-hidden="true"]:not(svg)')
-        ?.textContent,
+      button.parentElement!.querySelector(".tooltip__bubble")?.textContent,
     ).toBe("Edit");
   });
 
