@@ -96,7 +96,7 @@ Game choice and game headings (wherever there is a list of game titles):
 - Given that a game is chosen in the game choice, when I look at the closed field, then it shows the chosen game's logo or monogram before its name, as its row does. DECISION, product owner, 2026-11-16 (REQ-0027; the user may change it).
 - Given that the game choice shows "Other" or "no game", when I look at that row or the closed field, then it shows neither a logo nor a monogram. ASSUMPTION (product owner): "Other" has no logo (REQ-0026, Other).
 - Given that I am logged in, when I see the Game roles section of the You page (REQ-0021), then each game heading shows the game's logo or monogram before its name, at `--size-game-logo`. DECISION, user, 2026-11-16 (REQ-0027).
-- Given that a lobby is shown in a lobby list, in the week view or as a label, then no logo or monogram is shown, because labels stay text-only. DECISION, user, 2026-11-16 (confirmed; REQ-0027).
+- Given that a lobby's label is shown outside a lobby list row and a week block, then no logo or monogram is added to the label text, because labels stay text-only. DECISION, user, 2026-11-16 (confirmed; REQ-0027). Replaced in part by Amendment 2026-11-16 (logo in the lobby list and the week blocks): the lobby list rows and the week blocks show the logo or monogram before the label, never in the label text.
 - Given that the game choice is shown on a phone, when I open it, then its rows show the logos too, in the full-width sheet of REQ-0027. DECISION, user, 2026-11-16.
 - Given that a logo fails to load in the game choice, when the list is shown, then the monogram is shown and no error is shown (the rule above).
 
@@ -128,6 +128,37 @@ Delivery: a follow-up to PR 2 (the cover on Next up), ASSUMPTION; the orchestrat
 Questions for the user (recommended answer):
 - Should the cover also show on the Dashboard's Day list (REQ-0012)? Recommended: no, not now. The user asked for the group's list view. It can be added later as one short amendment.
 - Should the cover show on the week calendar blocks? Recommended: no. The blocks are too small for the text and the contrast rule.
+
+## Amendment 2026-11-16 (logo in the lobby list and the week blocks)
+Status: Decided (DECISION, user, 2026-11-16: answers a to d below). The rest of this requirement stays Decided. Feature F-030 (EXTEND, not a new feature; the fifth time it is asked, not added again). Source, the user, 2026-11-16: "Det ser bra ut. Vi hade kunnat använda loggan i listvyn också. En liten logga hade även kunnat användas i kalendern." (Looks good. We could use the logo in the list view too. A small logo could also be used in the calendar.)
+It replaces, for the lobby list rows and the week blocks, the list and week-view part of the criterion at line 99 (Amendment 2026-11-16, game choice) and the lobby-list and week-block part of "Images in the lobby list, the week calendar blocks and the lobby labels" (Out of scope, line 56). The label part stays: labels are text-only.
+
+Rows and blocks:
+- Given that I am logged in, when a lobby's game has a logo and the lobby is a row in the group view's lobby list (REQ-0004), then the logo is shown in the row before the label, at `--size-game-logo` (2.5rem), and the label stays text: the game name is shown as text beside the logo. DECISION, user, 2026-11-16 (question d).
+- Given that a row shows a logo and its game has a cover (Amendment 2026-11-16, cover places), when I read the row, then the logo sits on the cover, and the contrast rule of that amendment applies to the text of the label. The logo is not text and is not counted in the contrast check. DECISION, product owner, 2026-11-16 (kept with the user's answers).
+- Given that I am logged in, when a lobby's game has a logo and its block is shown in the week grid of the group view (REQ-0004) or in This week on the Dashboard (REQ-0012), then the logo is shown in the block before the label, at a smaller size than in rows, set as a design token by the UI expert so that it fits beside one line of the block's text. DECISION, user, 2026-11-16 (question d).
+- Given that a block is too narrow (under 6rem) to show the logo whole beside the first line of its label, when I see it, then the logo is not shown at all. It is never cut, scaled down to a fragment, or shown partly. DECISION, user, 2026-11-17 (threshold 6rem, from the user's answer of the same day). In blocks at least 6rem wide the logo may take width from the game name, so the name wraps onto one more line; in the shortest such blocks that extra line can then fall outside the block (accepted, DECISION, user, 2026-11-17). No text is removed to make room for the logo. The other text rules of REQ-0015 (Amendment 2026-11-13, week block fit) stay: the game name may be shortened, and no line is cut in half. DECISION, user, 2026-11-16 (question c), amended 2026-11-17.
+- Given that a row or block shows a logo, when a screen reader reads it, then the logo is decorative (empty text alternative), and the accessible name of the row or block is the same text as today: label, time range (blocks), and "X/Y players".
+- Given that a logo fails to load in a row or block, when it is shown, then the monogram takes its place if the row or block has room, otherwise nothing is shown, and no error is shown (the rule of line 41).
+- Given that I am logged in, when a row or block is shown on a phone (window under 760 px), then the logo does not cause a sideways scroll, and no line of text is cut (ASSUMPTION, as line 92).
+- Given that a lobby's game has no logo, when its row or block is shown, then the monogram takes the same place at the same size as the logo would, so the layout does not change when a logo is added. DECISION, user, 2026-11-16 (question d).
+- Given that a lobby is "Other" (customGameName) or an open lobby with no game (REQ-0015), when its row or block is shown, then it shows no logo and no monogram, as today (line 40).
+- Given that a lobby's label is shown, then the label is text only, with no logo or monogram in the text itself. The logo or monogram is a separate element before the label.
+
+Not changed (ASSUMPTION (product owner), the user did not say otherwise):
+- No cover on the week blocks (line 121), as before. Covers on the Dashboard Day list stay out (line 129).
+- The Dashboard's Day list (DayList, REQ-0012): no logo (DECISION, user, 2026-11-16, question a: later, as one short amendment).
+- The Group cards (REQ-0024), the Next up card and the lobby page (already shown), the game list, the game form, the game choice, the mode, activity and genre lists.
+- Labels in the Next up card and anywhere else that is text only.
+
+Decisions (DECISION, user, 2026-11-16):
+- a. Which list views: only the group view's lobby list. The Dashboard's Day list follows later as one short amendment.
+- b. Which calendar views: the week blocks of the group view and This week on the Dashboard. One rule for both.
+- c. Short blocks: the logo is hidden when it does not fit. It is never clipped, and no text is removed for it.
+- d. Size and monogram: rows at `--size-game-logo` (2.5rem); blocks at a smaller token that the UI expert sets. A game without a logo shows its monogram in the same place and size.
+- Logo above the cover in covered rows: DECISION, product owner, 2026-11-16 (kept).
+
+Order: not decided. The change has no dependency on REQ-0027. Proposed: one PR after the cover (PR 2 of the cover amendment) and before A4. The product owner suggests this, the user may change it.
 
 ## Assumptions (not decided by the user; the architect may refine the limits)
 - Limits: PNG, JPEG or WebP only; at most 512 KiB (524288 bytes) per image (ADR 0026, points 3 and 6).
