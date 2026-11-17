@@ -51,6 +51,44 @@ const press = (key: string, init: { shiftKey?: boolean } = {}) =>
   fireEvent.keyDown(focused()!, { key, ...init });
 
 describe("Select values", () => {
+  it.each([
+    ["with a click", () => chooseOption(field(), "Catan")],
+    [
+      "with Enter",
+      async () => {
+        await openWith("Enter");
+        press("Enter");
+      },
+    ],
+  ])(
+    "reports a pick of the shown value %s only with reportRepick",
+    async (_, pick) => {
+      const onValueChange = vi.fn();
+      const { unmount } = render(
+        <Field initial="g-catan" onValueChange={onValueChange} />,
+      );
+      await pick();
+      expect(onValueChange).not.toHaveBeenCalled();
+      unmount();
+
+      render(
+        <Field initial="g-catan" onValueChange={onValueChange} reportRepick />,
+      );
+      await pick();
+      expect(onValueChange).toHaveBeenCalledExactlyOnceWith("g-catan");
+    },
+  );
+
+  it("reports nothing with reportRepick when the list closes without a pick", async () => {
+    const onValueChange = vi.fn();
+    render(
+      <Field initial="g-catan" onValueChange={onValueChange} reportRepick />,
+    );
+    await openWith("Enter");
+    press("Escape");
+    expect(onValueChange).not.toHaveBeenCalled();
+  });
+
   it("keeps the empty choice as an empty value both ways", async () => {
     const onValueChange = vi.fn();
     render(<Field initial="g-catan" onValueChange={onValueChange} />);

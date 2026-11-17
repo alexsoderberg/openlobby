@@ -6,3 +6,4 @@ export const NOT_ALLOWED = "not_allowed";
 export const MODE_TAKEN = "mode_taken" satisfies ApiErrorCode;
 export const ACTIVITY_TAKEN = "activity_taken" satisfies ApiErrorCode;
 export const GAME_ROLE_TAKEN = "game_role_taken" satisfies ApiErrorCode;
+export const INVALID_ROLE_ICON = "invalid_role_icon" satisfies ApiErrorCode;

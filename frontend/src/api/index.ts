@@ -21,6 +21,7 @@ export type {
   NextLobby,
   PreferredGameRole,
   PreferredGameRoleChoices,
+  RoleIcon,
   Seat,
 } from "./client";
 export {
