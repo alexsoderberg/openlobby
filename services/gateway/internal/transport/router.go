@@ -136,6 +136,7 @@ var routes = []route{
 	{method: http.MethodGet, path: "/api/auth/me", upstream: authUpstream, session: true},
 	{method: http.MethodPost, path: "/api/groups", upstream: calendarUpstream, session: true},
 	{method: http.MethodGet, path: "/api/groups", upstream: calendarUpstream, session: true},
+	{method: http.MethodGet, path: "/api/group-overviews", upstream: calendarUpstream, session: true},
 	{method: http.MethodGet, path: "/api/groups/{groupId}", upstream: calendarUpstream, session: true},
 	{method: http.MethodDelete, path: "/api/groups/{groupId}/membership", upstream: calendarUpstream, session: true},
 	{method: http.MethodPut, path: "/api/groups/{groupId}/admins/{userId}", upstream: calendarUpstream, session: true},

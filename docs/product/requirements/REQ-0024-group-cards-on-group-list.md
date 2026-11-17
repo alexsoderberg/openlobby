@@ -18,6 +18,10 @@ Decided by the user on 2026-11-13 (DECISION, user, 2026-11-13): the answers to o
 - DECISION (user, 2026-11-13, question 8): priority Should, built right after the game role icons (A3b, REQ-0023) and before A4 to A6. The member count and the lobby line ship first. Avatars show initials until the avatars of REQ-0016 (A4) are built. Backlog position A3c.
 - DECISION (user, 2026-11-13, question 9): keep the next-lobby line. When this is built, the sentence that calls F-028 "the only view that shows lobbies of several groups together" is amended. That sentence is in the F-028 row of features.md, and REQ-0012 says the same in its out-of-scope line "Only the dashboard is cross-group." Both are amended when this is built (the product owner corrected the attribution, which first named REQ-0012 only).
 
+- DECISION (ui-ux expert / orchestrator, 2026-11-16, layout; user may change): the card grid has one column under 760 px, two columns from 47.5rem (760 px) and three columns from 75rem (1200 px). Refines the two-or-more-columns rule of the 2026-11-14 amendment in F-043 and REQ-0025.
+- DECISION (ui-ux expert / orchestrator, 2026-11-16, card height; user may change): cards in the same row share one height, and the lobby line sits at the bottom of each card, so the lobby lines of a row line up.
+- DECISION (user, 2026-11-17): the /groups page has one signature detail (ADR 0023): on first load the Group cards fade up in a short stagger, using opacity and transform only. None under reduced motion.
+
 ## Problem
 The Group list at `/groups` shows each group as its name only. A member who opens it to pick a group learns nothing about the group before opening it: how many people are in it, who they are, and when the group can play next. The list looks bare next to the rest of the app.
 
@@ -64,7 +68,7 @@ Live updates:
 - Given that `/groups` is open, when another member creates, joins, leaves or deletes a lobby, then the card does not change until I reload the page or come back to it (DECISION, user, 2026-11-13, question 7; REQ-0017 covers the Group view and the Dashboard only).
 
 Navigation and accessibility:
-- Given that I select a card with a click, or with Enter or Space on the keyboard, when it opens, then the Group view at `/groups/{groupId}` opens, as today (REQ-0012).
+- Given that I select a card with a click, or with Enter on the keyboard (it is a link, ADR 0025 PR2), when it opens, then the Group view at `/groups/{groupId}` opens, as today (REQ-0012).
 - Given that I move through the list with the keyboard, when I reach a card, then the whole card is one focus stop with a visible focus state, and it contains no other control (ASSUMPTION).
 - Given that a screen reader reads a card, when it reads the card, then it announces the group name, the member count and the lobby line in one announcement. It does not announce each avatar, and the "+N" marker is read only as part of the member count (ASSUMPTION: the avatars are decorative beside the count, as in REQ-0016).
 - Given that I use a phone (under 760 px), when I see the list, then each card is one tap target of at least 44 px in height, the cards form one column, and the page does not scroll sideways (REQ-0012, mobile rule).
