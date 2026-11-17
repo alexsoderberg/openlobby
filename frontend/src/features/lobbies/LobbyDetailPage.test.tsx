@@ -13,6 +13,7 @@ import {
   type LobbyDetail,
 } from "../../api";
 import { en } from "../../i18n/messages/en";
+import { chooseOption } from "../../test/chooseOption";
 import { fakeApiClient, testUser } from "../../test/fakeApiClient";
 import { visibleText } from "../../test/visibleText";
 import { LobbyDetailPage } from "./LobbyDetailPage";
@@ -232,9 +233,9 @@ describe("changing the mode on the page", () => {
       ),
     });
 
-    fireEvent.change(
+    await chooseOption(
       await screen.findByRole("combobox", { name: en.lobbyModeLabel }),
-      { target: { value: "m2" } },
+      "Ranked",
     );
     fireEvent.click(
       within(await screen.findByRole("dialog")).getByRole("button", {
@@ -334,9 +335,9 @@ describe("an open lobby on the page", () => {
     expect(
       await screen.findByRole("heading", { name: en.lobbyOpen }),
     ).toBeTruthy();
-    fireEvent.change(
+    await chooseOption(
       await screen.findByRole("combobox", { name: en.lobbyGameLabel }),
-      { target: { value: "game1" } },
+      "Catan",
     );
     fireEvent.click(
       screen.getByRole("button", { name: en.lobbyGameSetSubmit }),

@@ -6,6 +6,27 @@ export const stylesheet = readFileSync(
   join(import.meta.dirname, "../styles/global.css"),
   "utf8",
 );
+/** One innermost rule of global.css, with the at-rule preludes around it, outermost first. */
+export type CssRule = { selector: string; body: string; scopes: string[] };
+
+/** Every innermost rule, comments removed and whitespace in selectors and preludes collapsed. */
+export const cssRules: CssRule[] = [];
+{
+  const scopes: string[] = [];
+  let text = "";
+  for (const char of stylesheet.replace(/\/\*[\s\S]*?\*\//g, "")) {
+    if (char === "{") {
+      scopes.push(text.replace(/\s+/g, " ").trim());
+      text = "";
+    } else if (char === "}") {
+      const selector = scopes.pop() ?? "";
+      if (!selector.startsWith("@"))
+        cssRules.push({ selector, body: text, scopes: [...scopes] });
+      text = "";
+    } else text += char;
+  }
+}
+
 export const publicDir = join(import.meta.dirname, "../../public");
 
 export const WCAG_AA_TEXT = 4.5;

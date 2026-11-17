@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { Game, GameMode, GameRole } from "../../api";
 import { useMessages } from "../../i18n";
 import { Select } from "../../ui";
@@ -39,32 +40,21 @@ export function LobbyModeFields({
             {...fieldProps(`${id}-mode`, false, errorFor("mode"))}
             name="mode"
             value={modeValue}
-            onChange={(event) => onModeChange(event.target.value)}
-          >
-            <option value="">{m.lobbyModeNone}</option>
-            {modes.map((option) => (
-              <option key={option.id} value={option.id}>
-                {option.name}
-              </option>
-            ))}
-          </Select>
+            onValueChange={onModeChange}
+            options={[
+              { value: "", label: m.lobbyModeNone },
+              ...modes.map(toOption),
+            ]}
+          />
         </LobbyField>
       )}
       {mode && mode.activities.length > 0 && (
-        <LobbyField id={`${id}-activity`} label={m.lobbyActivityLabel}>
-          <Select
-            {...fieldProps(`${id}-activity`, false, errorFor("activity"))}
-            key={mode.id}
-            name="activity"
-          >
-            <option value="">{m.lobbyActivityNone}</option>
-            {mode.activities.map((activity) => (
-              <option key={activity.id} value={activity.id}>
-                {activity.name}
-              </option>
-            ))}
-          </Select>
-        </LobbyField>
+        <ActivityField
+          key={mode.id}
+          id={`${id}-activity`}
+          activities={mode.activities}
+          errorId={errorFor("activity")}
+        />
       )}
       {roles.length > 0 ? (
         <LobbyRoleFields
@@ -84,6 +74,39 @@ export function LobbyModeFields({
         />
       )}
     </>
+  );
+}
+
+const toOption = (item: { id: string; name: string }) => ({
+  value: item.id,
+  label: item.name,
+});
+
+/** No activity first. The mode keys this field, so a new mode starts with none. */
+function ActivityField({
+  id,
+  activities,
+  errorId,
+}: {
+  id: string;
+  activities: GameMode["activities"];
+  errorId?: string;
+}) {
+  const m = useMessages();
+  const [value, setValue] = useState("");
+  return (
+    <LobbyField id={id} label={m.lobbyActivityLabel}>
+      <Select
+        {...fieldProps(id, false, errorId)}
+        name="activity"
+        value={value}
+        onValueChange={setValue}
+        options={[
+          { value: "", label: m.lobbyActivityNone },
+          ...activities.map(toOption),
+        ]}
+      />
+    </LobbyField>
   );
 }
 

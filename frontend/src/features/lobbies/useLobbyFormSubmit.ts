@@ -3,11 +3,14 @@ import type { ChangeResult, CreateLobbyInput } from "../../api";
 import { fieldOf } from "./lobbyFieldOf";
 import { parseLobbyInput, readFields, slotInputName } from "./lobbyInput";
 
-/** The control of a field. With game roles, the max players error is about the first slot. */
+/**
+ * The control of a field. With game roles, the max players error is about the first slot. A dropdown list's name
+ * is on a hidden input, so its field is found by the end of its id.
+ */
 const selectorOf = (field: string) =>
   field === "maxPlayers"
     ? `[name="maxPlayers"], [name^="${slotInputName("")}"]`
-    : `[name="${field}"]:not(:disabled)`;
+    : `[name="${field}"]:not(:disabled, [type="hidden"]), [role="combobox"][id$="-${field}"]`;
 
 /** Checks the fields locally, then saves. Keeps the error code the attempt ended with and focuses its field. */
 export function useLobbyFormSubmit(

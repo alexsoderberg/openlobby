@@ -2,6 +2,11 @@ import js from "@eslint/js";
 import reactHooks from "eslint-plugin-react-hooks";
 import tseslint from "typescript-eslint";
 
+const ICON_LIBRARY = {
+  group: ["lucide-react", "lucide-react/*"],
+  message: "Use Icon from src/ui instead (ADR 0021 point 1).",
+};
+
 export default tseslint.config(
   { ignores: ["dist", "src/api/gen"] },
   js.configs.recommended,
@@ -33,13 +38,22 @@ export default tseslint.config(
     files: ["src/**/*.{ts,tsx}"],
     ignores: ["src/ui/Icon.tsx"],
     rules: {
+      "no-restricted-imports": ["error", { patterns: [ICON_LIBRARY] }],
+    },
+  },
+  {
+    // ADR 0023 point 8: each vendor sits in its ui/ wrapper. One rule entry per file, so this one repeats the icons.
+    files: ["src/**/*.{ts,tsx}"],
+    ignores: ["src/ui/**"],
+    rules: {
       "no-restricted-imports": [
         "error",
         {
           patterns: [
+            ICON_LIBRARY,
             {
-              group: ["lucide-react", "lucide-react/*"],
-              message: "Use Icon from src/ui instead (ADR 0021 point 1).",
+              group: ["@radix-ui/*", "sonner"],
+              message: "Use the ui component (ADR 0023 point 8).",
             },
           ],
         },

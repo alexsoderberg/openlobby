@@ -474,6 +474,7 @@ export const en = {
     invalid_mode: "A mode name must be 1 to 50 characters.",
     invalid_activity: "An activity name must be 1 to 50 characters.",
     invalid_game_role: "A game role name must be 1 to 30 characters.",
+    invalid_role_icon: "Choose an icon from the list, or No icon.",
     game_role_full:
       "This game role has no free slot. Choose another game role or flex.",
     lobby_game_set: "This lobby already has a game. Reload it to see it.",

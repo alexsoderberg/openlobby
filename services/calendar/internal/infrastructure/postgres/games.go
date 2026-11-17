@@ -32,7 +32,7 @@ const listGroupGamesSQL = `SELECT g.id, g.name, g.default_max_players, g.genre, 
 // One query per table for the whole game list, not one per game (ADR 0017 Consequences). The owner of a role is its mode
 // or, for a role of the game itself, the game.
 const (
-	selectGameRolesSQL = `SELECT id, COALESCE(game_mode_id, game_id), name, slots FROM game_roles`
+	selectGameRolesSQL = `SELECT id, COALESCE(game_mode_id, game_id), name, slots, role_icon FROM game_roles`
 	gameRoleOrderSQL   = ` ORDER BY sort_order, id`
 	listGameRolesSQL   = selectGameRolesSQL + gameRoleOrderSQL
 	selectModeRolesSQL = selectGameRolesSQL + ` WHERE game_mode_id = $1` + gameRoleOrderSQL
@@ -50,8 +50,8 @@ const deleteGameSQL = `DELETE FROM games WHERE id = $1`
 const (
 	deleteGameRolesSQL = `DELETE FROM game_roles WHERE game_id = $1 AND game_mode_id IS NULL`
 	deleteGameModesSQL = `DELETE FROM game_modes WHERE game_id = $1`
-	insertGameRoleSQL  = `INSERT INTO game_roles (id, game_id, game_mode_id, name, slots, sort_order)
-		VALUES (COALESCE($1::uuid, gen_random_uuid()), $2, $3, $4, $5, $6)`
+	insertGameRoleSQL  = `INSERT INTO game_roles (id, game_id, game_mode_id, name, slots, role_icon, sort_order)
+		VALUES (COALESCE($1::uuid, gen_random_uuid()), $2, $3, $4, $5, $6, $7)`
 	insertGameModeSQL = `INSERT INTO game_modes (id, game_id, name, max_players, sort_order)
 		VALUES (COALESCE($1::uuid, gen_random_uuid()), $2, $3, $4, $5) RETURNING id`
 	insertActivitySQL = `INSERT INTO activities (id, game_mode_id, name, sort_order)
@@ -258,7 +258,7 @@ func rolesByOwner(ctx context.Context, q queryer, query string, args ...any) (ma
 	err := eachRow(ctx, q, func(rows *sql.Rows) error {
 		var owner string
 		var role domain.GameRole
-		err := rows.Scan(&role.ID, &owner, &role.Name, &role.Slots)
+		err := rows.Scan(&role.ID, &owner, &role.Name, &role.Slots, &role.RoleIcon)
 		roles[owner] = append(roles[owner], role)
 		return err
 	}, query, args...)
@@ -364,7 +364,7 @@ func insertMode(ctx context.Context, tx *sql.Tx, gameID string, order int, mode 
 // insertGameRoles stores the roles of one owner: the mode when modeID is set, otherwise the game itself.
 func insertGameRoles(ctx context.Context, tx *sql.Tx, gameID, modeID string, roles []domain.GameRole) error {
 	for order, role := range roles {
-		if _, err := tx.ExecContext(ctx, insertGameRoleSQL, nullIfEmpty(role.ID), gameID, nullIfEmpty(modeID), role.Name, role.Slots, order); err != nil {
+		if _, err := tx.ExecContext(ctx, insertGameRoleSQL, nullIfEmpty(role.ID), gameID, nullIfEmpty(modeID), role.Name, role.Slots, role.RoleIcon, order); err != nil {
 			return err
 		}
 	}

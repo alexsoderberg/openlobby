@@ -8,6 +8,7 @@ import {
 import { describe, expect, it, vi } from "vitest";
 import { ApiError, ApiProvider, type ApiClient, type Game } from "../../api";
 import { en } from "../../i18n/messages/en";
+import { chooseOption } from "../../test/chooseOption";
 import { fakeApiClient } from "../../test/fakeApiClient";
 import { GamesPage } from "./GamesPage";
 
@@ -264,22 +265,21 @@ describe("add", () => {
 });
 
 describe("genre", () => {
-  function chooseGenre(scope: HTMLElement, genre: string) {
-    fireEvent.change(within(scope).getByLabelText(en.gameGenreLabel), {
-      target: { value: genre },
-    });
+  async function chooseGenre(scope: HTMLElement, name: string) {
+    await chooseOption(within(scope).getByLabelText(en.gameGenreLabel), name);
   }
+  const genreShown = (scope: HTMLElement) =>
+    within(scope).getByLabelText(en.gameGenreLabel).textContent;
 
   it("offers No genre first, then the eight genres", async () => {
     renderPage(adminClient());
     const select = within(await addForm()).getByLabelText(en.gameGenreLabel);
+    expect(select.textContent).toBe(en.genre.none);
 
+    fireEvent.keyDown(select, { key: "Enter" });
     expect(
-      within(select)
-        .getAllByRole("option")
-        .map((option) => option.textContent),
+      screen.getAllByRole("option").map((option) => option.textContent),
     ).toEqual(Object.values(en.genre));
-    expect((select as HTMLSelectElement).value).toBe("");
   });
 
   it("sends the chosen genre on create", async () => {
@@ -288,7 +288,7 @@ describe("genre", () => {
     const form = await addForm();
 
     fill(form, "Azul", "2");
-    chooseGenre(form, "party");
+    await chooseGenre(form, en.genre.party);
     fireEvent.click(screen.getByRole("button", { name: en.gameAddSubmit }));
 
     await waitFor(() =>
@@ -300,6 +300,8 @@ describe("genre", () => {
         modes: [],
       }),
     );
+    // The form is cleared for the next game, the genre too.
+    await waitFor(() => expect(genreShown(form)).toBe(en.genre.none));
   });
 
   it("shows the genre in the list", async () => {
@@ -323,9 +325,9 @@ describe("genre", () => {
     const form = screen
       .getByRole("button", { name: en.gameEditSubmit })
       .closest("form")!;
-    expect(valueOf(form, en.gameGenreLabel)).toBe("strategy");
+    expect(genreShown(form)).toBe(en.genre.strategy);
 
-    chooseGenre(form, "rpg");
+    await chooseGenre(form, en.genre.rpg);
     fireEvent.click(
       within(form).getByRole("button", { name: en.gameEditSubmit }),
     );
@@ -377,7 +379,7 @@ describe("genre", () => {
       .getByRole("button", { name: en.gameEditSubmit })
       .closest("form")!;
 
-    chooseGenre(form, "");
+    await chooseGenre(form, en.genre.none);
     fireEvent.click(
       within(form).getByRole("button", { name: en.gameEditSubmit }),
     );

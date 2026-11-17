@@ -1,5 +1,7 @@
 package domain
 
+import "slices"
+
 // maxGameRoleNameLength is the limit of a game role name in code points; the database check mirrors it (ADR 0017).
 const maxGameRoleNameLength = 30
 
@@ -8,6 +10,32 @@ type GameRole struct {
 	ID    string
 	Name  string
 	Slots int
+	// RoleIcon is nil when read for a role that was never saved with a choice (ADR 0024). A checked write always sets it.
+	RoleIcon *RoleIcon
+}
+
+// RoleIcon is the icon of a game role from a fixed set (REQ-0023, ADR 0024).
+type RoleIcon string
+
+// RoleIconNone means the admin chose "No icon". A write without an icon stores it (ADR 0024 section 2).
+const RoleIconNone RoleIcon = "none"
+
+// RoleIcons returns the allowed role icons. The list is kept equal to the contract's RoleIcon enum and the database
+// check by tests.
+func RoleIcons() []RoleIcon {
+	return []RoleIcon{"shield", "medical-cross", "dagger", "crosshair", "wrench", "star", RoleIconNone}
+}
+
+// newRoleIcon checks the icon of a game role write: nil becomes RoleIconNone, a value outside RoleIcons is refused.
+func newRoleIcon(icon *RoleIcon) (*RoleIcon, error) {
+	if icon == nil {
+		none := RoleIconNone
+		return &none, nil
+	}
+	if !slices.Contains(RoleIcons(), *icon) {
+		return nil, ErrInvalidRoleIcon
+	}
+	return icon, nil
 }
 
 // Activity is a named activity of a mode (REQ-0015). ID is empty for a new activity in a write.
@@ -39,7 +67,8 @@ func slotSum(roles []GameRole) (int, error) {
 	return sum, nil
 }
 
-// newGameRoles trims and checks the roles of one owner and returns them with their slot sum. A nil list stays nil.
+// newGameRoles trims and checks the roles of one owner, each in the order name, slots, icon (ADR 0024), and returns them
+// with their slot sum. A nil list stays nil.
 func newGameRoles(raw []GameRole) ([]GameRole, int, error) {
 	if raw == nil {
 		return nil, 0, nil
@@ -53,7 +82,11 @@ func newGameRoles(raw []GameRole) ([]GameRole, int, error) {
 		if !validCapacity(&role.Slots) {
 			return nil, 0, ErrInvalidCapacity
 		}
-		roles = append(roles, GameRole{ID: role.ID, Name: name, Slots: role.Slots})
+		icon, err := newRoleIcon(role.RoleIcon)
+		if err != nil {
+			return nil, 0, err
+		}
+		roles = append(roles, GameRole{ID: role.ID, Name: name, Slots: role.Slots, RoleIcon: icon})
 	}
 	sum, err := slotSum(roles)
 	return roles, sum, err

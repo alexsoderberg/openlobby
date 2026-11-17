@@ -2,30 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   WCAG_AA_UI,
   contrastRatio,
+  cssRules as rules,
   overPage,
   solid,
-  stylesheet,
 } from "../test/cssTokens";
-
-type Rule = { selector: string; body: string; scopes: string[] };
-
-/** Each innermost rule with the at-rule preludes around it, outermost first. */
-const rules: Rule[] = [];
-{
-  const scopes: string[] = [];
-  let text = "";
-  for (const char of stylesheet.replace(/\/\*[\s\S]*?\*\//g, "")) {
-    if (char === "{") {
-      scopes.push(text.trim());
-      text = "";
-    } else if (char === "}") {
-      const selector = scopes.pop() ?? "";
-      if (!selector.startsWith("@"))
-        rules.push({ selector, body: text, scopes: [...scopes] });
-      text = "";
-    } else text += char;
-  }
-}
 
 const standardRules = rules.filter(({ body }) =>
   /scrollbar-color\s*:|scrollbar-width:\s*thin/.test(body),
@@ -39,6 +19,7 @@ describe("scrollbars", () => {
     expect(standardRules.map(({ selector }) => selector).sort()).toEqual([
       "*",
       ":root",
+      '[data-slot="select-content"] [data-radix-select-viewport]',
     ]);
     expect(webkitRules.length).toBeGreaterThan(0);
   });
