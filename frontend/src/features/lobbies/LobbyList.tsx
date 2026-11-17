@@ -1,7 +1,12 @@
 import type { Group, Lobby } from "../../api";
 import { GenreFrame, GenreName } from "../../genres";
 import { formatDateTimeRange, useMessages } from "../../i18n";
-import { lobbyCoverUrl, lobbyLabel, RoleSlots } from "../../lobby";
+import {
+  LobbyGameLogo,
+  lobbyCoverUrl,
+  lobbyLabel,
+  RoleSlots,
+} from "../../lobby";
 import { creatorName } from "./creatorName";
 import { lobbyPath } from "./lobbyPath";
 
@@ -47,9 +52,13 @@ function LobbyRow({
       className="list-row lobby-row"
       coverUrl={lobbyCoverUrl(lobby)}
     >
-      <a className="lobby-row__game" href={lobbyPath(groupId, lobby.id)}>
-        {lobbyLabel(lobby, m)}
-      </a>
+      {/* One flex item, so a long label wraps beside its logo, never onto a line of its own. */}
+      <div className="game-heading">
+        <LobbyGameLogo lobby={lobby} size="regular" />
+        <a className="lobby-row__game" href={lobbyPath(groupId, lobby.id)}>
+          {lobbyLabel(lobby, m)}
+        </a>
+      </div>
       <GenreName genre={lobby.gameGenre} />
       <span>{formatDateTimeRange(lobby.startsAt, lobby.endsAt)}</span>
       <span className="lobby-row__meta">{m.lobbyCreatedBy(creator)}</span>

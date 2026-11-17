@@ -3,22 +3,24 @@ package application
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	"openlobby/services/calendar/internal/domain"
 )
 
 // Groups holds the use cases about groups. Each one is given the verified user ID by the transport layer.
 type Groups struct {
-	listing GroupsOfUser
-	creator GroupCreator
-	reader  GroupReader
-	names   UserDirectory
-	clock   Clock
+	listing   GroupsOfUser
+	overviews GroupOverviewReader
+	creator   GroupCreator
+	reader    GroupReader
+	names     UserDirectory
+	clock     Clock
 }
 
 // NewGroups returns the group use cases with their ports.
-func NewGroups(listing GroupsOfUser, creator GroupCreator, reader GroupReader, names UserDirectory, clock Clock) *Groups {
-	return &Groups{listing: listing, creator: creator, reader: reader, names: names, clock: clock}
+func NewGroups(listing GroupsOfUser, overviews GroupOverviewReader, creator GroupCreator, reader GroupReader, names UserDirectory, clock Clock) *Groups {
+	return &Groups{listing: listing, overviews: overviews, creator: creator, reader: reader, names: names, clock: clock}
 }
 
 // ListMine returns the groups where userID is a member. A user in no group gets no groups.
@@ -28,6 +30,26 @@ func (g *Groups) ListMine(ctx context.Context, userID string) ([]domain.Group, e
 		return nil, fmt.Errorf("list groups: %w", err)
 	}
 	return groups, nil
+}
+
+// ListOverviews returns the Group overviews of the user's groups with the members' display names, asked of auth in one
+// call and not at all when the user is in no group (ADR 0025).
+func (g *Groups) ListOverviews(ctx context.Context, userID string) ([]domain.GroupOverview, error) {
+	overviews, err := g.overviews.Overviews(ctx, userID, g.clock.Now())
+	if err != nil {
+		return nil, fmt.Errorf("list group overviews: %w", err)
+	}
+	if len(overviews) == 0 {
+		return overviews, nil
+	}
+	memberLists := make([][]domain.Member, len(overviews))
+	for i, overview := range overviews {
+		memberLists[i] = overview.Members
+	}
+	if err := g.withDisplayNames(ctx, memberLists...); err != nil {
+		return nil, fmt.Errorf("list group overviews: %w", err)
+	}
+	return overviews, nil
 }
 
 // Create makes the caller the admin of a new group. The name is checked before any write (REQ-0002).
@@ -63,18 +85,24 @@ func (g *Groups) Get(ctx context.Context, userID, groupID string) (domain.Group,
 	return group, members, nil
 }
 
-// withDisplayNames fills in DisplayName. The directory adapter fails when a name is missing, so every member gets one.
-func (g *Groups) withDisplayNames(ctx context.Context, members []domain.Member) error {
-	ids := make([]string, len(members))
-	for i, member := range members {
-		ids[i] = member.UserID
+// withDisplayNames fills in DisplayName in place with one directory call, each user asked once. The directory adapter
+// fails when a name is missing, so every member gets one.
+func (g *Groups) withDisplayNames(ctx context.Context, memberLists ...[]domain.Member) error {
+	var ids []string
+	for _, members := range memberLists {
+		for _, member := range members {
+			ids = append(ids, member.UserID)
+		}
 	}
-	names, err := g.names.DisplayNames(ctx, ids)
+	slices.Sort(ids)
+	names, err := g.names.DisplayNames(ctx, slices.Compact(ids))
 	if err != nil {
 		return fmt.Errorf("look up display names: %w", err)
 	}
-	for i := range members {
-		members[i].DisplayName = names[members[i].UserID]
+	for _, members := range memberLists {
+		for i := range members {
+			members[i].DisplayName = names[members[i].UserID]
+		}
 	}
 	return nil
 }

@@ -57,6 +57,11 @@ export const en = {
   groupsLoading: "Loading your groups.",
   groupsEmpty:
     "You are not in any group yet. Ask a member for an invite link to join one.",
+  // The Group card (REQ-0024). The member count is the only text read for the members; "+N" is decoration.
+  groupMemberCount: (count: number) =>
+    count === 1 ? "1 member" : `${count} members`,
+  groupMoreMembers: (count: number) => `+${count}`,
+  groupNoUpcomingLobbies: "No upcoming lobbies",
   createGroupHeading: "Create a group",
   groupNameLabel: "Group name",
   groupNameHint: `1 to ${GROUP_NAME_MAX_LENGTH} characters.`,
@@ -245,9 +250,16 @@ export const en = {
   lobbyViewLabel: "View",
   lobbyViewList: "List",
   lobbyViewCalendar: "Calendar",
+  // "1/5 players" counts against the spots, so only a bare count of one is singular.
   lobbyPlayers: (count: number, max: number | null) =>
-    max === null ? `${count} players` : `${count}/${max} players`,
+    max !== null
+      ? `${count}/${max} players`
+      : count === 1
+        ? "1 player"
+        : `${count} players`,
   lobbyLabelSeparator: " › ",
+  // Between a lobby's start and its player count. Decorative: the line hides it where the count wraps.
+  lobbyMetaSeparator: "·",
   // The label of a lobby with no game (ADR 0017 section 4).
   lobbyOpen: "Open",
   lobbyRoleSlotsLabel: "Game roles",

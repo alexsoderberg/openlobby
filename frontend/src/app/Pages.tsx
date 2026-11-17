@@ -3,8 +3,8 @@ import { Dashboard } from "../features/dashboard";
 import { GamesPage } from "../features/games";
 import {
   GroupDetails,
+  GroupListPage,
   LeaveGroupAction,
-  MyGroups,
   groupPath,
   useGroup,
   type GroupsState,
@@ -48,7 +48,7 @@ export function ProtectedPage({
         />
       );
     case "groups":
-      return <GroupsPage groups={groups} />;
+      return <GroupListPage onUnauthenticated={onUnauthenticated} />;
     case "profile":
       return (
         <ProfilePage
@@ -94,16 +94,6 @@ export function ProtectedPage({
         />
       );
   }
-}
-
-function GroupsPage({ groups }: { groups: MyGroupsLoad }) {
-  const m = useMessages();
-  return (
-    <>
-      <h1>{m.groupsHeading}</h1>
-      <MyGroups state={groups.state} onRetry={groups.reload} />
-    </>
-  );
 }
 
 /** A group the caller is not in gives the same page as an unknown address, so its existence is not revealed. */

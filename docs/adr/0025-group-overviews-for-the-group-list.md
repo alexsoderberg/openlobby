@@ -1,5 +1,5 @@
 # 0025. Group overviews: one new read in calendar for the Group list
-Status: Proposed (2026-11-13)
+Status: Accepted (2026-11-16)
 Requirement: REQ-0024 (F-043). Builds on ADR 0014 (the dashboard reads `GET /api/groups`; the Next up rule), ADR 0017 (lobby fields and labels), ADR 0003 (names from auth, batches of 100) and the `inSnapshot` read rule in calendar's `store.go`. ADR 0018 (the avatar flag, to come) extends it later. Adds one public route to `calendar`, routed by `gateway`. No new schema in `auth`, no new service, dependency or asynchronous communication.
 
 ## Context

@@ -148,7 +148,7 @@ func serve(logger *slog.Logger) error {
 	}
 	clock := systemclock.Clock{}
 	repo := store.Groups()
-	groups := application.NewGroups(repo, repo, repo, directory, clock)
+	groups := application.NewGroups(repo, repo, repo, repo, directory, clock)
 	invites := application.NewInviteLinks(repo, repo, store.InviteLinks(), cryptotoken.Generator{}, clock)
 	games := application.NewGames(repo, store.Games(), store.Games(), logger)
 	lobbies := application.NewLobbies(store.Lobbies(), store.Lobbies(), store.Games(), directory, clock)

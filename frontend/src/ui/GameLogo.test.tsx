@@ -45,16 +45,27 @@ describe("GameLogo", () => {
     expect(logoOf(container)).not.toBeNull();
   });
 
+  // The small box has a smaller radius, so it stays a rounded square and never reads as a round avatar.
   it.each([
-    [undefined, "size-(--size-game-logo)"],
-    ["large" as const, "size-(--size-game-logo-large)"],
-  ])("draws the box of size %s", (size, sizeClass) => {
+    [undefined, "size-(--size-game-logo)", "rounded-(--radius-control)"],
+    [
+      "large" as const,
+      "size-(--size-game-logo-large)",
+      "rounded-(--radius-control)",
+    ],
+    [
+      "small" as const,
+      "size-(--size-game-logo-small)",
+      "rounded-(--radius-badge)",
+    ],
+  ])("draws the box of size %s", (size, sizeClass, radiusClass) => {
     const { container } = render(
       <GameLogo gameId="g1" name="Deep Rock" size={size} />,
     );
 
     const box = container.querySelector('[data-slot="game-logo"]')!;
     expect(box.classList).toContain(sizeClass);
+    expect(box.classList).toContain(radiusClass);
     expect(box.getAttribute("data-size")).toBe(size ?? "regular");
   });
 });

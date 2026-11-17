@@ -27,3 +27,15 @@ describe("isLoginErrorCode", () => {
     },
   );
 });
+
+describe("lobbyPlayers", () => {
+  it.each([
+    [1, null, "1 player"],
+    [2, null, "2 players"],
+    [0, null, "0 players"],
+    [1, 5, "1/5 players"],
+    [3, 5, "3/5 players"],
+  ] as const)("writes %i of max %s as %s", (count, max, text) => {
+    expect(en.lobbyPlayers(count, max)).toBe(text);
+  });
+});
