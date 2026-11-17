@@ -223,3 +223,14 @@ Recorded with ADR 0027 (REQ-0027). Amends points 1, 6 and 7 of this ADR and ADR 
 - **Tailwind exclusion list (Amendment 2026-11-15 a, `@source not inline`).** `fixed` is removed from the list in `global.css`, because `Select.tsx` uses it as a class (ADR 0027 point 4), and a word used as a class is never on the list. Plain uses of "fixed" in `ui/` comments (`GameLogo.tsx`, `Tooltip.tsx`) then build one `.fixed` utility that no feature uses. Rule: a feature class named `fixed` is a reviewer BLOCKER. The removal is made in PR A.
 - **Point 4 (z-index, "below 60").** The sentence "every overlay ... z-index values below 60 (the highest in `global.css` today)" is amended: the Dropdown list sheet is above the tab bar (60) and the floating "+" (55) so that it covers them (REQ-0027). Its token is `--z-dropdown-list: 70`, below 1000 and above both; the zIndex test asserts this (ADR 0027 point 4). The other overlays keep values below 60.
 - **Point 8 (modularity).** `@radix-ui/react-select` is imported only in `ui/Select.tsx`, as the other Radix packages are only in `ui/`.
+
+## Amendment 2026-11-17 (Button hover)
+DECISION, user, 2026-11-17. This amendment wins over the hover and press rules of ADR 0021 (point 4, and the rejected `::before` option) and over the sweep and lift that point 2 and amendment B2 e describe for `Button`. It applies to `ui/Button.tsx` (PR B2) and to the legacy `.button` classes until the last B PR.
+- **Hover: "Follow light".** A lit top edge and a glow in the button's own colour; ghost has no glow. A soft light follows the pointer. The light is an `aria-hidden` `<span>` inside `Button`, the one effect layer that is not a pseudo-element, because the component reads the pointer. It covers the button box with the button's radius, so the light stays inside the box; the span clips it, and the button itself needs no `overflow: hidden`. Its colour is a token.
+- **Pointer.** One `onPointerMove` in `Button` writes `--pointer-x` and `--pointer-y` on the element and nothing else. No other JavaScript drives the hover.
+- **When hover applies.** Only under `(hover:hover)` and `(pointer:fine)`. Touch and coarse pointers get no hover styles.
+- **Press.** `:active` sinks the button 1px and shows an inner shade.
+- **Reduced motion.** `prefers-reduced-motion: reduce` keeps only the static part: the lit top edge and the glow. The light is not shown.
+- **Legacy classes.** The `.button` classes in `global.css` get the static part only (edge, glow, sink). They get no light and no pointer handling.
+- **Stacking.** The primary button no longer needs `overflow: hidden`; it uses `isolation: isolate` instead.
+- **Tests.** `Button.test.tsx` checks that the light is `aria-hidden` with no text, that a pointer move sets the two properties, and that the role and name tests stay as they are.

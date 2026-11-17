@@ -122,17 +122,10 @@
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --duration-fast: 0.1s;
   --duration-base: 0.45s;
-  --duration-sweep: 0.7s;
   --duration-slow: 1s;
-  --sweep-start: -150%;
-  --sweep-end: 350%;
-  --sweep-skew: -20deg;
-  --sweep-angle: 100deg;
-  --sweep-width: 35%;
   --tracking-tight: -0.03em;
   --tracking-snug: -0.02em;
   --tracking-wide: 0.14em;
-  --lift-button: -2px;
   --press-scale: 0.97;
   --reveal-offset: 40px;
   --blur-glass: 8px;
@@ -170,6 +163,35 @@
   /* Buttons (ADR 0021): compact under a mouse, the larger box is the hit area on touch. */
   --size-button: 2rem;
   --size-button-touch: 2.5rem;
+  /* Button hover: light from above lights the top edge, a glow in the button's own colour breathes in, a soft
+     light follows the pointer, and press sinks the button into an inner shadow. */
+  --color-button-edge: rgba(255, 255, 255, 0.18);
+  --color-button-edge-danger: rgba(255, 123, 114, 0.5);
+  --color-button-top-light: rgba(255, 255, 255, 0.07);
+  --color-button-top-light-primary: rgba(255, 251, 240, 0.24);
+  --color-button-top-light-danger: rgba(255, 123, 114, 0.12);
+  --color-button-glow-accent: rgba(240, 199, 94, 0.34);
+  --color-button-glow-danger: rgba(255, 123, 114, 0.3);
+  --color-button-light: rgba(255, 255, 255, 0.12);
+  --color-button-light-primary: rgba(255, 250, 235, 0.6);
+  --color-button-light-danger: rgba(255, 123, 114, 0.22);
+  --color-button-press-shade: rgba(0, 0, 0, 0.42);
+  --shadow-button-glow-primary: 0 6px 24px -6px var(--color-button-glow-accent);
+  --shadow-button-glow-accent: 0 0 20px -6px var(--color-button-glow-accent);
+  --shadow-button-glow-danger: 0 0 20px -6px var(--color-button-glow-danger);
+  --shadow-button-press: inset 0 2px 6px var(--color-button-press-shade);
+  --size-button-light: 7rem;
+  --duration-button-hover: 0.28s;
+  --duration-button-glow: 0.4s;
+  /* The light trails the pointer a little, which reads as liquid rather than stuck to the cursor. */
+  --duration-button-follow: 0.22s;
+  --scale-button-glow-rest: 0.9;
+  --scale-button-light-pressed: 0.55;
+  --opacity-button-glow-pressed: 0.45;
+  --offset-button-sink: 1px;
+  /* Where the lit edge's light from above has faded out; the primary's stops earlier so its gold stays full. */
+  --stop-button-top-light: 60%;
+  --stop-button-top-light-primary: 55%;
   /* A lobby row is a card: one and a half taps tall keeps it roomy yet calm. */
   --size-lobby-row: calc(var(--size-tap) * 1.5);
   --font-size-lobby-name: 1.125rem; /* a step above body text so the game leads the row */
@@ -412,7 +434,7 @@ a {
   justify-content: center;
   gap: var(--space-2);
   min-height: var(--size-button);
-  overflow: hidden;
+  isolation: isolate;
   padding: 0 var(--space-3);
   border: 1px solid var(--color-accent);
   border-radius: var(--radius-control);
@@ -425,71 +447,15 @@ a {
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
-  transition: transform var(--duration-base) var(--ease-spring);
-}
-
-/* The sweep parks off the left edge and only animates on hover-in, so leaving does not flash it back across. */
-.button::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  width: var(--sweep-width);
-  background: linear-gradient(
-    var(--sweep-angle),
-    transparent,
-    var(--color-sheen),
-    transparent
-  );
-  transform: translateX(var(--sweep-start)) skewX(var(--sweep-skew));
-  pointer-events: none;
 }
 
 .button-ghost,
 .button--secondary,
 .button--danger {
-  overflow: visible;
-  isolation: isolate;
   background: var(--color-surface);
   border-color: var(--color-border);
   color: var(--color-text);
   box-shadow: none;
-}
-
-/* Hover layers fade by opacity behind the content, so hover animates no colour. They lie on the border, outside
-   the padding box, where overflow: hidden would clip them; these variants have no sweep that needs the clip. */
-:is(.button--secondary, .button--danger, .button.button-ghost)::before,
-.button-ghost::after {
-  content: "";
-  position: absolute;
-  inset: -1px;
-  border-radius: inherit;
-  opacity: 0;
-  pointer-events: none;
-}
-
-/* The accent edge. */
-:is(.button--secondary, .button--danger, .button.button-ghost)::before {
-  z-index: -1;
-  border: 1px solid var(--color-accent);
-  transition: opacity var(--duration-base) var(--ease-out);
-}
-
-/* A ghost's wash, under the edge and quicker. Ghosts have no sweep, so ::after is free; this resets it. */
-.button-ghost::after {
-  z-index: -2;
-  width: auto;
-  background: var(--color-accent-wash);
-  transform: none;
-  transition: opacity var(--duration-fast) var(--ease-out);
-}
-
-:is(.button--secondary, .button--danger, .button.button-ghost):not(
-    :disabled
-  ):hover::before,
-.button-ghost:not(:disabled):hover::after {
-  opacity: 1;
 }
 
 .button-ghost {
@@ -501,17 +467,6 @@ a {
   background: none;
   border-color: var(--color-danger);
   color: var(--color-danger);
-}
-
-.button--secondary::after,
-.button--danger::after {
-  content: none;
-}
-
-:is(.button, .button-ghost, .button--secondary, .button--danger):not(
-    :disabled
-  ):hover {
-  transform: translateY(var(--lift-button));
 }
 
 @media (pointer: coarse) {
@@ -595,18 +550,6 @@ a {
   }
 }
 
-.button:not(:disabled, .button-ghost):hover::after {
-  transform: translateX(var(--sweep-end)) skewX(var(--sweep-skew));
-  transition: transform var(--duration-sweep) var(--ease-out);
-}
-
-:is(.button, .button-ghost, .button--secondary, .button--danger):not(
-    :disabled
-  ):active {
-  transform: scale(var(--press-scale));
-  transition-duration: var(--duration-fast);
-}
-
 :is(.button, .button-ghost, .button--secondary, .button--danger):disabled {
   opacity: 0.5;
   cursor: not-allowed;
@@ -619,7 +562,6 @@ a {
   border-style: solid;
   font: inherit;
   font-weight: 600;
-  transition: transform var(--duration-base) var(--ease-spring);
 }
 
 [data-slot="button"][data-variant="primary"] {
@@ -628,69 +570,184 @@ a {
     inset 0 -1px 0 var(--color-shade);
 }
 
-/* The primary's sweep parks off the left edge and only animates on hover-in. */
-[data-slot="button"][data-variant="primary"]::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  width: var(--sweep-width);
-  background: linear-gradient(
-    var(--sweep-angle),
-    transparent,
-    var(--color-sheen),
-    transparent
-  );
-  transform: translateX(var(--sweep-start)) skewX(var(--sweep-skew));
-  pointer-events: none;
+/* Button hover: light from above lights the top edge (::before), a glow in the button's own colour breathes in
+   (::after), and in a Button a soft light follows the pointer (--pointer-x/y from ui/Button.tsx). Press sinks the
+   button into an inner shadow. Every layer only fades by opacity or moves by transform. The .button classes get
+   the edge, glow and sink; the follow light and the press shade need the light span that only Button renders. */
+:is([data-slot="button"], .button) {
+  transition: transform var(--duration-fast) var(--ease-out);
 }
 
-[data-slot="button"][data-variant="primary"]:not(:disabled):hover::after {
-  transform: translateX(var(--sweep-end)) skewX(var(--sweep-skew));
-  transition: transform var(--duration-sweep) var(--ease-out);
-}
-
-/* Hover layers fade by opacity behind the content: the accent edge of secondary and danger, the ghost's wash. */
-[data-slot="button"]:is(
-    [data-variant="secondary"],
-    [data-variant="danger"]
-  )::before,
-[data-slot="button"][data-variant="ghost"]::after {
+:is([data-slot="button"], .button)::before,
+:is([data-slot="button"], .button)::after,
+[data-slot="button-light"],
+[data-slot="button-light"]::after {
   content: "";
   position: absolute;
   inset: -1px;
   z-index: -1;
   border-radius: inherit;
-  opacity: 0;
   pointer-events: none;
 }
 
-[data-slot="button"]:is(
-    [data-variant="secondary"],
-    [data-variant="danger"]
-  )::before {
-  border: 1px solid var(--color-accent);
-  transition: opacity var(--duration-base) var(--ease-out);
+/* The lit edge. It fades out halfway down, so the primary's lower half stays full gold. */
+:is([data-slot="button"], .button)::before {
+  opacity: 0;
+  background: linear-gradient(
+    var(--color-button-top-light),
+    transparent var(--stop-button-top-light)
+  );
+  box-shadow:
+    inset 0 1px 0 var(--color-button-edge),
+    inset 0 0 0 1px var(--color-button-top-light);
+  transition: opacity var(--duration-button-hover) var(--ease-out);
 }
 
-[data-slot="button"][data-variant="ghost"]::after {
-  background: var(--color-accent-wash);
+:is([data-slot="button"][data-variant="ghost"], .button-ghost)::before {
+  background:
+    linear-gradient(
+      var(--color-button-top-light),
+      transparent var(--stop-button-top-light)
+    ),
+    var(--color-row-hover);
+}
+
+:is(
+  [data-slot="button"][data-variant="primary"],
+  .button:not(.button-ghost, .button--secondary, .button--danger)
+)::before {
+  background: linear-gradient(
+    var(--color-button-top-light-primary),
+    transparent var(--stop-button-top-light-primary)
+  );
+  box-shadow: inset 0 1px 0 var(--color-sheen);
+}
+
+:is([data-slot="button"][data-variant="danger"], .button--danger)::before {
+  background: linear-gradient(
+    var(--color-button-top-light-danger),
+    transparent var(--stop-button-top-light)
+  );
+  box-shadow: inset 0 1px 0 var(--color-button-edge-danger);
+}
+
+/* The glow. Ghosts have none, so a row of them stays quiet. */
+:is([data-slot="button"], .button)::after {
+  opacity: 0;
+  transform: scale(var(--scale-button-glow-rest));
+  transition:
+    opacity var(--duration-button-glow) var(--ease-out),
+    transform var(--duration-button-glow) var(--ease-out);
+}
+
+:is(
+  [data-slot="button"][data-variant="primary"],
+  .button:not(.button-ghost, .button--secondary, .button--danger)
+)::after {
+  box-shadow: var(--shadow-button-glow-primary);
+}
+
+:is([data-slot="button"][data-variant="secondary"], .button--secondary)::after {
+  box-shadow: var(--shadow-button-glow-accent);
+}
+
+:is([data-slot="button"][data-variant="danger"], .button--danger)::after {
+  box-shadow: var(--shadow-button-glow-danger);
+}
+
+:is([data-slot="button"][data-variant="ghost"], .button-ghost)::after {
+  content: none;
+}
+
+/* The light span clips the follow light to the button's shape. */
+[data-slot="button-light"] {
+  overflow: hidden;
+}
+
+[data-slot="button-light"]::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--size-button-light);
+  aspect-ratio: 1;
+  margin: calc(var(--size-button-light) / -2) 0 0
+    calc(var(--size-button-light) / -2);
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    var(--color-button-light),
+    transparent
+  );
+  opacity: 0;
+  transform: translate(var(--pointer-x, 0px), var(--pointer-y, 0px));
+  transition:
+    opacity var(--duration-button-hover) var(--ease-out),
+    transform var(--duration-button-follow) var(--ease-out);
+}
+
+[data-slot="button"][data-variant="primary"]
+  > [data-slot="button-light"]::before {
+  background: radial-gradient(
+    closest-side,
+    var(--color-button-light-primary),
+    transparent
+  );
+}
+
+[data-slot="button"][data-variant="danger"]
+  > [data-slot="button-light"]::before {
+  background: radial-gradient(
+    closest-side,
+    var(--color-button-light-danger),
+    transparent
+  );
+}
+
+/* The press shade. */
+[data-slot="button-light"]::after {
+  inset: 0;
+  opacity: 0;
+  box-shadow: var(--shadow-button-press);
   transition: opacity var(--duration-fast) var(--ease-out);
 }
 
-[data-slot="button"]:not(:disabled):hover::before,
-[data-slot="button"][data-variant="ghost"]:not(:disabled):hover::after {
+/* Hover only where a pointer can hover, so a tap on a phone leaves nothing lit. */
+@media (hover: hover) and (pointer: fine) {
+  :is([data-slot="button"], .button):not(:disabled):hover::before,
+  [data-slot="button"]:not(:disabled):hover
+    > [data-slot="button-light"]::before {
+    opacity: 1;
+  }
+
+  :is([data-slot="button"], .button):not(:disabled):hover::after {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+:is([data-slot="button"], .button):not(:disabled):active {
+  transform: translateY(var(--offset-button-sink));
+}
+
+:is([data-slot="button"], .button):not(:disabled):active::before {
+  opacity: 0;
+}
+
+:is([data-slot="button"], .button):not(:disabled):active::after {
+  opacity: var(--opacity-button-glow-pressed);
+  transform: none;
+}
+
+/* On press the light gathers under the pointer. */
+[data-slot="button"]:not(:disabled):active
+  > [data-slot="button-light"]::before {
+  transform: translate(var(--pointer-x, 0px), var(--pointer-y, 0px))
+    scale(var(--scale-button-light-pressed));
+}
+
+[data-slot="button"]:not(:disabled):active > [data-slot="button-light"]::after {
   opacity: 1;
-}
-
-[data-slot="button"]:not(:disabled):hover {
-  transform: translateY(var(--lift-button));
-}
-
-[data-slot="button"]:not(:disabled):active {
-  transform: scale(var(--press-scale));
-  transition-duration: var(--duration-fast);
 }
 
 /* Dropdown list (ADR 0027): colour, radius and box are utilities in ui/Select.tsx; type, shadow and motion are
@@ -2721,27 +2778,13 @@ a {
     scroll-behavior: auto !important;
   }
 
-  .button:not(.button-ghost)::after {
+  /* The plain lit edge and glow: no follow light, no glow scale, no sink. */
+  [data-slot="button-light"]::before {
     display: none;
   }
 
-  :is(.button, .button-ghost, .button--secondary, .button--danger):not(
-      :disabled
-    ):hover {
-    transform: none;
-  }
-
-  :is(.button, .button-ghost, .button--secondary, .button--danger):not(
-      :disabled
-    ):active {
-    transform: none;
-  }
-
-  [data-slot="button"][data-variant="primary"]::after {
-    display: none;
-  }
-
-  [data-slot="button"]:not(:disabled):is(:hover, :active) {
+  :is([data-slot="button"], .button)::after,
+  :is([data-slot="button"], .button):not(:disabled):active {
     transform: none;
   }
 
