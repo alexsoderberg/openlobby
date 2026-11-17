@@ -40,6 +40,7 @@ const (
 	ErrorBodyCodeInvalidMaxUses          ErrorBodyCode = "invalid_max_uses"
 	ErrorBodyCodeInvalidMode             ErrorBodyCode = "invalid_mode"
 	ErrorBodyCodeInvalidRequest          ErrorBodyCode = "invalid_request"
+	ErrorBodyCodeInvalidRoleIcon         ErrorBodyCode = "invalid_role_icon"
 	ErrorBodyCodeInviteInvalid           ErrorBodyCode = "invite_invalid"
 	ErrorBodyCodeLobbyChanged            ErrorBodyCode = "lobby_changed"
 	ErrorBodyCodeLobbyEndNotAfterStart   ErrorBodyCode = "lobby_end_not_after_start"
@@ -100,6 +101,8 @@ func (e ErrorBodyCode) Valid() bool {
 	case ErrorBodyCodeInvalidMode:
 		return true
 	case ErrorBodyCodeInvalidRequest:
+		return true
+	case ErrorBodyCodeInvalidRoleIcon:
 		return true
 	case ErrorBodyCodeInviteInvalid:
 		return true
@@ -208,6 +211,39 @@ func (e MemberRole) Valid() bool {
 	case MemberRoleAdmin:
 		return true
 	case MemberRoleMember:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for RoleIcon.
+const (
+	Crosshair    RoleIcon = "crosshair"
+	Dagger       RoleIcon = "dagger"
+	MedicalCross RoleIcon = "medical-cross"
+	None         RoleIcon = "none"
+	Shield       RoleIcon = "shield"
+	Star         RoleIcon = "star"
+	Wrench       RoleIcon = "wrench"
+)
+
+// Valid indicates whether the value is a known member of the RoleIcon enum.
+func (e RoleIcon) Valid() bool {
+	switch e {
+	case Crosshair:
+		return true
+	case Dagger:
+		return true
+	case MedicalCross:
+		return true
+	case None:
+		return true
+	case Shield:
+		return true
+	case Star:
+		return true
+	case Wrench:
 		return true
 	default:
 		return false
@@ -388,6 +424,9 @@ type GameRole struct {
 	// Name Game role name, 1–30 characters after trim. Unique ignoring case among the roles of the same owner (the game, or the mode).
 	Name string `json:"name"`
 
+	// RoleIcon The game role's icon. Not in `required` so that existing fixtures stay valid, but the server always sends it. `null` means not chosen yet, `none` means "No icon" (ADR 0024).
+	RoleIcon *RoleIcon `json:"roleIcon"`
+
 	// Slots How many players the role takes in a lobby.
 	Slots int `json:"slots"`
 }
@@ -399,6 +438,9 @@ type GameRoleInput struct {
 
 	// Name Game role name. Empty after trim or longer than 30 characters gives `invalid_game_role`.
 	Name string `json:"name"`
+
+	// RoleIcon The game role's icon. Omitted or `null` is stored as `none`. A value outside the set gives `invalid_role_icon`, checked after the name (`invalid_game_role`) and the slots (`invalid_capacity`) of the role (ADR 0024).
+	RoleIcon *RoleIcon `json:"roleIcon,omitempty"`
 
 	// Slots An integer from 1 to 2147483647, otherwise `invalid_capacity`. The sum of the slots of one owner must also be within that range.
 	Slots int `json:"slots"`
@@ -658,6 +700,9 @@ type PreferredGameRole struct {
 
 	// Name The game role's name.
 	Name string `json:"name"`
+
+	// RoleIcon The game role's icon as it is now, read like its name. Not in `required` so that existing fixtures stay valid, but the server always sends it. `null` means not chosen yet, `none` means "No icon" (ADR 0024).
+	RoleIcon *RoleIcon `json:"roleIcon"`
 }
 
 // PreferredGameRoleChoices defines model for PreferredGameRoleChoices.
@@ -687,6 +732,9 @@ type ReplaceGameRequest struct {
 	Name *GameName `json:"name,omitempty"`
 }
 
+// RoleIcon The icon of a game role from a fixed set (REQ-0023, ADR 0024). `none` means the system admin chose "No icon"; `null` where the field is nullable means not chosen yet. Both are shown as no icon.
+type RoleIcon string
+
 // RoleSlot defines model for RoleSlot.
 type RoleSlot struct {
 	GameRoleId openapi_types.UUID `json:"gameRoleId"`
@@ -696,7 +744,10 @@ type RoleSlot struct {
 
 	// PlayerCount Number of players in the role. Shown as "Tank 0/1".
 	PlayerCount int `json:"playerCount"`
-	Slots       int `json:"slots"`
+
+	// RoleIcon The game role's icon as it was when the lobby got the role slot (a copy). Not in `required` so that existing fixtures stay valid, but the server always sends it. `null` means not chosen yet, `none` means "No icon" (ADR 0024).
+	RoleIcon *RoleIcon `json:"roleIcon"`
+	Slots    int       `json:"slots"`
 }
 
 // RoleSlotInput defines model for RoleSlotInput.

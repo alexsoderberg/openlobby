@@ -43,6 +43,11 @@ func TestGameRoleRules(t *testing.T) {
 		{name: "sum at the limit", raw: roles(math.MaxInt32-1, 1)},
 		{name: "sum above the limit", raw: roles(math.MaxInt32, 1), want: domain.ErrInvalidCapacity},
 		{name: "name is checked before slots", raw: []domain.GameRole{{Name: "", Slots: 0}}, want: domain.ErrInvalidGameRole},
+		{name: "unknown role icon", raw: []domain.GameRole{{Name: "Tank", Slots: 1, RoleIcon: icon("sword")}}, want: domain.ErrInvalidRoleIcon},
+		{name: "role icon with a capital letter", raw: []domain.GameRole{{Name: "Tank", Slots: 1, RoleIcon: icon("Shield")}}, want: domain.ErrInvalidRoleIcon},
+		{name: "empty role icon", raw: []domain.GameRole{{Name: "Tank", Slots: 1, RoleIcon: icon("")}}, want: domain.ErrInvalidRoleIcon},
+		{name: "name is checked before the icon", raw: []domain.GameRole{{Name: "", Slots: 1, RoleIcon: icon("sword")}}, want: domain.ErrInvalidGameRole},
+		{name: "slots are checked before the icon", raw: []domain.GameRole{{Name: "Tank", Slots: 0, RoleIcon: icon("sword")}}, want: domain.ErrInvalidCapacity},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
@@ -67,11 +72,50 @@ func TestOmittedListsStayNilAndEmptyListsStayEmpty(t *testing.T) {
 	}
 }
 
+func icon(value string) *domain.RoleIcon {
+	roleIcon := domain.RoleIcon(value)
+	return &roleIcon
+}
+
 func TestGameRoleNameIsTrimmedAndIDKept(t *testing.T) {
 	game, err := newGameWithRoles([]domain.GameRole{{ID: "r1", Name: "  Tank ", Slots: 1}})
 
-	if err != nil || game.GameRoles[0] != (domain.GameRole{ID: "r1", Name: "Tank", Slots: 1}) {
+	if err != nil || game.GameRoles[0].ID != "r1" || game.GameRoles[0].Name != "Tank" || game.GameRoles[0].Slots != 1 {
 		t.Fatalf("roles %v, error %v", game.GameRoles, err)
+	}
+}
+
+// ADR 0024 section 2: an omitted icon is stored as "none", a listed icon is kept, on the game and on a mode.
+func TestGameRoleIcon(t *testing.T) {
+	type iconCase struct {
+		name string
+		raw  *domain.RoleIcon
+		want domain.RoleIcon
+	}
+	tests := []iconCase{{name: "omitted", raw: nil, want: domain.RoleIconNone}}
+	for _, value := range domain.RoleIcons() {
+		tests = append(tests, iconCase{name: string(value), raw: icon(string(value)), want: value})
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			raw := []domain.GameRole{{Name: "Tank", Slots: 1, RoleIcon: tc.raw}}
+			game, err := newGameWithRoles(raw)
+			if err != nil || *game.GameRoles[0].RoleIcon != tc.want {
+				t.Fatalf("game roles %v, error %v; want icon %q", game.GameRoles, err, tc.want)
+			}
+			mode, err := newGameWithMode(domain.GameMode{Name: "Raid", GameRoles: raw})
+			if err != nil || *mode.Modes[0].GameRoles[0].RoleIcon != tc.want {
+				t.Fatalf("mode %v, error %v; want icon %q", mode.Modes, err, tc.want)
+			}
+		})
+	}
+}
+
+func TestModeRoleIconIsChecked(t *testing.T) {
+	_, err := newGameWithMode(domain.GameMode{Name: "Raid", GameRoles: []domain.GameRole{{Name: "Tank", Slots: 1, RoleIcon: icon("sword")}}})
+
+	if !errors.Is(err, domain.ErrInvalidRoleIcon) {
+		t.Fatalf("error %v, want ErrInvalidRoleIcon", err)
 	}
 }
 

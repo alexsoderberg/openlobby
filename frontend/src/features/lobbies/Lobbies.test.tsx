@@ -267,6 +267,43 @@ describe("game cover", () => {
   });
 });
 
+describe("game logo", () => {
+  const VERSION = "d".repeat(64);
+  const logoOf = (element: Element) =>
+    element.querySelector('[data-slot="game-logo"]');
+
+  it("shows each list row's game logo, or its monogram, at the regular size before the label", async () => {
+    renderLobbies(
+      withLobbies(
+        { ...catan, gameId: "game1", gameLogoVersion: VERSION },
+        { ...chess, gameId: "game2" },
+      ),
+    );
+
+    const [withLogo, monogram] = await screen.findAllByRole("listitem");
+    expect(logoOf(withLogo)?.getAttribute("data-size")).toBe("regular");
+    expect(logoOf(withLogo)?.nextElementSibling?.textContent).toBe("Catan");
+    expect(logoOf(withLogo)?.querySelector("img")?.getAttribute("src")).toBe(
+      `/api/games/game1/images/logo?v=${VERSION}`,
+    );
+    expect(logoOf(monogram)?.textContent).toBe("C");
+    expect(logoOf(monogram)?.getAttribute("aria-hidden")).toBe("true");
+    expect(screen.getByRole("link", { name: "Chess" })).toBeTruthy();
+  });
+
+  it("shows no logo on an open lobby or one with another game", async () => {
+    renderLobbies(
+      withLobbies(
+        lobby({ id: "l10", gameId: null, gameName: null }),
+        lobby({ id: "l11", gameId: null, gameName: "Kubb" }),
+      ),
+    );
+
+    const rows = await screen.findAllByRole("listitem");
+    expect(rows.map((row) => logoOf(row))).toEqual([null, null]);
+  });
+});
+
 describe("label and role slots", () => {
   const overwatch = lobby({
     id: "l9",
