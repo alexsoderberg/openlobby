@@ -31,13 +31,14 @@ func assertNoRoleSlots(t *testing.T, body map[string]any) {
 // questStore has a game with a mode Raid (Tank 1, DPS 2, one activity) and a lobby of that mode where Tank is full.
 func questStore() *memoryGroups {
 	store := upcomingStore()
+	shield := domain.RoleIcon("shield")
 	raid := domain.GameMode{ID: raidModeID, Name: "Raid", MaxPlayers: intp(3),
 		GameRoles:  []domain.GameRole{{ID: tankRoleID, Name: "Tank", Slots: 1}, {ID: dpsRoleID, Name: "DPS", Slots: 2}},
 		Activities: []domain.Activity{{ID: keepID, Name: "The Keep"}}}
 	store.games = append(store.games, domain.Game{ID: questGameID, Name: "Quest", Modes: []domain.GameMode{raid}})
 	store.lobbies[roleLobby] = domain.Lobby{ID: roleLobby, GroupID: fridayID, CreatedByUserID: alexID, GameName: strp("Quest"), MaxPlayers: intp(3),
 		EndsAt: store.lobbies[aliceLobby].EndsAt, PlayerCount: 1,
-		RoleSlots: []domain.RoleSlot{{GameRoleID: tankRoleID, Name: "Tank", Slots: 1, PlayerCount: 1}, {GameRoleID: dpsRoleID, Name: "DPS", Slots: 2}}}
+		RoleSlots: []domain.RoleSlot{{GameRoleID: tankRoleID, Name: "Tank", Slots: 1, RoleIcon: &shield, PlayerCount: 1}, {GameRoleID: dpsRoleID, Name: "DPS", Slots: 2}}}
 	return store
 }
 
@@ -180,5 +181,21 @@ func TestLobbyBodiesSendNullForUnsetFields(t *testing.T) {
 	}
 	if got.Players[1]["gameRoleId"] != tankRoleID {
 		t.Errorf("Alex gameRoleId = %v, want Tank", got.Players[1]["gameRoleId"])
+	}
+}
+
+// Each role slot sends its copied icon, and null when none was copied (ADR 0024 section 2).
+func TestRoleSlotsSendTheirRoleIcon(t *testing.T) {
+	response := call(newRouter(questStore(), fridayDirectory()), http.MethodGet, lobbiesPath+"/"+roleLobby, asUser(otherID), "")
+
+	var got struct {
+		RoleSlots []map[string]any `json:"roleSlots"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &got); err != nil || len(got.RoleSlots) != 2 {
+		t.Fatalf("body %q, error %v; want two role slots", response.Body.String(), err)
+	}
+	icon, present := got.RoleSlots[1]["roleIcon"]
+	if got.RoleSlots[0]["roleIcon"] != "shield" || !present || icon != nil {
+		t.Fatalf("role slots %v, want Tank with shield and DPS with roleIcon null", got.RoleSlots)
 	}
 }

@@ -155,6 +155,7 @@ type PreferredGameRole struct {
 	Name       string
 	GameName   string
 	ModeName   *string
+	RoleIcon   *RoleIcon // the current icon of the game role, read live like its name (ADR 0024)
 }
 
 // NewGroupName trims the name and checks its length. It returns the trimmed name.
