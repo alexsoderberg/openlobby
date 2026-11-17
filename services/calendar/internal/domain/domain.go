@@ -37,6 +37,9 @@ var ErrInvalidActivity = errors.New("invalid activity")
 // ErrInvalidGameRole means a game role name is empty after trim or longer than maxGameRoleNameLength (ADR 0017).
 var ErrInvalidGameRole = errors.New("invalid game role")
 
+// ErrInvalidRoleIcon means a game role icon is not in the fixed set (REQ-0023, ADR 0024).
+var ErrInvalidRoleIcon = errors.New("invalid role icon")
+
 // ErrInvalidID means an ID in a game list write is repeated or is not a current ID of the same owner (ADR 0017 section 6).
 var ErrInvalidID = errors.New("invalid id")
 

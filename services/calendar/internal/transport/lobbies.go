@@ -211,7 +211,7 @@ func lobbyBody(lobby domain.Lobby) (publicapi.CreateLobby201JSONResponse, error)
 	if err != nil {
 		return body, err
 	}
-	body.GameName, body.GameGenre, body.MaxPlayers = lobby.GameName, convertGenre[publicapi.Genre](lobby.GameGenre), lobby.MaxPlayers
+	body.GameName, body.GameGenre, body.MaxPlayers = lobby.GameName, convertEnum[publicapi.Genre](lobby.GameGenre), lobby.MaxPlayers
 	body.GameLogoVersion, body.GameCoverVersion = lobby.GameLogoVersion, lobby.GameCoverVersion
 	body.ModeName, body.ActivityName = lobby.ModeName, lobby.ActivityName
 	body.StartsAt, body.EndsAt = lobby.StartsAt.UTC(), lobby.EndsAt.UTC()

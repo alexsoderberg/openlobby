@@ -19,6 +19,7 @@ var (
 		{domain.ErrInvalidCapacity, publicapi.ErrorBodyCodeInvalidCapacity},
 		{domain.ErrInvalidGenre, publicapi.ErrorBodyCodeInvalidGenre},
 		{domain.ErrInvalidGameRole, publicapi.ErrorBodyCodeInvalidGameRole},
+		{domain.ErrInvalidRoleIcon, publicapi.ErrorBodyCodeInvalidRoleIcon},
 		{domain.ErrInvalidMode, publicapi.ErrorBodyCodeInvalidMode},
 		{domain.ErrInvalidActivity, publicapi.ErrorBodyCodeInvalidActivity},
 		{domain.ErrInvalidID, publicapi.ErrorBodyCodeInvalidRequest},
@@ -83,7 +84,7 @@ func (h publicHandler) ListGames(ctx context.Context, _ publicapi.ListGamesReque
 // then the name, the default max, the genre, the game roles and modes, then the duplicate names.
 func (h publicHandler) CreateGame(ctx context.Context, request publicapi.CreateGameRequestObject) (publicapi.CreateGameResponseObject, error) {
 	body := request.Body
-	game, err := h.games.CreateGame(ctx, actorFrom(ctx), valueOrEmpty(body.Name), body.DefaultMaxPlayers, convertGenre[domain.Genre](body.Genre), gameRoleInputs(body.GameRoles), modeInputs(body.Modes))
+	game, err := h.games.CreateGame(ctx, actorFrom(ctx), valueOrEmpty(body.Name), body.DefaultMaxPlayers, convertEnum[domain.Genre](body.Genre), gameRoleInputs(body.GameRoles), modeInputs(body.Modes))
 	if code, found := codeOf(gameBadRequests, err); found {
 		return publicapi.CreateGame400JSONResponse{Error: publicErrorBody(ctx, code)}, nil
 	}
@@ -107,7 +108,7 @@ func (h publicHandler) CreateGame(ctx context.Context, request publicapi.CreateG
 // before the permission check (ADR 0001 step 1), so a non-admin learns nothing from it.
 func (h publicHandler) ReplaceGame(ctx context.Context, request publicapi.ReplaceGameRequestObject) (publicapi.ReplaceGameResponseObject, error) {
 	body := request.Body
-	game, err := h.games.ReplaceGame(ctx, actorFrom(ctx), request.GameId, valueOrEmpty(body.Name), body.DefaultMaxPlayers, convertGenre[domain.Genre](body.Genre), gameRoleInputs(body.GameRoles), modeInputs(body.Modes))
+	game, err := h.games.ReplaceGame(ctx, actorFrom(ctx), request.GameId, valueOrEmpty(body.Name), body.DefaultMaxPlayers, convertEnum[domain.Genre](body.Genre), gameRoleInputs(body.GameRoles), modeInputs(body.Modes))
 	if code, found := codeOf(gameBadRequests, err); found {
 		return publicapi.ReplaceGame400JSONResponse{Error: publicErrorBody(ctx, code)}, nil
 	}
@@ -183,7 +184,7 @@ func gameBody(game domain.Game) (publicapi.Game, error) {
 		}
 		modes = append(modes, body)
 	}
-	return publicapi.Game{Id: id, Name: game.Name, DefaultMaxPlayers: game.DefaultMaxPlayers, Genre: convertGenre[publicapi.Genre](game.Genre), LogoVersion: game.LogoVersion, CoverVersion: game.CoverVersion, GameRoles: &roles, Modes: &modes}, nil
+	return publicapi.Game{Id: id, Name: game.Name, DefaultMaxPlayers: game.DefaultMaxPlayers, Genre: convertEnum[publicapi.Genre](game.Genre), LogoVersion: game.LogoVersion, CoverVersion: game.CoverVersion, GameRoles: &roles, Modes: &modes}, nil
 }
 
 func modeBody(mode domain.GameMode) (publicapi.GameMode, error) {
@@ -214,7 +215,7 @@ func gameRoleBodies(roles []domain.GameRole) ([]publicapi.GameRole, error) {
 		if err != nil {
 			return nil, err
 		}
-		bodies = append(bodies, publicapi.GameRole{Id: id, Name: role.Name, Slots: role.Slots})
+		bodies = append(bodies, publicapi.GameRole{Id: id, Name: role.Name, Slots: role.Slots, RoleIcon: convertEnum[publicapi.RoleIcon](role.RoleIcon)})
 	}
 	return bodies, nil
 }
@@ -235,7 +236,7 @@ func gameRoleInputs(list *[]publicapi.GameRoleInput) []domain.GameRole {
 	}
 	roles := make([]domain.GameRole, 0, len(*list))
 	for _, role := range *list {
-		roles = append(roles, domain.GameRole{ID: optionalID(role.Id), Name: role.Name, Slots: role.Slots})
+		roles = append(roles, domain.GameRole{ID: optionalID(role.Id), Name: role.Name, Slots: role.Slots, RoleIcon: convertEnum[domain.RoleIcon](role.RoleIcon)})
 	}
 	return roles
 }
@@ -262,11 +263,11 @@ func activityInputs(list *[]publicapi.ActivityInput) []domain.Activity {
 	return activities
 }
 
-// convertGenre moves a genre between the contract type and the domain type. Both are strings; the domain checks the value.
-func convertGenre[To, From ~string](genre *From) *To {
-	if genre == nil {
+// convertEnum moves an enum value, such as a genre or a role icon, between the contract type and the domain type. Both are strings; the domain checks the value.
+func convertEnum[To, From ~string](value *From) *To {
+	if value == nil {
 		return nil
 	}
-	converted := To(*genre)
+	converted := To(*value)
 	return &converted
 }
