@@ -43,7 +43,7 @@ func groupOverviewBody(overview domain.GroupOverview) (publicapi.GroupOverview, 
 	if lobby := overview.NextLobby; lobby != nil {
 		body.NextLobby = &publicapi.NextLobby{
 			GameName: lobby.GameName, ModeName: lobby.ModeName, ActivityName: lobby.ActivityName,
-			GameGenre: convertGenre[publicapi.Genre](lobby.GameGenre), MaxPlayers: lobby.MaxPlayers,
+			GameGenre: convertEnum[publicapi.Genre](lobby.GameGenre), MaxPlayers: lobby.MaxPlayers,
 			StartsAt: lobby.StartsAt.UTC(), EndsAt: lobby.EndsAt.UTC(), PlayerCount: lobby.PlayerCount,
 		}
 	}

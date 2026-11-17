@@ -501,3 +501,21 @@ func TestDomainGenresEqualTheContractEnum(t *testing.T) {
 		t.Fatalf("contract genres %v, domain genres %v; want equal sets", fromContract, fromDomain)
 	}
 }
+
+// The Go list and the contract enum are kept equal (ADR 0024 section 3).
+func TestDomainRoleIconsEqualTheContractEnum(t *testing.T) {
+	contract := []publicapi.RoleIcon{publicapi.Crosshair, publicapi.Dagger, publicapi.MedicalCross, publicapi.None, publicapi.Shield, publicapi.Star, publicapi.Wrench}
+	var fromContract, fromDomain []string
+	for _, roleIcon := range contract {
+		fromContract = append(fromContract, string(roleIcon))
+	}
+	for _, roleIcon := range domain.RoleIcons() {
+		fromDomain = append(fromDomain, string(roleIcon))
+	}
+	slices.Sort(fromContract)
+	slices.Sort(fromDomain)
+
+	if !slices.Equal(fromContract, fromDomain) {
+		t.Fatalf("contract role icons %v, domain role icons %v; want equal sets", fromContract, fromDomain)
+	}
+}

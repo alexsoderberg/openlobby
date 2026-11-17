@@ -72,6 +72,26 @@ func TestCreateGameWithGameRolesAndModes(t *testing.T) {
 	}
 }
 
+// ADR 0024: a given icon is kept, an omitted or null one is written as "none", and a role read without a choice sends
+// roleIcon null rather than leaving the field out.
+func TestGameRoleIconIsWrittenAndReturned(t *testing.T) {
+	store := gameStore()
+	store.games[0].GameRoles = []domain.GameRole{{ID: storedRoleID, Name: "Scout", Slots: 1}}
+	body := `{"name":"Raid","gameRoles":[{"name":"Tank","slots":1,"roleIcon":"shield"},{"name":"Scout","slots":1},{"name":"Flex","slots":1,"roleIcon":null}]}`
+
+	created := call(gameRouter(store), http.MethodPost, gameRoot, asAdminUser(alexID), body)
+	listed := call(gameRouter(store), http.MethodGet, gameRoot, asAdminUser(alexID), "")
+
+	roles := decode(t, created.Body.String())["gameRoles"].([]any)
+	icons := []any{roles[0].(map[string]any)["roleIcon"], roles[1].(map[string]any)["roleIcon"], roles[2].(map[string]any)["roleIcon"]}
+	if created.Code != http.StatusCreated || !reflect.DeepEqual(icons, []any{"shield", "none", "none"}) {
+		t.Fatalf("status %d, icons %v; want 201 with shield, none, none", created.Code, icons)
+	}
+	if !strings.Contains(listed.Body.String(), `"name":"Scout","roleIcon":null`) {
+		t.Fatalf("list %q; want roleIcon null for the stored role without a choice", listed.Body.String())
+	}
+}
+
 func TestReplaceGameKeepsRolesAndModesWhenOmittedOrNull(t *testing.T) {
 	for _, body := range []string{`{"name":"Renamed"}`, `{"name":"Renamed","gameRoles":null,"modes":null}`} {
 		store := gameStore()
@@ -118,6 +138,11 @@ func TestGameWritesRefuseInvalidRolesModesAndActivities(t *testing.T) {
 		{name: "mode max zero", body: `{"name":"G","modes":[{"name":"M","maxPlayers":0}]}`, code: "invalid_capacity"},
 		{name: "activity name empty", body: `{"name":"G","modes":[{"name":"M","maxPlayers":2,"activities":[{"name":""}]}]}`, code: "invalid_activity"},
 		{name: "role of a mode invalid", body: `{"name":"G","modes":[{"name":"M","gameRoles":[{"name":"","slots":1}]}]}`, code: "invalid_game_role"},
+		{name: "role icon unknown", body: `{"name":"G","gameRoles":[{"name":"A","slots":1,"roleIcon":"sword"}]}`, code: "invalid_role_icon"},
+		{name: "role icon of a mode unknown", body: `{"name":"G","modes":[{"name":"M","gameRoles":[{"name":"A","slots":1,"roleIcon":"Shield"}]}]}`, code: "invalid_role_icon"},
+		{name: "role icon is not a string", body: `{"name":"G","gameRoles":[{"name":"A","slots":1,"roleIcon":5}]}`, code: "invalid_request"},
+		{name: "role name before the icon", body: `{"name":"G","gameRoles":[{"name":"","slots":1,"roleIcon":"sword"}]}`, code: "invalid_game_role"},
+		{name: "role slots before the icon", body: `{"name":"G","gameRoles":[{"name":"A","slots":0,"roleIcon":"sword"}]}`, code: "invalid_capacity"},
 		{name: "ID is not a uuid", body: `{"name":"G","modes":[{"id":"nope","name":"M","maxPlayers":2}]}`, code: "invalid_request"},
 		{name: "modes is not a list", body: `{"name":"G","modes":{}}`, code: "invalid_request"},
 	}
