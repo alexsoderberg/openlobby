@@ -84,6 +84,7 @@ DECISION (user, 2026-11-10): no, A4 to A6 are not moved ahead of A2 and A3, whic
 | A6 | REQ-0018 | Group feed of recent lobby events (F-036) | Should | REQ-0003, REQ-0004, REQ-0005; REQ-0017 for new entries shown live |
 | A6a | REQ-0019 | Larger week view on desktop and scroll to the next lobby (F-017, F-028) | Should | REQ-0004, REQ-0012 (both amended by REQ-0019) |
 | A6b | REQ-0025 | Wider desktop layout on the main pages: up to 100rem, side columns (Dashboard, group view, lobby page), multi-column Group list (F-044) | Should | REQ-0012, REQ-0019 (both amended by REQ-0025), REQ-0024 (the card grid needs the cards of A3c, built before A4) |
+| A6c | REQ-0004 and REQ-0012 (Amendment 2026-11-17, Decided 2026-11-17: phone day selection, F-017 and F-028) | Pill row that scrolls only when needed, and a swipe between days on the phone day grid, stopping at Monday and Sunday. Not built yet | Should (ASSUMPTION, product owner, 2026-11-17; the user may override the order) | REQ-0004, REQ-0012, REQ-0019 (the scroll rule kept) |
 | A7 | – (F-037, not yet a requirement) | Member availability and group heatmap ("When can everyone play?") | not yet prioritised | REQ-0002, REQ-0003 (lobby from a suggested slot) |
 
 A6a was decided by the user on 2026-11-12 and is placed after A6 by the product owner, in line with the decided order of A4 to A6. It is an extension of the week view, not a new feature, and no other requirement depends on it. The user may move it earlier at any time. Its open questions are listed in REQ-0019.
