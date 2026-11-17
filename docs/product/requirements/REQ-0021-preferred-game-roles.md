@@ -1,5 +1,5 @@
 # REQ-0021. Preferred game roles per member
-Status: Implemented
+Status: Implemented. Amendment 2026-11-17 (compact display in the member list): Decided, not built (see the end of this file).
 Feature: F-039
 Priority: Should
 
@@ -83,3 +83,104 @@ All seven questions of ADR 0022 (section "Open questions for the user") are answ
 
 ## Architect
 ADR 0022 (Accepted, 2026-11-12) holds the storage and the API: the game and its game roles belong to the calendar service (REQ-0010 and REQ-0011), and the member comes from the gateway header. The term "Preferred game role" (avoid: class, main role, role alone) is defined there and in its glossary row. Implementation follows the design in ADR 0022.
+
+## Amendment 2026-11-17 (compact display in the member list)
+Status of this amendment: Decided (2026-11-17). Not built. The data design is in ADR 0022 Amendment 2026-11-17. The build waits for the role icons (ADR 0024 PR1a to PR3) and then for the Game chip components (CH1 to CH3, with the popover built in CH2b). Status of REQ-0021 itself: Implemented, unchanged.
+Feature: F-039 (EXTEND, not a new feature). The user's wish: "I don't need all this text in the member list under /groups/{id}; logos or something else would do."
+
+Decisions:
+- DECISION (user, 2026-11-17, Q1): a popover opened by click, tap, Enter or Space, on every device, shows the full text. No hover.
+- DECISION (user, 2026-11-17, Q5): only the member list of the Group view changes. The lobby player list and the You page keep the current text.
+- DECISION (user, 2026-11-17): in the member list of the Group view the game name is not shown as visible text. Only the game logo or monogram and the role icons are shown. The full text, with the game name, is the accessible name of the Game chip and is the text of the popover. This is an exception to REQ-0026's rule that a game name is always shown beside its logo, for this place only (REQ-0026 Amendment 2026-11-17).
+- DECISION (user, 2026-11-17): the popover is `AnchoredPopover` (Radix Popover), built in CH2b, before the Dialog family (ADR 0023; the earlier `ui/Popover.tsx` plan is renamed CreateFrame in CH2a, which this requirement does not depend on by name).
+- ASSUMPTION (product owner, 2026-11-17, the user may override): Q2, Q3, Q4, Q6 and Q7 as set out in "Decisions and assumptions" below.
+
+Term: the Game chip (CLAUDE.md glossary). One Game chip is one game of one member's preferred game roles in the member list. Avoid "item" and "compact item" for it.
+
+Scope: only the member list of the Group view (REQ-0002). It replaces the text "Plays ..." next to a member's name in that list. The list sits in the side column from 98rem; below 98rem the members panel sits below the lobbies (REQ-0025, line 48). Everything else in REQ-0021 stays as written, including recording, joining, visibility, and the lobby player list and the You page.
+
+Current text, for reference: "Plays Top, Jungle in League of Legends; Support in Overwatch; Tank (Dungeon 1-3-1) in World of Warcraft". It takes a full line per member.
+
+Terms (CLAUDE.md glossary): Preferred game role, Game role, Role icon (REQ-0023), Game logo and Monogram (REQ-0026), Game chip, Member list (of the Group view), Game (`gameId`).
+
+### Data the Game chip needs (designed in ADR 0022 Amendment 2026-11-17)
+The Game chip groups a member's preferred game roles by game, draws the game's logo, and draws each role's icon. The member list today has, per preferred game role, the game name, the mode name, the role name and (planned by ADR 0024) the role icon. It does not have:
+- the game's identity, so the roles can be grouped by game (the game name is not a safe key, since it is not shown and can repeat);
+- the game's logo version, so the Game logo can be drawn (REQ-0026 point 5 defines the field for games; the member's roles need it too);
+- the role icon of each preferred game role, which ADR 0024 adds to the preferred game role; this is required for the Game chip, not only for the game form.
+The data design is in ADR 0022 Amendment 2026-11-17. The backend provides the contract change in `api/` before the frontend work starts. The Game chip must not join the game list from the frontend. The server already sends the roles in game order (ADR 0022); that order is kept.
+
+### Game chip (Decided; Q2 to Q4 and Q6 are assumptions)
+- Given that I am a member of a group, when I see its member list, and a member has preferred game roles, then each game of those roles is one Game chip: the game's Game logo at the regular size of REQ-0026 (Amendment 2026-11-16), or its Monogram when it has none, followed by the Role icon of each of that game's preferred game roles that has one. The game name is not shown as visible text.
+- Given that a preferred game role of a game has no Role icon, when I see the Game chip, then the role's name is shown as short visible text after the icons of its game, e.g. "Top, Jungle" (ASSUMPTION, Q4).
+- Given that a member has preferred game roles in several games, when I see the member list, then there is one Game chip per game, in the order the server sends them, and the Game chips wrap onto the next line on a narrow row. There is no limit on the number of Game chips (ASSUMPTION, Q3).
+- Given that a member has no preferred game roles, when I see the member list, then nothing is shown, as today.
+- Given that two preferred game roles of one game have the same Role icon, when the Game chip is shown, then that icon appears once (ASSUMPTION, Q2).
+- Given that a Game chip is shown, when a screen reader reads the member list, then the Game chip's accessible name is the full text of REQ-0021 ("Plays ... in ..."), with the game name, the role names and the mode names. The logo, the monogram and the icons are hidden from assistive technology, so they never carry the information alone (WCAG 1.1.1, 4.1.2; REQ-0023 line 35).
+- Given that a Game chip is shown, when I use a phone, then its tap target is at least 44 px high and 44 px wide, and the Game chip does not change the layout of the list (REQ-0023, line 36).
+- Given that the Game logo is shown in a Game chip at the regular size, when a game has a logo, then the logo is shown at the size of REQ-0026 (Amendment 2026-11-16, regular); no new size is added (ASSUMPTION, Q6).
+
+### Full text on demand (Decided, Q1)
+- Given that a Game chip is shown, when I click it, tap it, or press Enter or Space while it has keyboard focus, then a popover shows the full text as today, with game names, role names and mode names.
+- Given that the popover is open, when I press Escape or tap outside it, then it closes and keyboard focus returns to the Game chip.
+- Given that the popover is open on a phone, when it is shown, then its text is not cut and the page does not scroll sideways.
+- Given that I use the keyboard, when I move through the member list, then the Game chip is reachable in the normal tab order and has a visible focus ring (WCAG 2.4.7).
+- The popover is `AnchoredPopover` (Radix Popover, backlog row A3f, DECISION, user, 2026-11-17).
+
+### Roles and modes
+- Given that a preferred game role has a Role icon, when the Game chip is shown, then only the icon is visible, and its name is in the full text (ASSUMPTION, Q2).
+- Given that a member has preferred game roles in several modes of one game, when the Game chip is shown, then the mode names are not visible; they are in the full text (ASSUMPTION, Q2).
+
+### Out of scope
+- Changing how game roles are chosen, saved or shown on the You page, in joining, or on lobby pages (Q5).
+- Mode names and game names as visible text in the member list.
+- Any new icon or new Role icon value (REQ-0023 set is unchanged).
+- A new size for the Game logo in the member list (Q6).
+- Labels of Next up, This week and the lobby list: no logo, no icon, no game role text there (REQ-0026, REQ-0023).
+- Showing game roles to people who share no group with the member (REQ-0021 visibility, unchanged).
+- Avatars in the member list (REQ-0016, F-029). The avatar rule is decided there.
+
+### Consequences for other requirements
+- REQ-0023 lines 9, 31 and 35 are amended for the member list (2026-11-17).
+- REQ-0026 gets Amendment 2026-11-17 for the name exception.
+- Tooltip (CLAUDE.md glossary, ADR 0021 point 2): not used here. The popover of Q1 needs no change to the Tooltip rule. The popover is `AnchoredPopover` (backlog row A3f).
+
+### Decisions and assumptions (questions of 2026-11-17; options and recommendations kept for the record)
+
+Q1. DECISION (user, 2026-11-17): option B. How does a person read the full text (game, role and mode names) now that it is not shown inline?
+- A. Popover opened by hover or keyboard focus on a mouse and by tap on a phone. Closest to the tooltip the brief mentioned. Needs the architect to decide whether the Tooltip rule (ADR 0021, glossary) covers it; a hover popover is a tooltip in all but name.
+- B. Popover opened by click, tap, Enter or Space, on every device. One interaction, no hover, no change to the Tooltip rule. Recommended: simplest, and works on touch without a second code path. A mouse user must click to see the names.
+- C. No visible text; the names only in the accessible name. Not recommended: icons without names cannot be learned by sight, and a role without an icon would show a name while its neighbours show none.
+- Recommendation: B.
+
+Q2. ASSUMPTION (product owner, 2026-11-17, the user may override): option A. Mode names and icons that repeat within one game (for example Tank in Dungeon and Tank in Raid, both shield)?
+- A. Mode names only in the full text; each icon once per game. Recommended: the icon is the same role, the mode is detail.
+- B. Each mode shown as a short text after its icon ("shield Dungeon 1-3-1"). Keeps the mode visible, but adds text the user wants less of.
+- C. One icon per preferred game role, repeats shown, no mode names. Not recommended: "shield shield" in one row.
+- Recommendation: A.
+
+Q3. ASSUMPTION (product owner, 2026-11-17, the user may override): option A. A member with many games (the member list is in the narrow side column from REQ-0025)?
+- A. One Game chip per game, no limit, wrapping. Recommended now: a member usually has a few games with game roles, and a cap is a rule nobody asked for yet. Revisit if the list is long in use.
+- B. At most three Game chips; a "+N" Game chip opens the full text (Q1) for the rest. Keeps rows short for people with many games, adds one rule to test.
+- Recommendation: A, with B as the fix if the member list grows too tall in review.
+
+Q4. ASSUMPTION (product owner, 2026-11-17, the user may override): option A. A preferred game role without a Role icon (no icon chosen, or "No icon", e.g. "Top" and "Jungle" in League of Legends)?
+- A. Its name is shown as short visible text after the icons of its game, e.g. "Top, Jungle". Recommended: no information is lost on the row, and it is shorter than today because the game name is gone.
+- B. Not shown on the row; only in the full text (Q1). Shorter, but a row with only a logo hides which roles a person plays.
+- Recommendation: A. It is the one place where text stays inline.
+
+Q5. DECISION (user, 2026-11-17): option A. Where does the compact form apply?
+- A. Only the member list of the Group view, the place the user named. Recommended. The lobby player list and the You page keep the current text until the user asks.
+- B. The member list of the Group view and the lobby player list. In a lobby every player has the same game, so the Game chip would show icons without a logo; the change is a second rule for one place.
+- Recommendation: A. Decided: A.
+
+Q6. ASSUMPTION (product owner, 2026-11-17, the user may override): option A. Size of the Game logo in the member list?
+- A. The regular size of REQ-0026 (Amendment 2026-11-16), the size of the game list and the game choice. No new size. Recommended. It may make a member row tall when a person has several games; check in review.
+- B. A new smaller size for the member list, e.g. 1.5rem. Needs a DECISION by the user (REQ-0026 fixed the sizes by the user's decision) and a new design token (ADR 0023).
+- Recommendation: A.
+
+Q7. ASSUMPTION (product owner, 2026-11-17, the user may override): Should, after REQ-0027 (A3e) and before REQ-0016 (A4). Priority and order.
+- Reason for the order: the row is the same one that REQ-0016 (avatars, A4) changes, so doing this first avoids changing the row twice. It comes after REQ-0027 as the user ordered. The build order is: the role icons (ADR 0024 PR1a to PR3) first, then the Game chip components CH1 to CH3, as the coordinator set on 2026-11-17.
+- Alternative: Could (a presentation tweak with no new data beyond the contract change), placed after A4 and A5.
+
+Assumptions (product owner, not decided by the user): the Game chip stays on the existing row and reuses the existing full text, so no new text is needed for the accessible name.
