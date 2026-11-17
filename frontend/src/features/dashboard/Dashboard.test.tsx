@@ -318,7 +318,15 @@ describe("label and role slots", () => {
   const overwatch = lobby("l1", "Overwatch 2", at(4, 20), at(4, 22), {
     modeName: "Competitive",
     flexCount: 1,
-    roleSlots: [{ gameRoleId: "r1", name: "Tank", slots: 1, playerCount: 0 }],
+    roleSlots: [
+      {
+        gameRoleId: "r1",
+        name: "Tank",
+        slots: 1,
+        playerCount: 0,
+        roleIcon: "shield",
+      },
+    ],
   });
 
   it("shows the label and role slots on Next up", async () => {
@@ -328,8 +336,13 @@ describe("label and role slots", () => {
     expect(
       card.getByRole("link", { name: "Overwatch 2 › Competitive" }),
     ).toBeTruthy();
-    expect(card.getByText("Tank 0/1")).toBeTruthy();
-    expect(card.getByText("Flex 1")).toBeTruthy();
+    expect(
+      card
+        .getByText("Tank 0/1")
+        .closest("li")!
+        .querySelector('[data-icon="shield"]'),
+    ).not.toBeNull();
+    expect(card.getByText("Flex 1").querySelector("svg")).toBeNull();
   });
 });
 

@@ -45,8 +45,8 @@ const choices: PreferredGameRoleChoices = {
           maxPlayers: 5,
           activities: [],
           gameRoles: [
-            { id: "tank", name: "Tank", slots: 1 },
-            { id: "support", name: "Support", slots: 2 },
+            { id: "tank", name: "Tank", slots: 1, roleIcon: "shield" },
+            { id: "support", name: "Support", slots: 2, roleIcon: null },
           ],
         },
       ],
@@ -73,6 +73,21 @@ const save = () =>
   fireEvent.click(screen.getByRole("button", { name: m.save }));
 
 describe("PreferredGameRoles", () => {
+  it("shows each game role's icon before its name, none without one", async () => {
+    renderSection();
+
+    const label = (
+      await screen.findByRole("checkbox", { name: /^Tank/ })
+    ).closest("label")!;
+    expect(label.querySelector('[data-icon="shield"]')).not.toBeNull();
+    expect(
+      box(m.roleWithMode("Support", "Ranked"))
+        .closest("label")!
+        .querySelector("svg"),
+    ).toBeNull();
+    expect(box("Scout").closest("label")!.querySelector("svg")).toBeNull();
+  });
+
   it("shows each game's logo before its name, and the monogram without one", async () => {
     const version = "a".repeat(64);
     renderSection({

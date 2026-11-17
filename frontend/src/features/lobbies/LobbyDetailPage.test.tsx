@@ -68,8 +68,20 @@ describe("lobby label, role slots and seats", () => {
     activityName: "Control",
     flexCount: 1,
     roleSlots: [
-      { gameRoleId: "r1", name: "Tank", slots: 1, playerCount: 1 },
-      { gameRoleId: "r2", name: "Healer", slots: 1, playerCount: 0 },
+      {
+        gameRoleId: "r1",
+        name: "Tank",
+        slots: 1,
+        playerCount: 1,
+        roleIcon: "shield",
+      },
+      {
+        gameRoleId: "r2",
+        name: "Healer",
+        slots: 1,
+        playerCount: 0,
+        roleIcon: "none",
+      },
     ],
     players: [
       { userId: testUser.userId, displayName: "Maja Lind", gameRoleId: "r1" },
@@ -111,6 +123,24 @@ describe("lobby label, role slots and seats", () => {
         "Kim Berg",
       ),
     ).toBeTruthy();
+  });
+
+  it("puts the role icon before the role slot and its player group heading, never on Flex or a role without one", async () => {
+    renderDetail({ getLobby: () => Promise.resolve(withRoles) });
+
+    await screen.findByRole("heading", { level: 1 });
+    const [tank, healer, flex] = within(
+      screen.getByRole("list", { name: en.lobbyRoleSlotsLabel }),
+    ).getAllByRole("listitem");
+    expect(tank.querySelector('[data-icon="shield"]')).not.toBeNull();
+    expect(healer.querySelector("svg")).toBeNull();
+    expect(flex.querySelector("svg")).toBeNull();
+    const [tankHeading, flexHeading] = screen.getAllByRole("heading", {
+      level: 3,
+    });
+    expect(tankHeading.querySelector('[data-icon="shield"]')).not.toBeNull();
+    expect(tankHeading.textContent).toBe("Tank");
+    expect(flexHeading.querySelector("svg")).toBeNull();
   });
 
   it("shows each player's preferred game roles next to the name", async () => {

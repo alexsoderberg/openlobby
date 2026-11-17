@@ -1,6 +1,12 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { ApiError, ApiProvider, type ApiClient, type Game } from "../../api";
+import {
+  ApiError,
+  ApiProvider,
+  type ApiClient,
+  type Game,
+  type GameRole,
+} from "../../api";
 import { en } from "../../i18n/messages/en";
 import { chooseOption, optionNames } from "../../test/chooseOption";
 import { fakeApiClient } from "../../test/fakeApiClient";
@@ -15,9 +21,9 @@ beforeEach(() => {
 });
 afterEach(() => vi.useRealTimers());
 
-const roles = [
-  { id: "r-tank", name: "Tank", slots: 1 },
-  { id: "r-heal", name: "Healer", slots: 1 },
+const roles: GameRole[] = [
+  { id: "r-tank", name: "Tank", slots: 1, roleIcon: "shield" },
+  { id: "r-heal", name: "Healer", slots: 1, roleIcon: "none" },
   { id: "r-dps", name: "Damage", slots: 3 },
 ];
 const wow: Game = {
@@ -260,6 +266,16 @@ describe("game roles", () => {
       startsAt: new Date(2026, 10, 5, 18).toISOString(),
       endsAt: new Date(2026, 10, 5, 20).toISOString(),
     });
+  });
+
+  it("shows the role icon from the game tree before each seat, none on Flex or a role without one", async () => {
+    renderForm();
+    await fillWow("Raid");
+
+    const label = (name: string) => seat(name).closest("label")!;
+    expect(label("Tank").querySelector('[data-icon="shield"]')).not.toBeNull();
+    expect(label("Healer").querySelector("svg")).toBeNull();
+    expect(label(en.lobbySeatFlex).querySelector("svg")).toBeNull();
   });
 
   it("sends flex as the creator's seat", async () => {

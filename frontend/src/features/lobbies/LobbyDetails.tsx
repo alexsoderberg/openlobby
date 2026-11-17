@@ -9,7 +9,7 @@ import {
   PreferredGameRolesNote,
   RoleSlots,
 } from "../../lobby";
-import { Icon, Panel } from "../../ui";
+import { GameRoleName, Icon, Panel } from "../../ui";
 import { DeleteLobbyDialog } from "./DeleteLobbyDialog";
 import { LobbyMembership } from "./LobbyMembership";
 import { LobbySettings } from "./LobbySettings";
@@ -101,11 +101,13 @@ function PlayerList({ lobby }: { lobby: LobbyDetail }) {
     ...roleSlots.map((slot) => ({
       key: slot.gameRoleId,
       name: slot.name,
+      icon: slot.roleIcon,
       players: players.filter((p) => p.gameRoleId === slot.gameRoleId),
     })),
     {
       key: "flex",
       name: m.lobbyFlex(),
+      icon: null,
       players: players.filter((p) => p.gameRoleId == null),
     },
   ].filter((group) => group.players.length > 0);
@@ -113,7 +115,9 @@ function PlayerList({ lobby }: { lobby: LobbyDetail }) {
     <>
       {groups.map((group) => (
         <section key={group.key} aria-label={group.name}>
-          <h3>{group.name}</h3>
+          <h3>
+            <GameRoleName icon={group.icon}>{group.name}</GameRoleName>
+          </h3>
           <PlayerRows players={group.players} />
         </section>
       ))}

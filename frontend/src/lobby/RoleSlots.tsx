@@ -1,20 +1,24 @@
-import type { Lobby } from "../api";
+import type { Lobby, RoleIcon } from "../api";
 import { useMessages } from "../i18n";
-import { Icon } from "../ui";
+import { GameRoleName, Icon } from "../ui";
 import { hasFreeSlot, type RoleSlot } from "./roleSlot";
 
-/** "Tank 1/1". A full slot adds ", full" for screen readers; the look of full is up to the caller. */
+/** "[shield] Tank 1/1". A full slot adds ", full" for screen readers; the look of full is up to the caller. */
 export function RoleSlotText({
   slot,
   full,
+  icon,
 }: {
   slot: Pick<RoleSlot, "name" | "playerCount" | "slots">;
   full: boolean;
+  icon?: RoleIcon | null;
 }) {
   const m = useMessages();
   return (
     <>
-      {m.lobbyRoleSlot(slot.name, slot.playerCount, slot.slots)}
+      <GameRoleName icon={icon}>
+        {m.lobbyRoleSlot(slot.name, slot.playerCount, slot.slots)}
+      </GameRoleName>
       {full && (
         <span className="visually-hidden">{m.lobbyRoleSlotFullSuffix}</span>
       )}
@@ -43,7 +47,7 @@ export function RoleSlots({
             key={slot.gameRoleId}
             className={full ? "badge badge--full" : "badge"}
           >
-            <RoleSlotText slot={slot} full={full} />
+            <RoleSlotText slot={slot} full={full} icon={slot.roleIcon} />
             {full && <Icon name="full" className="role-slot-check" />}
           </li>
         );

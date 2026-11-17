@@ -99,6 +99,7 @@ export function Icon({
       strokeWidth={STROKE_WIDTH}
       aria-hidden="true"
       focusable="false"
+      data-icon={name}
     />
   );
 }
