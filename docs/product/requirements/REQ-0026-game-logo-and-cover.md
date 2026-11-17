@@ -166,3 +166,17 @@ Order: not decided. The change has no dependency on REQ-0027. Proposed: one PR a
 - The cover is cropped to fill the card, not stretched.
 - Text on a cover meets WCAG AA (contrast rule above; ADR 0026, point 8).
 - Storage and delivery: ADR 0026 (table in `calendar`, version in the URL). Containers stay stateless.
+
+## Amendment 2026-11-17 (member list, Group view: game name not shown)
+Status of this amendment: Decided (2026-11-17). Status of REQ-0026: Decided, unchanged. Feature F-030 (EXTEND, not a new feature).
+
+DECISION (user, 2026-11-17, see REQ-0021 Amendment 2026-11-17): in the member list of the Group view, a game's logo or monogram is shown without the game name as visible text, next to the member's Role icons. This is an exception to the rule that the game name is always shown as text beside the logo (line 38 and line 42), for this place only. The exception does not change anything else in this requirement.
+
+Places:
+- Given that I am a member of a group, when I see the member list of its Group view and a member has preferred game roles of a game, then the game's logo (or its monogram when it has no logo) is shown at the regular size of Amendment 2026-11-16, with no game name as visible text.
+- Given that the logo or monogram is shown in this place, when a screen reader reads the member list, then the logo and monogram are hidden from it, and the game name is read as part of the member's Game chip (REQ-0021 Amendment 2026-11-17: the Game chip's accessible name is the full text, with the game name). The game name is therefore never missing for a screen reader (WCAG 1.1.1, 4.1.2).
+- Given that the monogram is shown in this place, when it has visible letters, then the letters are a visual cue only and are hidden from assistive technology, because the Game chip's accessible name holds the game name.
+
+Not changed (the game name stays beside the logo):
+- The Next up card, the lobby page, the game list, the game form, the game choice and the game headings of the You page.
+- Lobby labels, the lobby list, the week view and the Dashboard (labels stay text-only; Amendment 2026-11-16).

@@ -180,3 +180,42 @@ All answered by the user on 2026-11-12 with the recommended answers (DECISION, u
 - `docs/services.md`: calendar owns `preferred_game_roles`; the two routes in the route table; the ADR list of calendar gets 0022; the overview route prefix `/api/users*`.
 - `CLAUDE.md`: glossary row "Preferred game role" (point 9). Also the glossary row "You page" lists its sections; "Game roles" is added there with PR4 (see the placement DECISION in Delivery).
 - `docs/product/`: REQ-0021 and the backlog row (A9) are changed as adopted by the product owner on 2026-11-13.
+
+## Amendment 2026-11-17 (compact display in the Member list)
+Status: Proposed (2026-11-17). Requirement: REQ-0021 Amendment 2026-11-17 (Decided; the user's decisions Q1 and Q5, the assumptions Q2 to Q4, Q6 and Q7 of the product owner). Cross-references: ADR 0024 (Role icon) and ADR 0026 (Game logo), both amended in the same change. Adds three optional fields to `PreferredGameRole` and changes one frontend display. No new service, dependency, table or migration, and no asynchronous communication.
+
+**1. Contract (`api/calendar/openapi.yaml`, schema `PreferredGameRole`).** Three fields are added. Each is optional in the schema (not in `required`), and the server always sends it (ADR 0017, section 12). The schema is shared with `LobbyPlayer`, so the fields come with it; the lobby does not use them.
+- `gameId`: `string`, `format: uuid`. The game of the game role. The chips of the Member list are grouped by it, and the logo URL is built from it (ADR 0026 point 8).
+- `gameLogoVersion`: `string`, `nullable`, pattern `^[0-9a-f]{64}$`. The version of the game's logo; `null` when the game has none. The same field as `Lobby.gameLogoVersion` (ADR 0026 point 5).
+- `roleIcon`: `RoleIcon`, nullable. Already defined by ADR 0024 point 2, to be delivered by its PR1b. This amendment adds no second field; it only fixes that the Member list uses it.
+- Not added: a `preferredGames` list on `Member` or a new schema for a game with its roles. That would be a second structure for the same data, and the frontend would need the same grouping. The three fields on the existing item are the smallest change.
+- Not used as the group key: `gameName`. A name is not an identifier, and the logo needs the ID.
+
+**2. Backend (`calendar`, backend-expert).** The choice reads of ADR 0022 Amendment 2026-11-13 gain the three values in the same snapshot, without a new query:
+- `choicesOfMembersSQL` (read by `GroupReader.Members`) and `choicesOfLobbyPlayersSQL` (read by `LobbyReader.Lobby`) select `games.id` as the game ID, `game_roles.role_icon`, and the `version` of the game's `logo` row in `game_images`, through a `LEFT JOIN` on `(game_id, kind = 'logo')`. Only `version` is selected, never `image` (ADR 0026 point 5).
+- The domain type `PreferredGameRole` (ADR 0022) gets the three values. No logic in the domain.
+- Requires ADR 0024 PR1b (the `roleIcon` column and its read) and ADR 0026 PR1 (`game_images`, done). Backend PR CH1 follows ADR 0024 PR1b.
+- Tests: integration: a member's choice carries its game ID, the logo version (`null` without a logo), and the role icon (`null`, `none` or a value); the lobby player read gives the same values. Transport: the three fields are present in the `Member` and `LobbyPlayer` responses (`gameLogoVersion` as `null` when none). Contract tests against the generated types.
+
+**3. Frontend: the Game chip (`features/groups/GameChip.tsx`, ui-ux-expert, PR CH3).**
+- The Member list (`features/groups/GroupDetails.tsx`) shows a `GameChip` per game in place of `PreferredGameRolesNote`. The lobby player list and the You page keep their current display (user, 2026-11-17).
+- Grouping: by `gameId`, in the order the server sends the roles (a `Map` in insertion order). Nothing is sorted on the client.
+- Visible tokens per game, each shown once per game (DECISION, user, 2026-11-17, for role icons and for names of roles without an icon): a role with a Role icon other than `none` shows the icon, once per icon value; a role with `null` or `none` shows its name as text, once per name ignoring case. Mode names are never shown. A game without any preferred role gets no chip.
+- The logo is `GameLogo` at its regular size (`--size-game-logo`), with the game's name and `gameLogoVersion`. It is `aria-hidden` by `GameLogo`. The icons and names are `aria-hidden` too. The chip's trigger is a `button` with `aria-label` set to the full text.
+- Full text: the same sentence as the lobby note, `m.plays` with the game name in every part (`withGame` true). One function builds it, so that the note and the chip do not hold two copies of the grouping (ADR 0022 point 6, DRY). The function moves to `frontend/src/lobby/PreferredGameRolesNote.tsx` and is exported from the lobby index for the chip.
+- The full text opens in a `AnchoredPopover` (ADR 0023 Amendment 2026-11-17), on click, tap, Enter or Space. Closed with Escape or a click outside; focus returns to the chip.
+- Layout: the chips are a wrapping row after the member's name. The row's width does not change (REQ-0021, REQ-0023 line 36). Each chip is at least 44 px high and 44 px wide on a phone (`--size-tap` as `min-height` and `min-width`).
+- The Game chip is the only place where a Game logo hides its name (REQ-0026 rule; ADR 0026 Amendment 2026-11-17).
+
+**4. Order of the PRs (orchestrator).** One review for the whole requirement, after CH3 (CLAUDE.md, workflow step 5). DECISION, user, 2026-11-17: the role icon PRs of ADR 0024 (PR1a, PR1b, PR2 and PR3) are built first, then CH1, CH2a, CH2b and CH3. CH2b also waits for ADR 0027 PR A, as the table says.
+| PR | Owner | Scope | Depends on |
+|---|---|---|---|
+| CH1 | backend-expert (opus) | Point 1 and point 2 | ADR 0024 PR1b |
+| CH2a | ui-ux-expert (opus) | Rename `ui/Popover.tsx` to `ui/CreateFrame.tsx` (ADR 0023 Amendment 2026-11-17). No behaviour change | ADR 0027 PR A (both touch `global.css`, so they do not run at once); before or with CH2b |
+| CH2b | ui-ux-expert (opus) | Radix Popover pin and `ui/AnchoredPopover.tsx`, `--z-popover` token, tests (ADR 0023 Amendment 2026-11-17) | ADR 0027 PR A (the Select rollout; both touch `global.css`, so they do not run at once) |
+| CH3 | ui-ux-expert (opus) | Point 3: `GameChip`, the shared sentence, the Member list change, the tests | CH1, CH2b, ADR 0024 PR2 (role icon names and glyphs) and PR1b |
+Tests of CH3: `GameChip.test.tsx`: one chip per game in server order; icons once per game; a role without an icon shows its name; `none` and `null` show the name; no game name and no mode name as text; the trigger's accessible name is the full text; the logo and icons are `aria-hidden`; the popover opens on click and closes on Escape with focus back on the chip; a member with no roles gets no chips (the Member list test). The chip with a failed logo image shows the Monogram (REQ-0026).
+
+**5. Not built now (YAGNI).** No cap of three chips with a "+N" item (REQ-0021 Q3 is an assumption, option A, so all chips are shown and wrap). No hover popover. No mode names as text. No new icon. No change to the You page or the lobby player list. No change to `PreferredGameRolesNote` except the moved sentence function.
+
+**Changes in other documents.** `CLAUDE.md`: glossary rows "Member list", "Game chip", "Popover", "Create frame" (new), "Game logo", "Monogram", "Role icon", "Preferred game role" (updated). `docs/adr/0023`, `0024`, `0026`: amended in the same change (cross-references). `docs/services.md`: no change (no service, owner or dependency changes). `docs/product/`: owned by the product owner, not edited here.
