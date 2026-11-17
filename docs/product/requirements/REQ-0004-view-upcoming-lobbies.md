@@ -154,3 +154,37 @@ Status stays Implemented. DECISION, user, 2026-11-13. Implemented 2026-11-14. Bi
 - The block criterion "When a block is too short to show them, they stay available to assistive technology" is unchanged; the full name and label stay available to assistive technology and on the lobby page.
 - No part of a line of text in a block is ever shown cut in half.
 - Old wording (kept for reference): "then the game name stays as text and the mode and activity may be shortened (REQ-0015, Display)."
+
+## Amendment 2026-11-17 (phone day selection) - Decided
+Status stays Implemented. Decided by the user on 2026-11-17 (option C and the week edge rule, see Decisions below). Not built yet. Drafted by the product owner from the user's request (translated from Swedish): "In mobile mode the buttons for choosing the day in the calendar view are a bit awkward. Could we make a horizontal carousel or something instead?" The UI expert chooses the swipe threshold, the edge width and the strip scroll details. Applies to the phone rules of REQ-0004 and of This week (REQ-0012). Desktop is unchanged.
+
+What the phone does today (from the code, not measured on a device): seven equal pills in one row, each a button with the day name, the date and a dot when the day has lobbies. The row is inside the page padding of 16 px, so at a 390 px phone the content is 358 px and each pill is about 47 px wide and about 58 px high; at 320 px about 37 px wide, below the 44 px rule. A day changes only by tapping its pill. There is no gesture on the day itself. The group strip on the dashboard (REQ-0012) is already a horizontally swipeable row, so a swipe is not new to the app.
+
+Criteria:
+- Given that I am on a screen narrower than 760 px and I see the week view, when it is shown, then the seven day pills Monday to Sunday are shown in one row, and each is visible without scrolling. The row scrolls sideways only when it cannot hold seven pills of at least 44 px width, and then the selected pill is kept in view with scroll snapping (DECISION, user, 2026-11-17; the 364 px figure is ASSUMPTION).
+- Given that I see a day pill, when I look at it, then it is at least 44 px high and 44 px wide (cross-cutting rule, REQ-0012), and it keeps its current look: the dot for lobbies, the underline for today, the accent for the selected day.
+- Given that I select a day pill, when the day changes, then that day's time grid is shown and the vertical scroll position of the grid is kept (REQ-0019). This is unchanged.
+- Given that I swipe left or right on the time grid of the selected day, when the horizontal movement is clearly larger than the vertical movement and is longer than a threshold (set by the UI expert), then the next or previous day is shown and the selected pill follows (DECISION, user, 2026-11-17: the swipe is on the day grid, next to the pills). A vertical scroll of the hours is not changed by a swipe, and the vertical scroll position is kept.
+- Given that I swipe and the new day comes in, when it moves, then the motion uses only transform and opacity, runs smoothly, and goes from the side of the swipe. Given that the device asks for reduced motion, then the day changes at once with no motion (the existing reduced-motion rule of the app).
+- Given that I start a swipe at the edge of the screen, where the browser uses the gesture for going back, then the day does not change (the edge width is the UI expert's choice).
+- Given that I start a swipe on a lobby block, when I move my finger, then it is a swipe and does not open the lobby. A tap without movement on a block still opens it as today.
+- Given that the selected day is Monday and I swipe right, or it is Sunday and I swipe left, then nothing changes. A swipe never goes to another week and never goes back before the current week (DECISION, user, 2026-11-17: the swipe stops at Monday and Sunday; see Decisions 3).
+- Given that I use the keyboard or a screen reader, when I change the day, then the day pills are the way to do it, unchanged: Tab to a pill, Enter or Space selects it, the selected pill is announced as pressed, and the dot is read as "has lobbies". The swipe adds no keyboard shortcut, no role and no announcement. The pills stay buttons, not a tab list with arrow keys (DECISION, product owner: a change of semantics that nobody asked for).
+- Given that the page shows the day pills and the swipe area, when I look at the tab bar and the floating "+" button, then the pills and the grid stay in the content above the tab bar, and nothing overlaps the tab bar, the floating "+" or the top bar.
+- Given that the screen is 760 px or wider, when I see the week view, then there are no day pills and no swipe, and the grid is as REQ-0019 and REQ-0025 define. The swipe is tied to the same 760 px width as the pills, not to the kind of pointer, so a touch laptop 760 px or wider gets no swipe (ASSUMPTION).
+- Given that the week view opens on a phone, when it is shown, then today is the selected day, as today (unchanged).
+- Given that I am in the group view on a phone and select "Next week", then the day selection and the scroll rules are as today (unchanged): the selected day becomes today, or Monday for a later week.
+
+Out of scope of this amendment:
+- Automatic moving between days (an autoplay carousel).
+- Keyboard arrows on the day pills.
+- Changing a day or a week by swipe past the ends of the week (see Decisions 3).
+- Any change to the desktop layout, the list view, the Day list (REQ-0012) or what a lobby block shows.
+
+Decisions (DECISION, user, 2026-11-17, unless marked):
+1. What is awkward: (d), both the pills are hard to tap and the user wants to swipe between days. Both the tap and the swipe are built.
+2. Approach C: seven pills that scroll sideways only when they do not fit at 44 px each, plus a swipe on the day grid. Option A (a scrolling strip of large chips as the only change) and option B (swipe only) were not chosen.
+3. Week edge (a): a swipe stops at Monday and Sunday. The "Next week" button in the group view stays the only way to a new week. The dashboard has no next week.
+4. ASSUMPTION, product owner, 2026-11-17, the user may override: priority Should, placed after A6b (backlog row A6c).
+
+Related features (amendment 2026-11-17): F-017 (week view of the group view) and F-028 (This week). It is an extension of the phone day selection that REQ-0004 and REQ-0012 already define. Not a duplicate: no feature covers how a day is chosen on a phone, and the group strip (REQ-0012) is a different row of groups. Not F-004 (list).

@@ -213,3 +213,8 @@ Status stays Implemented. Decided by the user on 2026-11-14, specified in REQ-00
 - From 98rem (DECISION, user, 2026-11-14), Next up is in a side column on the right and This week is in the main column. Below 98rem the layout is one column, as today. Content, rules and buttons of Next up and This week are unchanged.
 - Dashboard with no upcoming lobby in any group, but at least one group: Next up keeps its side column and shows "Nothing booked" (ASSUMPTION, REQ-0025). With no group, no side column is shown.
 - The rules of the empty and error states above are unchanged. Phones are unchanged.
+
+## Amendment 2026-11-17 (phone day selection) - Decided
+Status stays Implemented. Decided by the user on 2026-11-17; the details are in REQ-0004, Amendment 2026-11-17 (phone day selection). Not built yet.
+- Decided: the day pills of This week on a phone follow REQ-0004 Amendment 2026-11-17, including the pill row rule and the swipe between days on the day grid. The swipe stops at Monday and Sunday (DECISION, user, 2026-11-17). This week shows the current week only, so a swipe never shows a day of another week.
+- Desktop and the Day list are not changed by this amendment.
