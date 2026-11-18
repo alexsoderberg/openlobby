@@ -1124,7 +1124,7 @@ a {
   inset: 0;
   z-index: -1;
   border-radius: inherit;
-  background: var(--color-accent-tint);
+  background: var(--color-row-hover);
   opacity: 0;
   pointer-events: none;
   transition: opacity var(--duration-base) var(--ease-out);
@@ -1904,7 +1904,7 @@ a {
   content: "";
   position: absolute;
   inset: 0;
-  background: var(--color-accent-wash);
+  background: var(--color-row-hover);
   opacity: 0;
   transition: opacity var(--duration-fast) var(--ease-out);
 }
@@ -2904,7 +2904,7 @@ a {
 
 .context-menu__item:hover,
 .context-menu__item:focus-visible {
-  background: var(--color-accent-tint);
+  background: var(--color-row-hover);
 }
 
 /* Spacing rule: a button or action row that follows other content in a panel, dialog or popover

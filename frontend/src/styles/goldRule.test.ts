@@ -22,6 +22,10 @@ describe("gold rule", () => {
     ".context-menu",
     ".day-pill__dot",
     '.time-grid__title[aria-current="date"] b',
+    // Hover and open tints are neutral; the focus ring stays gold (DECISION, 2026-11-18).
+    ".game-chip::after",
+    ".context-menu__item:hover, .context-menu__item:focus-visible",
+    ".time-grid__create::before",
   ])("%s has no gold", (selector) => {
     expect(body(selector)).not.toMatch(GOLD);
   });
