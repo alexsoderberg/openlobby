@@ -1,6 +1,6 @@
 import type { usePopover } from "../../hooks";
 import { useMessages } from "../../i18n";
-import { ErrorAlert, Popover } from "../../ui";
+import { CreateFrame, ErrorAlert } from "../../ui";
 import { GROUP_NOT_FOUND, useGroup } from "../groups";
 import { InviteLinks } from "./InviteLinks";
 
@@ -49,7 +49,7 @@ export function InvitePopover({
 }) {
   const m = useMessages();
   return (
-    <Popover
+    <CreateFrame
       centered
       label={group ? m.inviteHeading(group.name) : m.inviteButton}
       open={popover.open}
@@ -65,6 +65,6 @@ export function InvitePopover({
           onUnauthenticated={onUnauthenticated}
         />
       )}
-    </Popover>
+    </CreateFrame>
   );
 }

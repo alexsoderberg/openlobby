@@ -1,11 +1,11 @@
 import type { CSSProperties, ReactNode, RefObject } from "react";
 
 /**
- * The frame the popover grows out of. The outer box never moves, so the button can be measured against
+ * The frame the create form grows out of. The outer box never moves, so the button can be measured against
  * it; only the card inside scales, from the button centre, with transform and opacity alone. The scrim closes
  * the form on a tap outside. Closed, the frame is hidden from sight and from the keyboard (see global.css).
  */
-export function Popover({
+export function CreateFrame({
   label,
   centered = false,
   closeOnScrim = true,
