@@ -25,6 +25,12 @@ Overrides the colour rules of the dark luxury UI spec of 2026-11-03 (accent used
 - Given I look at the admin badge ("Group admin"), when I see it, then it is neutral, in the text colour, not gold (DECISION, user, 2026-11-18).
 - Given I look at the landing headline, when I see the highlighted word ("planned") and the logo's "Lobby", then they are not gold (DECISION, user, 2026-11-18).
 - Given any text in the gold rule above, when I check its contrast, then it meets WCAG AA as all text in the app does.
+- Gold uses decided 2026-11-18 (DECISION, user, 2026-11-18; the first three bullets below were delegated by the user to the orchestrator, the last one, the focus row and the page wash were confirmed by the user). The closed list is the glossary row "Gold rule" in `CLAUDE.md`, which is the single source:
+  - Stay gold, as action: the gold hover of a text link (as the gold hover edge of cards and secondary buttons) and the desktop "+" create control.
+  - Stay gold, as state: the selected thumb of the view toggle, and checked checkboxes and radios (`accent-color`).
+  - Stay gold, as focus: the highlighted option row of an open Dropdown list keeps its gold edge and tint, because it is the focus row.
+  - Neutral: the page background wash (`body`) on every page, the hover and open tint of a Game chip, the hover and focus tint of a context menu item, and the hover wash of the week grid's create area.
+  - Neutral, as built and confirmed by the user: the panel edges of Create frame, Popover, Dropdown list and the context menu; initials circles; the Monogram; today's date in the week grid (the underline stays in the text colour); the "has lobbies" dot of a day pill.
 
 ### 2. Genre accent stripe only on week blocks (DECISION, user, 2026-11-18)
 Overrides the 3px genre-accent left border of the lobby rows (F-032, PR #73) and the border named in REQ-0026 (Amendment 2026-11-18) and in the glossary row "Game cover".
