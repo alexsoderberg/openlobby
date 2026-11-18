@@ -1589,13 +1589,12 @@ a {
   height: 1.4rem;
 }
 
-/* A lobby row is a small card with an edge in its genre accent (neutral without a genre). */
+/* A lobby row is a small card. The accent stripe is for week grid blocks only (REQ-0028 item 2). */
 .lobby-row {
   min-height: var(--size-lobby-row);
   padding: var(--space-3);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-left: 3px solid var(--genre-accent);
   border-radius: var(--radius-panel);
 }
 
@@ -1746,14 +1745,13 @@ a {
   font-weight: 600;
 }
 
-/* The lobby line sits at the bottom of the card, with its genre's edge, wash and icon (ADR 0016). */
+/* The lobby line sits at the bottom of the card, with its genre's wash and icon (ADR 0016). */
 .group-card__lobby {
   display: grid;
   gap: var(--space-1);
   margin-top: auto;
   padding: var(--space-2) var(--space-3);
   padding-right: calc(var(--size-genre-icon) + var(--space-3));
-  border-left: 3px solid var(--genre-accent);
   border-radius: var(--radius-control);
   background: var(--color-surface);
   @supports (color: color-mix(in lab, red, red)) {
@@ -1767,7 +1765,6 @@ a {
 
 .group-card__lobby--none {
   color: var(--color-muted);
-  border-left-color: var(--color-border);
   background: none;
 }
 
@@ -1968,7 +1965,7 @@ a {
   overflow: hidden;
   padding-right: calc(var(--size-genre-icon) - var(--space-1));
   /* Every color-mix() sits in @supports, so Tailwind writes no full-accent fallback for older browsers (ADR 0023,
-     amendment b). border-left stays after this block: it must win over the border shorthand inside it. */
+     amendment b). */
   @supports (color: color-mix(in lab, red, red)) {
     background: color-mix(
       in srgb,
@@ -1977,10 +1974,14 @@ a {
     );
     border: 1px solid color-mix(in srgb, var(--genre-accent) 45%, transparent);
   }
-  border-left: 3px solid var(--genre-accent);
   border-radius: var(--radius-control);
   font-size: 0.75rem;
   line-height: var(--line-time-block);
+}
+
+/* The accent stripe: only week grid blocks draw it, and only for a game with a genre (REQ-0028 item 2). */
+.time-block:not([data-genre="neutral"]) > .time-block__body {
+  border-left: 3px solid var(--genre-accent);
 }
 
 .time-block[data-continues-before] .time-block__body {
@@ -3049,7 +3050,6 @@ a {
   padding-right: calc(var(--size-genre-icon) + var(--space-4));
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-left: 3px solid var(--genre-accent);
   border-radius: var(--radius-panel);
 }
 
