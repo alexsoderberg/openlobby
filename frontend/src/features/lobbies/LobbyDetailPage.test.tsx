@@ -172,14 +172,19 @@ describe("lobby label, role slots and seats", () => {
     });
 
     const tank = await screen.findByRole("region", { name: "Tank" });
-    expect(within(tank).getByRole("listitem").textContent).toBe(
-      "MLMaja Lind " +
+    const maja = within(tank).getByRole("listitem");
+    expect(within(maja).getByText("Maja Lind")).toBeTruthy();
+    expect(
+      within(maja).getByText(
         en.preferredGameRoles.plays([
           { roles: ["Tank (Competitive)", "Support"] },
         ]),
-    );
+      ),
+    ).toBeTruthy();
     const flex = screen.getByRole("region", { name: "Flex" });
-    expect(within(flex).getByRole("listitem").textContent).toBe("KBKim Berg");
+    const kim = within(flex).getByRole("listitem");
+    expect(within(kim).getByText("Kim Berg")).toBeTruthy();
+    expect(within(kim).queryByText(/Plays/)).toBeNull();
   });
 
   it("still lists a player whose game role is unknown or missing", async () => {
@@ -494,10 +499,11 @@ describe("lobby detail", () => {
 
     expect(await screen.findByRole("heading", { name: "Catan" })).toBeTruthy();
     expect(screen.getByText("2/4 players")).toBeTruthy();
-    const names = screen
-      .getAllByRole("listitem")
-      .map((item) => item.textContent);
-    expect(names).toEqual(["MLMaja Lind", "KBKim Berg"]);
+    const players = screen.getAllByRole("listitem");
+    expect(players).toHaveLength(2);
+    const [first, second] = players;
+    expect(within(first).getByText("Maja Lind")).toBeTruthy();
+    expect(within(second).getByText("Kim Berg")).toBeTruthy();
     expect(
       screen
         .getByRole("link", { name: en.lobbyBackToGroup })

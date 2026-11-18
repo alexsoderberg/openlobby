@@ -1037,8 +1037,8 @@ a {
   list-style: none;
 }
 
-/* A row of a list. Only a row that is one link (a lobby row) gets the hover tint, so no row shows as a link it
-   is not. */
+/* A row of a list. In a .row-list only a row that is one link (a lobby row) gets the hover tint, so no row shows
+   as a link it is not. The You page's nav row is a link too, but stands outside a .row-list and has no tint. */
 .list-row {
   display: flex;
   flex-wrap: wrap;
@@ -2196,7 +2196,8 @@ a {
   color: var(--color-muted);
 }
 
-/* Fills from 0 to --meter-value (0 to 1) when the element around it reveals. Used by ui/Meter. */
+/* Shows --meter-value (0 to 1). Inside a scroll reveal (an invite link row) it fills from 0 when the row reveals;
+   elsewhere (the Next up card) it shows its value at once. Used by ui/Meter. */
 .meter {
   margin-top: var(--space-3);
   height: 0.25rem;

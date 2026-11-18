@@ -211,8 +211,7 @@ export const en = {
     "The activity leaves the mode. Lobbies that already use it keep its name.",
   gameActivityRemoveSubmit: "Yes, remove activity",
   gameActivityRemoveKeep: "Keep activity",
-  gameStructureCapacityInvalid:
-    "Slots and max players must be whole numbers of 1 or more.",
+  gameStructureCapacityInvalid: `Slots and max players must be whole numbers from 1 to ${DEFAULT_MAX_PLAYERS_LIMIT}, and the slots of one game or mode must add up to no more than ${DEFAULT_MAX_PLAYERS_LIMIT}.`,
   gameAddHeading: "Add a game",
   gameAddSubmit: "Add game",
   gameEdit: "Change",
@@ -479,8 +478,7 @@ export const en = {
     lobby_full: "This lobby is full.",
     invalid_game:
       "Choose a game from the list, or enter a name of 1 to 50 characters.",
-    invalid_capacity:
-      "Max players must be a whole number of 1 or more. Leave it empty for no limit.",
+    invalid_capacity: `Max players must be a whole number from 1 to ${DEFAULT_MAX_PLAYERS_LIMIT}. Leave it empty for no limit.`,
     invalid_genre: "Choose a genre from the list, or no genre.",
     invalid_mode: "A mode name must be 1 to 50 characters.",
     invalid_activity: "An activity name must be 1 to 50 characters.",

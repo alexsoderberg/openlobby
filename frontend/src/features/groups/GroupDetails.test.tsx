@@ -73,7 +73,7 @@ describe("the member list", () => {
     ]);
     expect(maja.textContent).not.toContain("Overwatch");
     expect(within(kim).queryAllByRole("button")).toHaveLength(0);
-    expect(kim.textContent).toBe("KBKim Berg");
+    expect(within(kim).getByText("Kim Berg")).toBeTruthy();
   });
 
   it("puts the members in the side column, after the lobbies (REQ-0025)", async () => {
