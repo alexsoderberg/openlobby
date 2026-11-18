@@ -1,4 +1,5 @@
 export { Alert } from "./Alert";
+export { AnchoredPopover } from "./AnchoredPopover";
 export { Avatar } from "./Avatar";
 export { Brand } from "./Brand";
 export { Button } from "./Button";
