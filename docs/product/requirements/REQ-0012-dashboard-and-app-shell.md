@@ -222,3 +222,6 @@ Status stays Implemented. Recorded 2026-11-16 as the Group list cards are built.
 Status stays Implemented. Decided by the user on 2026-11-17; the details are in REQ-0004, Amendment 2026-11-17 (phone day selection). Not built yet.
 - Decided: the day pills of This week on a phone follow REQ-0004 Amendment 2026-11-17, including the pill row rule and the swipe between days on the day grid. The swipe stops at Monday and Sunday (DECISION, user, 2026-11-17). This week shows the current week only, so a swipe never shows a day of another week.
 - Desktop and the Day list are not changed by this amendment.
+
+## Amendment 2026-11-18 (REQ-0028, item 6: the word "Home")
+DECISION, user, 2026-11-18. The Home tab, the Home control of the Group rail and the heading of the Dashboard page show the same visible word, "Home". The word itself is an ASSUMPTION (product owner) that the user may change. The glossary term "Dashboard" stays for code and documents. See REQ-0028.

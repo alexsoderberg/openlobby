@@ -2,6 +2,7 @@
 
 Date: 2026-11-04. Status: approved by the user in the sketch session (mockup: `mockups/2026-11-04-dashboard.html`, toggle Desktop/Phone at the top right).
 Builds on: `2026-11-03-dark-luxury-ui-design.md` (tokens, fonts, motion). Feeds: REQ-0012 (F-028, dashboard and app shell). Terms follow the glossary in `CLAUDE.md`.
+Amendment 2026-11-18 (REQ-0028 item 6): the visible word of this page, its Tab bar item and the Group rail control is "Home"; the term "Dashboard" stays for code and documents.
 
 The mockup is illustrative. REQ-0012 and ADR 0014 are normative; where they differ, they win.
 

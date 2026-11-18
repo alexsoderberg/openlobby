@@ -1,7 +1,7 @@
 # 0026. Game logo and game cover: stored in calendar, uploaded per image, served behind the gateway
-Status: Accepted (2026-11-15); amended 2026-11-15, 2026-11-16 and 2026-11-17 (see the amendment sections at the end)
+Status: Accepted (2026-11-15); amended 2026-11-15, 2026-11-16, 2026-11-17 and 2026-11-18 (see the amendment sections at the end)
 Requirement: REQ-0026 (F-030).
-Amends: ADR 0001 (the 16 KiB body rule gets one exception, the game image upload, which reads at most 524288 bytes; the constant `httpapi.MaxBodyBytes` in `pkg/httpapi/httpapi.go` line 16 stays 16 KiB; the exemption is in the calendar transport, `services/calendar/internal/transport/router.go` line 32, and the info text of `api/calendar/openapi.yaml` line 17 names it). ADR 0016 section 7 (`GenreFrame`: on the Next up card a game cover replaces the genre background pattern; the genre accent border and the genre icon stay). ADR 0010 and ADR 0017 get two more optional game fields and two more lobby fields, with no change to their rules.
+Amends: ADR 0001 (the 16 KiB body rule gets one exception, the game image upload, which reads at most 524288 bytes; the constant `httpapi.MaxBodyBytes` in `pkg/httpapi/httpapi.go` line 16 stays 16 KiB; the exemption is in the calendar transport, `services/calendar/internal/transport/router.go` line 32, and the info text of `api/calendar/openapi.yaml` line 17 names it). ADR 0016 section 7 (`GenreFrame`: on the Next up card a game cover replaces the genre background pattern; the genre icon stays; the accent border was removed by Amendment 2026-11-18). ADR 0010 and ADR 0017 get two more optional game fields and two more lobby fields, with no change to their rules.
 
 ## Context
 - The game list belongs to `calendar` (ADR 0010) and is managed by the system admin (ADR 0011). A game's images belong to the game, so they belong to `calendar`.
@@ -267,3 +267,25 @@ DECISION, user, 2026-11-17 (REQ-0026 gets the same line from the product owner).
    - A full dark frame on phones (stop at 100%): rejected, the art would not show on phones at all. The 80% stop keeps a strip of art.
    - A vertical fade on phones: not asked. Upgrade path, if a phone layout needs it: a `shortcut:` comment in the CSS names it.
    For the product owner (in parallel, not in this ADR): REQ-0026 states the side gradient, the dark part behind the text, the 80% phone stop and the 20% limit at the right edge.
+
+## Amendment 2026-11-18 (REQ-0028, items 1 and 2: gold rule, genre border, scrim bound)
+DECISION, user, 2026-11-18 (REQ-0028; REQ-0026 Amendment 2026-11-18). Where it differs from points 8 and 9, Amendment 2026-11-16 item 9 and Amendment 2026-11-17, this amendment wins. Everything else in those stands.
+1. **No genre border on the cover places.** On Next up, the lobby page header and each lobby row of the Group view, the genre accent border is not drawn (ADR 0016 Amendment 2026-11-18). The genre icon stays. The cover, its side gradient, the `coverUrl` rules and the fallback to the pattern are unchanged.
+2. **Text colours on the covered places** (the text list of Amendment 2026-11-16 item 9 and point 8, REQ-0028 item 1):
+   - Counts are in `--color-text`, with tabular figures: the player count, a role slot count that is not full, and the Flex count. The badge keeps `--color-accent-tint` as its background. Flex N is a count, so it is in the text colour too; the list of gold uses in REQ-0028 is closed.
+   - A full role slot keeps `--color-on-accent` on `--color-accent` (gold is the state).
+   - Next up: the countdown and "Running" are `--color-accent` on the card's plate. This is a new text colour on a cover plate, so it needs a test case (item 9).
+3. **Scrim bound rechecked; alpha kept.** `--color-cover-scrim` stays at `rgba(10, 10, 13, 0.83)`. The derivation in Amendment 2026-11-17 item 6 ("the gold role slot badge over white needs 0.83") does not hold: the gold badge fill needs about 0.58 for 3:1 (a non-text object). The bound that came near 0.83 was the gold count text on the accent-tint badge (4.5:1, about 0.75), which item 2 removes. The bounds now, for the scrim over pure white (WCAG relative luminance, the tint of `--color-accent-tint` composed over the scrim):
+
+   | Text or fill on the plate | Required | Minimum alpha |
+   |---|---|---|
+   | Gold countdown and "Running" on Next up (text) | 4.5:1 | about 0.69 |
+   | `--color-text` on the accent-tint count badge | 4.5:1 | about 0.66 |
+   | `--color-text` on the plate | 4.5:1 | about 0.61 |
+   | Gold full role slot (fill, non-text) | 3:1 | about 0.58 |
+   | Gold count text on the accent-tint badge (removed by item 2) | 4.5:1 | about 0.75 |
+
+   Result: the binding bound is now about 0.69 (gold countdown). At 0.83 the gold on the plate is 7.7:1, so 0.83 passes every row. A lower alpha, for example 0.70, would pass too; it changes the look of the cover side and needs the browser check of Amendment 2026-11-17 item 3, so it is not decided here.
+4. **Layout rule unchanged.** Every text element and badge still lies inside the dark part (Amendment 2026-11-17 item 3).
+5. **Tests.** `frontend/src/genres/genreContrast.test.ts` gets the cases of item 2: gold on the Next up cover plate, and `--color-text` on the accent-tint badge over the plate. Both must pass at the token alpha.
+6. **Glossary.** The row "Game cover" in `CLAUDE.md` says the genre icon stays, with no accent border (updated in the same change).

@@ -122,6 +122,25 @@ Added 2026-11-12 (DECISION, user). A8 is the account settings panel on the You p
 
 Amendment 2026-11-17 to REQ-0021 (Game chips for preferred game roles in the Group view member list, EXTEND F-039) was Decided on 2026-11-17 and ordered as A3f in the Should table: Should, after REQ-0027 (A3e) and before REQ-0016 (A4). Q1 and Q5 are DECISION (user, 2026-11-17); Q2, Q3, Q4, Q6 and Q7 are product owner ASSUMPTIONS the user may override. Built 2026-11-18 (A3f, PRs #135, #136, #139, #138). Follow-ups are listed at the end of REQ-0021.
 
+## A3g, decided 2026-11-18
+
+REQ-0028 (Visual polish decisions 2026-11-18, DECISION, user, 2026-11-18): eight presentation changes to built features (F-001, F-010, F-028, F-030, F-032, F-043, F-044; EXTEND, no new feature). Priority Should (product owner). Placed after A3e and A3f and before A4, because items 1, 2 and 4 change the shared styles that ADR 0023 and ADR 0027 also change. The architect amends the ADRs and the spec first (REQ-0028 handover), then the UI expert builds the PRs one at a time.
+
+| Order | Requirement | Title | Priority | Depends on |
+|---|---|---|---|---|
+| A3g | REQ-0028 | Visual polish decisions 2026-11-18: gold for action and state, stripe on week blocks only, Space Grotesk landing headline, no glow on secondary buttons, Home label, Leave group in the Member list, lobby page order, 44 px touch buttons | Should | ADR 0021, ADR 0023 (Amendment 2026-11-17), ADR 0016 and ADR 0026 amended first (architect); ADR 0023 PR B3 and ADR 0027 PR A (shared `global.css` and Button); REQ-0026 cover PR2 (A3d) |
+
+Suggested order of small PRs (product owner, 2026-11-18; the user may change it):
+1. Home label (item 6). Text only.
+2. Touch button size and no glow on secondary buttons (items 8 and 4). Button and tokens.
+3. Gold rule and tabular counts (item 1), with the admin badge and the invite meter as decided in REQ-0028, and the cover scrim check of ADR 0026 point 8.
+4. Genre stripe on week blocks only (item 2).
+5. Landing headline in Space Grotesk, serif files dropped (item 3).
+6. Leave group as the last item on the Group view page (item 7).
+7. Lobby page order (item 5).
+
+PRs 2 to 4 touch shared styles, so they run one after another. PRs 1, 6 and 7 touch no shared style and may run in any order after the architect's amendments.
+
 ## Could, after the MVP
 
 Ordered after the Should items, because priority comes first. Not yet a requirement: the requirement is written after the MVP, as F-030 (Decided) with the same scope as before.

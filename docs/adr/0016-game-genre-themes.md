@@ -1,6 +1,6 @@
 # 0016. Game genre: fixed list on the game, genre themes in the frontend
 Status: Accepted (2026-11-07)
-Amended by ADR 0026 (section 7: on the Next up card a game cover replaces the genre background pattern; the genre accent border and icon stay)
+Amended by ADR 0026 (section 7: on the Next up card a game cover replaces the genre background pattern; the genre icon stays) and by Amendment 2026-11-18 below (the genre accent stripe is drawn on week blocks only)
 Amends ADR 0010 (genre only: read live from the game, unlike name and preset max)
 Amends ADR 0015 (points 2, 4, 5, 6, 7 and 10, and a new fill cycle, section 8)
 Merge order: ADR 0015 (branch `docs/adr-0015-three-js`, PR #60) merges before this ADR, because section 8 amends it.
@@ -242,3 +242,12 @@ The architect ruled on the review findings for the landing hero (section 8), so 
 **Module names (section 8, "Tests").** The painter is `heroCardPainter.ts`, with `heroCardPainter.test.ts`. The pose and tilt maths are in `heroPose.ts` (ADR 0015 amendment, point 2). The test names in section 8 follow the new names; the tests themselves are unchanged.
 
 **Consequences.** Section 8 changes no contract, no budget and no service. The glossary is unchanged.
+
+## Amendment 2026-11-18 (REQ-0028, item 2: accent stripe)
+DECISION, user, 2026-11-18 (REQ-0014 Amendment 2026-11-18, REQ-0028 item 2). Amends section 7 ("Where the theme shows"). Where they differ, this amendment wins.
+1. The accent stripe is a 3 px left edge in the genre accent of the lobby's game. It is drawn on the week grid blocks only: the blocks of the Group view and of This week. It is not drawn when the game has no genre.
+2. No stripe on the other places of the theme: the lobby rows of the Group view list, the lobby page header, the lobby line of a Group card, Next up and the This week day list.
+3. The rest of the theme stays where it is shown: the genre icon, the genre name as text, and the tint or pattern (section 7). Covers are unchanged (ADR 0026).
+4. The stripe is decorative and the genre name stays text. Two genres in one view still differ by icon and pattern (REQ-0014).
+5. The header pointer to ADR 0026 no longer names an accent border (ADR 0026 Amendment 2026-11-18).
+Consequence for the implementation: the stripe rule stays on the week block only. The stripe declarations on the lobby row, the group card lobby line and the lobby page header are removed.

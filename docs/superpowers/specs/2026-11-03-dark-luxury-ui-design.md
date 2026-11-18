@@ -2,6 +2,13 @@
 
 Date: 2026-11-03. Status: approved by the user in chat (brainstorming session). Owner of the build: ui-ux-expert. Reference mockups: `docs/superpowers/specs/2026-11-03-dark-luxury-ui/` (open the HTML files in a browser; they load Google Fonts for preview only).
 
+**Superseded in part by REQ-0028 (DECISION, user, 2026-11-18).** The statements below are replaced. The rest of this document stands. Where they differ, REQ-0028 and CLAUDE.md win.
+- **Accent list** (Colour, line 38): gold only for the action and state uses of REQ-0028 item 1 (primary button, focus ring, active Tab bar and Group rail item, Now line, Next up timing, selected option, full role slot, selected day, the gold hover edge of cards and secondary buttons). The key numbers, the admin badge, the highlighted heading word, the progress meters and the logo's "Lobby" are not gold. A lobby meter uses its genre accent (neutral without a genre); the invite uses meter is neutral.
+- **Serif display** (Typography, line 46) and **Cormorant Garamond** self-hosting, licence and "only upright Cormorant weights" (lines 49, 91): removed. The landing headline is Space Grotesk 700, the app heading font. No serif font file is shipped, and the Cormorant files and their licence are removed with it. The landing section titles use the heading font too.
+- **Landing headline row and highlight** (Landing page, lines 80, 91; copy table line 136; line 126): the headline is Space Grotesk 700. The word "planned" is not gold and not a serif. The copy itself is unchanged.
+- **"Primary: no outer blur shadow"** (Shape and detail, line 54): superseded by ADR 0023 Amendment 2026-11-17 and by ADR 0023 Amendment 2026-11-18 (primary keeps its glow, secondary has none, danger keeps its red glow).
+- **Badges** (Shape and detail, line 55): "accent text on a faint accent tint" is superseded. The admin badge is neutral (text colour). Counts are in the text colour (REQ-0028 item 1).
+
 ## Intent and why
 
 The frontend works but looks bare: it was built with neutral default tokens and no visual identity. The user wants OpenLobby to feel **engaging, cool and luxurious**: a dark theme in the spirit of Discord (where its users already are), but more exclusive, with motion that feels designed by a strong UI team. The user also wants a real landing page for logged-out visitors.

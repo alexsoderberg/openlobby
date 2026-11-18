@@ -1,5 +1,7 @@
 # Dark Luxury UI Implementation Plan
 
+> **Superseded in part by REQ-0028 (2026-11-18).** Do not build: the Cormorant Garamond files and `@font-face` rules (Global Constraints, Fonts line, and `--font-display`), gold on the admin badge, key numbers, meters, highlighted word or logo, the "primary: no outer blur shadow" rule, and the accent-on-tint badges. The spec's superseded list in `docs/superpowers/specs/2026-11-03-dark-luxury-ui-design.md` is the source; REQ-0028 wins.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. In this repository the orchestrator runs it: each task goes to the `ui-ux-expert` agent and then to the `reviewer` agent (CLAUDE.md workflow), one PR per task.
 
 **Goal:** Give the OpenLobby frontend the approved "gold on cool black" dark luxury look, a landing page for logged-out visitors, and a shared motion system, without changing behaviour.

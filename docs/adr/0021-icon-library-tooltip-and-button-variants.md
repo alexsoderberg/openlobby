@@ -2,7 +2,7 @@
 
 Status: Accepted (2026-11-11)
 Requirement: none. Visual improvement requested by the user, decided by the orchestrator on 2026-11-11.
-Amended by ADR 0023 (points 2, 3 and 4; the A3 amendment is superseded) and by ADR 0027 (A9, the native select choice for dropdown lists). ADR 0023 overturns two rejected alternatives below: "Radix or another tooltip library" (line 104) and "A `Button` component with `variant` and `size` props" (line 107). Replaces the button sizes and colour rules in `frontend/src/styles/global.css` (section "Primary button is solid accent").
+Amended by ADR 0023 (points 2, 3 and 4; the A3 amendment is superseded), by ADR 0027 (A9, the native select choice for dropdown lists) and by Amendment 2026-11-18 (A10, the touch button height is the tap size). ADR 0023 overturns two rejected alternatives below: "Radix or another tooltip library" (line 104) and "A `Button` component with `variant` and `size` props" (line 107). Replaces the button sizes and colour rules in `frontend/src/styles/global.css` (section "Primary button is solid accent").
 
 ## Context
 - Buttons share three classes in `frontend/src/styles/global.css`: `.button` (primary), `.button-ghost` and `.button--secondary`. Ghost and secondary look the same. Every button is at least `--size-tap` (2.75rem, 44px) high.
@@ -167,3 +167,13 @@ Recorded with ADR 0027 (REQ-0027). Where it differs from the Decision above or f
 - The Decision above, and ADR 0023's "Select: Not adopted" row, kept the native `<select>` on purpose, because of keyboard, screen readers and the phone pickers. This amendment reverses that choice for the look. The behaviour is kept: ADR 0027 uses Radix Select, which gives the same keyboard and screen reader behaviour, and a bottom sheet on phones replaces the OS picker.
 - The chevron stays an `Icon` (`chevronDown`, point A1), drawn by `ui/Select.tsx`.
 - New `Icon` state name: `selected` (the check mark of the selected option in a dropdown list). **Exception to A8 for option rows:** A8 rule 1 allows a state icon only inside text that states the state in words. An option row does not state "selected" in words, and REQ-0027 requires that the check mark alone show the selection. So, for option rows only, the state is carried by `aria-selected` on the option (which screen readers read), and the check mark is the visible cue (WCAG 1.4.1). The check mark sits only inside an option row, never on a button, link or trigger (A8 rule 1 still holds for its placement). For option rows, rule 2's "state in words" is replaced by `aria-selected` (above). Rule 1 applies as written to the check mark's placement, rule 3 applies with the check mark as the state carrier, and rule 4 applies as written. No other state icon uses this exception.
+
+## Amendment 2026-11-18 (REQ-0028, item 8: touch buttons 44 px)
+DECISION, user, 2026-11-18 (REQ-0028 item 8). Where it differs from the Decision above or from earlier amendments, this amendment wins. It changes the coarse-pointer size in points 3 and 4 and the rejected alternative "Hit area via `::before` pseudo-element".
+
+**A10. The touch button height is the tap size.**
+- On coarse pointers every button and every `IconButton` is `--size-tap` (2.75rem, 44 px) high. This replaces the 2.5rem (40 px) of points 3 and 4. Fine pointers are unchanged: `--size-button: 2rem`.
+- The token `--size-button-touch` is removed from `frontend/src/styles/global.css`. The coarse rule uses `--size-tap` directly. Reason: the touch size is the tap size, which already has one name. An alias would be a second name for the same value with no meaning of its own (CLAUDE.md, DRY).
+- Rejected alternative "Hit area via `::before`": its reason stands. The 2.75rem box on coarse pointers is used instead of the 2.5rem box.
+
+Consequence: a touch target is 44 px high in the same token as the tap size of REQ-0012 and REQ-0004, and there is one value, not two.
