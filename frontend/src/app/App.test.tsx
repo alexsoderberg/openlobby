@@ -94,7 +94,7 @@ describe("logged out", () => {
 });
 
 describe("logged in", () => {
-  it("shows the dashboard at the start address, with the display name in the top bar", async () => {
+  it("shows the Dashboard headed Home at the start address, with the display name in the top bar", async () => {
     renderAt(
       loggedInClient({
         listGroups: () => Promise.resolve([{ id: "g1", name: "Friday crew" }]),
@@ -105,9 +105,11 @@ describe("logged in", () => {
     expect(
       await screen.findByRole("heading", {
         level: 1,
-        name: en.dashboard.heading,
+        name: en.shell.home,
       }),
     ).toBeTruthy();
+    // REQ-0028 item 6: the page is never called "Dashboard" on screen.
+    expect(screen.queryByText(/dashboard/i)).toBeNull();
     const profile = screen.getByRole("link", {
       name: en.shell.openProfile(testUser.displayName),
     });

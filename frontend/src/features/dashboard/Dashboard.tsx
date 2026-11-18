@@ -29,7 +29,7 @@ export function Dashboard({
   const m = useMessages();
   return (
     <>
-      <h1>{m.dashboard.heading}</h1>
+      <h1>{m.shell.home}</h1>
       <DashboardBody
         groups={groups}
         onRetryGroups={onRetryGroups}

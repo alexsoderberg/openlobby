@@ -410,8 +410,7 @@ export const en = {
   },
 
   dashboard: {
-    heading: "Dashboard",
-    loading: "Loading your dashboard.",
+    loading: "Loading your lobbies.",
     groupStripLabel: "Your groups",
     noGroups: "You are not in a group yet",
     noGroupsHint:
