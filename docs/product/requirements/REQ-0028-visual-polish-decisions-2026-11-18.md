@@ -75,6 +75,13 @@ Amends the touch button size of ADR 0021 (point 2, 2.5rem on coarse pointers) an
 - Given I use a mouse or another fine pointer, when I see a button, then its size is as before (ADR 0021, 2rem).
 - Given the design tokens, when I check the touch button size, then it is the same value as the tap size, and there is one value, not two (DRY, CLAUDE.md).
 
+## Also decided: fix PR 1 (DECISION, user, 2026-11-18)
+The user approved four small fixes of existing behaviour on 2026-11-18. They are fixes, not new functionality, so they go directly to workflow step 2 (CLAUDE.md), built in branch `frontend-polish-1`. They change no item above.
+- (a) Panels (a code name, not a glossary term) in the logged-in app show at once: their scroll reveal is removed and only the page transition animates. The landing step cards and the invite link rows keep their reveal.
+- (b) A person without an Avatar shows initials (`ui/Avatar`), not an empty circle, in the Member list and in the lobby player list.
+- (c) The row hover tint with a mouse stays only on rows that are one full-row link (the lobby rows).
+- (d) UI copy: capacity errors keep the upper limit in plain words; the image size error names 512 KiB; the Game cover hint and removal text name all three places a Game cover shows (Next up, the lobby page header and each lobby row of the Group view); the empty lobbies text ends with a full stop.
+
 ## Out of scope
 - Any change of what the features do, their content or their rules. Only colour, font, placement, labels and button size change.
 - A light theme, new fonts or a font other than the one named in item 3.
