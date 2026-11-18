@@ -8,6 +8,8 @@ import type { ReactNode } from "react";
 const PANEL_GAP = 4;
 const WINDOW_MARGIN = 8;
 
+// border-(length:--space-0), not border-0: class lists read tokens only (uiClasses.test.ts, ADR 0023 Amendment
+// 2026-11-16 B2 a).
 const popoverVariants = {
   trigger:
     "inline-flex items-center p-(--space-0) border-(length:--space-0) bg-transparent text-(--color-text) cursor-pointer",

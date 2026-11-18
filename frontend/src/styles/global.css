@@ -1151,7 +1151,7 @@ a {
   font-size: var(--font-size-heading);
 }
 
-[data-state="open"] > .game-chip::after {
+[data-slot="anchored-popover-trigger"][data-state="open"] > .game-chip::after {
   opacity: 1;
 }
 

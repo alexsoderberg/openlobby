@@ -29,6 +29,7 @@ export function GameChip({ roles }: { roles: PreferredGameRole[] }) {
     useMessages().preferredGameRoles,
     true,
   );
+  // Never empty: GameChips makes a chip only for a game with at least one role.
   const [{ gameId, gameName, gameLogoVersion }] = roles;
   const { icons, names } = visibleTokens(roles);
   return (
@@ -37,7 +38,8 @@ export function GameChip({ roles }: { roles: PreferredGameRole[] }) {
         <GameLogo
           gameId={gameId ?? ""}
           name={gameName}
-          version={gameLogoVersion}
+          // Without a game ID there is no logo URL, so the monogram shows at once and no request is made.
+          version={gameId ? gameLogoVersion : undefined}
         />
         {icons.map((icon) => (
           <Icon key={icon} name={icon} className="game-chip__icon" />
@@ -53,6 +55,7 @@ export function GameChips({ roles = [] }: { roles?: PreferredGameRole[] }) {
   // The contract leaves gameId optional for old fixtures; the server always sends it, so the name never keys.
   const byGame = new Map<string, PreferredGameRole[]>();
   for (const role of roles) {
+    // The name is a grouping key only, never a logo source.
     const key = role.gameId ?? role.gameName;
     byGame.set(key, [...(byGame.get(key) ?? []), role]);
   }

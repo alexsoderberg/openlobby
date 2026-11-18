@@ -79,7 +79,9 @@ describe("GameChips", () => {
   it("shows the name of each role without an icon (null or none), once ignoring case", () => {
     const { chips } = renderChips();
     expect(chips[1].querySelector("[data-icon]")).toBeNull();
-    expect(chips[1].textContent).toBe("LOTop, Jungle");
+    // The names follow the monogram as the chip's last element.
+    const shown = chips[1].firstElementChild!;
+    expect(shown.lastElementChild!.textContent).toBe("Top, Jungle");
   });
 
   it("shows no game name and no mode name as text", () => {
@@ -117,6 +119,14 @@ describe("GameChips", () => {
   it("shows the monogram when the logo image fails to load", () => {
     const { chips } = renderChips();
     fireEvent.error(chips[0].querySelector("img")!);
+    expect(chips[0].querySelector("img")).toBeNull();
+    expect(chips[0].textContent).toBe("WO");
+  });
+
+  it("shows the monogram at once and requests no logo when the game ID is missing", () => {
+    const { chips } = renderChips([
+      { ...role("Tank", "shield", wow), gameId: undefined },
+    ]);
     expect(chips[0].querySelector("img")).toBeNull();
     expect(chips[0].textContent).toBe("WO");
   });
