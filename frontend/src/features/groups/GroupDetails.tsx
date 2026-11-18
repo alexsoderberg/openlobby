@@ -1,11 +1,11 @@
 import { GROUPS_PATH } from "./groupPath";
 import { Lobbies } from "../lobbies";
 import { useMessages } from "../../i18n";
-import { PreferredGameRolesNote } from "../../lobby";
 import type { ReactNode } from "react";
 import { ErrorAlert, Panel } from "../../ui";
 import type { GroupState } from "./useGroup";
 import { MakeGroupAdminAction } from "./MakeGroupAdminAction";
+import { GameChips } from "./GameChip";
 
 /** Shows a group with its members. The admin marker is text, so it does not depend on color. */
 export function GroupDetails({
@@ -61,10 +61,7 @@ export function GroupDetails({
                 <li key={member.userId} className="list-row">
                   <span className="avatar" />
                   {member.displayName}
-                  <PreferredGameRolesNote
-                    roles={member.preferredGameRoles}
-                    withGame
-                  />
+                  <GameChips roles={member.preferredGameRoles} />
                   {member.role === "admin" && (
                     <>
                       {" "}

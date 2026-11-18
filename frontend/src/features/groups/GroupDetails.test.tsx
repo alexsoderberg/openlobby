@@ -17,16 +17,24 @@ const group: Group = {
         {
           gameRoleId: "r1",
           name: "Tank",
+          gameId: "ow",
           gameName: "Overwatch",
           modeName: "Competitive",
         },
         {
           gameRoleId: "r2",
           name: "Support",
+          gameId: "ow",
           gameName: "Overwatch",
           modeName: null,
         },
-        { gameRoleId: "r3", name: "Healer", gameName: "WoW", modeName: null },
+        {
+          gameRoleId: "r3",
+          name: "Healer",
+          gameId: "wow",
+          gameName: "WoW",
+          modeName: null,
+        },
       ],
     },
     { userId: "u2", displayName: "Kim Berg", role: "member" },
@@ -34,7 +42,7 @@ const group: Group = {
 };
 
 describe("the member list", () => {
-  it("shows each member's preferred game roles with the game next to the name", async () => {
+  it("shows each member's preferred game roles as one Game chip per game, and none for a member without them", async () => {
     render(
       <ApiProvider client={fakeApiClient()}>
         <GroupDetails
@@ -50,15 +58,22 @@ describe("the member list", () => {
     const members = await screen.findByRole("heading", {
       name: en.membersHeading,
     });
-    const rows = within(members.closest("section")!).getAllByRole("listitem");
-    expect(rows.map((row) => row.textContent)).toEqual([
-      "Maja Lind " +
-        en.preferredGameRoles.plays([
-          { roles: ["Tank (Competitive)", "Support"], game: "Overwatch" },
-          { roles: ["Healer"], game: "WoW" },
-        ]),
-      "Kim Berg",
+    const [maja, kim] = within(members.closest("section")!).getAllByRole(
+      "listitem",
+    );
+    expect(
+      within(maja)
+        .getAllByRole("button")
+        .map((chip) => chip.getAttribute("aria-label")),
+    ).toEqual([
+      en.preferredGameRoles.plays([
+        { roles: ["Tank (Competitive)", "Support"], game: "Overwatch" },
+      ]),
+      en.preferredGameRoles.plays([{ roles: ["Healer"], game: "WoW" }]),
     ]);
+    expect(maja.textContent).not.toContain("Overwatch");
+    expect(within(kim).queryAllByRole("button")).toHaveLength(0);
+    expect(kim.textContent).toBe("Kim Berg");
   });
 
   it("puts the members in the side column, after the lobbies (REQ-0025)", async () => {
