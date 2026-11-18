@@ -847,8 +847,15 @@ export interface components {
             name: string;
             /** @description The game role's icon as it is now, read like its name. Not in `required` so that existing fixtures stay valid, but the server always sends it. `null` means not chosen yet, `none` means "No icon" (ADR 0024). */
             roleIcon?: (string & components["schemas"]["RoleIcon"]) | null;
+            /**
+             * Format: uuid
+             * @description The game of the game role, the key that groups the roles of one game and builds the logo URL (ADR 0022 Amendment 2026-11-17). Not in `required` so that existing fixtures stay valid, but the server always sends it.
+             */
+            gameId?: string;
             /** @description The name of the game role's game. */
             gameName: string;
+            /** @description Version of the logo of the game role's game, for the image URL (ADR 0026). `null` when the game has no logo. Not in `required` so that existing fixtures stay valid, but the server always sends it (ADR 0022 Amendment 2026-11-17). */
+            gameLogoVersion?: string | null;
             /** @description The name of the game role's mode, or `null` for a role of a game with no modes. */
             modeName: string | null;
         };

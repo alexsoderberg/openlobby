@@ -463,10 +463,10 @@ func seedMemberChoices(t *testing.T, store *Store) (wantAlex []domain.PreferredG
 	replaceChoices(t, store, nobodyID, fixture.tank)
 	raid := "Raid"
 	return []domain.PreferredGameRole{
-		{GameRoleID: arena.GameRoles[0].ID, Name: "Solo", GameName: "arena"},
-		{GameRoleID: fixture.fighter, Name: "Fighter", GameName: "Duel"},
-		{GameRoleID: fixture.tank, Name: "Tank", GameName: "Raid Game", ModeName: &raid},
-		{GameRoleID: fixture.healer, Name: "Healer", GameName: "Raid Game", ModeName: &raid},
+		{GameRoleID: arena.GameRoles[0].ID, Name: "Solo", GameID: arena.ID, GameName: "arena"},
+		{GameRoleID: fixture.fighter, Name: "Fighter", GameID: fixture.duel.ID, GameName: "Duel"},
+		{GameRoleID: fixture.tank, Name: "Tank", GameID: fixture.raid.ID, GameName: "Raid Game", ModeName: &raid},
+		{GameRoleID: fixture.healer, Name: "Healer", GameID: fixture.raid.ID, GameName: "Raid Game", ModeName: &raid},
 	}, fixture.healer
 }
 

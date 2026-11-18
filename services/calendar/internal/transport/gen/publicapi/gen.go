@@ -691,6 +691,12 @@ type NextLobby struct {
 
 // PreferredGameRole A game role that a person usually plays (ADR 0022). Order in a list - game name ignoring case, then mode order, then role order, as entered by the system admin.
 type PreferredGameRole struct {
+	// GameId The game of the game role, the key that groups the roles of one game and builds the logo URL (ADR 0022 Amendment 2026-11-17). Not in `required` so that existing fixtures stay valid, but the server always sends it.
+	GameId *openapi_types.UUID `json:"gameId,omitempty"`
+
+	// GameLogoVersion Version of the logo of the game role's game, for the image URL (ADR 0026). `null` when the game has no logo. Not in `required` so that existing fixtures stay valid, but the server always sends it (ADR 0022 Amendment 2026-11-17).
+	GameLogoVersion *string `json:"gameLogoVersion"`
+
 	// GameName The name of the game role's game.
 	GameName   string             `json:"gameName"`
 	GameRoleId openapi_types.UUID `json:"gameRoleId"`

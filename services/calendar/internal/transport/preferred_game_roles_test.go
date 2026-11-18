@@ -189,12 +189,15 @@ func TestReplacePreferredGameRolesRefusalsKeepTheChoices(t *testing.T) {
 	}
 }
 
+// choiceLogoVersion is the logo version of the Raid game in visibleChoices; the Scout game has no logo.
+var choiceLogoVersion = strings.Repeat("ab", 32)
+
 // visibleChoices gives alex a mode role and a role of a game with no modes, in the adapter's order; other has none.
 func visibleChoices() map[string][]domain.PreferredGameRole {
 	raid, shield := "Raid", domain.RoleIcon("shield")
 	return map[string][]domain.PreferredGameRole{alexID: {
-		{GameRoleID: choiceTankID, Name: "Tank", GameName: "Raid", ModeName: &raid, RoleIcon: &shield},
-		{GameRoleID: choiceScoutID, Name: "Scout", GameName: "Scout"},
+		{GameRoleID: choiceTankID, Name: "Tank", GameID: questGameID, GameName: "Raid", GameLogoVersion: &choiceLogoVersion, ModeName: &raid, RoleIcon: &shield},
+		{GameRoleID: choiceScoutID, Name: "Scout", GameID: chessGameID, GameName: "Scout"},
 	}}
 }
 
@@ -237,9 +240,10 @@ func TestGroupAndLobbyShowTheVisibleChoicesInTheContractShape(t *testing.T) {
 		{name: "getLobby", path: lobbiesPath + "/" + otherLobby, decode: lobbyChoices},
 	}
 	raid, shield := "Raid", publicapi.Shield
+	questGame, chessGame := uuid.MustParse(questGameID), uuid.MustParse(chessGameID)
 	wantAlex := []publicapi.PreferredGameRole{
-		{GameRoleId: uuid.MustParse(choiceTankID), Name: "Tank", GameName: "Raid", ModeName: &raid, RoleIcon: &shield},
-		{GameRoleId: uuid.MustParse(choiceScoutID), Name: "Scout", GameName: "Scout", ModeName: nil},
+		{GameRoleId: uuid.MustParse(choiceTankID), Name: "Tank", GameId: &questGame, GameName: "Raid", GameLogoVersion: &choiceLogoVersion, ModeName: &raid, RoleIcon: &shield},
+		{GameRoleId: uuid.MustParse(choiceScoutID), Name: "Scout", GameId: &chessGame, GameName: "Scout", ModeName: nil},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
@@ -259,9 +263,11 @@ func TestGroupAndLobbyShowTheVisibleChoicesInTheContractShape(t *testing.T) {
 			if other == nil || len(*other) != 0 {
 				t.Fatalf("other's choices %v, want [] (never null)", other)
 			}
-			// Decoding gives a nil ModeName for both null and a missing key; the contract sends null.
-			if !strings.Contains(response.Body.String(), `"modeName":null,"name":"Scout"`) {
-				t.Fatalf("body %q, want modeName null on the role of a game with no modes", response.Body.String())
+			// Decoding gives nil for both null and a missing key; the contract sends null.
+			for _, want := range []string{`"modeName":null,"name":"Scout"`, `"gameLogoVersion":null,"gameName":"Scout"`} {
+				if !strings.Contains(response.Body.String(), want) {
+					t.Fatalf("body %q, want %s on the role of a game with no modes and no logo", response.Body.String(), want)
+				}
 			}
 		})
 	}

@@ -109,9 +109,10 @@ func lockForReplace(ctx context.Context, tx *sql.Tx, userID string, gameRoleIDs 
 // The choices visible to a member of the group (ADR 0022 point 6), one query per read, never one per person. Only
 // effective game roles, in the order of the contract: game name ignoring case, then mode order, then role order.
 const (
-	selectVisibleChoicesSQL = `SELECT p.user_id, gr.id, gr.name, g.name, gm.name, gr.role_icon FROM preferred_game_roles p
+	selectVisibleChoicesSQL = `SELECT p.user_id, gr.id, gr.name, g.id, g.name, logo.version, gm.name, gr.role_icon FROM preferred_game_roles p
 		JOIN game_roles gr ON gr.id = p.game_role_id
 		JOIN games g ON g.id = gr.game_id
+		LEFT JOIN game_images logo ON logo.game_id = g.id AND logo.kind = 'logo'
 		LEFT JOIN game_modes gm ON gm.id = gr.game_mode_id
 		WHERE ` + effectiveGameRoleSQL + ` AND `
 	visibleChoiceOrderSQL = ` ORDER BY lower(g.name), g.id, gm.sort_order, gm.id, gr.sort_order, gr.id`
@@ -133,7 +134,7 @@ func visibleChoicesByUser(ctx context.Context, q queryer, query, id string) (map
 	err := eachRow(ctx, q, func(rows *sql.Rows) error {
 		var userID string
 		var role domain.PreferredGameRole
-		err := rows.Scan(&userID, &role.GameRoleID, &role.Name, &role.GameName, &role.ModeName, &role.RoleIcon)
+		err := rows.Scan(&userID, &role.GameRoleID, &role.Name, &role.GameID, &role.GameName, &role.GameLogoVersion, &role.ModeName, &role.RoleIcon)
 		byUser[userID] = append(byUser[userID], role)
 		return err
 	}, query, id)
