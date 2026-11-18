@@ -98,8 +98,12 @@ func preferredGameRoleBodies(roles []domain.PreferredGameRole) (*[]publicapi.Pre
 		if err != nil {
 			return nil, err
 		}
-		bodies = append(bodies, publicapi.PreferredGameRole{GameRoleId: id, Name: role.Name, GameName: role.GameName, ModeName: role.ModeName,
-			RoleIcon: convertEnum[publicapi.RoleIcon](role.RoleIcon)})
+		gameID, err := parseUUID(role.GameID)
+		if err != nil {
+			return nil, err
+		}
+		bodies = append(bodies, publicapi.PreferredGameRole{GameRoleId: id, Name: role.Name, GameId: &gameID, GameName: role.GameName,
+			GameLogoVersion: role.GameLogoVersion, ModeName: role.ModeName, RoleIcon: convertEnum[publicapi.RoleIcon](role.RoleIcon)})
 	}
 	return &bodies, nil
 }

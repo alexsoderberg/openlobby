@@ -4,6 +4,7 @@ package postgres
 
 import (
 	"context"
+	"reflect"
 	"slices"
 	"testing"
 
@@ -205,15 +206,25 @@ func TestModeChangeCopiesTheNewModesRoleIcons(t *testing.T) {
 	}
 }
 
-// A preferred game role shows the current icon of its game role, on members and on lobby players (ADR 0024 section 2).
-func TestPreferredGameRoleShowsTheCurrentRoleIcon(t *testing.T) {
+// A preferred game role shows its game ID, the game's logo version and the current icon of its game role, on members
+// and on lobby players (ADR 0024 section 2, ADR 0022 Amendment 2026-11-17).
+func TestPreferredGameRoleShowsItsGameLogoAndCurrentRoleIcon(t *testing.T) {
 	store := migratedStore(t)
 	ctx := context.Background()
 	seedGroups(t, store)
 	fixture := seedChoiceGames(t, store, "")
 	lobby := insertLobby(t, store, newLobby(fridayID, alexID, &fixture.raid.ID, fixture.raid.Name))
-	replaceChoices(t, store, alexID, fixture.tank)
+	replaceChoices(t, store, alexID, fixture.tank, fixture.healer, fixture.fighter)
 	setRoleIcon(t, store, fixture.tank, "wrench") // after the choice: the read is live, not a copy
+	setRoleIcon(t, store, fixture.healer, "none")
+	// A role saved before ADR 0024 has no icon chosen yet; the domain writes "none", so set NULL directly.
+	if _, err := store.db.Exec(`UPDATE game_roles SET role_icon = NULL WHERE id = $1`, fixture.fighter); err != nil {
+		t.Fatal(err)
+	}
+	logo := logoOf(t, []byte{0xff, 0xd8, 0xff})
+	if _, err := store.GameImages().Save(ctx, fixture.raid.ID, logo); err != nil {
+		t.Fatal(err)
+	}
 
 	members, err := store.Groups().Members(ctx, fridayID)
 	if err != nil {
@@ -224,10 +235,19 @@ func TestPreferredGameRoleShowsTheCurrentRoleIcon(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	raid, wrench, none := "Raid", domain.RoleIcon("wrench"), domain.RoleIcon("none")
+	tank := domain.PreferredGameRole{GameRoleID: fixture.tank, Name: "Tank", GameID: fixture.raid.ID, GameName: fixture.raid.Name,
+		GameLogoVersion: &logo.Version, ModeName: &raid, RoleIcon: &wrench}
+	healer := tank
+	healer.GameRoleID, healer.Name, healer.RoleIcon = fixture.healer, "Healer", &none
+	// Duel has no logo and the fighter no icon chosen yet: both nil.
+	fighter := domain.PreferredGameRole{GameRoleID: fixture.fighter, Name: "Fighter", GameID: fixture.duel.ID, GameName: fixture.duel.Name}
 	member := members[slices.IndexFunc(members, func(m domain.Member) bool { return m.UserID == alexID })]
-	for name, roles := range map[string][]domain.PreferredGameRole{"member": member.PreferredGameRoles, "player": players[0].PreferredGameRoles} {
-		if len(roles) != 1 || roles[0].RoleIcon == nil || *roles[0].RoleIcon != "wrench" {
-			t.Fatalf("%s: choices %+v, want the tank with its current icon wrench", name, roles)
-		}
+	if want := []domain.PreferredGameRole{fighter, tank, healer}; !reflect.DeepEqual(member.PreferredGameRoles, want) {
+		t.Fatalf("member choices %+v, want %+v", member.PreferredGameRoles, want)
+	}
+	// The lobby player read shows the lobby's game only, with the same values.
+	if want := []domain.PreferredGameRole{tank, healer}; !reflect.DeepEqual(players[0].PreferredGameRoles, want) {
+		t.Fatalf("player choices %+v, want %+v", players[0].PreferredGameRoles, want)
 	}
 }
