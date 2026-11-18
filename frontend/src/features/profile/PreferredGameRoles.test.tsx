@@ -170,7 +170,7 @@ describe("PreferredGameRoles", () => {
       "scout",
       "tank",
     ]);
-    expect(document.activeElement).toBe(status);
+    await waitFor(() => expect(document.activeElement).toBe(status));
   });
 
   it("shows the saved choice when the list is opened again", async () => {

@@ -197,7 +197,8 @@ describe("changing the mode", () => {
     );
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(await screen.findByText(en.lobbySettingsSaved)).toBeTruthy();
-    expect(document.activeElement).toBe(await modeSelect());
+    const mode = await modeSelect();
+    await waitFor(() => expect(document.activeElement).toBe(mode));
   });
 
   it("sends null as the shown mode for a lobby with no mode yet", async () => {
@@ -246,7 +247,8 @@ describe("changing the mode", () => {
     const alert = await screen.findByRole("alert");
     expect(alert.textContent).toBe(en.lobbyErrors.lobby_changed);
     expect(onChanged).toHaveBeenCalled();
-    expect(document.activeElement).toBe(await modeSelect());
+    const mode = await modeSelect();
+    await waitFor(() => expect(document.activeElement).toBe(mode));
     expect((await modeSelect()).getAttribute("aria-describedby")).toContain(
       alert.id,
     );
@@ -336,7 +338,7 @@ describe("the activity", () => {
     const alert = await screen.findByRole("alert");
     expect(alert.textContent).toBe(en.lobbyErrors.invalid_activity);
     expect(select.getAttribute("aria-describedby")).toBe(alert.id);
-    expect(document.activeElement).toBe(select);
+    await waitFor(() => expect(document.activeElement).toBe(select));
   });
 });
 
@@ -382,7 +384,7 @@ describe("setting the game of an open lobby", () => {
     await waitFor(() => expect(onChanged).toHaveBeenCalled());
     expect(client.setLobbyGame).toHaveBeenCalledWith("g1", "l1", "game1");
     const status = await screen.findByText(en.lobbyGameSaved);
-    expect(document.activeElement).toBe(status);
+    await waitFor(() => expect(document.activeElement).toBe(status));
   });
 
   it("explains that someone set the game first, loads the lobby again and focuses the message", async () => {
@@ -397,7 +399,8 @@ describe("setting the game of an open lobby", () => {
     const alert = await screen.findByRole("alert");
     expect(alert.textContent).toBe(en.lobbyErrors.lobby_game_set);
     expect(onChanged).toHaveBeenCalled();
-    expect(document.activeElement).toBe(alert);
+    // Focus moves in an effect after the message renders, which findByRole can resolve before.
+    await waitFor(() => expect(document.activeElement).toBe(alert));
   });
 
   it("explains a game that is no longer listed beside the game and does not reload", async () => {
@@ -414,6 +417,6 @@ describe("setting the game of an open lobby", () => {
     expect(onChanged).not.toHaveBeenCalled();
     const select = await gameSelect();
     expect(select.getAttribute("aria-describedby")).toContain(alert.id);
-    expect(document.activeElement).toBe(select);
+    await waitFor(() => expect(document.activeElement).toBe(select));
   });
 });
