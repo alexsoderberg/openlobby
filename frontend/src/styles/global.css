@@ -1096,6 +1096,71 @@ a {
   overflow-wrap: anywhere;
 }
 
+/* Game chips (REQ-0021 Amendment 2026-11-17): a wrapping row after the member's name. Each chip is one tap
+   target of at least --size-tap around the logo, on a faint surface that holds its icons together; a tint marks it
+   under the pointer and while its Popover is open. */
+/* The gap between chips is wider than inside one, so each game's icons read as its own group. */
+.game-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+}
+
+.game-chips > [data-slot="anchored-popover-trigger"] {
+  border-radius: var(--radius-control);
+}
+
+.game-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-width: var(--size-tap);
+  min-height: var(--size-tap);
+  padding-inline: var(--space-0);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+  color: var(--color-muted);
+  font-size: var(--font-size-small);
+  position: relative;
+  isolation: isolate;
+}
+
+/* The tint is a layer that fades by opacity, as on a list row, so only a composited property moves. */
+.game-chip::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: var(--color-accent-tint);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-base) var(--ease-out);
+}
+
+/* Room after the last icon or name, so the tint does not end at the glyph. */
+.game-chip:has(> :nth-child(2)) {
+  padding-inline-end: var(--space-2);
+}
+
+/* The icons carry the row, so they read at heading size beside the logo, not at the small name size. */
+.game-chip__icon {
+  flex: none;
+  color: var(--color-text);
+  font-size: var(--font-size-heading);
+}
+
+[data-state="open"] > .game-chip::after {
+  opacity: 1;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  [data-slot="anchored-popover-trigger"]:hover > .game-chip::after {
+    opacity: 1;
+  }
+}
+
 .avatar {
   flex: none;
   width: 2rem;
