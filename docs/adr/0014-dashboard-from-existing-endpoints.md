@@ -28,3 +28,9 @@ REQ-0012 (F-028) shows the "Next up" lobby and "This week" across all groups of 
 - **Join state from a detail call per lobby.** Rejected: N extra calls on the card. `joinedByMe` costs one boolean in the list query.
 - **Drop Join/Leave from the card and open the group view instead.** Rejected for the MVP: the sketch session approved the buttons on the card. This is the fallback if `joinedByMe` is not accepted.
 - **Dashboard at `/dashboard`.** Rejected: one more route and a redirect after login, with no gain.
+
+## Amendment 2026-11-18 (REQ-0028, item 6: the word "Home")
+DECISION, user, 2026-11-18 (REQ-0028 item 6; REQ-0012 Amendment 2026-11-18). Point 6 (route) and the term stay as they are.
+- The visible word for this page is "Home": the Home tab of the Tab bar, the Home control of the Group rail and the heading of the page at `/`. The Home control's accessible name is "Home".
+- The word is in one text key of the catalogue (ADR 0013), used by the Tab bar and the page heading, so they cannot drift apart.
+- The term "Dashboard" stays for code, contracts and documents, and the route is still `/`. The page is not called "Dashboard" in any visible place.

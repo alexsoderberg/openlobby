@@ -197,3 +197,6 @@ Places:
 Not changed (the game name stays beside the logo):
 - The Next up card, the lobby page, the game list, the game form, the game choice and the game headings of the You page.
 - Lobby labels, the lobby list, the week view and the Dashboard (labels stay text-only; Amendment 2026-11-16).
+
+## Amendment 2026-11-18 (REQ-0028, item 2: genre border)
+DECISION, user, 2026-11-18. On the cover places (Next up, the lobby page header, each lobby row of the Group view), the genre accent border is no longer shown; the genre icon stays (every mention of the genre accent border in this document is amended so that it reads "the genre icon"). The cover, its side gradient and its fallback are unchanged. See REQ-0028.

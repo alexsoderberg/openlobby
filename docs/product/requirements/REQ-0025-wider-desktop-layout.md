@@ -101,3 +101,9 @@ Order and accessibility:
 None. The open questions of the draft are decided by the user (DECISION, user, 2026-11-14): the side column is on the right, the side column breakpoint is 98rem, the Group view side column holds the members and the Group feed, invite links stay in the popover. The glossary terms "Main area", "Main column" and "Side column" are requested in the glossary (CLAUDE.md, architect).
 
 Items still ASSUMPTION for the UI expert: the margin size, the 5.25rem Group rail width and the 0.5rem scrollbar used in the arithmetic, the side column width, the card column count and card width of the Group list, the 760 px line of the card grid, the 48rem text measure, the empty Next up layout on the Dashboard, and the focus and reading order.
+
+## Amendment 2026-11-18 (REQ-0028, items 5 and 7)
+DECISION, user, 2026-11-18. This amends the out-of-scope line "A change of the content, rules or buttons of any panel", for these two places only:
+- Lobby page: "Join lobby" or "Leave lobby" comes directly after the role slots, before the "Players" heading; "Delete lobby" is the last element of the panel. This applies at every width.
+- Group view: "Leave group" is no longer in the page header (group name and Invite button); it is the last item on the page, below the Group feed in the side column layout and after the Member list below 98rem.
+The side column content of REQ-0025 (lobby settings, members, Group feed) is unchanged. See REQ-0028 for the open questions on these places.

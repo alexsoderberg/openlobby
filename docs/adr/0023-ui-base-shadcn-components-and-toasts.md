@@ -2,7 +2,7 @@
 
 Status: Accepted (2026-11-13)
 Requirement: REQ-0022 (product owner, Decided) covers the toasts: placement, duration, pause, the nine places and the layering. This ADR implements it.
-Amended 2026-11-17 (Amendment 2026-11-17 at the end of this file): the Popover is pulled forward as `ui/AnchoredPopover.tsx` on Radix Popover for the Game chip (ADR 0022 Amendment 2026-11-17); the create frame is renamed `ui/CreateFrame.tsx` and is not converted. It amends the Popover row (point 1), the Popover paragraph (point 5), row G (point 6) and the "below 60" sentence (point 4).
+Amended 2026-11-18 (Amendment 2026-11-18 at the end of this file: glow by variant, touch size). Amended 2026-11-17 (Amendment 2026-11-17 at the end of this file): the Popover is pulled forward as `ui/AnchoredPopover.tsx` on Radix Popover for the Game chip (ADR 0022 Amendment 2026-11-17); the create frame is renamed `ui/CreateFrame.tsx` and is not converted. It amends the Popover row (point 1), the Popover paragraph (point 5), row G (point 6) and the "below 60" sentence (point 4).
 Amended by ADR 0027 (Select, dropdown lists, Amendment 2026-11-16 at the end of this file): the "Not adopted" row for Select (line 36) and the "Not adopted" list (line 140) are overridden there, and the z-index rule of point 4 ("below 60") is amended there too. Where they differ, the amendment wins.
 Amends ADR 0021:
 - point 2 (Tooltip): the Tooltip is Radix Tooltip wrapped in `ui/Tooltip.tsx`. The reason "a new dependency for a small component" no longer holds (see 1a). The A3 amendment (top-layer popover) is superseded. The touch rule and "used by `IconButton` only" stay. The rejected alternative "Radix or another tooltip library" (ADR 0021, line 104) is overturned.
@@ -250,3 +250,13 @@ DECISION, user, 2026-11-17. This amendment wins over the hover and press rules o
 - **Legacy classes.** The `.button` classes in `global.css` get the static part only (edge, glow, sink). They get no light and no pointer handling.
 - **Stacking.** The primary button no longer needs `overflow: hidden`; it uses `isolation: isolate` instead.
 - **Tests.** `Button.test.tsx` checks that the light is `aria-hidden` with no text, that a pointer move sets the two properties, and that the role and name tests stay as they are.
+
+## Amendment 2026-11-18 (REQ-0028, items 4 and 8: button glow and touch size)
+DECISION, user, 2026-11-18 (REQ-0028 items 4 and 8). Wins over the hover rules "Hover: Follow light" and "Legacy classes" of Amendment 2026-11-17, and over the touch size of point 1b. Applies to `ui/Button.tsx` and to the legacy `.button` classes until the last B PR.
+- **Glow by variant.** `primary` keeps its glow in its own colour. `danger` keeps its red glow. `secondary` has no glow, on hover or focus. `ghost` has none, as before.
+- **Secondary hover edge.** The gold hover edge of `secondary` stays: it is action feedback (REQ-0028 item 1). `danger` keeps its red edge.
+- **Reduced motion.** The static part keeps the lit top edge and the glow of the variants that have one. A secondary button under reduced motion has no glow, as on hover.
+- **Legacy classes.** `.button--secondary` loses its glow too; its glow rule is removed. `.button` (primary) and `.button--danger` keep theirs.
+- **Tokens.** `--shadow-button-glow-accent` is used only by secondary, so it is removed (no dead code). `--color-button-glow-accent` stays: the primary glow uses it through `--shadow-button-glow-primary`.
+- **Touch size (point 1b).** On coarse pointers every variant is `--size-tap` high (ADR 0021 Amendment 2026-11-18, A10). `--size-button-touch` is removed. The `pointer-coarse:` rule is the one place for the touch height. The same `--size-tap` applies to the Dropdown list trigger (ADR 0027, `ui/Select.tsx`) and to the text inputs of `.group-form` and `.invite-link__url`, which are not `Button`s (ADR 0021 A10).
+- **Tests.** `Button.test.tsx`, or the CSS test that reads `global.css`: secondary has no glow on hover, primary and danger have theirs, and on coarse pointers the height is `--size-tap`.
