@@ -93,6 +93,26 @@ describe("leaving a group", () => {
     });
   }
 
+  it("puts Leave group last on the page, after the Member list, not in the header (REQ-0028 item 7)", async () => {
+    renderGroup();
+    const leave = await screen.findByRole("button", { name: en.groupLeave });
+    const heading = screen.getByRole("heading", { level: 1, name: group.name });
+    expect(heading.parentElement!.contains(leave)).toBe(false);
+    // The side column follows the lobbies in the DOM, so this order holds in both layouts (REQ-0025).
+    expect(leave.closest(".side-column")).not.toBeNull();
+    const members = within(
+      screen
+        .getByRole("heading", { name: en.membersHeading })
+        .closest("section")!,
+    ).getByRole("list");
+    expect(members.compareDocumentPosition(leave)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+    const main = screen.getByRole("main");
+    const focusable = main.querySelectorAll("a[href], button, input, select");
+    expect(focusable[focusable.length - 1]).toBe(leave);
+  });
+
   it("asks first, with Stay focused, and leaves only on confirmation", async () => {
     const client = renderGroup();
     const dialog = await openDialog();
