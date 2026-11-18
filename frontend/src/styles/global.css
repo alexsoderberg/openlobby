@@ -221,6 +221,8 @@
   --shadow-popover: 0 30px 80px rgba(0, 0, 0, 0.55);
   /* Dropdown list (ADR 0027 point 4): above the tab bar (60) and the floating "+" (55), below the toaster. */
   --z-dropdown-list: 70;
+  /* Popover (ADR 0023 Amendment 2026-11-17): above the tab bar (60), below the dropdown list and the toaster. */
+  --z-popover: 65;
   --width-accent-edge: 2px;
   --size-scrim-spread: 100vmax; /* a shadow this wide covers any window */
   --size-sheet-max: 70dvh;
@@ -773,6 +775,28 @@ a {
 }
 
 [data-slot="select-content"][data-state="closed"] {
+  animation: dropdown-out var(--duration-page-out) var(--ease-in) forwards;
+}
+
+/* Popover (ADR 0023 Amendment 2026-11-17): colour, radius and box are utilities in ui/AnchoredPopover.tsx; type,
+   shadow and motion are here. The panel grows from its trigger, like the dropdown list. */
+[data-slot="anchored-popover-trigger"] {
+  font: inherit;
+}
+
+[data-slot="anchored-popover"] {
+  /* border utility's style is a registered variable; some browsers lack it (ADR 0023 B2 amendment d) */
+  border-style: solid;
+  font-size: var(--font-size-small);
+  box-shadow: var(--shadow-popover);
+  transform-origin: var(--radix-popover-content-transform-origin);
+}
+
+[data-slot="anchored-popover"][data-state="open"] {
+  animation: dropdown-in var(--duration-page) var(--ease-out);
+}
+
+[data-slot="anchored-popover"][data-state="closed"] {
   animation: dropdown-out var(--duration-page-out) var(--ease-in) forwards;
 }
 
