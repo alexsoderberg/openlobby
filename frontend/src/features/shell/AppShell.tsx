@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import type { AuthUser, GroupSummary } from "../../api";
 import { usePopover } from "../../hooks";
 import { useMessages } from "../../i18n";
-import { Popover } from "../../ui";
+import { CreateFrame } from "../../ui";
 import { CreateGroup, type GroupsState } from "../groups";
 import { InvitePopover } from "../invites";
 import type { ActiveNav } from "./activeNav";
@@ -70,7 +70,7 @@ export function AppShell({
           onPress={popover.press}
         />
       )}
-      <Popover
+      <CreateFrame
         label={m.createGroupHeading}
         open={popover.open}
         origin={popover.origin}
@@ -85,7 +85,7 @@ export function AppShell({
             onUnauthenticated={onUnauthenticated}
           />
         )}
-      </Popover>
+      </CreateFrame>
       <InvitePopover
         group={inviteGroup}
         popover={invite}

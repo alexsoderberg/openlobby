@@ -3,7 +3,7 @@ import type { Group } from "../../api";
 import { usePopover } from "../../hooks";
 import type { PickedStart } from "../../calendar";
 import { useMessages } from "../../i18n";
-import { ErrorAlert, Icon, Panel, Popover, ViewToggle } from "../../ui";
+import { CreateFrame, ErrorAlert, Icon, Panel, ViewToggle } from "../../ui";
 import { CreateLobby } from "./CreateLobby";
 import { LobbyCalendar } from "./LobbyCalendar";
 import { LobbyList } from "./LobbyList";
@@ -85,7 +85,7 @@ export function Lobbies({
           onCreate={openForm}
         />
       </Panel>
-      <Popover
+      <CreateFrame
         centered
         closeOnScrim={false}
         label={m.lobbyCreateHeading}
@@ -104,7 +104,7 @@ export function Lobbies({
             onUnauthenticated={onUnauthenticated}
           />
         )}
-      </Popover>
+      </CreateFrame>
     </>
   );
 }
