@@ -1,6 +1,7 @@
 # 0020. Group feed: events recorded in the lobby write transaction
 Status: Proposed (2026-11-10)
 Requirement: REQ-0018 (F-036). Uses REQ-0016 (ADR 0018, avatars) and REQ-0017 (ADR 0019, the signal).
+Amendment 2026-11-18 (name only): where this ADR says `PersonAvatar`, the component that exists today is `ui/Avatar` (initials). `PersonAvatar` is the name ADR 0018 (Proposed) plans for the Discord picture; it is not built yet.
 Amends: ADR 0004 (rules 6 and 7: what a successful write records), ADR 0006 (new table `group_events`).
 
 ## Context

@@ -173,7 +173,7 @@ DECISION, user, 2026-11-18 (REQ-0028 item 8). Where it differs from the Decision
 
 **A10. The touch button height is the tap size.**
 - On coarse pointers every button and every `IconButton` is `--size-tap` (2.75rem, 44 px) high. This replaces the 2.5rem (40 px) of points 3 and 4. Fine pointers are unchanged: `--size-button: 2rem`.
-- The token `--size-button-touch` is removed from `frontend/src/styles/global.css`. The coarse rule uses `--size-tap` directly. Reason: the touch size is the tap size, which already has one name. An alias would be a second name for the same value with no meaning of its own (CLAUDE.md, DRY).
+- The token `--size-button-touch` is removed from `frontend/src/styles/global.css`. The coarse rule uses `--size-tap` directly. The other coarse-pointer heights that used the touch token take `--size-tap` too: the Dropdown list trigger (`ui/Select.tsx`, `pointer-coarse:min-h`) and the text inputs of `.group-form` and `.invite-link__url` (`global.css`, coarse media query). One height for every touch target, not a per-control value. Reason: the touch size is the tap size, which already has one name. An alias would be a second name for the same value with no meaning of its own (CLAUDE.md, DRY).
 - Rejected alternative "Hit area via `::before`": its reason stands. The 2.75rem box on coarse pointers is used instead of the 2.5rem box.
 
 Consequence: a touch target is 44 px high in the same token as the tap size of REQ-0012 and REQ-0004, and there is one value, not two.

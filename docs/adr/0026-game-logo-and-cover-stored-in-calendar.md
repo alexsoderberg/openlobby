@@ -114,7 +114,7 @@ Pure functions with unit tests. No `net/http` in the domain.
 
 ### 8. Frontend (`frontend/src`)
 - One function `gameImageUrl(gameId, kind, version)` returns `/api/games/${gameId}/images/${kind}?v=${version}`. It lives in `frontend/src/api/` next to the client, so the path exists in one place (the same rule as ADR 0018 for avatars). The URL is same-origin, so `img-src 'self'` works.
-- `GameLogo` in `frontend/src/ui/`, next to the existing `Avatar` (ADR 0018 names `PersonAvatar` for the same place; it is not built yet). Props: `gameId`, `name`, `version`.
+- `GameLogo` in `frontend/src/ui/`, next to the existing `Avatar` (`Avatar` is the initials badge that exists now; ADR 0018, Proposed, plans `PersonAvatar` for the Discord picture, not built yet). Props: `gameId`, `name`, `version`.
   - With a version: `<img alt="" src={gameImageUrl(...)}>`, in a fixed box, `object-fit: contain`.
   - Without a version, or when the image fails (`onError` on `<img>`, not a `catch`): the monogram. `GameLogo` draws it itself: `initialsOf(name)` (the shared initials rule, so it exists once) in its own rounded square of `--size-game-logo`, in the avatar's colour tokens. `Avatar` is not reused: its round look lives in `.initials-icon` in `global.css`, and changing size or shape from outside is a cascade override that ADR 0023 point 2 (rule a) forbids. A game must not read as a person's round avatar (Amendment 2026-11-16 item 7).
   - The name is always shown as text next to the logo by the caller. The logo is a sibling before the label, never part of the label string (the label stays text-only, REQ-0026).
@@ -272,20 +272,19 @@ DECISION, user, 2026-11-17 (REQ-0026 gets the same line from the product owner).
 DECISION, user, 2026-11-18 (REQ-0028; REQ-0026 Amendment 2026-11-18). Where it differs from points 8 and 9, Amendment 2026-11-16 item 9 and Amendment 2026-11-17, this amendment wins. Everything else in those stands.
 1. **No genre border on the cover places.** On Next up, the lobby page header and each lobby row of the Group view, the genre accent border is not drawn (ADR 0016 Amendment 2026-11-18). The genre icon stays. The cover, its side gradient, the `coverUrl` rules and the fallback to the pattern are unchanged.
 2. **Text colours on the covered places** (the text list of Amendment 2026-11-16 item 9 and point 8, REQ-0028 item 1):
-   - Counts are in `--color-text`, with tabular figures: the player count, a role slot count that is not full, and the Flex count. The badge keeps `--color-accent-tint` as its background. Flex N is a count, so it is in the text colour too; the list of gold uses in REQ-0028 is closed.
+   - Counts are in `--color-text`, with tabular figures: the player count, a role slot count that is not full, and the Flex N count (ASSUMPTION in REQ-0028 item 1, read as a count). The count badge background is the neutral surface `--color-surface`, not gold. The gold uses are the closed list of REQ-0028 item 1 only.
    - A full role slot keeps `--color-on-accent` on `--color-accent` (gold is the state).
    - Next up: the countdown and "Running" are `--color-accent` on the card's plate. This is a new text colour on a cover plate, so it needs a test case (item 9).
-3. **Scrim bound rechecked; alpha kept.** `--color-cover-scrim` stays at `rgba(10, 10, 13, 0.83)`. The derivation in Amendment 2026-11-17 item 6 ("the gold role slot badge over white needs 0.83") does not hold: the gold badge fill needs about 0.58 for 3:1 (a non-text object). The bound that came near 0.83 was the gold count text on the accent-tint badge (4.5:1, about 0.75), which item 2 removes. The bounds now, for the scrim over pure white (WCAG relative luminance, the tint of `--color-accent-tint` composed over the scrim):
+3. **Scrim bound rechecked; alpha kept.** `--color-cover-scrim` stays at `rgba(10, 10, 13, 0.83)`. The derivation in Amendment 2026-11-17 item 6 ("the gold role slot badge over white needs 0.83") does not hold: the gold badge fill needs about 0.58 for 3:1 (a non-text object). The bound that came near 0.83 was the gold count text on the accent-tint badge (4.5:1, about 0.75), which item 2 removes. The bounds now, for the scrim over pure white (WCAG relative luminance; the count badge is `--color-surface` composed over the scrim):
 
    | Text or fill on the plate | Required | Minimum alpha |
    |---|---|---|
    | Gold countdown and "Running" on Next up (text) | 4.5:1 | about 0.69 |
-   | `--color-text` on the accent-tint count badge | 4.5:1 | about 0.66 |
+   | `--color-text` on the `--color-surface` count badge | 4.5:1 | about 0.63 |
    | `--color-text` on the plate | 4.5:1 | about 0.61 |
    | Gold full role slot (fill, non-text) | 3:1 | about 0.58 |
-   | Gold count text on the accent-tint badge (removed by item 2) | 4.5:1 | about 0.75 |
 
-   Result: the binding bound is now about 0.69 (gold countdown). At 0.83 the gold on the plate is 7.7:1, so 0.83 passes every row. A lower alpha, for example 0.70, would pass too; it changes the look of the cover side and needs the browser check of Amendment 2026-11-17 item 3, so it is not decided here.
+   Result: the binding bound is about 0.69 (gold countdown). At 0.83 the gold on the plate is 7.8:1, and every row passes, so 0.83 is kept. A lower alpha, for example 0.70, would pass too; it changes the look of the cover side and needs the browser check of Amendment 2026-11-17 item 3, so it is not decided here.
 4. **Layout rule unchanged.** Every text element and badge still lies inside the dark part (Amendment 2026-11-17 item 3).
-5. **Tests.** `frontend/src/genres/genreContrast.test.ts` gets the cases of item 2: gold on the Next up cover plate, and `--color-text` on the accent-tint badge over the plate. Both must pass at the token alpha.
+5. **Tests.** `frontend/src/genres/genreContrast.test.ts` gets the cases of item 2: gold on the Next up cover plate, and `--color-text` on the `--color-surface` count badge over the plate. Both must pass at the token alpha.
 6. **Glossary.** The row "Game cover" in `CLAUDE.md` says the genre icon stays, with no accent border (updated in the same change).

@@ -127,3 +127,6 @@ Acceptance criteria (addition):
 - Given that I open `/` logged out, when the page has loaded, then the hero has no "How it works" button or link, and the "How it works" steps section is still shown.
 
 Out of scope (addition): replacing the removed preview with another demo or preview on the landing page.
+
+## Amendment 2026-11-18 (REQ-0028, item 3: landing headline font)
+DECISION, user, 2026-11-18. The landing headline is set in Space Grotesk 700, the app's heading font, not Cormorant Garamond. The serif font files are dropped. The hero's text criteria above are unchanged. See REQ-0028 item 3.

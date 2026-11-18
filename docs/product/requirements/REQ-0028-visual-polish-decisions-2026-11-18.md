@@ -17,6 +17,8 @@ As a member, I want gold to mean "act here" or "this is the current state", and 
 Overrides the colour rules of the dark luxury UI spec of 2026-11-03 (accent used on key numbers, progress meters, the admin badge, the highlighted heading word and the logo).
 - Given I look at any page, when I look for gold, then gold marks only: the primary button, the focus ring, the active item of the Tab bar and the Group rail, the Now line, the timing of Next up (the countdown and "Running"), and state: a selected option of a Dropdown list, a full role slot (REQ-0011), and the selected day in the day pills (REQ-0004). ASSUMPTION: these state uses are kept because they are state, not counts.
 - Given a player count ("3/5 players") or a role slot count that is not full ("Tank 0/1"), when I see it, then the figures are in the text colour, not gold, and they use tabular figures, so the width of the digits does not change when the count changes.
+- Given a count badge of a role slot or of Flex, when I see its background, then it is neutral, not the gold tint (DECISION, orchestrator direction, 2026-11-18, consistent with "gold only for action and state"; the architect records it in ADR 0026). A full role slot keeps its gold fill as a state (item 1, state uses).
+- ASSUMPTION (product owner): "Flex N" is a count, so it is in the text colour like the other counts.
 - Given a meter of a lobby (its player count), when it shows its fill, then the fill uses the genre accent of its lobby's theme (the neutral theme for no genre).
 - Given the invite uses meter of a link, when it shows its fill, then the fill is a neutral colour, not gold (DECISION, user, 2026-11-18; the link has no genre).
 - Given I look at a Group card, when I see its background, then there is no gold wash. DECISION, user, 2026-11-18: the gold hover edge of cards and of secondary buttons stays gold, because it is action feedback.
@@ -39,6 +41,8 @@ Overrides the serif headline of the dark luxury UI spec of 2026-11-03 (Cormorant
 - Given I open `/` logged out, when the page loads, then no serif font file is requested or shipped with the frontend (test: the build has no Cormorant Garamond file and the licence of that font is removed with it).
 - Given I open `/` logged out, when the headline changes font, then the headline, lead and buttons do not move (no layout shift, as REQ-0013).
 - Given I open `/` logged out, when the page loads, then the headline has the same text and the same accessible role (first heading of the page), as REQ-0013 requires.
+- Given the Cormorant token `--font-display` is removed, when the landing page is built, then its uses take `--font-heading` (DECISION, orchestrator direction, 2026-11-18, consistent with this item).
+- ASSUMPTION (product owner): the landing section titles use the heading font too, as the headline does.
 
 ### 4. No gold glow on secondary buttons (DECISION, user, 2026-11-18)
 Amends ADR 0023 Amendment 2026-11-17 (Button hover: a glow in the button's own colour). The primary keeps its glow.
@@ -74,6 +78,7 @@ Amends the touch button size of ADR 0021 (point 2, 2.5rem on coarse pointers) an
 - Given I use a touch screen (coarse pointer), when I see any button or icon-only button, then its height is at least 2.75rem (44 px), the same value as the tap size of REQ-0012 and REQ-0004.
 - Given I use a mouse or another fine pointer, when I see a button, then its size is as before (ADR 0021, 2rem).
 - Given the design tokens, when I check the touch button size, then it is the same value as the tap size, and there is one value, not two (DRY, CLAUDE.md).
+- ASSUMPTION (product owner): on a coarse pointer, text inputs (the group form inputs and the invite link URL field) and the Dropdown list trigger also take the 44 px height (`--size-tap`), so they match the touch buttons.
 
 ## Also decided: fix PR 1 (DECISION, user, 2026-11-18)
 The user approved four small fixes of existing behaviour on 2026-11-18. They are fixes, not new functionality, so they go directly to workflow step 2 (CLAUDE.md), built in branch `frontend-polish-1`. They change no item above.
@@ -100,8 +105,8 @@ The user approved four small fixes of existing behaviour on 2026-11-18. They are
 - Verdict (product owner, 2026-11-18): EXTEND each feature above, NEW rejected. Each item changes the look or the place of a feature that already exists; no item adds data, an action or a rule. The eight items are one requirement only because they came from one review and share the gold rule and the button size.
 - Not a duplicate of F-041 (toasts) or F-045 (dropdown lists): those are behaviour and components, and this requirement changes only a colour, a font, a placement and a size.
 
-## Open questions
-None. The user answered the open questions on 2026-11-18 (DECISION, user, 2026-11-18): the gold hover edge stays gold; the admin badge is neutral; the highlighted landing word and the logo's "Lobby" are not gold; the invite uses meter is neutral; the stripe is removed from Next up and the This week day list; "Delete lobby" is last in the main column; "Leave group" is below the Group feed, last on the page; the danger button keeps its red glow; the visible word is "Home" (the glossary term "Dashboard" stays for code and documents).
+## Assumptions
+The user answered the open questions on 2026-11-18 (DECISION, user, 2026-11-18): the gold hover edge stays gold; the admin badge is neutral; the highlighted landing word and the logo's "Lobby" are not gold; the invite uses meter is neutral; the stripe is removed from Next up and the This week day list; "Delete lobby" is last in the main column; "Leave group" is below the Group feed, last on the page; the danger button keeps its red glow; the visible word is "Home" (the glossary term "Dashboard" stays for code and documents).
 
 Items still ASSUMPTION (product owner, not asked by the user; the user may change them): the gold state uses of item 1 (the full role slot, the selected option, the selected day, the countdown of Next up); the place of the Join and Leave buttons when a lobby has no role slots (item 5).
 
