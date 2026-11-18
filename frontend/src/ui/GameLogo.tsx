@@ -42,7 +42,7 @@ export function GameLogo({
         SIZE_CLASSES[size],
         image
           ? undefined
-          : "border border-(--color-accent-line) bg-(--color-accent-tint) text-(--color-text)",
+          : "border border-(--color-border) bg-(--color-surface) text-(--color-text)",
       )}
     >
       {image ? (

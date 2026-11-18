@@ -59,7 +59,7 @@ const selectVariants = {
   trigger:
     "inline-flex w-full items-center gap-(--space-2) min-h-(--size-button) pointer-coarse:min-h-(--size-tap) px-(--space-2) border border-(--color-muted) rounded-(--radius-control) bg-(--color-surface) text-(--color-text) cursor-pointer enabled:hover:border-(--color-text) aria-expanded:border-(--color-accent) data-placeholder:text-(--color-muted) disabled:cursor-not-allowed disabled:opacity-50",
   content:
-    "z-(--z-dropdown-list) min-w-(--radix-select-trigger-width) max-h-(--radix-select-content-available-height) p-(--space-1) border border-(--color-accent-line) rounded-(--radius-panel) bg-(--color-bg-raised) text-(--color-text) phone:fixed phone:inset-x-(--space-0) phone:bottom-(--space-0) phone:w-full phone:max-h-(--size-sheet-max) phone:rounded-b-(--space-0) phone:pb-(--sheet-safe-bottom)",
+    "z-(--z-dropdown-list) min-w-(--radix-select-trigger-width) max-h-(--radix-select-content-available-height) p-(--space-1) border border-(--color-border) rounded-(--radius-panel) bg-(--color-bg-raised) text-(--color-text) phone:fixed phone:inset-x-(--space-0) phone:bottom-(--space-0) phone:w-full phone:max-h-(--size-sheet-max) phone:rounded-b-(--space-0) phone:pb-(--sheet-safe-bottom)",
   item: "flex items-center gap-(--space-2) py-(--space-2) px-(--space-3) phone:min-h-(--size-tap) rounded-(--radius-control) cursor-pointer data-highlighted:bg-(--color-accent-tint) data-disabled:cursor-not-allowed data-disabled:opacity-50",
   selected: "text-(--color-accent)",
 };

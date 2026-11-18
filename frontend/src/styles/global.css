@@ -265,9 +265,9 @@
   --genre-motif-opacity: 0.12;
   --size-genre-icon: 1.5rem;
   --size-genre-motif: 6rem;
-  /* Over a game cover: the lowest alpha at which the Next up text passes AA over a pure white image, the
-     brightest any cover can be. The gold role slot badge on its tint sets 0.83; the other texts pass from about
-     0.76, with muted text, the genre name and field errors in the text colour (ADR 0026 point 8, pinned by
+  /* Over a game cover: dark enough that every text passes AA over a pure white image, the brightest any cover
+     can be. The gold Next up timing binds at about 0.69; 0.83 is kept for the look, with muted text, the genre
+     name and field errors in the text colour (ADR 0026 Amendment 2026-11-18 item 3, pinned by
      genres/genreContrast.test.ts). */
   --color-cover-scrim: rgba(10, 10, 13, 0.83);
   --ratio-cover-preview: 16 / 9;
@@ -1169,10 +1169,12 @@ a {
   display: inline-block;
   padding: 0 var(--space-2);
   border-radius: var(--radius-badge);
-  background: var(--color-accent-tint);
-  color: var(--color-accent);
+  background: var(--color-surface);
+  color: var(--color-text);
   font-size: var(--font-size-small);
   font-weight: 600;
+  /* Counts keep their width as they change (REQ-0028 item 1). */
+  font-variant-numeric: tabular-nums;
 }
 
 /* A full role slot: filled instead of tinted, with a check mark, so full never rests on colour alone. */
@@ -1448,7 +1450,8 @@ a {
   font-weight: 700;
   line-height: 1;
   letter-spacing: var(--tracking-tight);
-  color: var(--color-accent);
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
 }
 
 .invite-link__meta {
@@ -1678,13 +1681,7 @@ a {
   text-decoration: none;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-panel);
-  background:
-    radial-gradient(
-      22rem 10rem at 100% 0,
-      var(--color-accent-wash),
-      transparent 70%
-    ),
-    var(--color-surface);
+  background: var(--color-surface);
   box-shadow: inset 0 1px 0 var(--color-card-edge);
 }
 
@@ -1732,7 +1729,7 @@ a {
 
 .group-card__people > .initials-icon {
   background:
-    linear-gradient(var(--color-accent-tint), var(--color-accent-tint)),
+    linear-gradient(var(--color-surface), var(--color-surface)),
     var(--color-bg-raised);
   box-shadow: 0 0 0 2px var(--color-bg-raised);
 }
@@ -1880,7 +1877,6 @@ a {
 }
 
 .time-grid__title[aria-current="date"] b {
-  color: var(--color-accent);
   text-decoration: underline;
   text-underline-offset: 0.2em;
 }
@@ -2060,10 +2056,6 @@ a {
 }
 
 /* Landing page. Start states live in the keyframes, so with animations off the final layout shows at once. */
-.brand__accent {
-  color: var(--color-accent);
-}
-
 .landing-topbar {
   display: flex;
   align-items: center;
@@ -2207,10 +2199,15 @@ a {
 .meter > span {
   display: block;
   height: 100%;
-  background: var(--color-accent);
+  background: var(--genre-accent);
   transform: scaleX(var(--meter-value, 0));
   transform-origin: left;
   transition: transform var(--duration-meter) var(--ease-out);
+}
+
+/* An invite link has no genre, so its uses meter is neutral (REQ-0028 item 1). */
+.invite-link .meter > span {
+  background: var(--color-muted);
 }
 
 [data-reveal="pending"] .meter > span {
@@ -2320,9 +2317,9 @@ a {
   place-items: center;
   width: var(--size-avatar);
   height: var(--size-avatar);
-  border: 1px solid var(--color-accent-line);
+  border: 1px solid var(--color-border);
   border-radius: 50%;
-  background: var(--color-accent-tint);
+  background: var(--color-surface);
   color: var(--color-text);
   font-family: var(--font-heading);
   font-size: var(--font-size-small);
@@ -2510,7 +2507,7 @@ a {
     var(--color-popover-top),
     var(--color-bg-raised)
   );
-  border: 1px solid var(--color-accent-line);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-popover);
   box-shadow: var(--shadow-popover);
   opacity: 0;
@@ -2660,7 +2657,8 @@ a {
 }
 
 .next-up__figure {
-  color: var(--color-accent);
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
   font-family: var(--font-heading);
   font-size: 1.5rem;
   font-weight: 700;
@@ -2720,7 +2718,7 @@ a {
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: var(--color-accent);
+  background: var(--color-muted);
 }
 
 @media (min-width: 47.5rem) {
@@ -2883,7 +2881,7 @@ a {
   min-width: 10rem;
   padding: var(--space-1);
   background: var(--color-bg-raised);
-  border: 1px solid var(--color-accent-line);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-panel);
   box-shadow: var(--shadow-popover);
 }

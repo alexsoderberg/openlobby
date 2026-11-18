@@ -75,7 +75,7 @@ describe("design tokens", () => {
     expect(token("--color-focus")).toBe(token("--color-accent"));
   });
 
-  it("accent and muted text read at 4.5:1 or more on the badge tint (--color-accent-tint over --color-bg)", () => {
+  it("accent and muted text read at 4.5:1 or more on the accent tint (--color-accent-tint over --color-bg)", () => {
     const tint = overPage("--color-accent-tint");
     expect(contrastRatio(solid("--color-accent"), tint)).toBeGreaterThanOrEqual(
       WCAG_AA_TEXT,
@@ -85,9 +85,9 @@ describe("design tokens", () => {
     );
   });
 
-  it("the meter fill stands out at 3:1 or more on its track", () => {
+  it("the neutral meter fill stands out at 3:1 or more on its track", () => {
     expect(
-      contrastRatio(solid("--color-accent"), overPage("--color-border")),
+      contrastRatio(solid("--color-muted"), overPage("--color-border")),
     ).toBeGreaterThanOrEqual(WCAG_AA_UI);
   });
 

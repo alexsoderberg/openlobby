@@ -5,6 +5,7 @@ import {
   WCAG_AA_TEXT,
   WCAG_AA_UI,
   contrastRatio,
+  overPage,
   publicDir,
   solid,
   stylesheet,
@@ -90,11 +91,12 @@ describe("genre theme contrast (WCAG AA)", () => {
   });
 
   it.each(accents)(
-    "$key: the accent carries meaning at 3:1 or more on the page",
+    "$key: the accent carries meaning at 3:1 or more on the page and as a meter fill on its track",
     ({ accent }) => {
-      expect(contrastRatio(accent, solid("--color-bg"))).toBeGreaterThanOrEqual(
-        WCAG_AA_UI,
-      );
+      for (const behind of [solid("--color-bg"), overPage("--color-border")])
+        expect(contrastRatio(accent, behind)).toBeGreaterThanOrEqual(
+          WCAG_AA_UI,
+        );
     },
   );
 
@@ -110,6 +112,18 @@ describe("genre theme contrast (WCAG AA)", () => {
           contrastRatio(text, behind),
           `${text} on ${behind}`,
         ).toBeGreaterThanOrEqual(WCAG_AA_TEXT);
+    },
+  );
+
+  it.each(stacks)(
+    "%s: a count badge reads at 4.5:1 or more on its surface",
+    (_, _accent, behind) => {
+      expect(
+        contrastRatio(
+          solid("--color-text"),
+          plate([rgbaLayer("--color-surface")], behind),
+        ),
+      ).toBeGreaterThanOrEqual(WCAG_AA_TEXT);
     },
   );
 
@@ -191,26 +205,24 @@ describe("game cover contrast (WCAG AA, worst case: a white cover)", () => {
   );
 
   it.each(coverStacks)(
-    "%s: a badge and a game monogram read at 4.5:1 or more on their tint",
-    (_, _accent, layers) => {
-      for (const text of [solid("--color-accent"), solid("--color-text")])
-        expect(
-          contrastRatio(
-            text,
-            coverPlate(layers, rgbaLayer("--color-accent-tint")),
-          ),
-          text,
-        ).toBeGreaterThanOrEqual(WCAG_AA_TEXT);
-    },
-  );
-
-  it.each(coverStacks)(
-    "%s: the Leave button reads at 4.5:1 or more on its own surface",
+    "%s: a count badge, a game monogram and the Leave button read at 4.5:1 or more on their surface",
     (_, _accent, layers) => {
       expect(
         contrastRatio(
           solid("--color-text"),
           coverPlate(layers, rgbaLayer("--color-surface")),
+        ),
+      ).toBeGreaterThanOrEqual(WCAG_AA_TEXT);
+    },
+  );
+
+  it.each(accents)(
+    "$key: the gold Next up timing reads at 4.5:1 or more on the Next up cover plate",
+    ({ accent }) => {
+      expect(
+        contrastRatio(
+          solid("--color-accent"),
+          coverPlate(coverViews["Next up card and lobby head"](accent)),
         ),
       ).toBeGreaterThanOrEqual(WCAG_AA_TEXT);
     },

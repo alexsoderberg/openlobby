@@ -14,7 +14,7 @@ const popoverVariants = {
   trigger:
     "inline-flex items-center p-(--space-0) border-(length:--space-0) bg-transparent text-(--color-text) cursor-pointer",
   content:
-    "z-(--z-popover) w-max max-w-(--width-popover) phone:max-w-(--radix-popover-content-available-width) py-(--space-2) px-(--space-3) border border-(--color-accent-line) rounded-(--radius-popover) bg-(--color-bg-raised) text-(--color-text) wrap-break-word",
+    "z-(--z-popover) w-max max-w-(--width-popover) phone:max-w-(--radix-popover-content-available-width) py-(--space-2) px-(--space-3) border border-(--color-border) rounded-(--radius-popover) bg-(--color-bg-raised) text-(--color-text) wrap-break-word",
 };
 
 /**
