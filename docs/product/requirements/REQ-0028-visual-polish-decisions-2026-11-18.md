@@ -17,7 +17,7 @@ As a member, I want gold to mean "act here" or "this is the current state", and 
 Overrides the colour rules of the dark luxury UI spec of 2026-11-03 (accent used on key numbers, progress meters, the admin badge, the highlighted heading word and the logo).
 - Given I look at any page, when I look for gold, then gold marks only: the primary button, the focus ring, the active item of the Tab bar and the Group rail, the Now line, the timing of Next up (the countdown and "Running"), and state: a selected option of a Dropdown list, a full role slot (REQ-0011), and the selected day in the day pills (REQ-0004). ASSUMPTION: these state uses are kept because they are state, not counts.
 - Given a player count ("3/5 players") or a role slot count that is not full ("Tank 0/1"), when I see it, then the figures are in the text colour, not gold, and they use tabular figures, so the width of the digits does not change when the count changes.
-- Given a count badge of a role slot or of Flex, when I see its background, then it is neutral, not the gold tint (DECISION, orchestrator direction, 2026-11-18, consistent with "gold only for action and state"; the architect records it in ADR 0026). A full role slot keeps its gold fill as a state (item 1, state uses).
+- Given a count badge of a role slot or of Flex, when I see its background, then it is neutral, not the gold tint (DECISION, user, 2026-11-18, confirmed after review; the architect records it in ADR 0026). A full role slot keeps its gold fill as a state (item 1, state uses).
 - ASSUMPTION (product owner): "Flex N" is a count, so it is in the text colour like the other counts.
 - Given a meter of a lobby (its player count), when it shows its fill, then the fill uses the genre accent of its lobby's theme (the neutral theme for no genre).
 - Given the invite uses meter of a link, when it shows its fill, then the fill is a neutral colour, not gold (DECISION, user, 2026-11-18; the link has no genre).
@@ -41,7 +41,7 @@ Overrides the serif headline of the dark luxury UI spec of 2026-11-03 (Cormorant
 - Given I open `/` logged out, when the page loads, then no serif font file is requested or shipped with the frontend (test: the build has no Cormorant Garamond file and the licence of that font is removed with it).
 - Given I open `/` logged out, when the headline changes font, then the headline, lead and buttons do not move (no layout shift, as REQ-0013).
 - Given I open `/` logged out, when the page loads, then the headline has the same text and the same accessible role (first heading of the page), as REQ-0013 requires.
-- Given the Cormorant token `--font-display` is removed, when the landing page is built, then its uses take `--font-heading` (DECISION, orchestrator direction, 2026-11-18, consistent with this item).
+- Given the Cormorant token `--font-display` is removed, when the landing page is built, then its uses take `--font-heading` (DECISION, user, 2026-11-18, confirmed after review).
 - ASSUMPTION (product owner): the landing section titles use the heading font too, as the headline does.
 
 ### 4. No gold glow on secondary buttons (DECISION, user, 2026-11-18)
