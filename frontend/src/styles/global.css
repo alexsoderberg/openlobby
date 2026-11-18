@@ -887,8 +887,8 @@ a {
 [data-reveal="pending"],
 [data-reveal="shown"] {
   transition:
-    opacity var(--duration-slow) var(--ease-out),
-    transform var(--duration-slow) var(--ease-out);
+    opacity var(--duration-slow) var(--ease-out) var(--reveal-delay),
+    transform var(--duration-slow) var(--ease-out) var(--reveal-delay);
 }
 
 [data-reveal="shown"] {
@@ -902,12 +902,6 @@ a {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-panel);
-}
-
-.panel {
-  transition:
-    opacity var(--duration-slow) var(--ease-out) var(--reveal-delay),
-    transform var(--duration-slow) var(--ease-out) var(--reveal-delay);
 }
 
 .panel > :first-child,
@@ -935,15 +929,11 @@ a {
   margin-top: var(--space-3);
 }
 
-/* Panels of one screen stack with a gap. The second one reveals a step later. */
+/* Panels of one screen stack with a gap. */
 .panel-group {
   display: grid;
   gap: var(--space-3);
   margin-top: var(--space-3);
-}
-
-.panel-group > :nth-child(2) {
-  --reveal-delay: var(--stagger-step);
 }
 
 /* Wide windows: the side column sits on the right of the main column, which is the first track (REQ-0025).
@@ -1047,7 +1037,8 @@ a {
   list-style: none;
 }
 
-/* Rows get a faint hover tint. The tint is a token, so a row never shows as a link it is not. */
+/* A row of a list. In a .row-list only a row that is one link (a lobby row) gets the hover tint, so no row shows
+   as a link it is not. The You page's nav row is a link too, but stands outside a .row-list and has no tint. */
 .list-row {
   display: flex;
   flex-wrap: wrap;
@@ -1065,7 +1056,7 @@ a {
   isolation: isolate;
 }
 
-.row-list > .list-row::after {
+.row-list > .lobby-row::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -1077,8 +1068,10 @@ a {
   transition: opacity var(--duration-base) var(--ease-out);
 }
 
-.row-list > .list-row:hover::after {
-  opacity: 1;
+@media (hover: hover) and (pointer: fine) {
+  .row-list > .lobby-row:hover::after {
+    opacity: 1;
+  }
 }
 
 /* IconButton sits in its tooltip wrapper, so the wrapper stands for the button in these sibling rules. */
@@ -1159,19 +1152,6 @@ a {
   [data-slot="anchored-popover-trigger"]:hover > .game-chip::after {
     opacity: 1;
   }
-}
-
-.avatar {
-  flex: none;
-  width: 2rem;
-  height: 2rem;
-  border: 1px solid var(--color-border);
-  border-radius: 50%;
-  background: linear-gradient(
-    135deg,
-    var(--color-bg-raised),
-    var(--color-border)
-  );
 }
 
 .role-slots {
@@ -2216,7 +2196,8 @@ a {
   color: var(--color-muted);
 }
 
-/* Fills from 0 to --meter-value (0 to 1) when the element around it reveals. Used by ui/Meter. */
+/* Shows --meter-value (0 to 1). Inside a scroll reveal (an invite link row) it fills from 0 when the row reveals;
+   elsewhere (the Next up card) it shows its value at once. Used by ui/Meter. */
 .meter {
   margin-top: var(--space-3);
   height: 0.25rem;

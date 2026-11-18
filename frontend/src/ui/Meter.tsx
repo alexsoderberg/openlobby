@@ -2,7 +2,7 @@ import type { CSSProperties } from "react";
 
 /**
  * A bar that fills to value out of max. It is announced as a meter, so the number reaches
- * assistive technology, not only the picture. It fills from 0 when its reveal runs (see `.meter`).
+ * assistive technology, not only the picture. Inside a scroll reveal it fills from 0 (see `.meter`).
  */
 export function Meter({
   value,

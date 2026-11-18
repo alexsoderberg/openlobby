@@ -29,7 +29,7 @@ const keyframeProperties = Array.from(
 
 describe("motion cost", () => {
   it("transitions only composited properties, never all", () => {
-    expect(transitions).toContain(".panel opacity");
+    expect(transitions).toContain(".row-list > .lobby-row::after opacity");
     const costly = transitions.filter(
       (entry) =>
         !COMPOSITED.has(entry.split(" ").at(-1) ?? "") && !ALLOWED.has(entry),
@@ -42,7 +42,7 @@ describe("motion cost", () => {
     expect(keyframeProperties.filter((p) => !COMPOSITED.has(p))).toEqual([]);
   });
 
-  // A blur must be recomputed every frame its element or anything around it moves. Panels reveal and ride
+  // A blur must be recomputed every frame its element or anything around it moves. Panels ride
   // the page transition, so only the sticky top bar, which stays put, keeps one.
   it("keeps backdrop-filter on the top bar only", () => {
     const blurred = cssRules

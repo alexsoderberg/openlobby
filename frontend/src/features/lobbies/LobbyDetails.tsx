@@ -9,7 +9,7 @@ import {
   PreferredGameRolesNote,
   RoleSlots,
 } from "../../lobby";
-import { GameRoleName, Icon, Panel } from "../../ui";
+import { Avatar, GameRoleName, Icon, Panel } from "../../ui";
 import { DeleteLobbyDialog } from "./DeleteLobbyDialog";
 import { LobbyMembership } from "./LobbyMembership";
 import { LobbySettings } from "./LobbySettings";
@@ -131,7 +131,7 @@ function PlayerRows({ players }: { players: LobbyDetail["players"] }) {
     <ul className="row-list" role="list">
       {players.map((player) => (
         <li key={player.userId} className="list-row">
-          <span className="avatar" />
+          <Avatar name={player.displayName} />
           {player.displayName}
           <PreferredGameRolesNote roles={player.preferredGameRoles} />
         </li>

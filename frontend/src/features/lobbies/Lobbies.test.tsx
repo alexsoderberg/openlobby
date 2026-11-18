@@ -186,7 +186,7 @@ describe("lobby list", () => {
     renderLobbies();
 
     expect(
-      await screen.findByText("No lobbies have been created yet"),
+      await screen.findByText("No lobbies have been created yet."),
     ).toBeTruthy();
   });
 
@@ -572,10 +572,10 @@ describe("calendar view", () => {
 
   it("shows the same empty text as the list", async () => {
     renderLobbies();
-    await screen.findByText("No lobbies have been created yet");
+    await screen.findByText("No lobbies have been created yet.");
     fireEvent.click(calendarButton());
 
-    expect(screen.getByText("No lobbies have been created yet")).toBeTruthy();
+    expect(screen.getByText("No lobbies have been created yet.")).toBeTruthy();
   });
 
   it("starts in the list again on a later visit", async () => {

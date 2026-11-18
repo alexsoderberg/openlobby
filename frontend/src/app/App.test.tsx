@@ -299,9 +299,10 @@ describe("group page", () => {
       await screen.findByRole("heading", { level: 1, name: "Friday crew" }),
     ).toBeTruthy();
     const [maja, erik] = screen.getAllByRole("listitem");
-    expect(maja.textContent).toBe(`Maja Lind ${en.groupAdminMarker}`);
+    expect(within(maja).getByText("Maja Lind")).toBeTruthy();
     expect(within(maja).getByText(en.groupAdminMarker)).toBeTruthy();
-    expect(erik.textContent).toBe("Erik Berg");
+    expect(within(erik).getByText("Erik Berg")).toBeTruthy();
+    expect(within(erik).queryByText(en.groupAdminMarker)).toBeNull();
     expect(client.getGroup).toHaveBeenCalledWith("g1");
   });
 
