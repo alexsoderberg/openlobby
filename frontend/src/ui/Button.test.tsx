@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { cssRules } from "../test/cssTokens";
+import { cssRules, stylesheet } from "../test/cssTokens";
 import { Button } from "./Button";
 
 describe("Button", () => {
@@ -87,5 +87,54 @@ describe("button hover rules in global.css", () => {
     expect(
       hoverRules.filter(({ scopes }) => !scopes.includes(HOVER_MEDIA)),
     ).toEqual([]);
+  });
+});
+
+// REQ-0028 items 4 and 8, ADR 0023 Amendment 2026-11-18, ADR 0021 A10.
+describe("button glow and touch height in global.css", () => {
+  // The last ::after rule that names the button outside a :not(), as the cascade sees it.
+  const glowRule = (button: string) =>
+    cssRules
+      .filter(
+        ({ selector }) =>
+          selector.endsWith("::after") &&
+          selector.replace(/:not\([^)]*\)/g, "").includes(button),
+      )
+      .at(-1)?.body ?? "";
+  const variant = (name: string) => `[data-variant="${name}"]`;
+
+  it("gives primary and danger their glow", () => {
+    expect(glowRule(variant("primary"))).toMatch(
+      /box-shadow: var\(--shadow-button-glow-primary\)/,
+    );
+    expect(glowRule(variant("danger"))).toMatch(
+      /box-shadow: var\(--shadow-button-glow-danger\)/,
+    );
+  });
+
+  it("gives secondary and ghost no glow, the legacy secondary class too", () => {
+    for (const name of ["secondary", "ghost"])
+      expect(glowRule(variant(name))).toMatch(/content: none/);
+    expect(glowRule(".button--secondary")).toMatch(/content: none/);
+  });
+
+  it("has no separate touch button size: coarse pointers use --size-tap", () => {
+    expect(stylesheet).not.toMatch(
+      /--size-button-touch|--shadow-button-glow-accent/,
+    );
+    const coarseHeights = cssRules
+      .filter(({ scopes }) => scopes.includes("@media (pointer: coarse)"))
+      .flatMap(({ body }) =>
+        Array.from(
+          body.matchAll(/min-height:\s*([^;]+);/g),
+          ([, value]) => value,
+        ),
+      );
+    expect(coarseHeights.length).toBeGreaterThan(0);
+    expect(new Set(coarseHeights)).toEqual(new Set(["var(--size-tap)"]));
+    render(<Button>Save</Button>);
+    expect(screen.getByRole("button", { name: "Save" }).className).toContain(
+      "pointer-coarse:min-h-(--size-tap)",
+    );
   });
 });

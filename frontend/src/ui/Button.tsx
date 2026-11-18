@@ -9,7 +9,7 @@ type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
 type ButtonSize = "default" | "icon";
 
 const buttonVariants = {
-  base: "relative isolate inline-flex items-center justify-center gap-(--space-2) min-h-(--size-button) pointer-coarse:min-h-(--size-button-touch) border cursor-pointer disabled:cursor-not-allowed disabled:opacity-50",
+  base: "relative isolate inline-flex items-center justify-center gap-(--space-2) min-h-(--size-button) pointer-coarse:min-h-(--size-tap) border cursor-pointer disabled:cursor-not-allowed disabled:opacity-50",
   variant: {
     primary:
       "border-(--color-accent) bg-(--color-accent) text-(--color-on-accent)",

@@ -271,3 +271,11 @@ describe("Select keyboard (REQ-0027)", () => {
     expect(screen.queryByRole("listbox")).toBeNull();
   });
 });
+
+// One touch height for every target: the trigger matches the touch buttons (ADR 0021 A10, REQ-0028 item 8).
+describe("Select touch height", () => {
+  it("is --size-tap high on a coarse pointer", () => {
+    render(<Field />);
+    expect(field().className).toContain("pointer-coarse:min-h-(--size-tap)");
+  });
+});
