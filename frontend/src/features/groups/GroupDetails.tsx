@@ -2,7 +2,7 @@ import { GROUPS_PATH } from "./groupPath";
 import { Lobbies } from "../lobbies";
 import { useMessages } from "../../i18n";
 import type { ReactNode } from "react";
-import { ErrorAlert, Panel } from "../../ui";
+import { Avatar, ErrorAlert, Panel } from "../../ui";
 import type { GroupState } from "./useGroup";
 import { MakeGroupAdminAction } from "./MakeGroupAdminAction";
 import { GameChips } from "./GameChip";
@@ -59,7 +59,7 @@ export function GroupDetails({
             <ul className="row-list" role="list">
               {state.group.members.map((member) => (
                 <li key={member.userId} className="list-row">
-                  <span className="avatar" />
+                  <Avatar name={member.displayName} />
                   {member.displayName}
                   <GameChips roles={member.preferredGameRoles} />
                   {member.role === "admin" && (

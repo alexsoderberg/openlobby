@@ -173,13 +173,13 @@ describe("lobby label, role slots and seats", () => {
 
     const tank = await screen.findByRole("region", { name: "Tank" });
     expect(within(tank).getByRole("listitem").textContent).toBe(
-      "Maja Lind " +
+      "MLMaja Lind " +
         en.preferredGameRoles.plays([
           { roles: ["Tank (Competitive)", "Support"] },
         ]),
     );
     const flex = screen.getByRole("region", { name: "Flex" });
-    expect(within(flex).getByRole("listitem").textContent).toBe("Kim Berg");
+    expect(within(flex).getByRole("listitem").textContent).toBe("KBKim Berg");
   });
 
   it("still lists a player whose game role is unknown or missing", async () => {
@@ -497,7 +497,7 @@ describe("lobby detail", () => {
     const names = screen
       .getAllByRole("listitem")
       .map((item) => item.textContent);
-    expect(names).toEqual(["Maja Lind", "Kim Berg"]);
+    expect(names).toEqual(["MLMaja Lind", "KBKim Berg"]);
     expect(
       screen
         .getByRole("link", { name: en.lobbyBackToGroup })
