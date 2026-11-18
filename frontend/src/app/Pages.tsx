@@ -124,12 +124,16 @@ function GroupPage({
               group={state.group}
               onUnauthenticated={onUnauthenticated}
             />
-            <LeaveGroupAction
-              group={state.group}
-              onLeft={onLeft}
-              onUnauthenticated={onUnauthenticated}
-            />
           </div>
+        )
+      }
+      footerAction={
+        state.status === "loaded" && (
+          <LeaveGroupAction
+            group={state.group}
+            onLeft={onLeft}
+            onUnauthenticated={onUnauthenticated}
+          />
         )
       }
     />

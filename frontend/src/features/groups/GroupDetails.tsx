@@ -15,6 +15,7 @@ export function GroupDetails({
   onRefresh,
   onUnauthenticated,
   headerAction,
+  footerAction,
 }: {
   state: Exclude<GroupState, { status: "notFound" }>;
   /** The logged-in user, to tell whether they may make others group admins. */
@@ -25,6 +26,8 @@ export function GroupDetails({
   onUnauthenticated: () => void;
   /** Shown next to the heading, e.g. the Invite button. */
   headerAction?: ReactNode;
+  /** Shown last on the page, after the Member list, e.g. Leave group (REQ-0028 item 7). */
+  footerAction?: ReactNode;
 }) {
   const m = useMessages();
 
@@ -79,6 +82,7 @@ export function GroupDetails({
                 </li>
               ))}
             </ul>
+            {footerAction}
           </Panel>
         </div>
       </div>
