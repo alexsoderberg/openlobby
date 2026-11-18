@@ -1,5 +1,5 @@
 # REQ-0021. Preferred game roles per member
-Status: Implemented. Amendment 2026-11-17 (compact display in the member list): Decided, not built (see the end of this file).
+Status: Implemented. Amendment 2026-11-17 (compact display in the member list): Implemented (2026-11-18, PRs #135, #136, #139, #138; see the end of this file).
 Feature: F-039
 Priority: Should
 
@@ -85,7 +85,7 @@ All seven questions of ADR 0022 (section "Open questions for the user") are answ
 ADR 0022 (Accepted, 2026-11-12) holds the storage and the API: the game and its game roles belong to the calendar service (REQ-0010 and REQ-0011), and the member comes from the gateway header. The term "Preferred game role" (avoid: class, main role, role alone) is defined there and in its glossary row. Implementation follows the design in ADR 0022.
 
 ## Amendment 2026-11-17 (compact display in the member list)
-Status of this amendment: Decided (2026-11-17). Not built. The data design is in ADR 0022 Amendment 2026-11-17. The build waits for the role icons (ADR 0024 PR1a to PR3) and then for the Game chip components (CH1 to CH3, with the popover built in CH2b). Status of REQ-0021 itself: Implemented, unchanged.
+Status of this amendment: Implemented (2026-11-18). PRs #135 (CH1, data), #136 (CH2a, CreateFrame rename), #139 (CH2b, AnchoredPopover), #138 (CH3, Game chip in the member list). Decided 2026-11-17; the data design is in ADR 0022 Amendment 2026-11-17. Status of REQ-0021 itself: Implemented.
 Feature: F-039 (EXTEND, not a new feature). The user's wish: "I don't need all this text in the member list under /groups/{id}; logos or something else would do."
 
 Decisions:
@@ -184,3 +184,10 @@ Q7. ASSUMPTION (product owner, 2026-11-17, the user may override): Should, after
 - Alternative: Could (a presentation tweak with no new data beyond the contract change), placed after A4 and A5.
 
 Assumptions (product owner, not decided by the user): the Game chip stays on the existing row and reuses the existing full text, so no new text is needed for the accessible name.
+
+### Follow-ups after the build (review of 2026-11-18, not blocking)
+- Manual checks still open: a real touch device and a screen reader (owner: user).
+- The popover panel shows a heavy 3px focus ring when opened from the keyboard (owner: ui-ux-expert).
+- The Group admin badge can wrap onto its own line on narrow member rows (owner: ui-ux-expert).
+- The popover uses literal 4px and 8px instead of the space tokens; the Game chip minimum size applies at all widths, where ADR 0022 says phones (owner: architect).
+- The sentence helper `preferredGameRolesSentence` lives in `lobby/` and takes a boolean flag (owner: architect).
