@@ -72,7 +72,8 @@
   --color-accent: #f0c75e;
   --color-on-accent: #14110a;
   --color-accent-tint: rgba(240, 199, 94, 0.12);
-  --color-accent-wash: rgba(240, 199, 94, 0.07);
+  /* A faint cool grey glow at the top of the page, for depth without gold (REQ-0028 item 1). */
+  --color-page-wash: rgba(150, 165, 190, 0.06);
   --color-focus: var(--color-accent);
   --color-online: #3ddc84;
   --color-danger: #ff7b72;
@@ -311,7 +312,7 @@ body {
   background-image:
     radial-gradient(
       60rem 40rem at 85% 0%,
-      var(--color-accent-wash),
+      var(--color-page-wash),
       transparent 70%
     ),
     linear-gradient(180deg, var(--color-bg-raised), var(--color-bg) 30rem);
@@ -782,6 +783,7 @@ a {
 }
 
 /* The highlighted row is the keyboard focus: the wash and an accent edge mark it in place of the outline. */
+/* Gold here is focus under the Gold rule (REQ-0028 item 1, DECISION, user, 2026-11-18). */
 [data-slot="select-item"]:focus-visible {
   outline: none;
 }

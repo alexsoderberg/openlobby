@@ -12,6 +12,8 @@ const GOLD = /--color-accent/;
 // Gold marks only action and state; counts and decoration are neutral (REQ-0028 item 1).
 describe("gold rule", () => {
   it.each([
+    // The page wash keeps its depth in a neutral tone (DECISION, user, 2026-11-18).
+    "body",
     ".badge",
     ".next-up__figure",
     ".invite-link__uses",
