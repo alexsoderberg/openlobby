@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs";
+import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
@@ -91,15 +91,22 @@ describe("design tokens", () => {
     ).toBeGreaterThanOrEqual(WCAG_AA_UI);
   });
 
-  it.each(["--font-display", "--font-heading", "--font-sans"])(
+  it.each(["--font-heading", "--font-sans"])(
     "%s falls back to a generic family",
     (name) => {
       expect(token(name)).toMatch(/,\s*(serif|sans-serif)$/);
     },
   );
 
-  it("declares the eight self-hosted font faces", () => {
-    expect(fontFaces).toHaveLength(8);
+  it("declares the six self-hosted font faces", () => {
+    expect(fontFaces).toHaveLength(6);
+  });
+
+  // The landing headline is Space Grotesk; no serif font is shipped (REQ-0028 item 3).
+  it("ships no serif font file or licence", () => {
+    expect(readdirSync(join(publicDir, "fonts")).join()).not.toMatch(
+      /cormorant/i,
+    );
   });
 
   it("loads every font face with font-display: swap from a file that exists", () => {
