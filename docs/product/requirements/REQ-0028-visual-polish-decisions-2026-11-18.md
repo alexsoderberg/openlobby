@@ -1,5 +1,5 @@
 # REQ-0028. Visual polish decisions 2026-11-18
-Status: Decided
+Status: Implemented (2026-11-18)
 Feature: F-001, F-010, F-028, F-030, F-032, F-043, F-044 (extended; no new feature, see Related features)
 Priority: Should
 
@@ -92,6 +92,12 @@ The user approved four small fixes of existing behaviour on 2026-11-18. They are
 - (b) A person without an Avatar shows initials (`ui/Avatar`), not an empty circle, in the Member list and in the lobby player list.
 - (c) The row hover tint with a mouse stays only on rows that are one full-row link (the lobby rows).
 - (d) UI copy: capacity errors keep the upper limit in plain words; the image size error names 512 KiB; the Game cover hint and removal text name all three places a Game cover shows (Next up, the lobby page header and each lobby row of the Group view); the empty lobbies text ends with a full stop.
+
+## Implementation (2026-11-18)
+- Fix PR 1 (the four fixes above): PR #141.
+- Items 1 to 8, plus the neutral hover tints, the neutral page wash and a test fix: PR #145 (rebase-merged). Docs PRs #142, #143, #144.
+- Reviewed in three rounds, APPROVED. The agents did not check it in a browser; the user looked at the preview and said it looks good.
+- Follow-up: when the Group feed is built in the frontend (REQ-0018, F-036), "Leave group" must stay below it (item 7).
 
 ## Out of scope
 - Any change of what the features do, their content or their rules. Only colour, font, placement, labels and button size change.

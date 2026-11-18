@@ -59,6 +59,7 @@ Live (needs REQ-0017):
 F-020 (history of past lobbies, Proposed): the feed is recent events for seven days, not the history of lobbies; F-020 stays Proposed and is not replaced. F-015 (notifications): this is in-app only and has no push; F-015 stays Proposed. F-035 (live updates, REQ-0017) shows new entries live. F-003, F-005 and F-018 provide the changes that are recorded. F-004 and F-017 are the group view the feed sits in. It is not a duplicate: no existing feature lists the events of a group.
 
 ## Open questions
+- Follow-up (REQ-0028 item 7, DECISION, user, 2026-11-18): when the feed is built in the frontend, "Leave group" stays the last item on the Group view page, below the feed.
 - DECISION (user, 2026-11-10): the draft is accepted as written. Events are kept 7 days, at most 20 are shown; "New lobby" names the creator; deleting a lobby is not an event.
 - DECISION (user, 2026-11-10), amending the draft: an event shows the current name of a member who left, not the name at the time (see the criterion above). The name stays visible for members who left.
 - DECISION (user, 2026-11-10): an event shows the start time of its lobby, not the time the event happened.

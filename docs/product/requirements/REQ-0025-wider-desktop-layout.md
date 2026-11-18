@@ -106,4 +106,4 @@ Items still ASSUMPTION for the UI expert: the margin size, the 5.25rem Group rai
 DECISION, user, 2026-11-18. This amends the out-of-scope line "A change of the content, rules or buttons of any panel", for these two places only:
 - Lobby page: "Join lobby" or "Leave lobby" comes directly after the role slots, before the "Players" heading; "Delete lobby" is the last element of the panel. This applies at every width.
 - Group view: "Leave group" is no longer in the page header (group name and Invite button); it is the last item on the page, below the Group feed in the side column layout and after the Member list below 98rem.
-The side column content of REQ-0025 (lobby settings, members, Group feed) is unchanged. See REQ-0028 for the open questions on these places.
+The side column content of REQ-0025 (lobby settings, members, Group feed) is unchanged. See REQ-0028 for the open questions on these places. Implemented 2026-11-18 (PR #145).
