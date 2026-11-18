@@ -50,13 +50,25 @@ export function LobbyDetails({
         </div>
         <GenreName genre={lobby.gameGenre} />
       </GenreFrame>
-      {/* Settings sit between the players and the actions; from 98rem they move to the side column (REQ-0025). */}
+      {/* Join or leave follows the role slots, or the spot count without them; Delete lobby is last in the main
+          column. Settings sit between the players and Delete; from 98rem they move to the side column (REQ-0025,
+          REQ-0028 item 5). */}
       <div className="panel-group">
         <Panel className="side-layout side-layout--lobby">
           <div className="lobby-summary">
             <p>{formatDateTimeRange(lobby.startsAt, lobby.endsAt)}</p>
             <p>{m.lobbyPlayers(lobby.playerCount, lobby.maxPlayers)}</p>
             <RoleSlots lobby={lobby} />
+            <div className="form-actions">
+              <LobbyMembership
+                groupId={groupId}
+                lobby={lobby}
+                onChanged={onMembershipChanged}
+                showEnded
+                seat={seat}
+                onUnauthenticated={callbacks.onUnauthenticated}
+              />
+            </div>
             <h2>{m.lobbyPlayersHeading}</h2>
             <PlayerList lobby={lobby} />
           </div>
@@ -68,19 +80,11 @@ export function LobbyDetails({
               onUnauthenticated={callbacks.onUnauthenticated}
             />
           </div>
-          <div className="form-actions">
-            <LobbyMembership
-              groupId={groupId}
-              lobby={lobby}
-              onChanged={onMembershipChanged}
-              showEnded
-              seat={seat}
-              onUnauthenticated={callbacks.onUnauthenticated}
-            />
-            {isCreator && (
+          {isCreator && (
+            <div className="form-actions">
               <DeleteLobby lobby={lobby} groupId={groupId} {...callbacks} />
-            )}
-          </div>
+            </div>
+          )}
         </Panel>
       </div>
     </>

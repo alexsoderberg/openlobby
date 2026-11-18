@@ -289,7 +289,7 @@ describe("changing the mode on the page", () => {
 });
 
 describe("page order", () => {
-  it("puts the settings between the players and the actions, in one panel, as the side column (REQ-0025)", async () => {
+  it("puts the settings between the players and Delete lobby, in one panel, as the side column (REQ-0025, REQ-0028 item 5)", async () => {
     const mode = {
       id: "m1",
       name: "Casual",
@@ -324,16 +324,80 @@ describe("page order", () => {
     const players = screen.getByRole("heading", {
       name: en.lobbyPlayersHeading,
     });
-    const leave = screen.getByRole("button", { name: en.lobbyLeave });
+    const remove = screen.getByRole("button", { name: en.lobbyDelete });
     expect(players.compareDocumentPosition(settings)).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING,
     );
-    expect(settings.compareDocumentPosition(leave)).toBe(
+    expect(settings.compareDocumentPosition(remove)).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING,
     );
     const side = settings.closest(".side-column");
     expect(side).not.toBeNull();
-    expect(side!.parentElement).toBe(leave.closest(".panel"));
+    expect(side!.parentElement).toBe(remove.closest(".panel"));
+  });
+
+  // The side column is placed by CSS only, so the DOM order (and focus order) is the same at every width.
+  function expectInOrder(...elements: Element[]) {
+    elements
+      .slice(1)
+      .forEach((element, index) =>
+        expect(elements[index].compareDocumentPosition(element)).toBe(
+          Node.DOCUMENT_POSITION_FOLLOWING,
+        ),
+      );
+  }
+
+  function lastFocusableIn(container: Element) {
+    const focusable = container.querySelectorAll("a[href], button, input");
+    return focusable[focusable.length - 1];
+  }
+
+  it("puts Leave lobby right after the role slots, before the players, and Delete lobby last (REQ-0028 item 5)", async () => {
+    renderDetail({
+      getLobby: () =>
+        Promise.resolve({
+          ...lobby,
+          flexCount: 1,
+          roleSlots: [
+            { gameRoleId: "r1", name: "Tank", slots: 1, playerCount: 1 },
+          ],
+          players: [
+            { userId: testUser.userId, displayName: "Maja", gameRoleId: "r1" },
+            { userId: "u2", displayName: "Kim", gameRoleId: null },
+          ],
+        }),
+    });
+
+    const slots = await screen.findByRole("list", {
+      name: en.lobbyRoleSlotsLabel,
+    });
+    const leave = screen.getByRole("button", { name: en.lobbyLeave });
+    const players = screen.getByRole("heading", {
+      name: en.lobbyPlayersHeading,
+    });
+    const remove = screen.getByRole("button", { name: en.lobbyDelete });
+    expectInOrder(slots, leave, players, screen.getByText("Kim"), remove);
+    expect(lastFocusableIn(remove.closest(".panel")!)).toBe(remove);
+  });
+
+  it("puts Join lobby right after the spot count when the lobby has no role slots (REQ-0028 item 5)", async () => {
+    renderDetail(
+      {
+        getLobby: () => Promise.resolve({ ...lobby, joinedByMe: false }),
+      },
+      "u3",
+    );
+
+    const join = await screen.findByRole("button", { name: en.lobbyJoin });
+    const spots = screen.getByText(
+      en.lobbyPlayers(lobby.playerCount, lobby.maxPlayers),
+    );
+    expect(spots.nextElementSibling).toBe(join.parentElement);
+    expectInOrder(
+      join,
+      screen.getByRole("heading", { name: en.lobbyPlayersHeading }),
+    );
+    expect(screen.queryByRole("button", { name: en.lobbyDelete })).toBeNull();
   });
 });
 
