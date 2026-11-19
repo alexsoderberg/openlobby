@@ -1,5 +1,6 @@
 import { toUserMessage, useMessages } from "../i18n";
 import { Alert } from "./Alert";
+import { Button } from "./Button";
 import { Icon } from "./Icon";
 
 export function ErrorAlert({
@@ -13,14 +14,10 @@ export function ErrorAlert({
   return (
     <>
       <Alert>{toUserMessage(code)}</Alert>
-      <button
-        type="button"
-        className="button button--secondary"
-        onClick={onRetry}
-      >
+      <Button type="button" variant="secondary" onClick={onRetry}>
         <Icon name="retry" />
         {m.tryAgain}
-      </button>
+      </Button>
     </>
   );
 }

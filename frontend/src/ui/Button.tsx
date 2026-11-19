@@ -1,5 +1,6 @@
 // Copied from shadcn/ui `button` (https://ui.shadcn.com/docs/components/button). Edited per ADR 0023 1b: class
 // lists read our tokens, the variant names are the glossary's, no asChild and no class-variance-authority.
+// ButtonLink is the same look on a link, for navigation that must stay a link (no asChild, so its own element).
 // Type, shadow, hover and press motion live in global.css under [data-slot="button"]; the light span holds the
 // light that follows the pointer and the press shade.
 import type { ComponentProps, PointerEvent } from "react";
@@ -30,39 +31,77 @@ const buttonVariants = {
   size: Record<ButtonSize, string>;
 };
 
-export function Button({
-  className,
+type ButtonLook = { variant?: ButtonVariant; size?: ButtonSize };
+
+/** The slot, variant and size that global.css styles, and the utility classes, shared by Button and ButtonLink. */
+function buttonAttributes({
   variant = "primary",
   size = "default",
+  className,
+}: ButtonLook & { className?: string }) {
+  return {
+    "data-slot": "button",
+    "data-variant": variant,
+    "data-size": size,
+    className: classNames(
+      buttonVariants.base,
+      buttonVariants.variant[variant],
+      buttonVariants.size[size],
+      className,
+    ),
+  };
+}
+
+const buttonLight = <span data-slot="button-light" aria-hidden="true" />;
+
+export function Button({
+  className,
+  variant,
+  size,
   onPointerMove,
   children,
   ...props
-}: ComponentProps<"button"> & { variant?: ButtonVariant; size?: ButtonSize }) {
+}: ComponentProps<"button"> & ButtonLook) {
   return (
     <button
-      data-slot="button"
-      data-variant={variant}
-      data-size={size}
-      className={classNames(
-        buttonVariants.base,
-        buttonVariants.variant[variant],
-        buttonVariants.size[size],
-        className,
-      )}
+      {...buttonAttributes({ variant, size, className })}
       onPointerMove={(event) => {
         placeLight(event);
         onPointerMove?.(event);
       }}
       {...props}
     >
-      <span data-slot="button-light" aria-hidden="true" />
+      {buttonLight}
       {children}
     </button>
   );
 }
 
+/** A link with the look of a Button: it navigates (a full page load, middle-click), so it stays an `a`. */
+export function ButtonLink({
+  className,
+  variant,
+  onPointerMove,
+  children,
+  ...props
+}: ComponentProps<"a"> & Pick<ButtonLook, "variant">) {
+  return (
+    <a
+      {...buttonAttributes({ variant, className })}
+      onPointerMove={(event) => {
+        placeLight(event);
+        onPointerMove?.(event);
+      }}
+      {...props}
+    >
+      {buttonLight}
+      {children}
+    </a>
+  );
+}
+
 /** Puts the pointer position in two CSS variables, so the light moves by transform and never by layout. */
-function placeLight(event: PointerEvent<HTMLButtonElement>) {
+function placeLight(event: PointerEvent<HTMLElement>) {
   const button = event.currentTarget;
   const box = button.getBoundingClientRect();
   button.style.setProperty("--pointer-x", `${event.clientX - box.left}px`);
