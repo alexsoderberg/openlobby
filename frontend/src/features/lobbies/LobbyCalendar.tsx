@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { Lobby } from "../../api";
 import { formatDayRange, useMessages } from "../../i18n";
-import { Icon } from "../../ui";
+import { Button, Icon } from "../../ui";
 import {
   nextWeekStart,
   weekItems,
@@ -35,14 +35,14 @@ export function LobbyCalendar({
         <h3 aria-live="polite">
           {m.calendarWeekHeading(formatDayRange(week[0].day, week[6].day))}
         </h3>
-        <button
+        <Button
           type="button"
-          className="button button--secondary"
+          variant="secondary"
           onClick={() => setWeekStart(nextWeekStart(weekStart))}
         >
           <Icon name="forward" />
           {m.calendarNextWeek}
-        </button>
+        </Button>
       </div>
       <WeekTimeGrid
         days={week}

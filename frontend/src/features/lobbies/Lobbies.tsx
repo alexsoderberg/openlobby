@@ -3,7 +3,14 @@ import type { Group } from "../../api";
 import { usePopover } from "../../hooks";
 import type { PickedStart } from "../../calendar";
 import { useMessages } from "../../i18n";
-import { CreateFrame, ErrorAlert, Icon, Panel, ViewToggle } from "../../ui";
+import {
+  Button,
+  CreateFrame,
+  ErrorAlert,
+  Icon,
+  Panel,
+  ViewToggle,
+} from "../../ui";
 import { CreateLobby } from "./CreateLobby";
 import { LobbyCalendar } from "./LobbyCalendar";
 import { LobbyList } from "./LobbyList";
@@ -49,16 +56,15 @@ export function Lobbies({
         <div className="heading-row">
           <div className="panel__head">
             <h2>{m.lobbiesHeading}</h2>
-            <button
+            <Button
               type="button"
-              className="button"
               aria-haspopup="dialog"
               aria-expanded={popover.open}
               onClick={(event) => openForm(undefined, event.currentTarget)}
             >
               <Icon name="plus" />
               {m.lobbyCreateButton}
-            </button>
+            </Button>
           </div>
           <p role="status" className="status">
             {created && m.lobbyCreated}

@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import type { Lobby, Seat } from "../../api";
 import { useMessages } from "../../i18n";
 import { hasFreeSlot, RoleSlotText } from "../../lobby";
-import { Icon, type IconName } from "../../ui";
+import { Button, Icon, type IconName } from "../../ui";
 import { SeatChoice } from "./SeatChoice";
 import { FLEX_SEAT, SEAT_FIELD } from "./lobbyInput";
 
@@ -89,18 +89,14 @@ export function SeatForm({
         </p>
       )}
       <div className="form-actions">
-        <button type="submit" className="button" disabled={busy}>
+        <Button type="submit" disabled={busy}>
           <Icon name={submitIcon} />
           {submitLabel}
-        </button>
-        <button
-          type="button"
-          className="button button--secondary"
-          onClick={onCancel}
-        >
+        </Button>
+        <Button type="button" variant="secondary" onClick={onCancel}>
           <Icon name="close" />
           {m.cancel}
-        </button>
+        </Button>
       </div>
     </form>
   );

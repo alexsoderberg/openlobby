@@ -9,7 +9,7 @@ import {
   PreferredGameRolesNote,
   RoleSlots,
 } from "../../lobby";
-import { Avatar, GameRoleName, Icon, Panel } from "../../ui";
+import { Avatar, Button, GameRoleName, Icon, Panel } from "../../ui";
 import { DeleteLobbyDialog } from "./DeleteLobbyDialog";
 import { LobbyMembership } from "./LobbyMembership";
 import { LobbySettings } from "./LobbySettings";
@@ -164,14 +164,14 @@ function DeleteLobby({
 
   return (
     <>
-      <button
+      <Button
         type="button"
-        className="button button--danger"
+        variant="danger"
         onClick={() => setConfirming(true)}
       >
         <Icon name="remove" />
         {m.lobbyDelete}
-      </button>
+      </Button>
       {confirming && (
         <DeleteLobbyDialog
           label={lobbyLabel(lobby, m)}
