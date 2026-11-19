@@ -23,6 +23,8 @@ export function AlertDialogContent({
       <RadixAlertDialog.Overlay
         data-slot="alert-dialog-overlay"
         className={dialogVariants.overlay}
+        // A press outside does nothing, and must not take focus out of the dialog either.
+        onMouseDown={(event) => event.preventDefault()}
       />
       <RadixAlertDialog.Content
         data-slot="alert-dialog-content"

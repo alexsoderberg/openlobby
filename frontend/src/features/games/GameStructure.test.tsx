@@ -313,11 +313,13 @@ describe("remove a mode or an activity", () => {
 
     click(mode, `${en.gameModeRemove}, Raid`);
     await answer(en.gameModeRemoveSubmit);
-    // The page is hidden while the dialog is open, so wait for the focus that follows the removal.
+    // The page is hidden while the dialog is open, so wait for the focus that follows the removal. The poll reads
+    // only the focused text: a role query over the whole form on every poll is too slow under a full test run.
     await waitFor(() =>
-      expect(document.activeElement).toBe(
-        within(form).getByRole("button", { name: en.gameModeAdd }),
-      ),
+      expect(document.activeElement?.textContent).toBe(en.gameModeAdd),
+    );
+    expect(document.activeElement).toBe(
+      within(form).getByRole("button", { name: en.gameModeAdd }),
     );
     expect(within(form).queryByRole("region")).toBeNull();
     expect(within(form).queryByRole("button", { name: "Raid" })).toBeNull();

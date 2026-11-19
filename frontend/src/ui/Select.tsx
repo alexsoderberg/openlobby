@@ -114,7 +114,7 @@ export function Select({
     const step = tabStep.current;
     tabStep.current = 0;
     // A pick that opened a confirm dialog has put focus in it; Radix would take it back to the field.
-    if (document.activeElement?.closest('[role="alertdialog"]')) {
+    if (document.activeElement?.closest('[data-slot="alert-dialog-content"]')) {
       event.preventDefault();
       return;
     }

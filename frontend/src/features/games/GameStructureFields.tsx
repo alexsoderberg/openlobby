@@ -293,6 +293,7 @@ export function ModeView({
             danger
             keepLabel={removal.keepLabel}
             busy={false}
+            // Nothing to send: confirming only closes the dialog with confirmed true, and onClose applies it.
             onConfirm={async () => undefined}
             // After the exit: removing the mode closes this view, which would cut the dialog's exit short.
             onClose={(confirmed) => {

@@ -108,10 +108,14 @@ describe("ConfirmDialog", () => {
     const overlay = document.querySelector<HTMLElement>(
       '[data-slot="alert-dialog-overlay"]',
     )!;
+    await waitFor(() => expect(document.activeElement).toBe(keep()));
     fireEvent.pointerDown(overlay);
+    // The press would move focus out of the dialog unless its default is prevented.
+    expect(fireEvent.mouseDown(overlay)).toBe(false);
     fireEvent.click(overlay);
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(screen.getByRole("alertdialog").dataset.state).toBe("open");
+    expect(document.activeElement).toBe(keep());
     expect(onClose).not.toHaveBeenCalled();
   });
 
@@ -141,6 +145,8 @@ describe("ConfirmDialog", () => {
     fireEvent.click(submit());
     await waitFor(() => expect(keep()).toHaveProperty("disabled", true));
     expect(submit()).toHaveProperty("disabled", true);
+    // Focus waits on the dialog itself while both buttons are disabled.
+    expect(document.activeElement).toBe(screen.getByRole("alertdialog"));
     fireEvent.keyDown(screen.getByRole("alertdialog"), { key: "Escape" });
     expect(screen.getByRole("alertdialog")).toBeTruthy();
 
