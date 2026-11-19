@@ -2,7 +2,7 @@ import { useRef } from "react";
 import { loginUrl } from "../../api";
 import { useFocusAfterLogout, useScrolledPast } from "../../hooks";
 import { useMessages } from "../../i18n";
-import { Alert, Brand, Icon } from "../../ui";
+import { Alert, Brand, ButtonLink, Icon } from "../../ui";
 import { loggedOutNotice, type LoggedOutPageProps } from "../session";
 import { LandingHero } from "./LandingHero";
 import { StepCard } from "./StepCard";
@@ -30,10 +30,10 @@ export function LandingPage({
         className={`topbar landing-topbar${scrolled ? " is-scrolled" : ""}`}
       >
         <Brand />
-        <a className="button button-ghost" href={href}>
+        <ButtonLink variant="ghost" href={href}>
           <Icon name="logIn" />
           {t.topBarLogIn}
-        </a>
+        </ButtonLink>
       </header>
       <main className="landing">
         {notice && <Alert>{notice}</Alert>}
@@ -45,10 +45,10 @@ export function LandingPage({
           </h1>
           <p className="hero__lead">{t.lead}</p>
           <div className="hero__actions">
-            <a className="button" href={href}>
+            <ButtonLink href={href}>
               <Icon name="logIn" />
               {m.logInWithDiscord}
-            </a>
+            </ButtonLink>
           </div>
           <LandingHero />
         </section>

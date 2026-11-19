@@ -2,7 +2,7 @@ export { Alert } from "./Alert";
 export { AnchoredPopover } from "./AnchoredPopover";
 export { Avatar } from "./Avatar";
 export { Brand } from "./Brand";
-export { Button } from "./Button";
+export { Button, ButtonLink } from "./Button";
 export { ConfirmDialog } from "./ConfirmDialog";
 export { CreateFrame } from "./CreateFrame";
 export { ErrorAlert } from "./ErrorAlert";

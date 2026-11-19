@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { cssRules, stylesheet } from "../test/cssTokens";
-import { Button } from "./Button";
+import { Button, ButtonLink } from "./Button";
 
 describe("Button", () => {
   it("is a button named by its text that runs its click handler", () => {
@@ -70,13 +70,49 @@ describe("Button", () => {
   });
 });
 
+describe("ButtonLink", () => {
+  it("is a link named by its text, marked like a Button, with its light span hidden", () => {
+    render(
+      <ButtonLink variant="ghost" href="/api/auth/login">
+        Log in
+      </ButtonLink>,
+    );
+
+    const link = screen.getByRole("link", { name: "Log in" });
+    expect(link.getAttribute("href")).toBe("/api/auth/login");
+    expect(link.dataset).toMatchObject({ slot: "button", variant: "ghost" });
+    expect(
+      link
+        .querySelector('[data-slot="button-light"]')
+        ?.getAttribute("aria-hidden"),
+    ).toBe("true");
+  });
+
+  // Unlayered link rules would beat the colour utilities, which sit in a layer, so none may match a ButtonLink.
+  it("is matched by none of the global link rules", () => {
+    render(<ButtonLink href="/">Log in</ButtonLink>);
+    const link = screen.getByRole("link", { name: "Log in" });
+    const linkRules = cssRules.filter(
+      ({ selector }) =>
+        /(^|[\s,(])a\b/.test(selector) && !selector.includes("::"),
+    );
+
+    expect(linkRules.length).toBeGreaterThan(0);
+    for (const { selector } of linkRules)
+      expect(link.matches(selector.replace(/:hover/g, ""))).toBe(false);
+  });
+});
+
 // A tap on a phone fires :hover and leaves it on; hover looks are only for pointers that can hover.
 describe("button hover rules in global.css", () => {
   const HOVER_MEDIA = "@media (hover: hover) and (pointer: fine)";
   const hoverRules = cssRules.filter(
     ({ selector }) =>
       selector.includes(":hover") &&
-      /\[data-slot="button"\]|\.button\b/.test(selector),
+      // A :not() that leaves buttons out (the global link rule) does not make a rule a button rule.
+      /\[data-slot="button"\]|\.button\b/.test(
+        selector.replace(/:not\([^)]*\)/g, ""),
+      ),
   );
 
   it("finds them", () => {

@@ -337,14 +337,16 @@ h2 {
   margin: var(--space-4) 0 var(--space-2);
 }
 
-/* Links stay text-coloured and underlined; gold appears only on hover or focus. :where keeps .button colours intact. */
-a {
+/* Links stay text-coloured and underlined; gold appears only on hover or focus. A ButtonLink is left out: these
+   unlayered rules would beat its Tailwind colour utilities, which sit in a layer. :where keeps the specificity of a
+   plain a, so a class such as .brand still wins. */
+a:where(:not([data-slot="button"])) {
   color: var(--color-text);
   text-decoration: underline;
   text-underline-offset: 0.2em;
 }
 
-:where(a):hover {
+:where(a:not([data-slot="button"])):hover {
   color: var(--color-accent);
 }
 
@@ -406,10 +408,9 @@ a {
   margin: 0 auto;
 }
 
-/* Button variants (ADR 0021): the primary is the only filled one; secondary has a neutral edge, ghost has
-   none, danger is text and edge in the danger colour. One size per pointer type. */
+/* Button variants (ADR 0021): the primary is the only filled one; secondary has a neutral edge,
+   danger is text and edge in the danger colour. One size per pointer type. */
 .button,
-.button-ghost,
 .button--secondary,
 .button--danger {
   position: relative;
@@ -433,18 +434,12 @@ a {
   cursor: pointer;
 }
 
-.button-ghost,
 .button--secondary,
 .button--danger {
   background: var(--color-surface);
   border-color: var(--color-border);
   color: var(--color-text);
   box-shadow: none;
-}
-
-.button-ghost {
-  background: none;
-  border-color: transparent;
 }
 
 .button--danger {
@@ -454,32 +449,8 @@ a {
 }
 
 @media (pointer: coarse) {
-  :is(.button, .button-ghost, .button--secondary, .button--danger) {
+  :is(.button, .button--secondary, .button--danger) {
     min-height: var(--size-tap);
-  }
-}
-
-/* Icon-only (IconButton): a round icon under a mouse with the label in the tooltip; on touch the short
-   label is shown beside the icon, since there is no hover. */
-.button--icon {
-  width: var(--size-button);
-  padding: 0;
-  border-radius: 50%;
-}
-
-.button__label {
-  display: none;
-}
-
-@media (pointer: coarse) {
-  .button--icon {
-    width: auto;
-    padding: 0 var(--space-3);
-    border-radius: var(--radius-chip);
-  }
-
-  .button__label {
-    display: inline;
   }
 }
 
@@ -534,7 +505,7 @@ a {
   }
 }
 
-:is(.button, .button-ghost, .button--secondary, .button--danger):disabled {
+:is(.button, .button--secondary, .button--danger):disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
@@ -544,6 +515,7 @@ a {
 [data-slot="button"] {
   /* border utility's style is a registered variable; some browsers lack it (ADR 0023 B2 amendment d) */
   border-style: solid;
+  text-decoration: none;
   font: inherit;
   font-weight: 600;
 }
@@ -587,7 +559,7 @@ a {
   transition: opacity var(--duration-button-hover) var(--ease-out);
 }
 
-:is([data-slot="button"][data-variant="ghost"], .button-ghost)::before {
+[data-slot="button"][data-variant="ghost"]::before {
   background:
     linear-gradient(
       var(--color-button-top-light),
@@ -598,7 +570,7 @@ a {
 
 :is(
   [data-slot="button"][data-variant="primary"],
-  .button:not(.button-ghost, .button--secondary, .button--danger)
+  .button:not(.button--secondary, .button--danger)
 )::before {
   background: linear-gradient(
     var(--color-button-top-light-primary),
@@ -626,7 +598,7 @@ a {
 
 :is(
   [data-slot="button"][data-variant="primary"],
-  .button:not(.button-ghost, .button--secondary, .button--danger)
+  .button:not(.button--secondary, .button--danger)
 )::after {
   box-shadow: var(--shadow-button-glow-primary);
 }
@@ -637,7 +609,6 @@ a {
 
 :is(
   [data-slot="button"]:is([data-variant="ghost"], [data-variant="secondary"]),
-  .button-ghost,
   .button--secondary
 )::after {
   content: none;
@@ -857,7 +828,7 @@ a {
   color: var(--color-muted);
 }
 
-.login-panel .button {
+.login-panel [data-slot="button"] {
   margin-top: var(--space-2);
 }
 
@@ -2896,13 +2867,12 @@ a {
    sits one space-3 below it, and the invite popover's blocks after a status line do the same.
    Headings, .status, .row-list and .step-card__text keep their own spacing, so this is not a
    blanket rule. Specificity (0,2,0) beats .button and .alert resets whatever the source order.
-   .login-panel has its own .button margin and is left alone. The Next up card is no panel, so what
+   .login-panel has its own button margin and is left alone. The Next up card is no panel, so what
    follows its players figure or meter (the join or leave button, the Ended line or an error) is spaced the same way. */
 :is(.panel, .dialog, .create-popover__card, .lobby-summary)
   > *
   + :is(
     .button,
-    .button-ghost,
     .button--secondary,
     .button--danger,
     [data-slot="button"],
