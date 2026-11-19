@@ -324,6 +324,24 @@ describe("PreferredGameRoles", () => {
     ).toBeTruthy();
   });
 
+  it("moves focus to Save when a save fails", async () => {
+    renderSection({
+      replacePreferredGameRoles: vi.fn(() =>
+        Promise.reject(new ApiError(503, "service_unavailable")),
+      ),
+    });
+    await screen.findByRole("group", { name: "Overwatch" });
+
+    save();
+
+    await screen.findByRole("alert");
+    await waitFor(() =>
+      expect(document.activeElement).toBe(
+        screen.getByRole("button", { name: m.save }),
+      ),
+    );
+  });
+
   it("shows a failed save and sends the same choice again on Try again", async () => {
     const replacePreferredGameRoles = vi
       .fn()

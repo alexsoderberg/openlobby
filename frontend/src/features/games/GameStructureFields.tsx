@@ -9,7 +9,7 @@ import {
 } from "react";
 import type { RoleIcon } from "../../api";
 import { useMessages } from "../../i18n";
-import { ConfirmDialog, Icon, IconButton, Select } from "../../ui";
+import { Button, ConfirmDialog, Icon, IconButton, Select } from "../../ui";
 import { ROLE_ICONS } from "./roleIcons";
 import {
   emptyActivity,
@@ -124,10 +124,10 @@ export function GameStructureFields({
             ))}
           </ul>
         )}
-        <button
+        <Button
+          variant="secondary"
           type="button"
           id={addModeId(id)}
-          className="button button--secondary"
           onClick={() => {
             const mode = emptyMode();
             setDraft((d) => ({ ...d, modes: [...d.modes, mode] }));
@@ -136,7 +136,7 @@ export function GameStructureFields({
         >
           <Icon name="plus" />
           {m.gameModeAdd}
-        </button>
+        </Button>
       </fieldset>
     </FieldErrorContext>
   );
@@ -265,9 +265,9 @@ export function ModeView({
           requestFocus={requestFocus}
           askRemoval={setRemoval}
         />
-        <button
+        <Button
+          variant="danger"
           type="button"
-          className="button button--danger"
           aria-label={`${m.gameModeRemove}, ${label}`}
           onClick={() =>
             setRemoval({
@@ -283,7 +283,7 @@ export function ModeView({
         >
           <Icon name="remove" />
           {m.gameModeRemove}
-        </button>
+        </Button>
         {removal && (
           <ConfirmDialog
             heading={removal.heading}
@@ -365,10 +365,10 @@ function ActivityFieldset({
           })}
         </ul>
       )}
-      <button
+      <Button
+        variant="secondary"
         type="button"
         id={addId}
-        className="button button--secondary"
         onClick={() => {
           const activity = emptyActivity();
           patch({ activities: [...mode.activities, activity] });
@@ -377,7 +377,7 @@ function ActivityFieldset({
       >
         <Icon name="plus" />
         {m.gameActivityAdd}
-      </button>
+      </Button>
     </fieldset>
   );
 }
@@ -462,10 +462,10 @@ function RoleFieldset({
           <p className="form-hint">{m.gameRolesTotal(sumSlots(roles))}</p>
         </>
       )}
-      <button
+      <Button
+        variant="secondary"
         type="button"
         id={addId}
-        className="button button--secondary"
         onClick={() => {
           const role = emptyRole();
           onChange([...roles, role]);
@@ -474,7 +474,7 @@ function RoleFieldset({
       >
         <Icon name="plus" />
         {m.gameRoleAdd}
-      </button>
+      </Button>
     </fieldset>
   );
 }
@@ -496,15 +496,15 @@ function StructureRow({
     <fieldset className="structure-row">
       <legend className="visually-hidden">{legend}</legend>
       {children}
-      <button
+      <Button
+        variant="danger"
         type="button"
-        className="button button--danger"
         aria-label={removeLabel}
         onClick={onRemove}
       >
         <Icon name="remove" />
         {m.gameRemove}
-      </button>
+      </Button>
     </fieldset>
   );
 }

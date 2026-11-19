@@ -18,7 +18,7 @@ import {
   type GameInput,
 } from "../../api";
 import { toUserMessage, useMessages } from "../../i18n";
-import { Icon, type IconName } from "../../ui";
+import { Button, Icon, type IconName } from "../../ui";
 import { GameGenreField } from "./GameGenreField";
 import {
   GameStructureFields,
@@ -251,19 +251,15 @@ function GameFormActions({
   const m = useMessages();
   return (
     <div className="form-actions">
-      <button type="submit" className="button" disabled={busy}>
+      <Button type="submit" disabled={busy}>
         <Icon name={submitIcon} />
         {submitLabel}
-      </button>
+      </Button>
       {onCancel && (
-        <button
-          type="button"
-          className="button button--secondary"
-          onClick={onCancel}
-        >
+        <Button variant="secondary" type="button" onClick={onCancel}>
           <Icon name="close" />
           {m.gameEditCancel}
-        </button>
+        </Button>
       )}
     </div>
   );

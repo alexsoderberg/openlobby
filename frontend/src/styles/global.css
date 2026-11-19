@@ -1312,6 +1312,11 @@ a:where(:not([data-slot="button"])) {
   animation: view-forward var(--duration-page) var(--ease-out) both;
 }
 
+/* The add buttons of a structure group and Remove mode keep their own width in the grid, like .group-form .button. */
+.group-form :is(.structure, .mode-view) > [data-slot="button"] {
+  justify-self: start;
+}
+
 .group-form .mode-view__heading {
   margin: 0;
   font-family: var(--font-heading);
