@@ -2,7 +2,7 @@ import type { PickedStart } from "../../calendar";
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import type { ChangeResult, CreateLobbyInput, Game } from "../../api";
 import { toLobbyMessage, useMessages } from "../../i18n";
-import { Icon } from "../../ui";
+import { Button, Icon } from "../../ui";
 import { INVALID_CAPACITY } from "../../api";
 import { LobbyGameFields } from "./LobbyGameFields";
 import { LobbyModeFields } from "./LobbyModeFields";
@@ -132,18 +132,14 @@ function LobbyFormActions({
   const m = useMessages();
   return (
     <div className="form-actions">
-      <button type="submit" className="button" disabled={busy}>
+      <Button type="submit" disabled={busy}>
         <Icon name="plus" />
         {m.lobbyCreateSubmit}
-      </button>
-      <button
-        type="button"
-        className="button button--secondary"
-        onClick={onCancel}
-      >
+      </Button>
+      <Button type="button" variant="secondary" onClick={onCancel}>
         <Icon name="close" />
         {m.cancel}
-      </button>
+      </Button>
     </div>
   );
 }
