@@ -412,52 +412,6 @@ a:where(:not([data-slot="button"])) {
   margin: 0 auto;
 }
 
-/* Button variants (ADR 0021): the primary is the only filled one; secondary has a neutral edge,
-   danger is text and edge in the danger colour. One size per pointer type. */
-.button,
-.button--secondary,
-.button--danger {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-  min-height: var(--size-button);
-  isolation: isolate;
-  padding: 0 var(--space-3);
-  border: 1px solid var(--color-accent);
-  border-radius: var(--radius-control);
-  background: var(--color-accent);
-  color: var(--color-on-accent);
-  box-shadow:
-    inset 0 1px 0 var(--color-highlight),
-    inset 0 -1px 0 var(--color-shade);
-  font: inherit;
-  font-weight: 600;
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.button--secondary,
-.button--danger {
-  background: var(--color-surface);
-  border-color: var(--color-border);
-  color: var(--color-text);
-  box-shadow: none;
-}
-
-.button--danger {
-  background: none;
-  border-color: var(--color-danger);
-  color: var(--color-danger);
-}
-
-@media (pointer: coarse) {
-  :is(.button, .button--secondary, .button--danger) {
-    min-height: var(--size-tap);
-  }
-}
-
 /* The bubble lives inside the wrapper and its ::before bridges the gap, so the pointer can move onto it
    (WCAG 1.4.13). No tooltip on touch: the button shows its label there. */
 /* In a grid or flex column the wrapper keeps the button's width, so only the button opens the bubble. */
@@ -509,13 +463,8 @@ a:where(:not([data-slot="button"])) {
   }
 }
 
-:is(.button, .button--secondary, .button--danger):disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
 /* Button (ADR 0023 1b): colour, radius and box are utilities in ui/Button.tsx; type, shadow, hover and press
-   motion are here. The looks match the .button classes above, which go once the last call site has moved. */
+   motion are here. */
 [data-slot="button"] {
   /* border utility's style is a registered variable; some browsers lack it (ADR 0023 B2 amendment d) */
   border-style: solid;
@@ -532,14 +481,13 @@ a:where(:not([data-slot="button"])) {
 
 /* Button hover: light from above lights the top edge (::before), a glow in the button's own colour breathes in
    (::after), and in a Button a soft light follows the pointer (--pointer-x/y from ui/Button.tsx). Press sinks the
-   button into an inner shadow. Every layer only fades by opacity or moves by transform. The .button classes get
-   the edge, glow and sink; the follow light and the press shade need the light span that only Button renders. */
-:is([data-slot="button"], .button) {
+   button into an inner shadow. Every layer only fades by opacity or moves by transform. */
+[data-slot="button"] {
   transition: transform var(--duration-fast) var(--ease-out);
 }
 
-:is([data-slot="button"], .button)::before,
-:is([data-slot="button"], .button)::after,
+[data-slot="button"]::before,
+[data-slot="button"]::after,
 [data-slot="button-light"],
 [data-slot="button-light"]::after {
   content: "";
@@ -551,7 +499,7 @@ a:where(:not([data-slot="button"])) {
 }
 
 /* The lit edge. It fades out halfway down, so the primary's lower half stays full gold. */
-:is([data-slot="button"], .button)::before {
+[data-slot="button"]::before {
   opacity: 0;
   background: linear-gradient(
     var(--color-button-top-light),
@@ -572,10 +520,7 @@ a:where(:not([data-slot="button"])) {
     var(--color-row-hover);
 }
 
-:is(
-  [data-slot="button"][data-variant="primary"],
-  .button:not(.button--secondary, .button--danger)
-)::before {
+[data-slot="button"][data-variant="primary"]::before {
   background: linear-gradient(
     var(--color-button-top-light-primary),
     transparent var(--stop-button-top-light-primary)
@@ -583,7 +528,7 @@ a:where(:not([data-slot="button"])) {
   box-shadow: inset 0 1px 0 var(--color-sheen);
 }
 
-:is([data-slot="button"][data-variant="danger"], .button--danger)::before {
+[data-slot="button"][data-variant="danger"]::before {
   background: linear-gradient(
     var(--color-button-top-light-danger),
     transparent var(--stop-button-top-light)
@@ -592,7 +537,7 @@ a:where(:not([data-slot="button"])) {
 }
 
 /* The glow. Ghosts and secondaries have none, so only the main and destructive actions call out (REQ-0028 item 4). */
-:is([data-slot="button"], .button)::after {
+[data-slot="button"]::after {
   opacity: 0;
   transform: scale(var(--scale-button-glow-rest));
   transition:
@@ -600,21 +545,18 @@ a:where(:not([data-slot="button"])) {
     transform var(--duration-button-glow) var(--ease-out);
 }
 
-:is(
-  [data-slot="button"][data-variant="primary"],
-  .button:not(.button--secondary, .button--danger)
-)::after {
+[data-slot="button"][data-variant="primary"]::after {
   box-shadow: var(--shadow-button-glow-primary);
 }
 
-:is([data-slot="button"][data-variant="danger"], .button--danger)::after {
+[data-slot="button"][data-variant="danger"]::after {
   box-shadow: var(--shadow-button-glow-danger);
 }
 
-:is(
-  [data-slot="button"]:is([data-variant="ghost"], [data-variant="secondary"]),
-  .button--secondary
-)::after {
+[data-slot="button"]:is(
+    [data-variant="ghost"],
+    [data-variant="secondary"]
+  )::after {
   content: none;
 }
 
@@ -673,27 +615,27 @@ a:where(:not([data-slot="button"])) {
 
 /* Hover only where a pointer can hover, so a tap on a phone leaves nothing lit. */
 @media (hover: hover) and (pointer: fine) {
-  :is([data-slot="button"], .button):not(:disabled):hover::before,
+  [data-slot="button"]:not(:disabled):hover::before,
   [data-slot="button"]:not(:disabled):hover
     > [data-slot="button-light"]::before {
     opacity: 1;
   }
 
-  :is([data-slot="button"], .button):not(:disabled):hover::after {
+  [data-slot="button"]:not(:disabled):hover::after {
     opacity: 1;
     transform: none;
   }
 }
 
-:is([data-slot="button"], .button):not(:disabled):active {
+[data-slot="button"]:not(:disabled):active {
   transform: translateY(var(--offset-button-sink));
 }
 
-:is([data-slot="button"], .button):not(:disabled):active::before {
+[data-slot="button"]:not(:disabled):active::before {
   opacity: 0;
 }
 
-:is([data-slot="button"], .button):not(:disabled):active::after {
+[data-slot="button"]:not(:disabled):active::after {
   opacity: var(--opacity-button-glow-pressed);
   transform: none;
 }
@@ -1061,8 +1003,7 @@ a:where(:not([data-slot="button"])) {
 
 /* IconButton sits in its tooltip wrapper, so the wrapper stands for the button in these sibling rules. */
 /* A game image field in a game being changed keeps its buttons by the image. */
-.list-row
-  :is(.button, [data-slot="button"], .tooltip):not(.image-field__row > *),
+.list-row :is([data-slot="button"], .tooltip):not(.image-field__row > *),
 .list-row .badge {
   margin-left: auto;
 }
@@ -1238,11 +1179,6 @@ a:where(:not([data-slot="button"])) {
   text-align: start;
 }
 
-.group-form .button,
-.group-form > [data-slot="button"] {
-  justify-self: start;
-}
-
 /* Items keep their own height: the default stretch made Delete lobby as tall as the open seat form beside it. */
 .form-actions {
   display: flex;
@@ -1343,7 +1279,9 @@ a:where(:not([data-slot="button"])) {
   animation: view-forward var(--duration-page) var(--ease-out) both;
 }
 
-/* The add buttons of a structure group and Remove mode keep their own width in the grid, like .group-form .button. */
+/* A button in a form grid keeps its own width instead of stretching across the column: the submit, the add buttons
+   of a structure group and Remove mode. */
+.group-form > [data-slot="button"],
 .group-form :is(.structure, .mode-view) > [data-slot="button"] {
   justify-self: start;
 }
@@ -2831,8 +2769,8 @@ a:where(:not([data-slot="button"])) {
     display: none;
   }
 
-  :is([data-slot="button"], .button)::after,
-  :is([data-slot="button"], .button):not(:disabled):active {
+  [data-slot="button"]::after,
+  [data-slot="button"]:not(:disabled):active {
     transform: none;
   }
 
@@ -2891,7 +2829,7 @@ a:where(:not([data-slot="button"])) {
 /* Spacing rule: a button or action row that follows other content in a panel, the lobby summary, a dialog or popover
    sits one space-3 below it, and the invite popover's blocks after a status line do the same.
    Headings, .status, .row-list and .step-card__text keep their own spacing, so this is not a
-   blanket rule. Specificity (0,2,0) beats .button and .alert resets whatever the source order.
+   blanket rule. Specificity (0,2,0) beats the .alert reset whatever the source order.
    .login-panel has its own button margin and is left alone. The Next up card is no panel, so what
    follows its players figure or meter (the join or leave button, the Ended line or an error) is spaced the same way. */
 :is(
@@ -2901,15 +2839,7 @@ a:where(:not([data-slot="button"])) {
     .lobby-summary
   )
   > *
-  + :is(
-    .button,
-    .button--secondary,
-    .button--danger,
-    [data-slot="button"],
-    .tooltip,
-    .form-actions,
-    .view-switch
-  ),
+  + :is([data-slot="button"], .tooltip, .form-actions, .view-switch),
 .create-popover__card > .status + *,
 .next-up__spots > .next-up__figure + *,
 .next-up__spots > .meter + * {
@@ -2927,8 +2857,8 @@ a:where(:not([data-slot="button"])) {
 
 /* Only the first button of a row pushes right; the rest follow at the row gap. */
 .list-row
-  :is(.button, [data-slot="button"], .tooltip)
-  + :is(.button, [data-slot="button"], .tooltip) {
+  :is([data-slot="button"], .tooltip)
+  + :is([data-slot="button"], .tooltip) {
   margin-left: 0;
 }
 
