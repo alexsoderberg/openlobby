@@ -93,13 +93,6 @@ describe("ConfirmDialog", () => {
       "Escape",
       () => fireEvent.keyDown(document.activeElement!, { key: "Escape" }),
     ],
-    [
-      "the overlay",
-      () =>
-        fireEvent.click(
-          document.querySelector('[data-slot="alert-dialog-overlay"]')!,
-        ),
-    ],
   ])("closes on %s without the action and returns focus", async (_, close) => {
     const { opener, onConfirm, onClose } = renderOpen();
     await waitFor(() => expect(document.activeElement).toBe(keep()));
@@ -108,6 +101,18 @@ describe("ConfirmDialog", () => {
     expect(onConfirm).not.toHaveBeenCalled();
     expect(screen.queryByRole("alertdialog")).toBeNull();
     expect(document.activeElement).toBe(opener);
+  });
+
+  it("stays open on a click outside it", async () => {
+    const { onClose } = renderOpen();
+    const overlay = document.querySelector<HTMLElement>(
+      '[data-slot="alert-dialog-overlay"]',
+    )!;
+    fireEvent.pointerDown(overlay);
+    fireEvent.click(overlay);
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(screen.getByRole("alertdialog").dataset.state).toBe("open");
+    expect(onClose).not.toHaveBeenCalled();
   });
 
   it("keeps a refusal in the dialog, where it is read", async () => {

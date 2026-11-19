@@ -1,11 +1,8 @@
 // Copied from shadcn/ui `alert-dialog` (https://ui.shadcn.com/docs/components/alert-dialog) on Radix AlertDialog,
-// trimmed to Content, Title, Description, Action and Cancel (ADR 0023 point 5). Edited per ADR 0023 point 2: class
-// lists read our tokens; type and motion live in global.css under [data-slot="alert-dialog-*"]. Action and Cancel
-// render our Button, since Button has no asChild of its own. The overlay closes the dialog (ADR 0023 point 5), which
-// Radix's alert dialog does not do by itself, so Content takes `onOverlayClick`.
+// trimmed to Content, Title, Description (ADR 0023 point 5, Amendment 2026-11-19). Edited per ADR 0023 point 2:
+// class lists read our tokens; type and motion live in global.css under [data-slot="alert-dialog-*"].
 import * as RadixAlertDialog from "@radix-ui/react-alert-dialog";
 import type { ComponentProps } from "react";
-import { Button } from "./Button";
 import { classNames } from "./classNames";
 
 const dialogVariants = {
@@ -19,17 +16,13 @@ export const AlertDialog = RadixAlertDialog.Root;
 
 export function AlertDialogContent({
   className,
-  onOverlayClick,
   ...props
-}: ComponentProps<typeof RadixAlertDialog.Content> & {
-  onOverlayClick?: () => void;
-}) {
+}: ComponentProps<typeof RadixAlertDialog.Content>) {
   return (
     <RadixAlertDialog.Portal>
       <RadixAlertDialog.Overlay
         data-slot="alert-dialog-overlay"
         className={dialogVariants.overlay}
-        onClick={onOverlayClick}
       />
       <RadixAlertDialog.Content
         data-slot="alert-dialog-content"
@@ -54,24 +47,5 @@ export function AlertDialogDescription(
       data-slot="alert-dialog-description"
       {...props}
     />
-  );
-}
-
-export function AlertDialogAction(props: ComponentProps<typeof Button>) {
-  return (
-    <RadixAlertDialog.Action asChild>
-      <Button {...props} />
-    </RadixAlertDialog.Action>
-  );
-}
-
-export function AlertDialogCancel({
-  variant = "secondary",
-  ...props
-}: ComponentProps<typeof Button>) {
-  return (
-    <RadixAlertDialog.Cancel asChild>
-      <Button variant={variant} {...props} />
-    </RadixAlertDialog.Cancel>
   );
 }

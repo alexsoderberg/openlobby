@@ -1,11 +1,10 @@
-import { useRef, useState, type MouseEvent } from "react";
+import { useRef, useState } from "react";
 import type { ChangeResult } from "../api";
 import { toUserMessage } from "../i18n";
 import { Alert } from "./Alert";
+import { Button } from "./Button";
 import {
   AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogTitle,
@@ -13,9 +12,9 @@ import {
 import { Icon, type IconName } from "./Icon";
 
 /**
- * A modal confirmation on Radix AlertDialog (ADR 0023 point 5): the page behind is inert, and Keep, Escape or the
- * overlay close it. Keep gets the first focus, so Enter right after opening does not run the action. `onConfirm`
- * resolves to the error code of a refusal, which stays in the dialog, where it is read; a success closes it. The
+ * A modal confirmation on Radix AlertDialog (ADR 0023 point 5): the page behind is inert, and Keep or
+ * Escape close it; a click outside does nothing. Keep gets the first focus, so Enter right after opening does not
+ * run the action. `onConfirm` resolves to the error code of a refusal, which stays in the dialog, where it is read; a success closes it. The
  * dialog keeps its own open state so its exit motion can run: `onClose` comes after the exit, with `confirmed`
  * true after a success, and the owner removes the dialog and acts there. Focus is back on the opener by then, if
  * it is still on the page. `danger` marks a destructive action (ADR 0021).
@@ -45,6 +44,7 @@ export function ConfirmDialog({
   const [running, setRunning] = useState(false);
   const [errorCode, setErrorCode] = useState<string>();
   const confirmed = useRef(false);
+  const keepRef = useRef<HTMLButtonElement>(null);
   // Read once, before Radix moves focus to Keep. No Radix Trigger opened it, so Radix has nothing to return to.
   const [opener] = useState(() => document.activeElement);
 
@@ -53,8 +53,7 @@ export function ConfirmDialog({
     if (!running) setOpen(false);
   };
 
-  async function confirm(event: MouseEvent) {
-    event.preventDefault(); // Action closes by default; only a success closes this dialog.
+  async function confirm() {
     setRunning(true);
     try {
       const code = await onConfirm();
@@ -69,7 +68,11 @@ export function ConfirmDialog({
   return (
     <AlertDialog open={open} onOpenChange={(next) => next || dismiss()}>
       <AlertDialogContent
-        onOverlayClick={dismiss}
+        // Radix would focus the first button, the action; Keep goes first (ADR 0023 Amendment 2026-11-19).
+        onOpenAutoFocus={(event) => {
+          event.preventDefault();
+          keepRef.current?.focus();
+        }}
         onCloseAutoFocus={(event) => {
           event.preventDefault();
           if (opener instanceof HTMLElement && opener.isConnected) {
@@ -82,18 +85,25 @@ export function ConfirmDialog({
         <AlertDialogDescription>{body}</AlertDialogDescription>
         {errorCode !== undefined && <Alert>{toUserMessage(errorCode)}</Alert>}
         <div className="form-actions">
-          <AlertDialogAction
+          <Button
+            type="button"
             variant={danger ? "danger" : "primary"}
             disabled={busy || running}
             onClick={confirm}
           >
             <Icon name={submitIcon} />
             {submitLabel}
-          </AlertDialogAction>
-          <AlertDialogCancel disabled={running}>
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            ref={keepRef}
+            disabled={running}
+            onClick={dismiss}
+          >
             <Icon name="close" />
             {keepLabel}
-          </AlertDialogCancel>
+          </Button>
         </div>
       </AlertDialogContent>
     </AlertDialog>

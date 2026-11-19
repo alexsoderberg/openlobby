@@ -22,4 +22,16 @@ describe("z-index layers", () => {
     expect(popover).toBeLessThan(Number(declarations.get("--z-dropdown-list")));
     expect(popover).toBeLessThan(TOASTER_FLOOR);
   });
+
+  // ADR 0023 Amendment 2026-11-19: the dialog covers every other overlay, as the native modal did; toasts stay above.
+  it("puts the dialog above the tab bar, the popover and the dropdown list, below the toaster", () => {
+    const dialog = Number(declarations.get("--z-dialog"));
+    for (const below of [
+      TAB_BAR,
+      Number(declarations.get("--z-popover")),
+      Number(declarations.get("--z-dropdown-list")),
+    ])
+      expect(dialog).toBeGreaterThan(below);
+    expect(dialog).toBeLessThan(TOASTER_FLOOR);
+  });
 });

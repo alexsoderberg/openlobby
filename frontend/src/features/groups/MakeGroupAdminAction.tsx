@@ -40,7 +40,11 @@ export function MakeGroupAdminAction({
           memberName={member.displayName}
           busy={busy}
           onConfirm={() => make(member.userId)}
-          onClose={() => setConfirming(false)}
+          onClose={(made) => {
+            setConfirming(false);
+            // After the exit: the reload turns the member into an admin and takes this row's button away.
+            if (made) onSettled();
+          }}
         />
       )}
     </>
