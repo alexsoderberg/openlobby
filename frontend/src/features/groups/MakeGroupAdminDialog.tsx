@@ -9,7 +9,7 @@ export function MakeGroupAdminDialog({
   memberName: string;
   busy: boolean;
   onConfirm: () => ChangeResult;
-  onClose: () => void;
+  onClose: (made: boolean) => void;
 }) {
   const m = useMessages();
   return (

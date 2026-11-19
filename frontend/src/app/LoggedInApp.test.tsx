@@ -88,7 +88,7 @@ describe("leaving a group", () => {
 
   async function openDialog() {
     fireEvent.click(await screen.findByRole("button", { name: en.groupLeave }));
-    return await screen.findByRole("dialog", {
+    return await screen.findByRole("alertdialog", {
       name: en.groupLeaveHeading(group.name),
     });
   }

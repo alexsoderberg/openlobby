@@ -4,8 +4,9 @@ import { useChangeAction } from "../../hooks";
 
 /**
  * Makes a member a group admin and resolves to the error code of a failure, or undefined on success, so the dialog
- * can show it. `onSettled` runs after every outcome but an ended session, so the member list shows what is true now.
- * `busy` is true while the call runs.
+ * can show it. `onSettled` runs after a refusal, so the member list shows what is true now; after a success the
+ * caller runs it once the dialog has closed, so the reload does not remove the dialog's row mid-exit. `busy` is true
+ * while the call runs.
  */
 export function useMakeGroupAdmin(
   groupId: string,
@@ -22,7 +23,7 @@ export function useMakeGroupAdmin(
   async function make(userId: string): ChangeResult {
     sessionEnded.current = false;
     const code = await run(() => api.makeGroupAdmin(groupId, userId));
-    if (!sessionEnded.current) onSettled();
+    if (code !== undefined && !sessionEnded.current) onSettled();
     return code;
   }
 

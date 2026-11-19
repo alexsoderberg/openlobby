@@ -18,12 +18,6 @@ export function LeaveGroupAction({
   const [confirming, setConfirming] = useState(false);
   const { busy, leave } = useLeaveGroup(group.id, onUnauthenticated);
 
-  async function confirmLeave() {
-    const code = await leave();
-    if (code === undefined) onLeft(group);
-    return code;
-  }
-
   return (
     <>
       <Button
@@ -38,8 +32,11 @@ export function LeaveGroupAction({
         <LeaveGroupDialog
           groupName={group.name}
           busy={busy}
-          onConfirm={confirmLeave}
-          onClose={() => setConfirming(false)}
+          onConfirm={leave}
+          onClose={(left) => {
+            setConfirming(false);
+            if (left) onLeft(group);
+          }}
         />
       )}
     </>

@@ -24,12 +24,6 @@ export function MakeGroupAdminAction({
     onUnauthenticated,
   );
 
-  async function confirmMake() {
-    const code = await make(member.userId);
-    if (code === undefined) setConfirming(false);
-    return code;
-  }
-
   return (
     <>
       <Button
@@ -45,8 +39,12 @@ export function MakeGroupAdminAction({
         <MakeGroupAdminDialog
           memberName={member.displayName}
           busy={busy}
-          onConfirm={confirmMake}
-          onClose={() => setConfirming(false)}
+          onConfirm={() => make(member.userId)}
+          onClose={(made) => {
+            setConfirming(false);
+            // After the exit: the reload turns the member into an admin and takes this row's button away.
+            if (made) onSettled();
+          }}
         />
       )}
     </>

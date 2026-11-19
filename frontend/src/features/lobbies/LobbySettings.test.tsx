@@ -88,7 +88,7 @@ const chooseMode = async (name: string) =>
   chooseOption(await modeSelect(), name);
 const confirm = async () =>
   fireEvent.click(
-    within(await screen.findByRole("dialog")).getByRole("button", {
+    within(await screen.findByRole("alertdialog")).getByRole("button", {
       name: en.lobbyModeChangeSubmit,
     }),
   );
@@ -177,9 +177,13 @@ describe("changing the mode", () => {
 
     await chooseMode("Duo");
 
-    const dialog = await screen.findByRole("dialog");
+    const dialog = await screen.findByRole("alertdialog");
     expect(within(dialog).getByText(en.lobbyModeChangeConfirm)).toBeTruthy();
     expect(client.setLobbyMode).not.toHaveBeenCalled();
+    // The list gives focus back to its field as it closes; Keep must keep it.
+    expect(document.activeElement).toBe(
+      within(dialog).getByRole("button", { name: en.lobbyModeChangeKeep }),
+    );
   });
 
   it("sends the mode with the mode that was shown, then loads the lobby again", async () => {
@@ -195,7 +199,7 @@ describe("changing the mode", () => {
       "m-duo",
       "m-raid",
     );
-    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(screen.queryByRole("alertdialog")).toBeNull();
     expect(await screen.findByText(en.lobbySettingsSaved)).toBeTruthy();
     const mode = await modeSelect();
     await waitFor(() => expect(document.activeElement).toBe(mode));
@@ -222,16 +226,26 @@ describe("changing the mode", () => {
     await chooseMode("Duo");
 
     fireEvent.click(
-      within(await screen.findByRole("dialog")).getByRole("button", {
+      within(await screen.findByRole("alertdialog")).getByRole("button", {
         name: en.lobbyModeChangeKeep,
       }),
     );
 
-    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
     expect(client.setLobbyMode).not.toHaveBeenCalled();
   });
 
-  it("explains a changed lobby, loads it again and focuses the mode", async () => {
+  /** The refusal, read inside the open dialog. */
+  const dialogAlert = async () =>
+    within(await screen.findByRole("alertdialog")).findByRole("alert");
+  const keep = () =>
+    fireEvent.click(
+      within(screen.getByRole("alertdialog")).getByRole("button", {
+        name: en.lobbyModeChangeKeep,
+      }),
+    );
+
+  it("explains a changed lobby in the dialog, loads it again and focuses the mode after Keep", async () => {
     const { onChanged } = renderSettings(
       {},
       {
@@ -244,17 +258,17 @@ describe("changing the mode", () => {
 
     await confirm();
 
-    const alert = await screen.findByRole("alert");
-    expect(alert.textContent).toBe(en.lobbyErrors.lobby_changed);
+    expect((await dialogAlert()).textContent).toBe(
+      en.lobbyErrors.lobby_changed,
+    );
     expect(onChanged).toHaveBeenCalled();
+    keep();
     const mode = await modeSelect();
     await waitFor(() => expect(document.activeElement).toBe(mode));
-    expect((await modeSelect()).getAttribute("aria-describedby")).toContain(
-      alert.id,
-    );
+    expect(screen.queryByRole("alert")).toBeNull();
   });
 
-  it("explains that the new mode has a lower limit than the players", async () => {
+  it("keeps a refused mode change in the dialog and changes nothing", async () => {
     const { onChanged } = renderSettings(
       {},
       {
@@ -267,30 +281,40 @@ describe("changing the mode", () => {
 
     await confirm();
 
-    expect((await screen.findByRole("alert")).textContent).toBe(
+    expect((await dialogAlert()).textContent).toBe(
       en.lobbyErrors.lobby_has_more_players,
     );
+    expect(screen.getByRole("alertdialog")).toBeTruthy();
     expect(onChanged).not.toHaveBeenCalled();
+    keep();
+    const mode = await modeSelect();
+    await waitFor(() => expect(document.activeElement).toBe(mode));
+    // Closed as not confirmed: no saved status, and the field still shows the old mode.
+    expect(screen.queryByText(en.lobbySettingsSaved)).toBeNull();
+    expect(mode.textContent).toContain("Raid");
   });
 
   it.each([
     ["lobby_has_ended", en.errors.lobby_has_ended],
     ["not_allowed", en.lobbySettingsNotPlayer],
     ["invalid_mode", en.lobbyErrors.invalid_mode],
-  ])("says %s in plain text and does not reload", async (code, text) => {
-    const { onChanged } = renderSettings(
-      {},
-      {
-        setLobbyMode: vi.fn(() => Promise.reject(new ApiError(403, code))),
-      },
-    );
-    await chooseMode("Duo");
+  ])(
+    "says %s in plain text in the dialog and does not reload",
+    async (code, text) => {
+      const { onChanged } = renderSettings(
+        {},
+        {
+          setLobbyMode: vi.fn(() => Promise.reject(new ApiError(403, code))),
+        },
+      );
+      await chooseMode("Duo");
 
-    await confirm();
+      await confirm();
 
-    expect((await screen.findByRole("alert")).textContent).toBe(text);
-    expect(onChanged).not.toHaveBeenCalled();
-  });
+      expect((await dialogAlert()).textContent).toBe(text);
+      expect(onChanged).not.toHaveBeenCalled();
+    },
+  );
 });
 
 describe("the activity", () => {

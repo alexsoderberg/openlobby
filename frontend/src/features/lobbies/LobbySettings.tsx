@@ -115,9 +115,8 @@ function SettingsSection({
 }
 
 /**
- * One change at a time: runs it, keeps what it ended in, and moves focus to the control it was about (the
- * dialog has left the page by then). A set game takes the game control off the page on the reload, so focus
- * goes to the game's result instead.
+ * One change at a time: runs it, keeps what it ended in, and moves focus to the control it was about. A set game
+ * takes the game control off the page on the reload, so focus goes to the game's result instead.
  */
 function useSettingChange(
   root: RefObject<HTMLElement | null>,
@@ -139,19 +138,18 @@ function useSettingChange(
       ?.focus();
   }, [outcome, root]);
 
-  /** `settled` runs before the outcome is shown, so a dialog is gone when focus moves. */
-  async function apply(
-    field: Field,
-    call: () => Promise<void>,
-    settled?: () => void,
-  ) {
+  /** Runs a change and loads the lobby again when that is due; resolves to the error code of a refusal. */
+  async function send(call: () => Promise<void>) {
     setOutcome(undefined);
     const code = await run(call);
-    settled?.();
-    setOutcome({ field, code });
     if (reloads(code)) onChanged();
+    return code;
   }
-  return { busy, outcome, apply };
+
+  async function apply(field: Field, call: () => Promise<void>) {
+    setOutcome({ field, code: await send(call) });
+  }
+  return { busy, outcome, setOutcome, send, apply };
 }
 
 type Change = ReturnType<typeof useSettingChange>;
@@ -204,6 +202,8 @@ function SettingsForm({
   modes,
   busy,
   outcome,
+  setOutcome,
+  send,
   apply,
 }: Props & Change & { modes: GameMode[] }) {
   const m = useMessages();
@@ -213,16 +213,7 @@ function SettingsForm({
   const activities =
     modes.find((mode) => mode.id === lobby.modeId)?.activities ?? [];
   const errorFor = (field: Field) => errorIdOf(id, field, outcome);
-
-  async function changeMode(mode: GameMode) {
-    await apply(
-      "mode",
-      () => api.setLobbyMode(groupId, lobby.id, mode.id, lobby.modeId ?? null),
-      () => setPending(undefined),
-    );
-    // A refusal is read beside the control, so the dialog closes and never keeps one.
-    return undefined;
-  }
+  const refusalText = useRefusalText();
 
   return (
     <div className="group-form">
@@ -231,10 +222,10 @@ function SettingsForm({
         lobby={lobby}
         modes={modes}
         disabled={busy}
-        errorId={errorFor("mode")}
         onChoose={setPending}
       />
-      <Result field="mode" outcome={outcome} errorId={errorFor("mode")} />
+      {/* Only a saved mode: a refused one is read in its dialog. */}
+      <Result field="mode" outcome={outcome} />
       {activities.length > 0 && (
         <>
           <ActivitySelect
@@ -266,8 +257,24 @@ function SettingsForm({
           submitIcon="edit"
           keepLabel={m.lobbyModeChangeKeep}
           busy={busy}
-          onConfirm={() => changeMode(pending)}
-          onClose={() => setPending(undefined)}
+          // A refusal stays in the dialog; only a saved mode is reported beside the control, once it has closed.
+          onConfirm={() =>
+            send(() =>
+              api.setLobbyMode(
+                groupId,
+                lobby.id,
+                pending.id,
+                lobby.modeId ?? null,
+              ),
+            )
+          }
+          toMessage={refusalText}
+          onClose={(changed) => {
+            setPending(undefined);
+            if (changed) setOutcome({ field: "mode" });
+            // The dialog was opened from the list's option, which is gone, so focus goes back to the mode control.
+            document.getElementById(`${id}-mode`)?.focus();
+          }}
         />
       )}
     </div>
@@ -279,14 +286,12 @@ function ModeSelect({
   lobby,
   modes,
   disabled,
-  errorId,
   onChoose,
 }: {
   id: string;
   lobby: LobbyDetail;
   modes: GameMode[];
   disabled: boolean;
-  errorId?: string;
   onChoose: (mode: GameMode | undefined) => void;
 }) {
   const m = useMessages();
@@ -294,7 +299,7 @@ function ModeSelect({
   return (
     <LobbyField id={id} label={m.lobbyModeLabel} hint={m.lobbyModeChangeHint}>
       <Select
-        {...fieldProps(id, true, errorId)}
+        {...fieldProps(id, true)}
         value={lobby.modeId ?? ""}
         disabled={disabled}
         onValueChange={(value) =>
@@ -369,6 +374,7 @@ function Result({
   errorId?: string;
 }) {
   const m = useMessages();
+  const refusalText = useRefusalText();
   if (outcome?.field !== field) return null;
   const focusable =
     field === "game" ? { tabIndex: -1, "data-result": field } : {};
@@ -380,11 +386,18 @@ function Result({
     );
   return (
     <p id={errorId} role="alert" className="field-error" {...focusable}>
-      {outcome.code === NOT_ALLOWED
-        ? m.lobbySettingsNotPlayer
-        : outcome.code === INVALID_GAME
-          ? m.lobbyGameSetInvalid
-          : toLobbyMessage(outcome.code)}
+      {refusalText(outcome.code)}
     </p>
   );
+}
+
+/** The lobby settings' words for a refused change, beside its control or in the mode dialog. */
+function useRefusalText() {
+  const m = useMessages();
+  return (code: string) =>
+    code === NOT_ALLOWED
+      ? m.lobbySettingsNotPlayer
+      : code === INVALID_GAME
+        ? m.lobbyGameSetInvalid
+        : toLobbyMessage(code);
 }

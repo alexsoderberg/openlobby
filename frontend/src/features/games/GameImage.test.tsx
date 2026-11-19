@@ -169,7 +169,7 @@ describe("game logo in the game form", () => {
     });
     expect(remove.dataset.variant).toBe("danger");
     fireEvent.click(remove);
-    const dialog = await screen.findByRole("dialog", {
+    const dialog = await screen.findByRole("alertdialog", {
       name: en.gameImageRemoveHeading.logo("Catan"),
     });
     expect(client.removeGameImage).not.toHaveBeenCalled();
@@ -197,7 +197,7 @@ describe("game logo in the game form", () => {
     fireEvent.click(
       within(field).getByRole("button", { name: en.gameImageRemove }),
     );
-    const dialog = await screen.findByRole("dialog");
+    const dialog = await screen.findByRole("alertdialog");
     fireEvent.click(
       within(dialog).getByRole("button", { name: en.gameImageRemoveSubmit }),
     );
@@ -278,7 +278,7 @@ describe("game cover in the game form", () => {
     fireEvent.click(
       within(field).getByRole("button", { name: en.gameImageRemove }),
     );
-    const dialog = await screen.findByRole("dialog", {
+    const dialog = await screen.findByRole("alertdialog", {
       name: en.gameImageRemoveHeading.cover("Catan"),
     });
     fireEvent.click(

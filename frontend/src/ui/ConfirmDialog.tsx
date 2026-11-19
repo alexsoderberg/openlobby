@@ -1,14 +1,24 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import type { ChangeResult } from "../api";
 import { toUserMessage } from "../i18n";
 import { Alert } from "./Alert";
+import { Button } from "./Button";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogTitle,
+} from "./Dialog";
 import { Icon, type IconName } from "./Icon";
 
 /**
- * A modal confirmation, so the page behind is inert and Escape closes it. The browser returns focus to the button
- * that opened it. A refusal stays in the dialog, where it is read. `onConfirm` resolves to the error code of a
- * failure; after a success the owner has already removed the dialog. Keep gets the first focus, so Enter right
- * after opening does not run the action. `danger` marks a destructive action (ADR 0021).
+ * A modal confirmation on Radix AlertDialog (ADR 0023 point 5): the page behind is inert, and Keep or Escape
+ * close it; a click outside does nothing. Keep gets the first focus, so Enter right after opening does not run
+ * the action. `onConfirm` resolves to the error code of a refusal, which stays in the dialog, where it is read,
+ * in the words of `toMessage`; a success closes it. The dialog keeps its own open state so its exit motion can
+ * run: `onClose` comes after the exit, with `confirmed` true after a success, and the owner removes the dialog and
+ * acts there. Focus is back on the opener by then, if it is still on the page. `danger` marks a destructive
+ * action (ADR 0021).
  */
 export function ConfirmDialog({
   heading,
@@ -20,6 +30,7 @@ export function ConfirmDialog({
   busy,
   onConfirm,
   onClose,
+  toMessage = toUserMessage,
 }: {
   heading: string;
   body: string;
@@ -29,46 +40,80 @@ export function ConfirmDialog({
   keepLabel: string;
   busy: boolean;
   onConfirm: () => ChangeResult;
-  onClose: () => void;
+  onClose: (confirmed: boolean) => void;
+  /** The text of a refusal code, for an owner whose form words some codes its own way. */
+  toMessage?: (code: string) => string;
 }) {
-  const headingId = useId();
-  const dialogRef = useRef<HTMLDialogElement>(null);
+  const [open, setOpen] = useState(true);
+  const [running, setRunning] = useState(false);
   const [errorCode, setErrorCode] = useState<string>();
+  const confirmed = useRef(false);
+  const keepRef = useRef<HTMLButtonElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  // Read once, before Radix moves focus to Keep. No Radix Trigger opened it, so Radix has nothing to return to.
+  const [opener] = useState(() => document.activeElement);
 
-  useEffect(() => {
-    dialogRef.current?.showModal();
-  }, []);
+  // While the action runs the dialog stays, so the owner never misses the outcome of a change it asked for.
+  const dismiss = () => {
+    if (!running) setOpen(false);
+  };
+
+  async function confirm() {
+    // Both buttons are disabled while the action runs, which would drop focus out of the dialog.
+    contentRef.current?.focus();
+    setRunning(true);
+    try {
+      const code = await onConfirm();
+      setErrorCode(code);
+      confirmed.current = code === undefined;
+      if (confirmed.current) setOpen(false);
+    } finally {
+      setRunning(false);
+    }
+  }
 
   return (
-    <dialog
-      ref={dialogRef}
-      className="dialog"
-      aria-labelledby={headingId}
-      onClose={onClose}
-    >
-      <h2 id={headingId}>{heading}</h2>
-      <p>{body}</p>
-      {errorCode !== undefined && <Alert>{toUserMessage(errorCode)}</Alert>}
-      <div className="form-actions">
-        <button
-          type="button"
-          className={danger ? "button button--danger" : "button"}
-          disabled={busy}
-          onClick={async () => setErrorCode(await onConfirm())}
-        >
-          <Icon name={submitIcon} />
-          {submitLabel}
-        </button>
-        <button
-          type="button"
-          className="button button--secondary"
-          autoFocus
-          onClick={() => dialogRef.current?.close()}
-        >
-          <Icon name="close" />
-          {keepLabel}
-        </button>
-      </div>
-    </dialog>
+    <AlertDialog open={open} onOpenChange={(next) => next || dismiss()}>
+      <AlertDialogContent
+        ref={contentRef}
+        // Radix would focus the first button, the action; Keep goes first (ADR 0023 Amendment 2026-11-19).
+        onOpenAutoFocus={(event) => {
+          event.preventDefault();
+          keepRef.current?.focus();
+        }}
+        onCloseAutoFocus={(event) => {
+          event.preventDefault();
+          if (opener instanceof HTMLElement && opener.isConnected) {
+            opener.focus();
+          }
+          onClose(confirmed.current);
+        }}
+      >
+        <AlertDialogTitle>{heading}</AlertDialogTitle>
+        <AlertDialogDescription>{body}</AlertDialogDescription>
+        {errorCode !== undefined && <Alert>{toMessage(errorCode)}</Alert>}
+        <div className="form-actions">
+          <Button
+            type="button"
+            variant={danger ? "danger" : "primary"}
+            disabled={busy || running}
+            onClick={confirm}
+          >
+            <Icon name={submitIcon} />
+            {submitLabel}
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            ref={keepRef}
+            disabled={running}
+            onClick={dismiss}
+          >
+            <Icon name="close" />
+            {keepLabel}
+          </Button>
+        </div>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
