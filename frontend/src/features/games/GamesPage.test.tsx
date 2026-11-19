@@ -502,9 +502,12 @@ describe("change", () => {
 describe("remove", () => {
   async function openDialog() {
     await screen.findByText("Catan");
-    fireEvent.click(
-      screen.getByRole("button", { name: `${en.gameRemove}, Catan` }),
-    );
+    const remove = screen.getByRole("button", {
+      name: `${en.gameRemove}, Catan`,
+    });
+    // A destructive action is always the danger variant (ADR 0021).
+    expect(remove.dataset.variant).toBe("danger");
+    fireEvent.click(remove);
     return screen.findByRole("dialog", {
       name: en.gameRemoveHeading("Catan"),
     });
