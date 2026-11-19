@@ -1279,7 +1279,7 @@ a:where(:not([data-slot="button"])) {
   animation: view-forward var(--duration-page) var(--ease-out) both;
 }
 
-/* A button in a form grid keeps its own width instead of stretching across the column: the submit, the add buttons
+/* A button in a form grid keeps its own width instead of stretching across the column: the Create invite link submit, the add buttons
    of a structure group and Remove mode. */
 .group-form > [data-slot="button"],
 .group-form :is(.structure, .mode-view) > [data-slot="button"] {
