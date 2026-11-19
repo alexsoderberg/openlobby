@@ -1,6 +1,6 @@
 import type { AuthUser } from "../../api";
 import { useMessages } from "../../i18n";
-import { Avatar, ErrorAlert, Icon, Panel } from "../../ui";
+import { Avatar, Button, ErrorAlert, Icon, Panel } from "../../ui";
 import { GAMES_PATH } from "../games";
 import { PreferredGameRoles } from "./PreferredGameRoles";
 
@@ -48,14 +48,10 @@ export function ProfilePage({
         )}
         <Panel>
           {logoutError && <ErrorAlert code={logoutError} onRetry={onLogout} />}
-          <button
-            type="button"
-            className="button button--secondary"
-            onClick={onLogout}
-          >
+          <Button variant="secondary" type="button" onClick={onLogout}>
             <Icon name="logOut" />
             {m.logOut}
-          </button>
+          </Button>
         </Panel>
       </div>
     </>

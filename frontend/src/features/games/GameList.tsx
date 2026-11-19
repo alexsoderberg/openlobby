@@ -1,7 +1,7 @@
 import type { ChangeResult, Game, GameInput } from "../../api";
 import { GenreName } from "../../genres";
 import { useMessages } from "../../i18n";
-import { ErrorAlert, GameLogo, Icon, IconButton } from "../../ui";
+import { Button, ErrorAlert, GameLogo, Icon, IconButton } from "../../ui";
 import { GameForm } from "./GameForm";
 import { GameImageField } from "./GameImageField";
 import type { GamesState } from "./useGames";
@@ -91,15 +91,15 @@ function GameRow({
         subject={game.name}
         onClick={onEdit}
       />
-      <button
+      <Button
+        variant="danger"
         type="button"
-        className="button button--danger"
         aria-label={`${m.gameRemove}, ${game.name}`}
         onClick={onRemove}
       >
         <Icon name="remove" />
         {m.gameRemove}
-      </button>
+      </Button>
     </li>
   );
 }

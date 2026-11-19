@@ -7,6 +7,7 @@ import {
 import { useMessages } from "../../i18n";
 import {
   Alert,
+  Button,
   ErrorAlert,
   GameLogo,
   GameRoleName,
@@ -147,15 +148,10 @@ function ChoiceForm({
         )
       )}
       <div className="form-actions">
-        <button
-          ref={submitRef}
-          type="submit"
-          className="button"
-          disabled={busy || reloading}
-        >
+        <Button ref={submitRef} type="submit" disabled={busy || reloading}>
           <Icon name="save" />
           {m.save}
-        </button>
+        </Button>
       </div>
       <p ref={statusRef} tabIndex={-1} role="status" className="status">
         {outcome && !outcome.code && m.saved}
