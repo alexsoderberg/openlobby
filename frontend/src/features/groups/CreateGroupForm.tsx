@@ -73,11 +73,7 @@ export function CreateGroupForm({
           </p>
         )}
         <div className="form-actions">
-          <Button
-            type="submit"
-
-            disabled={state.status === "saving"}
-          >
+          <Button type="submit" disabled={state.status === "saving"}>
             <Icon name="plus" />
             {m.createGroupSubmit}
           </Button>

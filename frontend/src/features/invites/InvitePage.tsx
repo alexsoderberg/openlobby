@@ -74,12 +74,7 @@ function Invitation({
         {joinState.status === "failed" && (
           <Alert>{toUserMessage(joinState.code)}</Alert>
         )}
-        <Button
-          type="button"
-
-          disabled={joining}
-          onClick={onJoin}
-        >
+        <Button type="button" disabled={joining} onClick={onJoin}>
           <Icon name="join" />
           {m.joinGroupSubmit}
         </Button>
