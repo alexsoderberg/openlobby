@@ -110,9 +110,7 @@ describe("button hover rules in global.css", () => {
     ({ selector }) =>
       selector.includes(":hover") &&
       // A :not() that leaves buttons out (the global link rule) does not make a rule a button rule.
-      /\[data-slot="button"\]|\.button\b/.test(
-        selector.replace(/:not\([^)]*\)/g, ""),
-      ),
+      selector.replace(/:not\([^)]*\)/g, "").includes('[data-slot="button"]'),
   );
 
   it("finds them", () => {
@@ -148,10 +146,9 @@ describe("button glow and touch height in global.css", () => {
     );
   });
 
-  it("gives secondary and ghost no glow, the legacy secondary class too", () => {
+  it("gives secondary and ghost no glow", () => {
     for (const name of ["secondary", "ghost"])
       expect(glowRule(variant(name))).toMatch(/content: none/);
-    expect(glowRule(".button--secondary")).toMatch(/content: none/);
   });
 
   it("has no separate touch button size: coarse pointers use --size-tap", () => {
