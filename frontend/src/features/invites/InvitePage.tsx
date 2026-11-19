@@ -1,6 +1,6 @@
 import type { InviteInfo } from "../../api";
 import { toUserMessage, useMessages } from "../../i18n";
-import { Alert, ErrorAlert, Icon, Panel } from "../../ui";
+import { Alert, Button, ErrorAlert, Icon, Panel } from "../../ui";
 import { GROUPS_PATH } from "../groups";
 import { INVITE_INVALID } from "./inviteErrors";
 import { useInvite } from "./useInvite";
@@ -74,15 +74,15 @@ function Invitation({
         {joinState.status === "failed" && (
           <Alert>{toUserMessage(joinState.code)}</Alert>
         )}
-        <button
+        <Button
           type="button"
-          className="button"
+
           disabled={joining}
           onClick={onJoin}
         >
           <Icon name="join" />
           {m.joinGroupSubmit}
-        </button>
+        </Button>
         <p role="status" className="status">
           {joining && m.joinGroupBusy}
         </p>

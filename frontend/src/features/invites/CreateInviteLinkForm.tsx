@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { INVITE_MAX_USES_DEFAULT, INVITE_MAX_USES_LIMIT } from "../../api";
 import { useMessages } from "../../i18n";
-import { Icon, Select } from "../../ui";
+import { Button, Icon, Select } from "../../ui";
 
 const MAX_USES_OPTIONS = Array.from(
   { length: INVITE_MAX_USES_LIMIT },
@@ -45,10 +45,10 @@ export function CreateInviteLinkForm({
       <p id={HINT_ID} className="form-hint">
         {m.inviteMaxUsesHint}
       </p>
-      <button type="submit" className="button" disabled={busy}>
+      <Button type="submit" disabled={busy}>
         <Icon name="plus" />
         {m.createInviteLinkSubmit}
-      </button>
+      </Button>
     </form>
   );
 }

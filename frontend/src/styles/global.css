@@ -1207,7 +1207,7 @@ a:where(:not([data-slot="button"])) {
   text-align: start;
 }
 
-.group-form .button {
+.group-form :is(.button, [data-slot="button"]) {
   justify-self: start;
 }
 

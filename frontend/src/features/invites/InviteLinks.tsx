@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import type { Group } from "../../api";
 import { toUserMessage, useMessages } from "../../i18n";
-import { Alert, Icon } from "../../ui";
+import { Alert, Button, Icon } from "../../ui";
 import { CreateInviteLinkForm } from "./CreateInviteLinkForm";
 import { InviteLinkList } from "./InviteLinkList";
 import { useCopyInviteLink } from "./useCopyInviteLink";
@@ -70,14 +70,10 @@ export function InviteLinks({
           </span>
         )}
       </p>
-      <button
-        type="button"
-        className="button button--secondary"
-        onClick={onClose}
-      >
+      <Button type="button" variant="secondary" onClick={onClose}>
         <Icon name="close" />
         {m.inviteClose}
-      </button>
+      </Button>
     </>
   );
 }
