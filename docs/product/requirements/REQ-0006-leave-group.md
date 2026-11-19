@@ -43,4 +43,4 @@ F-002 (Create and join group) is the opposite: membership starts there and ends 
 - ASSUMPTION (rejoin): A member who joins again is not an admin, even if they were before leaving. The admin role changes owner only when the last admin leaves.
 
 ## Amendment 2026-11-18 (REQ-0028, item 7: placement)
-DECISION, user, 2026-11-18. The "Leave group" button is no longer in the Group view header. It is the last item on the Group view page: below the Member list and the Group feed in the side column layout (98rem or wider), and after the Member list below 98rem. It is a `danger` button. The confirmation and every rule above stay as they are. See REQ-0028.
+DECISION, user, 2026-11-18. The "Leave group" button is no longer in the Group view header. It is the last item on the Group view page: below the Member list and the Group feed in the side column layout (98rem or wider), and after the Member list below 98rem. It is a `danger` button. The confirmation and every rule above stay as they are. See REQ-0028. Implemented 2026-11-18 (PR #145).

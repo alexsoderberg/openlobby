@@ -224,4 +224,4 @@ Status stays Implemented. Decided by the user on 2026-11-17; the details are in 
 - Desktop and the Day list are not changed by this amendment.
 
 ## Amendment 2026-11-18 (REQ-0028, item 6: the word "Home")
-DECISION, user, 2026-11-18. The Home tab, the Home control of the Group rail and the heading of the Dashboard page show the same visible word, "Home". The word itself is an ASSUMPTION (product owner) that the user may change. The glossary term "Dashboard" stays for code and documents. See REQ-0028.
+DECISION, user, 2026-11-18. The Home tab, the Home control of the Group rail and the heading of the Dashboard page show the same visible word, "Home". The word itself is an ASSUMPTION (product owner) that the user may change. The glossary term "Dashboard" stays for code and documents. See REQ-0028. Implemented 2026-11-18 (PR #145).

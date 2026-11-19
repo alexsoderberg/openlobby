@@ -128,7 +128,7 @@ REQ-0028 (Visual polish decisions 2026-11-18, DECISION, user, 2026-11-18): eight
 
 | Order | Requirement | Title | Priority | Depends on |
 |---|---|---|---|---|
-| A3g | REQ-0028 | Visual polish decisions 2026-11-18: gold for action and state, stripe on week blocks only, Space Grotesk landing headline, no glow on secondary buttons, Home label, Leave group in the Member list, lobby page order, 44 px touch buttons | Should | ADR 0021, ADR 0023 (Amendment 2026-11-17), ADR 0016 and ADR 0026 amended first (architect); ADR 0023 PR B3 and ADR 0027 PR A (shared `global.css` and Button); REQ-0026 cover PR2 (A3d) |
+| A3g | REQ-0028 | Visual polish decisions 2026-11-18: gold for action and state, stripe on week blocks only, Space Grotesk landing headline, no glow on secondary buttons, Home label, Leave group in the Member list, lobby page order, 44 px touch buttons. Delivered 2026-11-18: fix PR 1 #141, items 1 to 8 #145 (docs #142, #143, #144) | Should | ADR 0021, ADR 0023 (Amendment 2026-11-17), ADR 0016 and ADR 0026 amended first (architect); ADR 0023 PR B3 and ADR 0027 PR A (shared `global.css` and Button); REQ-0026 cover PR2 (A3d) |
 
 Suggested order of small PRs (product owner, 2026-11-18; the user may change it):
 1. Home label (item 6). Text only.

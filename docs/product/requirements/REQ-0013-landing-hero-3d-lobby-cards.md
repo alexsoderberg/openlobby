@@ -129,4 +129,4 @@ Acceptance criteria (addition):
 Out of scope (addition): replacing the removed preview with another demo or preview on the landing page.
 
 ## Amendment 2026-11-18 (REQ-0028, item 3: landing headline font)
-DECISION, user, 2026-11-18. The landing headline is set in Space Grotesk 700, the app's heading font, not Cormorant Garamond. The serif font files are dropped. The hero's text criteria above are unchanged. See REQ-0028 item 3.
+DECISION, user, 2026-11-18. The landing headline is set in Space Grotesk 700, the app's heading font, not Cormorant Garamond. The serif font files are dropped. The hero's text criteria above are unchanged. See REQ-0028 item 3. Implemented 2026-11-18 (PR #145).

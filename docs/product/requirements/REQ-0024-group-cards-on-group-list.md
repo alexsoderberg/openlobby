@@ -96,7 +96,7 @@ Navigation and accessibility:
 - Not a duplicate of any feature: no feature shows the member count or member avatars of a group in the Group list. The product owner's verdict is NEW (F-043), with the overlap with F-028 recorded above.
 
 ## Amendment 2026-11-18 (REQ-0028, items 1 and 2)
-DECISION, user, 2026-11-18. A Group card has no gold wash behind it, and its lobby line has no genre accent stripe. The genre icon, the genre name and the tint or pattern of the lobby line stay. Member counts are in the text colour with tabular figures. See REQ-0028.
+DECISION, user, 2026-11-18. A Group card has no gold wash behind it, and its lobby line has no genre accent stripe. The genre icon, the genre name and the tint or pattern of the lobby line stay. Member counts are in the text colour with tabular figures. See REQ-0028. Implemented 2026-11-18 (PR #145).
 
 ## Open questions
 None. All nine questions are answered (see Decisions). Items marked ASSUMPTION are for the UI expert and the architect to settle within the criteria.
