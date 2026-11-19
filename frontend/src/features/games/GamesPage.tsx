@@ -86,7 +86,7 @@ function RemoveGame({ admin }: { admin: Admin }) {
       game={removing}
       busy={admin.busy}
       onConfirm={() => admin.confirmRemove(removing.id)}
-      onClose={() => admin.setRemoving(undefined)}
+      onClose={admin.closeRemove}
     />
   );
 }

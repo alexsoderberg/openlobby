@@ -156,12 +156,6 @@ function DeleteLobby({
   const [confirming, setConfirming] = useState(false);
   const { busy, run } = useChangeAction(onUnauthenticated);
 
-  async function remove() {
-    const code = await run(() => api.deleteLobby(groupId, lobby.id));
-    if (code === undefined) onDeleted();
-    return code;
-  }
-
   return (
     <>
       <Button
@@ -176,8 +170,11 @@ function DeleteLobby({
         <DeleteLobbyDialog
           label={lobbyLabel(lobby, m)}
           busy={busy}
-          onConfirm={remove}
-          onClose={() => setConfirming(false)}
+          onConfirm={() => run(() => api.deleteLobby(groupId, lobby.id))}
+          onClose={(deleted) => {
+            setConfirming(false);
+            if (deleted) onDeleted();
+          }}
         />
       )}
     </>

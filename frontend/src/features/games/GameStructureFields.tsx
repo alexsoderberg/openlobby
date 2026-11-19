@@ -293,13 +293,15 @@ export function ModeView({
             danger
             keepLabel={removal.keepLabel}
             busy={false}
-            onConfirm={async () => {
-              setDraft(removal.apply);
-              requestFocus(removal.focusId);
+            onConfirm={async () => undefined}
+            // After the exit: removing the mode closes this view, which would cut the dialog's exit short.
+            onClose={(confirmed) => {
+              if (confirmed) {
+                setDraft(removal.apply);
+                requestFocus(removal.focusId);
+              }
               setRemoval(undefined);
-              return undefined;
             }}
-            onClose={() => setRemoval(undefined)}
           />
         )}
       </section>

@@ -1,5 +1,4 @@
 import { useState, type RefObject } from "react";
-import { flushSync } from "react-dom";
 import type { Game, GameInput } from "../../api";
 import { GAME_NOT_FOUND } from "./gameErrors";
 import { useGameChanges } from "./useGameChanges";
@@ -23,11 +22,7 @@ export function useGameAdmin(
 
   function closeUnlessFailed(code: string | undefined): string | undefined {
     if (code !== undefined && code !== GAME_NOT_FOUND) return code;
-    // The modal dialog makes the page inert, so the status takes focus only once the dialog is unmounted.
-    flushSync(() => {
-      setEditingId(undefined);
-      setRemoving(undefined);
-    });
+    setEditingId(undefined);
     statusRef.current?.focus();
     return undefined;
   }
@@ -42,6 +37,11 @@ export function useGameAdmin(
     setEditingId,
     removing,
     setRemoving,
+    /** After the confirm dialog's exit; a success (or a vanished game) moves focus to the status. */
+    closeRemove: (removed: boolean) => {
+      setRemoving(undefined);
+      if (removed) statusRef.current?.focus();
+    },
     add: async (input: GameInput) => {
       let addedId: string | undefined;
       const code = closeUnlessFailed(
@@ -52,7 +52,10 @@ export function useGameAdmin(
     },
     save: async (gameId: string, input: GameInput) =>
       closeUnlessFailed(await changes.replace(gameId, input)),
-    confirmRemove: async (gameId: string) =>
-      closeUnlessFailed(await changes.remove(gameId)),
+    // A vanished game closes the dialog too: the page shows that message itself.
+    confirmRemove: async (gameId: string) => {
+      const code = await changes.remove(gameId);
+      return code === GAME_NOT_FOUND ? undefined : code;
+    },
   };
 }

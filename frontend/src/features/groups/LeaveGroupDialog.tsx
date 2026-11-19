@@ -9,7 +9,7 @@ export function LeaveGroupDialog({
   groupName: string;
   busy: boolean;
   onConfirm: () => ChangeResult;
-  onClose: () => void;
+  onClose: (left: boolean) => void;
 }) {
   const m = useMessages();
   return (

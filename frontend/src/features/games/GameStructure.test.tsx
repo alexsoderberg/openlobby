@@ -97,7 +97,9 @@ function fillName(scope: HTMLElement, name: string) {
 
 async function answer(name: string) {
   fireEvent.click(
-    within(await screen.findByRole("dialog")).getByRole("button", { name }),
+    within(await screen.findByRole("alertdialog")).getByRole("button", {
+      name,
+    }),
   );
 }
 
@@ -295,21 +297,30 @@ describe("remove a mode or an activity", () => {
     const form = await editForm("Dungeons");
     const mode = openMode(form, "Raid");
 
-    click(mode, `${en.gameModeRemove}, Raid`);
-    await screen.findByRole("dialog", {
+    const remove = within(mode).getByRole("button", {
+      name: `${en.gameModeRemove}, Raid`,
+    });
+    remove.focus();
+    fireEvent.click(remove);
+    await screen.findByRole("alertdialog", {
       name: en.gameModeRemoveHeading("Raid"),
     });
     await answer(en.gameModeRemoveKeep);
-    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    // The dialog tells its owner after the exit, as focus returns to the opener.
+    await waitFor(() => expect(document.activeElement).toBe(remove));
+    expect(screen.queryByRole("alertdialog")).toBeNull();
     expect(within(mode).getByDisplayValue("Raid")).toBeTruthy();
 
     click(mode, `${en.gameModeRemove}, Raid`);
     await answer(en.gameModeRemoveSubmit);
-    await waitFor(() => expect(within(form).queryByRole("region")).toBeNull());
-    expect(within(form).queryByRole("button", { name: "Raid" })).toBeNull();
-    expect(document.activeElement).toBe(
-      within(form).getByRole("button", { name: en.gameModeAdd }),
+    // The page is hidden while the dialog is open, so wait for the focus that follows the removal.
+    await waitFor(() =>
+      expect(document.activeElement).toBe(
+        within(form).getByRole("button", { name: en.gameModeAdd }),
+      ),
     );
+    expect(within(form).queryByRole("region")).toBeNull();
+    expect(within(form).queryByRole("button", { name: "Raid" })).toBeNull();
     expect(client.replaceGame).not.toHaveBeenCalled();
 
     click(form, en.gameEditSubmit);
@@ -387,7 +398,7 @@ describe("remove a mode or an activity", () => {
 
     await answer(en.gameActivityRemoveKeep);
 
-    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
     expect(within(mode).getByDisplayValue("Crypt")).toBeTruthy();
   });
 
@@ -397,7 +408,7 @@ describe("remove a mode or an activity", () => {
     const mode = openMode(form, "Raid");
 
     click(mode, `${en.gameActivityRemove}, Crypt`);
-    await screen.findByRole("dialog", {
+    await screen.findByRole("alertdialog", {
       name: en.gameActivityRemoveHeading("Crypt"),
     });
     expect(within(mode).getByDisplayValue("Crypt")).toBeTruthy();

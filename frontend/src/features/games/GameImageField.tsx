@@ -1,4 +1,3 @@
-import { flushSync } from "react-dom";
 import { useId, useRef, useState } from "react";
 import { gameImageUrl, type Game, type GameImageKind } from "../../api";
 import { toUserMessage, useMessages } from "../../i18n";
@@ -31,15 +30,6 @@ export function GameImageField({
   const [confirming, setConfirming] = useState(false);
   const image = useGameImage(game, kind, onChanged, onUnauthenticated);
   const { state } = image;
-
-  async function remove() {
-    const code = await image.remove();
-    if (code !== undefined) return code;
-    // The modal dialog makes the page inert, and its opener is gone: focus goes to the status once it is closed.
-    flushSync(() => setConfirming(false));
-    statusRef.current?.focus();
-    return undefined;
-  }
 
   return (
     <fieldset className="structure" aria-describedby={hintId}>
@@ -115,8 +105,12 @@ export function GameImageField({
           danger
           keepLabel={m.gameImageRemoveKeep}
           busy={image.busy}
-          onConfirm={remove}
-          onClose={() => setConfirming(false)}
+          onConfirm={image.remove}
+          onClose={(removed) => {
+            setConfirming(false);
+            // The opener went with the image, so focus goes to the status that tells what happened.
+            if (removed) statusRef.current?.focus();
+          }}
         />
       )}
     </fieldset>

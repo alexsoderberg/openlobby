@@ -48,7 +48,7 @@ const makeButton = () =>
 
 async function openDialog() {
   fireEvent.click(await makeButton());
-  return await screen.findByRole("dialog", {
+  return await screen.findByRole("alertdialog", {
     name: en.makeAdminHeading(sam.displayName),
   });
 }
@@ -112,7 +112,7 @@ describe("making a member group admin", () => {
     });
     confirm(await openDialog());
 
-    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
     expect(client.makeGroupAdmin).toHaveBeenCalledWith("g1", sam.userId);
     expect(client.getGroup).toHaveBeenCalledTimes(2);
     await waitFor(() =>

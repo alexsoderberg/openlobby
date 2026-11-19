@@ -9,7 +9,7 @@ export function DeleteGameDialog({
   game: Game;
   busy: boolean;
   onConfirm: () => ChangeResult;
-  onClose: () => void;
+  onClose: (removed: boolean) => void;
 }) {
   const m = useMessages();
   return (

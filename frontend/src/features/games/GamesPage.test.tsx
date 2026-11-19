@@ -508,7 +508,7 @@ describe("remove", () => {
     // A destructive action is always the danger variant (ADR 0021).
     expect(remove.dataset.variant).toBe("danger");
     fireEvent.click(remove);
-    return screen.findByRole("dialog", {
+    return screen.findByRole("alertdialog", {
       name: en.gameRemoveHeading("Catan"),
     });
   }
@@ -529,7 +529,7 @@ describe("remove", () => {
     await waitFor(() => expect(client.deleteGame).toHaveBeenCalledWith("g1"));
     const status = await screen.findByText(en.gameRemoved);
     await waitFor(() => expect(document.activeElement).toBe(status));
-    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(screen.queryByRole("alertdialog")).toBeNull();
   });
 
   it("keeps the game when the dialog is cancelled", async () => {
@@ -541,7 +541,7 @@ describe("remove", () => {
       within(dialog).getByRole("button", { name: en.gameRemoveKeep }),
     );
 
-    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
     expect(client.deleteGame).not.toHaveBeenCalled();
     expect(screen.getByText("Catan")).toBeTruthy();
   });
@@ -561,7 +561,7 @@ describe("remove", () => {
       en.errors.game_not_found,
     );
     expect(screen.getAllByRole("alert")).toHaveLength(1);
-    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(screen.queryByRole("alertdialog")).toBeNull();
   });
 
   it("keeps the list on screen while it refreshes after a removal", async () => {
@@ -596,7 +596,7 @@ describe("remove", () => {
       expect((await within(dialog).findByRole("alert")).textContent).toBe(
         en.errors[code],
       );
-      expect(screen.getByRole("dialog")).toBeTruthy();
+      expect(screen.getByRole("alertdialog")).toBeTruthy();
     },
   );
 });

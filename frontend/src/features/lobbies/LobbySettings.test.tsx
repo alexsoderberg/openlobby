@@ -88,7 +88,7 @@ const chooseMode = async (name: string) =>
   chooseOption(await modeSelect(), name);
 const confirm = async () =>
   fireEvent.click(
-    within(await screen.findByRole("dialog")).getByRole("button", {
+    within(await screen.findByRole("alertdialog")).getByRole("button", {
       name: en.lobbyModeChangeSubmit,
     }),
   );
@@ -177,9 +177,13 @@ describe("changing the mode", () => {
 
     await chooseMode("Duo");
 
-    const dialog = await screen.findByRole("dialog");
+    const dialog = await screen.findByRole("alertdialog");
     expect(within(dialog).getByText(en.lobbyModeChangeConfirm)).toBeTruthy();
     expect(client.setLobbyMode).not.toHaveBeenCalled();
+    // The list gives focus back to its field as it closes; Keep must keep it.
+    expect(document.activeElement).toBe(
+      within(dialog).getByRole("button", { name: en.lobbyModeChangeKeep }),
+    );
   });
 
   it("sends the mode with the mode that was shown, then loads the lobby again", async () => {
@@ -195,7 +199,7 @@ describe("changing the mode", () => {
       "m-duo",
       "m-raid",
     );
-    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(screen.queryByRole("alertdialog")).toBeNull();
     expect(await screen.findByText(en.lobbySettingsSaved)).toBeTruthy();
     const mode = await modeSelect();
     await waitFor(() => expect(document.activeElement).toBe(mode));
@@ -222,12 +226,12 @@ describe("changing the mode", () => {
     await chooseMode("Duo");
 
     fireEvent.click(
-      within(await screen.findByRole("dialog")).getByRole("button", {
+      within(await screen.findByRole("alertdialog")).getByRole("button", {
         name: en.lobbyModeChangeKeep,
       }),
     );
 
-    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
     expect(client.setLobbyMode).not.toHaveBeenCalled();
   });
 

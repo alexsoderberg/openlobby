@@ -110,9 +110,14 @@ export function Select({
     if (!event.defaultPrevented) repicked.current = true;
   };
 
-  function focusAfterTab(event: Event) {
+  function focusAfterClose(event: Event) {
     const step = tabStep.current;
     tabStep.current = 0;
+    // A pick that opened a confirm dialog has put focus in it; Radix would take it back to the field.
+    if (document.activeElement?.closest('[role="alertdialog"]')) {
+      event.preventDefault();
+      return;
+    }
     const trigger = document.getElementById(id);
     const next = step && trigger && nextInTabOrder(trigger, step);
     if (!next) return;
@@ -164,7 +169,7 @@ export function Select({
             tabStep.current = event.shiftKey ? -1 : 1;
             setOpen(false);
           }}
-          onCloseAutoFocus={focusAfterTab}
+          onCloseAutoFocus={focusAfterClose}
           onEscapeKeyDown={() => {
             repicked.current = false;
           }}

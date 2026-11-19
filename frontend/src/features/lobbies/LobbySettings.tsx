@@ -115,9 +115,8 @@ function SettingsSection({
 }
 
 /**
- * One change at a time: runs it, keeps what it ended in, and moves focus to the control it was about (the
- * dialog has left the page by then). A set game takes the game control off the page on the reload, so focus
- * goes to the game's result instead.
+ * One change at a time: runs it, keeps what it ended in, and moves focus to the control it was about. A set game
+ * takes the game control off the page on the reload, so focus goes to the game's result instead.
  */
 function useSettingChange(
   root: RefObject<HTMLElement | null>,
@@ -139,15 +138,9 @@ function useSettingChange(
       ?.focus();
   }, [outcome, root]);
 
-  /** `settled` runs before the outcome is shown, so a dialog is gone when focus moves. */
-  async function apply(
-    field: Field,
-    call: () => Promise<void>,
-    settled?: () => void,
-  ) {
+  async function apply(field: Field, call: () => Promise<void>) {
     setOutcome(undefined);
     const code = await run(call);
-    settled?.();
     setOutcome({ field, code });
     if (reloads(code)) onChanged();
   }
@@ -215,10 +208,8 @@ function SettingsForm({
   const errorFor = (field: Field) => errorIdOf(id, field, outcome);
 
   async function changeMode(mode: GameMode) {
-    await apply(
-      "mode",
-      () => api.setLobbyMode(groupId, lobby.id, mode.id, lobby.modeId ?? null),
-      () => setPending(undefined),
+    await apply("mode", () =>
+      api.setLobbyMode(groupId, lobby.id, mode.id, lobby.modeId ?? null),
     );
     // A refusal is read beside the control, so the dialog closes and never keeps one.
     return undefined;
@@ -267,7 +258,11 @@ function SettingsForm({
           keepLabel={m.lobbyModeChangeKeep}
           busy={busy}
           onConfirm={() => changeMode(pending)}
-          onClose={() => setPending(undefined)}
+          onClose={() => {
+            setPending(undefined);
+            // The dialog was opened from the list's option, which is gone, so focus goes back to the mode control.
+            document.getElementById(`${id}-mode`)?.focus();
+          }}
         />
       )}
     </div>

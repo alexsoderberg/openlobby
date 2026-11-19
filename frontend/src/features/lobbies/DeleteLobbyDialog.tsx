@@ -9,7 +9,7 @@ export function DeleteLobbyDialog({
   label: string;
   busy: boolean;
   onConfirm: () => ChangeResult;
-  onClose: () => void;
+  onClose: (deleted: boolean) => void;
 }) {
   const m = useMessages();
   return (

@@ -273,7 +273,7 @@ describe("changing the mode on the page", () => {
       "Ranked",
     );
     fireEvent.click(
-      within(await screen.findByRole("dialog")).getByRole("button", {
+      within(await screen.findByRole("alertdialog")).getByRole("button", {
         name: en.lobbyModeChangeSubmit,
       }),
     );
@@ -617,7 +617,7 @@ describe("deleting a lobby", () => {
     fireEvent.click(
       await screen.findByRole("button", { name: en.lobbyDelete }),
     );
-    return screen.findByRole("dialog", {
+    return screen.findByRole("alertdialog", {
       name: en.lobbyDeleteHeading("Catan"),
     });
   }
@@ -653,7 +653,7 @@ describe("deleting a lobby", () => {
       within(dialog).getByRole("button", { name: en.lobbyDeleteKeep }),
     );
 
-    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
     expect(client.deleteLobby).not.toHaveBeenCalled();
     expect(onDeleted).not.toHaveBeenCalled();
   });
