@@ -1,5 +1,6 @@
 # 0015. Landing 3D hero with three.js, lazy-loaded
 Status: Accepted (2026-11-07)
+Amended 2026-11-21 by ADR 0028 (REQ-0029, running order redesign): see the Amendment 2026-11-21 section at the end of this file.
 Amended by ADR 0016 (points 2, 4, 5, 6, 7 and 10: genre themes and the fill cycle)
 
 ## Context
@@ -137,3 +138,6 @@ export interface HeroScene {
 - Reusing the catalog message `lobbyPlayers` for the "x/y players" text stays as point 6 says. Reusing an existing message is not a hero name.
 
 **Consequences.** No change to the budgets (point 9), the modes (point 5), the lifecycle (point 7) or the accessibility rules (point 8). The file list of point 2 is replaced by the list above.
+
+## Amendment 2026-11-21 (ADR 0028, REQ-0029)
+- The hero keeps its 3D scene, lazy load and static fallback. It takes the light palette through the tokens; the colours are still read with `getComputedStyle`. Its cards lose the genre motif and the glow phase (ADR 0028 section 7, PR5b). Pointer, visibility and reduced-motion rules stay.

@@ -1,0 +1,71 @@
+<!-- Reference mockup for REQ-0029, not app code. -->
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fredagsgänget - OpenLobby (Concept A)</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700&family=Big+Shoulders+Display:wght@700;800;900&display=swap">
+<link rel="stylesheet" href="style.css"></head>
+<body>
+<header class="top">
+  <a class="wordmark" href="home.html">OpenLobby</a>
+  <nav class="tabs" aria-label="Main"><a href="home.html">Home</a><a href="#" aria-current="page">Groups</a><a href="#">You</a></nav>
+  <div class="top__end"><span class="me" aria-label="Alex">A</span></div>
+</header>
+<main>
+  <a class="crumb" href="#"><i data-lucide="arrow-left"></i>Groups</a>
+  <div class="head">
+    <span class="head__swatch g1" aria-hidden="true"></span>
+    <div><h1>Fredagsgänget</h1><p class="muted" style="margin-top:6px;font-weight:600">6 members, 4 upcoming lobbies</p></div>
+    <div class="head__actions"><button class="btn"><i data-lucide="link"></i>Invite</button><button class="btn btn--primary"><i data-lucide="plus"></i>Create lobby</button></div>
+  </div>
+  <div class="split">
+    <div>
+      <section class="lineup-day"><h2>Saturday 21 Nov, today</h2>
+        <a class="set" href="lobby.html">
+          <p class="set__time">12:35<small>to 14:35</small></p>
+          <div><p class="set__title"><span class="mono">O2</span>Overwatch 2 › Competitive</p>
+            <p class="slots"><span class="full"><i data-lucide="shield"></i>Tank 1/1</span><span><i data-lucide="sword"></i>Damage 1/2</span><span><i data-lucide="cross"></i>Support 1/2</span><span class="tag" style="border:2px solid #15171a">You are in</span></p></div>
+          <p class="set__count">3/5<small>players</small></p></a>
+      </section>
+      <section class="lineup-day"><h2>Sunday 22 Nov</h2>
+        <a class="set" href="#">
+          <p class="set__time">19:00<small>to 22:00</small></p>
+          <div><p class="set__title"><span class="mono">DR</span>Deep Rock Galactic › Deep Dive</p>
+            <p class="slots"><span>Scout 1/1</span><span>Driller 0/1</span><span>Engineer 1/1</span><span>Gunner 0/1</span></p></div>
+          <p class="set__count">2/4<small>players</small></p></a>
+      </section>
+      <section class="lineup-day"><h2>Monday 23 Nov</h2>
+        <a class="set" href="#">
+          <p class="set__time">20:30<small>to 22:00</small></p>
+          <div><p class="set__title"><span class="mono">RL</span>Rocket League › Ranked 3v3</p><p class="muted">Created by Kevin N</p></div>
+          <p class="set__count">3/3<small>Full</small></p></a>
+      </section>
+      <section class="lineup-day"><h2>Tuesday 24 Nov</h2>
+        <a class="set" href="#">
+          <p class="set__time">18:00<small>to 21:00</small></p>
+          <div><p class="set__title"><span class="mono" aria-hidden="true">?</span>Open</p><p class="muted">No game yet. Created by Mira Lindqvist</p></div>
+          <p class="set__count">1<small>player</small></p></a>
+      </section>
+    </div>
+    <aside class="aside">
+      <h2>Members</h2>
+      <div class="member"><b>Alex</b><span class="badge">Admin</span><span class="roles"><span class="mono" style="width:28px;height:28px;font-size:12px">O2</span><i data-lucide="shield"></i><i data-lucide="cross"></i></span></div>
+      <div class="member"><b>Mira Lindqvist</b><span class="badge">Admin</span><span class="roles"><span class="mono" style="width:28px;height:28px;font-size:12px">O2</span><i data-lucide="sword"></i></span></div>
+      <div class="member"><b>Jonte</b><span class="roles"><span class="mono" style="width:28px;height:28px;font-size:12px">O2</span><i data-lucide="cross"></i><span class="mono" style="width:28px;height:28px;font-size:12px">DR</span>Driller</span></div>
+      <div class="member"><b>Saga Holm</b></div>
+      <div class="member"><b>Kevin N</b><span class="roles"><span class="mono" style="width:28px;height:28px;font-size:12px">RL</span>Striker</span></div>
+      <div class="member"><b>Ebba Sjöberg</b></div>
+      <h2>Group feed</h2>
+      <ul class="feed">
+        <li><time>2 h ago</time>Jonte joined Overwatch 2 › Competitive as Support</li>
+        <li><time>3 h ago</time>Mira Lindqvist created Overwatch 2 › Competitive</li>
+        <li><time>Yesterday</time>Rocket League › Ranked 3v3 is full</li>
+        <li><time>Yesterday</time>Saga Holm left Deep Rock Galactic › Deep Dive</li>
+      </ul>
+      <button class="btn btn--danger" style="margin-top:24px">Leave group</button>
+    </aside>
+  </div>
+</main>
+<nav class="tabbar" aria-label="Main"><a href="home.html"><i data-lucide="house"></i>Home</a><a href="#" aria-current="page"><i data-lucide="users"></i>Groups</a><a href="#"><i data-lucide="user"></i>You</a></nav>
+<button class="fab" aria-label="Create lobby"><i data-lucide="plus"></i></button>
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script><script>lucide.createIcons()</script>
+</body></html>
