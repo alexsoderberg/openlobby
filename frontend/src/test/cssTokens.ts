@@ -9,20 +9,43 @@ export const stylesheet = readFileSync(
 /** One innermost rule of global.css, with the at-rule preludes around it, outermost first. */
 export type CssRule = { selector: string; body: string; scopes: string[] };
 
-/** Every innermost rule, comments removed and whitespace in selectors and preludes collapsed. */
+/**
+ * Every rule, comments removed and whitespace in selectors and preludes collapsed. A rule's body holds its own
+ * declarations, also those after a nested at-rule. The declarations inside an at-rule nested in a rule (such as
+ * `@supports` inside `.x { }`) are a rule of their own: the enclosing selector, with that at-rule in its scopes.
+ */
 export const cssRules: CssRule[] = [];
 {
-  const scopes: string[] = [];
+  const blocks: { prelude: string; body: string }[] = [];
+  const isAtRule = (prelude: string) => prelude.startsWith("@");
   let text = "";
   for (const char of stylesheet.replace(/\/\*[\s\S]*?\*\//g, "")) {
     if (char === "{") {
-      scopes.push(text.replace(/\s+/g, " ").trim());
+      // What comes before the last ";" is declarations of the enclosing block; the rest is this block's prelude.
+      const split = text.lastIndexOf(";") + 1;
+      if (blocks.length) blocks[blocks.length - 1].body += text.slice(0, split);
+      blocks.push({
+        prelude: text.slice(split).replace(/\s+/g, " ").trim(),
+        body: "",
+      });
       text = "";
     } else if (char === "}") {
-      const selector = scopes.pop() ?? "";
-      if (!selector.startsWith("@"))
-        cssRules.push({ selector, body: text, scopes: [...scopes] });
+      const block = blocks.pop();
+      if (!block) continue;
+      block.body += text;
       text = "";
+      const scopes = blocks.map(({ prelude }) => prelude).filter(isAtRule);
+      const owner = [...blocks]
+        .reverse()
+        .find(({ prelude }) => !isAtRule(prelude));
+      if (!isAtRule(block.prelude))
+        cssRules.push({ selector: block.prelude, body: block.body, scopes });
+      else if (owner && block.body.trim())
+        cssRules.push({
+          selector: owner.prelude,
+          body: block.body,
+          scopes: [...scopes, block.prelude],
+        });
     } else text += char;
   }
 }
@@ -55,23 +78,6 @@ export function solid(name: string): string {
   if (!/^#[0-9a-f]{6}$/i.test(value))
     throw new Error(`${name} is not a solid hex colour`);
   return value;
-}
-
-/** A translucent rgba token composited over --color-bg, giving the plate the text really sits on. */
-export function overPage(name: string): string {
-  const match = /^rgba\((\d+), (\d+), (\d+), ([\d.]+)\)$/.exec(token(name));
-  if (!match) throw new Error(`${name} is not an rgba colour`);
-  const [, red, green, blue, alpha] = match;
-  const page = [1, 3, 5].map((start) =>
-    Number.parseInt(solid("--color-bg").slice(start, start + 2), 16),
-  );
-  const over = [Number(red), Number(green), Number(blue)];
-  return `#${over
-    .map((channel, index) =>
-      Math.round(channel * Number(alpha) + page[index] * (1 - Number(alpha))),
-    )
-    .map((channel) => channel.toString(16).padStart(2, "0"))
-    .join("")}`;
 }
 
 /** WCAG 2.x relative luminance of a #rrggbb colour. */

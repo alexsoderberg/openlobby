@@ -5,11 +5,6 @@ import { cssRules, stylesheet } from "../test/cssTokens";
 // visibility is a discrete switch (the create popover's delayed hide), so it never repaints mid-way.
 const COMPOSITED = new Set(["transform", "opacity", "visibility", "none"]);
 
-// A field's border repaints one small box for 0.1 s, and inputs cannot host a fading layer, so it stays.
-const ALLOWED = new Set([
-  `.group-form input:where(:not([type="radio"], [type="checkbox"])), .invite-link__url border-color`,
-]);
-
 /** "selector property" for each transitioned property; items split on commas outside parentheses only. */
 const transitions = cssRules.flatMap(({ selector, body }) =>
   Array.from(
@@ -29,10 +24,9 @@ const keyframeProperties = Array.from(
 
 describe("motion cost", () => {
   it("transitions only composited properties, never all", () => {
-    expect(transitions).toContain(".row-list > .lobby-row::after opacity");
+    expect(transitions).toContain(".scrim opacity");
     const costly = transitions.filter(
-      (entry) =>
-        !COMPOSITED.has(entry.split(" ").at(-1) ?? "") && !ALLOWED.has(entry),
+      (entry) => !COMPOSITED.has(entry.split(" ").at(-1) ?? ""),
     );
     expect(costly).toEqual([]);
   });
@@ -40,14 +34,5 @@ describe("motion cost", () => {
   it("animates only composited properties in keyframes", () => {
     expect(keyframeProperties).toContain("opacity");
     expect(keyframeProperties.filter((p) => !COMPOSITED.has(p))).toEqual([]);
-  });
-
-  // A blur must be recomputed every frame its element or anything around it moves. Panels ride
-  // the page transition, so only the sticky top bar, which stays put, keeps one.
-  it("keeps backdrop-filter on the top bar only", () => {
-    const blurred = cssRules
-      .filter(({ body }) => /backdrop-filter\s*:/.test(body))
-      .map(({ selector }) => selector);
-    expect(blurred).toEqual([".topbar::before"]);
   });
 });

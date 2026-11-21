@@ -1,5 +1,5 @@
 // Structure from shadcn/ui `select` (https://ui.shadcn.com/docs/components/select) on Radix Select (ADR 0027).
-// Edited per ADR 0023 point 2: class lists read our tokens; type, shadow and motion live in global.css under
+// Edited per ADR 0023 point 2: class lists read our tokens; type, edges and motion live in global.css under
 // [data-slot="select-*"], and the phone sheet is the `phone:` variant plus one wrapper rule there.
 import * as RadixSelect from "@radix-ui/react-select";
 import {
@@ -9,7 +9,6 @@ import {
   type Ref,
   type SyntheticEvent,
 } from "react";
-import { classNames } from "./classNames";
 import { Icon } from "./Icon";
 
 export type DropdownOption = {
@@ -57,12 +56,12 @@ function nextInTabOrder(trigger: HTMLElement, step: number) {
 
 const selectVariants = {
   trigger:
-    "inline-flex w-full items-center gap-(--space-2) min-h-(--size-button) pointer-coarse:min-h-(--size-tap) px-(--space-2) border border-(--color-muted) rounded-(--radius-control) bg-(--color-surface) text-(--color-text) cursor-pointer enabled:hover:border-(--color-text) aria-expanded:border-(--color-accent) data-placeholder:text-(--color-muted) disabled:cursor-not-allowed disabled:opacity-50",
+    "inline-flex w-full items-center gap-(--space-2) min-h-(--size-button) pointer-coarse:min-h-(--size-tap) px-(--space-2) border border-(--color-control-line) rounded-(--radius) bg-(--color-surface) text-(--color-text) cursor-pointer enabled:hover:bg-(--color-raised) data-placeholder:text-(--color-muted) disabled:cursor-not-allowed disabled:opacity-50",
   content:
-    "z-(--z-dropdown-list) min-w-(--radix-select-trigger-width) max-h-(--radix-select-content-available-height) p-(--space-1) border border-(--color-border) rounded-(--radius-panel) bg-(--color-bg-raised) text-(--color-text) phone:fixed phone:inset-x-(--space-0) phone:bottom-(--space-0) phone:w-full phone:max-h-(--size-sheet-max) phone:rounded-b-(--space-0) phone:pb-(--sheet-safe-bottom)",
-  // The gold tint of the highlighted row is focus under the Gold rule (REQ-0028 item 1, DECISION, user, 2026-11-18).
-  item: "flex items-center gap-(--space-2) py-(--space-2) px-(--space-3) phone:min-h-(--size-tap) rounded-(--radius-control) cursor-pointer data-highlighted:bg-(--color-accent-tint) data-disabled:cursor-not-allowed data-disabled:opacity-50",
-  selected: "text-(--color-accent)",
+    "z-(--z-dropdown-list) min-w-(--radix-select-trigger-width) max-h-(--radix-select-content-available-height) p-(--space-1) border border-(--color-rule-strong) rounded-(--radius) phone:rounded-b-(--space-0) bg-(--color-surface) text-(--color-text) phone:fixed phone:inset-x-(--space-0) phone:bottom-(--space-0) phone:w-full phone:max-h-(--size-sheet-max) phone:pb-(--sheet-safe-bottom)",
+  // The highlighted row takes the raised fill; its ring and the selected row's text-colour edge are in global.css.
+  // No signal (ADR 0028 section 16.4).
+  item: "flex items-center gap-(--space-2) py-(--space-2) px-(--space-3) phone:min-h-(--size-tap) cursor-pointer data-highlighted:bg-(--color-raised) data-disabled:cursor-not-allowed data-disabled:opacity-50",
 };
 
 /**
@@ -191,10 +190,7 @@ export function Select({
                   },
                 })}
                 data-slot="select-item"
-                className={classNames(
-                  selectVariants.item,
-                  option.value === value ? selectVariants.selected : undefined,
-                )}
+                className={selectVariants.item}
               >
                 <RadixSelect.ItemText>
                   {/* Its own box, so the label stays plain text and still truncates in the field. */}

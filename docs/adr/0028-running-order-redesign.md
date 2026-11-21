@@ -1,5 +1,5 @@
 # 0028. Running order redesign: light tokens, fonts, Top bar, group colour and Orange rule
-Status: Accepted (2026-11-21). Implements REQ-0029 (Decided). The user's decisions of 2026-11-21 are in section 12.
+Status: Accepted (2026-11-21), amended 2026-11-21: dark theme only. Section 16 replaces the light palette and parts of sections 1 to 9, 12 to 14. Implements REQ-0029 (Decided). The user's decisions of 2026-11-21 are in sections 12 and 16.
 Amends: ADR 0014, 0015, 0016, 0018, 0021, 0023, 0026 and 0027 (each has an "Amendment 2026-11-21" pointer). Where they differ, this ADR wins.
 
 ## Context
@@ -223,6 +223,121 @@ DECISION (user, 2026-11-21): accepted. Order: PR1a, PR1b, PR2, PR3a, PR3b, PR4, 
 | Hero motif shapes (`heroScene.ts`, `MotifDescriptor`), glow phase of `heroCycle.ts`, `--color-online` | Neutral hero card | PR5b |
 | Round Avatar and the rounded `GameLogo` box | Squares | PR1a |
 | i18n keys whose last user is deleted (for example `calendarDayPillsLabel`) | None | Same PR as the code (ADR 0013) |
+
+## 16. Amendment 2026-11-21: dark theme
+DECISION, user, 2026-11-21. After the light build of PR1a the user said: "Dark mode is mandatory." Three dark mockups were shown, and the user chose option 1 "Stage" (warm charcoal, signal orange): "We like this design. Go with it. Accent colours we can discuss later." The layout decisions of sections 3 to 5, 8 and 13 stay. Where this section and the earlier text differ, this section wins.
+
+Replaced: section 1 (palette and names), section 2 (radius and shadow bullets), section 3 (phone top bar colour), section 4 (block colour and outline, legend, Now line), section 5 (text on group fills), section 6 (Orange rule), section 7 (square logo box), section 9 (Avatar), section 12 item 2, section 13 (PR4), and the test rows of section 14 named in 16.9.
+
+### 16.1 One theme: dark
+- Dark only. `color-scheme: dark` on `:root`. No light values and no `dark:` variants (ADR 0023).
+- A light theme may come later as a second set of values for the same token names. No component changes then.
+
+### 16.2 Colour tokens
+Declared in `:root` of `frontend/src/styles/global.css`. The names are the architect's. The values are the user's (option 1).
+
+| Token | Value | Use |
+|---|---|---|
+| `--color-ground` | `#161412` | page background |
+| `--color-surface` | `#201d1a` | Next up band, panels, Create frame, dialog, Dropdown list panel, phone Tab bar, text fields |
+| `--color-raised` | `#2b2723` | hover of buttons, the highlighted option, avatars and monograms, toasts |
+| `--color-rule` | `#332f2a` | dividers only (a meter track is `--color-raised`) |
+| `--color-rule-strong` | `#4b453f` | decorative panel edges (1 px), never a control |
+| `--color-control-line` | `#7a7268` | the border of a control: text field, Dropdown trigger, secondary button (1 px). At least 3:1 on ground (3.88), surface (3.54) and raised (3.13), WCAG 1.4.11 |
+| `--color-text` | `#f2ede5` | text, icons, the focus outline, the outline of my own block, fills of selected controls and meters (for example the view toggle thumb and the meter fill) |
+| `--color-muted` | `#aaa298` | secondary text |
+| `--color-signal` | `#ff6a2b` | the Orange rule (16.4) only. It is the one accent token: a new accent changes only this value and the list in 16.4 stays |
+| `--color-on-signal` | `#161412` | text and icons on the signal fill, Top bar text and tab underline |
+| `--color-danger` | `#ff7a85` | danger text and danger border |
+| `--color-scrim` | `rgb(0 0 0 / 0.6)` | Create frame and dialog scrim. ASSUMPTION: not in the mockups; the UI/UX expert checks it in the browser |
+| `--color-group-1` to `--color-group-6` | `#6f97f7`, `#4fbf7f`, `#e0b83a`, `#ec7aa6`, `#3dbab5`, `#a98be8` | group colour (section 5) |
+| `--color-on-group` | `#161412` | text on every group fill |
+
+Contrast (the user's check): text 15.8:1 on ground; muted at least 5.9:1 on ground, surface and raised; signal 6.4:1 on ground; danger 7.3:1 on ground; text on group fills 6.5 to 9.7:1. Rule: every text colour on a surface in the table is at least 4.5:1. `styles/tokens.test.ts` checks it, and checks that `--color-control-line` is at least 3:1 on ground, surface and raised.
+
+Names replaced (sections 1 and 2 used the light names):
+
+| Earlier name | Now |
+|---|---|
+| `--color-ink` as text | `--color-text` |
+| `--color-ink` on a signal or group fill | `--color-on-signal`, `--color-on-group` |
+| `--color-ink` as a control border | `--color-control-line` |
+| `--color-ink-soft` | `--color-muted` |
+| `--color-orange` | `--color-signal` |
+| `--color-wash` | `--color-raised` |
+| `--color-surface` (white) | `--color-surface` (dark value) |
+
+The other names of section 1 keep their meaning (ground, rule, danger, group colours), with the new values. `--color-focus` stays removed.
+
+### 16.3 Surfaces, borders, focus, buttons
+- No shadows. Floating panels (Create frame, dialog, Dropdown list panel, toast, phone Tab bar) are separated by their surface and a 1 px `--color-rule-strong` border.
+- Controls (text fields, Dropdown trigger, secondary button) have a 1 px `--color-control-line` border, which meets 3:1 against the ground, surface and raised (WCAG 1.4.11). `--color-rule-strong` is for decorative panel edges only.
+- Focus: `:focus-visible` is a 2 px `--color-text` outline with a 2 px offset, on every element. Focus is never signal. Inside the Top bar it is `--color-on-signal` (16.11 item 1).
+- Checkboxes and radios: `accent-color: var(--color-text)`.
+- Buttons. Primary: signal fill, on-signal text, no colour change on hover, press is a transform. Secondary: surface fill, control-line border, text; hover raised. Ghost: no border, text; hover raised. Danger: no fill, danger border and text; hover raised. Icon-only buttons follow the same rules.
+
+### 16.4 Orange rule (replaces section 6)
+`--color-signal` is used for these seven things and nothing else:
+1. The Top bar background, at every width. Option 1 shows the orange bar on phones too, so this replaces the ground bar under 760 px (section 3 and REQ-0029 item 3). Text on it is `--color-on-signal`.
+2. The primary button fill.
+3. The Now line, and the marker of today (the bar under the day name).
+4. The Next up band: the "Next up" eyebrow and the countdown or "Running" label. This is the only place where signal is text.
+5. The active tab: an underline in `--color-on-signal` on the Top bar; the active item of the phone Tab bar has a signal fill with on-signal text.
+6. A full role slot: a check icon in signal and the count in text colour. The check icon carries the meaning; signal alone never does.
+7. My own avatar in a player list: signal fill, on-signal initials.
+
+Rules:
+- Signal is never text except in item 4. Elsewhere it is a fill or an icon. Measured: signal on surface 5.9:1 (architect's calculation; the token test checks it).
+- Dropdown lists use no signal. The selected option has a check mark and a 2 px edge at its left in text colour. The highlighted option has the raised fill. This changes REQ-0029 item 9 (section 12, item 2).
+- Counts, the admin marker, the Monogram and the joined marks are text colour.
+- Group colours are never used for states or focus.
+- Test `styles/orangeRule.test.ts` replaces the Gold rule test: `--color-signal` as `color` only in the Next up band selectors (item 4); as a background only in the selectors of items 1 to 3 and 5 to 7; the focus rule uses `--color-text`.
+
+### 16.5 Radius (replaces the radius part of section 2)
+- Two tokens only, in `:root`: `--radius: 8px` and `--radius-sm: 4px`. The ADR 0023 names `--radius-panel`, `--radius-popover`, `--radius-control`, `--radius-badge` and `--radius-chip` are removed. `--radius` takes the first three; `--radius-sm` takes the last two.
+- `--radius` (8 px): Next up band, panels and Group cards, Create frame, dialog, Dropdown list panel (its phone sheet has the top corners), toast, all buttons, text fields, Dropdown trigger, the items of the phone Tab bar. The bar itself is square (16.11 item 7).
+- `--radius-sm` (4 px): running order blocks, Game chips, tags, the admin marker, Monograms, avatars, the game logo box, colour swatches.
+- Rule: every `border-radius` in `global.css` and in `ui/` class lists is `var(--radius)` or `var(--radius-sm)`. No literal value, no percentage, no pill. Native controls keep their own rounding. Icon-only buttons are not round (this replaces the round icon button of ADR 0021).
+
+### 16.6 Shadows, glass, gradients
+- No `box-shadow`, `text-shadow`, `drop-shadow`, `backdrop-filter`, glow or sheen. The Now line's outline is a 4 px `--color-ground` bar under the 2 px signal bar.
+- No blended gradient. Ruled lines may use `repeating-linear-gradient` with hard stops, such as the hour lines of the running order track. This is a permanent exception for ruled lines, not a temporary one. Blended gradients stay forbidden. `styles/flat.test.ts` keeps this rule.
+
+### 16.7 Running order blocks, legend, Now line (sections 4 and 5)
+- Block: fill `--color-group-N`, text `--color-on-group`, radius `--radius-sm`. A lobby the caller has joined has a 2 px `--color-text` outline set inside the block (`outline-offset: -2px`, so it cannot overlap a neighbour) and the text "you". The text carries the meaning, not the outline alone.
+- Legend: "You are in" swatch is a 2 px text-colour outline with no fill.
+- Now line: 2 px signal over a 4 px ground bar, `aria-hidden`, as section 4 says.
+- The text on group fills is `--color-on-group` in every group. The earlier "white, or ink on group 3" is replaced. The group name rule of section 5 stays.
+
+### 16.8 Next up band, Top bar, Avatar, lobby page
+- Next up band: `--color-surface` fill, text colour, eyebrow and countdown in signal (16.4 item 4). Its primary button is the signal fill.
+- Top bar: signal background at every width; the Wordmark and the tabs in `--color-on-signal`; the active tab has the underline of 16.4 item 5. The avatar of me on the Top bar has a `--color-ground` fill and text-colour initials.
+- Avatar, Monogram, game logo box: a square with `--radius-sm` corners. Initials in `--font-heading`, `--color-raised` fill, text colour. A Discord picture (ADR 0018) fills the same square. This replaces the square-only wording of section 9 and the square of section 7.
+- Lobby page (REQ-0029 item 6 changes): the Seat boxes are dropped. The lobby page keeps the player list as it is built today (role group headings with the role icon and count; rows with the avatar, the name, the "You" tag and the preferred roles note), the role slots (16.4 item 6 for a full one), and the "Change seat" and "Leave lobby" buttons. There is no button per seat. Icons stay where they are today.
+
+### 16.9 Other rules changed
+- Section 12, item 2 and section 13 (PR4): as 16.4 and 16.8.
+- Section 14: `styles/tokens.test.ts` checks the values and contrast of 16.2; `styles/orangeRule.test.ts` checks 16.4; `styles/flat.test.ts` allows only the two radius tokens in `border-radius`, forbids shadows, glass and blended gradients, and allows ruled hard-stop gradients; `ui/Button.test.tsx` and `ui/Toast.test.tsx` check the colours of 16.3 and 16.8. The other rows of section 14 stand.
+- ADR 0027 (the panel is a white surface with a 2 px ink border), and the 2026-11-21 sections of ADRs 0018, 0021 and 0023 name light values or round shapes. This section replaces them. Their pointers already say so; they are not edited.
+
+### 16.10 Alternatives considered
+- Light and dark theme together. Rejected: the user made dark mandatory. A light theme later reuses the names (16.1).
+- Keep `--color-orange` as the token name. Rejected: the name would be wrong once the accent changes.
+- A shadow on floating panels. Rejected: a border separates them, and no shadows are allowed.
+- Signal for text in general (counts, links). Rejected: it keeps the accent rare and readable only on the Next up band.
+- A hover colour token for the primary button. Rejected (YAGNI): it has no colour change.
+
+### 16.11 Rulings on the PR1a build (2026-11-21)
+DECISION, architect, on the deviations the UI/UX expert built. Each one amends the rule it names.
+1. **Focus on the Top bar (amends 16.3).** Inside the Top bar the focus outline is `--color-on-signal` (`#161412`, 6.4:1 on signal). The text colour on signal is about 2.5:1, below the 3:1 of WCAG 1.4.11. Selector: `.top-bar :focus-visible` only. The test covers it. Focus is still never signal.
+2. **Highlighted Dropdown option (amends 16.4).** On a fine pointer the highlighted option has the raised fill and a 2 px `--color-text` ring; the ring is the keyboard focus. Raised alone is about 1.1:1 against the surface, too little. On touch sheets only the raised fill is shown: touch has no keyboard focus, and the check mark shows the selection.
+3. **Radius on layers and on the sheet (amends 16.5).** `border-radius` may also be `inherit`, and only on pseudo-element, hover and pattern layers and on the cover image, inside a box that has a token radius. Such a layer follows its box. The phone bottom sheet has square bottom corners: `var(--space-0)` (zero) on the bottom, `var(--radius)` on the top. `styles/flat.test.ts` accepts exactly `var(--radius)`, `var(--radius-sm)`, `var(--space-0)`, and `inherit` in the layer selectors.
+4. **Genre motif and cover hover, temporary until PR5a.** `--genre-motif-opacity` goes from 0.12 to 0.08: muted text over the motifs measured 4.15 to 4.44:1 at 0.12. The game-cover hover is opaque. Both are removed with `GenreFrame` in PR5a (section 15). No new genre visual is added in the meantime.
+5. **Ruled hour-line gradient of the old week grid (16.6).** Allowed as the permanent exception for hard-stop repeating gradients. It goes with the grid in PR3a. The running order track may use the same form. No blended gradient.
+6. **`--color-online` (landing glow).** Not in the 16.2 table, and not added to it. It stays in PR1a and is removed in PR5b with the hero, as section 1 and section 15 already say. It is not used by any new element.
+7. **Phone Tab bar corners (amends 16.5, accepted from the UI/UX expert).** The phone Tab bar stays edge to edge with square corners. Only its items take `--radius`. The bar is fixed to the bottom and side edges of the window, so rounded corners would show the page through the screen edge. The approved option 1 mockup draws it the same way.
+
+Temporary tokens, with the PR that deletes them: `--color-online` (PR5b), `--genre-motif-opacity` and the game-cover hover (PR5a), the genre tokens (PR5a). Section 15 is the list of what is deleted where.
 
 ## Amendments made with this ADR
 Each amended ADR carries a pointer section "Amendment 2026-11-21 (ADR 0028)". The rule of this ADR wins where they differ. ADRs 0014, 0015, 0016, 0018, 0021, 0023, 0026 and 0027.
