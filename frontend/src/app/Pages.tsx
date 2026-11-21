@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { AuthUser } from "../api";
 import { Dashboard } from "../features/dashboard";
 import { GamesPage } from "../features/games";
@@ -23,6 +24,7 @@ export function ProtectedPage({
   route,
   user,
   groups,
+  createGroupButton,
   logoutError,
   onOpenGroup,
   onLeftGroup,
@@ -32,6 +34,7 @@ export function ProtectedPage({
   route: Exclude<Route, { name: "notFound" }>;
   user: AuthUser;
   groups: MyGroupsLoad;
+  createGroupButton: ReactNode;
   logoutError?: string;
   onOpenGroup: (groupId: string) => void;
   onLeftGroup: (group: { id: string; name: string }) => void;
@@ -48,7 +51,12 @@ export function ProtectedPage({
         />
       );
     case "groups":
-      return <GroupListPage onUnauthenticated={onUnauthenticated} />;
+      return (
+        <GroupListPage
+          createGroupButton={createGroupButton}
+          onUnauthenticated={onUnauthenticated}
+        />
+      );
     case "profile":
       return (
         <ProfilePage

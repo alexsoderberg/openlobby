@@ -8,7 +8,6 @@ export { CreateFrame } from "./CreateFrame";
 export { ErrorAlert } from "./ErrorAlert";
 export { GameLogo } from "./GameLogo";
 export { GameRoleName } from "./GameRoleName";
-export { GroupIcon } from "./GroupIcon";
 export { Icon, type IconName } from "./Icon";
 export { IconButton } from "./IconButton";
 export { Meter } from "./Meter";

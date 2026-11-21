@@ -16,7 +16,10 @@ const overview = {
 function renderPage(client: ApiClient, onUnauthenticated = vi.fn()) {
   render(
     <ApiProvider client={client}>
-      <GroupListPage onUnauthenticated={onUnauthenticated} />
+      <GroupListPage
+        createGroupButton={null}
+        onUnauthenticated={onUnauthenticated}
+      />
     </ApiProvider>,
   );
   return { onUnauthenticated };

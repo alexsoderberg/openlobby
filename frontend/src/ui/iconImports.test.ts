@@ -23,7 +23,7 @@ describe("icon library imports (ADR 0021)", () => {
     "are refused outside ui/Icon.tsx",
     async (code) => {
       expect(
-        await restrictedImportErrors(code, "src/features/shell/TabBar.tsx"),
+        await restrictedImportErrors(code, "src/features/shell/TopBar.tsx"),
       ).toHaveLength(1);
     },
     LINT_TIMEOUT_MS,

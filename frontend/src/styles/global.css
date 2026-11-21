@@ -145,11 +145,9 @@
   --size-top-bar: 4rem;
   /* The top bar grows by the notch / status bar inset when viewport-fit=cover applies. */
   --size-top-bar-total: calc(var(--size-top-bar) + env(safe-area-inset-top));
-  --size-rail: 5.25rem;
   /* The side column. It starts at a 98rem window, written out in its media query (REQ-0025). */
   --width-aside: 19rem;
   --size-tab-bar: 5.5rem;
-  --size-group-icon: 3.25rem;
   --line-time-block: 1.3; /* unitless, so a block label can also be limited to one line in em */
   --size-plus: 3.25rem;
   --size-plus-tab: 3.5rem;
@@ -162,6 +160,10 @@
   /* One text line of a week block: its 0.75rem type at the block's line height (ADR 0026 Amendment item 11). */
   --size-game-logo-small: calc(0.75rem * var(--line-time-block));
   --width-popover: 22rem;
+  /* Top bar, sticky from 760px: below the scrim (40), so it dims with the page. */
+  --z-top-bar: 10;
+  /* The active tab's weight; the hidden copy in every tab label reserves its width (ADR 0028 section 16.12). */
+  --font-weight-tab-active: 700;
   /* Dropdown list (ADR 0027 point 4): above the tab bar (60) and the floating "+" (55), below the toaster. */
   --z-dropdown-list: 70;
   /* Popover (ADR 0023 Amendment 2026-11-17): above the tab bar (60), below the dropdown list and the toaster. */
@@ -1961,7 +1963,8 @@ a:where(:not([data-slot="button"])) {
   }
 }
 
-/* App shell. Phones first; the Group rail replaces the Tab bar from 760px (47.5rem). */
+/* App shell. Phones first: the Top bar's nav is the Tab bar at the bottom; from 760px (47.5rem) it is the row
+   of text tabs in the Top bar (ADR 0028 section 3). */
 .shell {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -1972,11 +1975,10 @@ a:where(:not([data-slot="button"])) {
   min-height: 100dvh;
 }
 
+/* Phones: not sticky and no z-index, so the bar makes no stacking context and its nav, the fixed Tab bar, keeps
+   its own layer above the scrim. The bar scrolls away with the page (ADR 0028 section 16.12 item 2). */
 .top-bar {
   grid-area: top;
-  position: sticky;
-  top: 0;
-  z-index: 10;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1998,6 +2000,14 @@ a:where(:not([data-slot="button"])) {
   outline-color: var(--color-on-signal);
 }
 
+/* The Wordmark: uppercase by CSS, not by the text (ADR 0028 section 2). */
+.top-bar .brand {
+  font-size: var(--font-size-heading);
+  font-weight: 900;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
 /* My avatar on the Top bar: a ground square with text-colour initials (ADR 0028 section 16.8). */
 .top-bar__user > .initials-icon {
   background: var(--color-ground);
@@ -2012,7 +2022,9 @@ a:where(:not([data-slot="button"])) {
   text-decoration: none;
 }
 
+/* Phones show only the avatar; the accessible name of the link still holds the display name. */
 .top-bar__name {
+  display: none;
   max-width: 9rem;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2075,47 +2087,9 @@ a:where(:not([data-slot="button"])) {
   min-width: 0;
 }
 
-/* The group under the pointer gets a strong edge; the open one a text-colour edge and the raised fill, so the
-   mark is not colour alone. */
-.group-icon {
-  display: grid;
-  place-items: center;
-  width: var(--size-group-icon);
-  height: var(--size-group-icon);
-  border: 1px solid var(--color-rule);
-  border-radius: var(--radius-sm);
-  background: var(--color-surface);
-  color: var(--color-text);
-  text-decoration: none;
-}
-
-.group-icon:hover {
-  border-color: var(--color-rule-strong);
-}
-
-.group-icon[aria-current="page"] {
-  border-color: var(--color-text);
-}
-
-.group-icon[aria-current="page"] {
-  background: var(--color-raised);
-}
-
-.group-icon > .initials-icon {
-  width: 100%;
-  height: 100%;
-  border: 0;
-  background: none;
-  font-size: 1rem;
-}
-
 .nav-icon {
   width: 1.4rem;
   height: 1.4rem;
-}
-
-.group-rail {
-  display: none;
 }
 
 /* Edge to edge, so only its items take --radius: a rounded bar on the window's own edges would show the page
@@ -2146,6 +2120,22 @@ a:where(:not([data-slot="button"])) {
   font-size: 0.75rem;
   font-weight: 500;
   text-decoration: none;
+}
+
+/* The label also holds an invisible bold copy with no height, so the bold active tab does not change its width
+   and the tabs never shift (ADR 0028 section 16.12 item 7). The copy has empty alt text for screen readers. */
+.tab__label {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.tab__label::after {
+  content: attr(data-label) / "";
+  height: 0;
+  overflow: hidden;
+  font-weight: var(--font-weight-tab-active);
+  visibility: hidden;
 }
 
 /* The active tab: a signal fill with on-signal text (ADR 0028 section 16.4 item 5). */
@@ -2179,7 +2169,11 @@ a:where(:not([data-slot="button"])) {
   transform: rotate(135deg);
 }
 
-/* Phones: the "+" floats above the Tab bar at the bottom right. */
+/* Phones: the "+" floats above the Tab bar at the bottom right. The header "+" of the Group list is for wide screens. */
+.plus-button--header {
+  display: none;
+}
+
 .plus-button--fab {
   position: fixed;
   z-index: 55;
@@ -2316,18 +2310,6 @@ a:where(:not([data-slot="button"])) {
   font-weight: 800;
 }
 
-.group-strip .row-list {
-  display: flex;
-  gap: var(--space-3);
-  overflow-x: auto;
-  padding: var(--space-2) var(--space-1);
-  scrollbar-width: none;
-}
-
-.group-strip li {
-  flex: none;
-}
-
 .next-up {
   display: grid;
   gap: var(--space-3);
@@ -2440,62 +2422,97 @@ a:where(:not([data-slot="button"])) {
     --toast-bottom: var(--space-3);
   }
 
-  .shell {
-    grid-template-columns: var(--size-rail) minmax(0, 1fr);
-    grid-template-areas:
-      "top top"
-      "rail main";
+  /* The bar's items stretch to its height, so the active tab's underline sits on the bar's bottom edge. */
+  .top-bar {
+    position: sticky;
+    top: 0;
+    z-index: var(--z-top-bar);
+    justify-content: flex-start;
+    align-items: stretch;
+    gap: var(--space-6);
+    padding: env(safe-area-inset-top) var(--space-6) 0;
   }
 
-  .top-bar {
-    padding: env(safe-area-inset-top) var(--space-4) 0;
+  .top-bar .brand,
+  .top-bar__user {
+    align-self: center;
+  }
+
+  .top-bar .brand {
+    font-size: var(--font-size-figure);
+  }
+
+  .top-bar__user {
+    margin-left: auto;
+  }
+
+  .top-bar__name {
+    display: block;
+  }
+
+  /* The nav of the Tab bar, back in the Top bar as text tabs. */
+  .tab-bar {
+    position: static;
+    inset: auto;
+    z-index: auto;
+    display: flex;
+    gap: var(--space-4);
+    padding: 0;
+    background: none;
+    border: 0;
+  }
+
+  .tab {
+    position: relative;
+    display: flex;
+    align-items: center;
+    color: var(--color-on-signal);
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  /* The active tab: an on-signal underline and a bold weight, not a fill (ADR 0028 section 16.4 item 5). */
+  .tab[aria-current="page"] {
+    background: none;
+    font-weight: var(--font-weight-tab-active);
+  }
+
+  .tab[aria-current="page"]::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    background: var(--color-on-signal);
+  }
+
+  .top-bar .nav-icon {
+    display: none;
+  }
+
+  .plus-button--header {
+    display: inline-grid;
   }
 
   .shell__main {
     padding: var(--space-4) var(--space-6) var(--space-6);
   }
 
-  .tab-bar,
-  .plus-button--fab,
-  .group-strip {
+  .plus-button--fab {
     display: none;
   }
 
-  .group-rail {
-    grid-area: rail;
-    position: sticky;
-    top: var(--size-top-bar-total);
-    z-index: 60;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--space-3);
-    height: calc(100dvh - var(--size-top-bar-total));
-    padding: var(--space-3) 0;
-    border-right: 1px solid var(--color-rule);
-  }
-
-  .group-rail__separator {
-    width: 1.75rem;
-    height: 1px;
-    background: var(--color-rule);
-  }
-
-  .group-rail__groups {
-    display: grid;
-    flex: 1;
-    align-content: start;
-    gap: var(--space-3);
-    min-height: 0;
-    padding: var(--space-1);
-    overflow-y: auto;
-    scrollbar-width: none;
-  }
-
+  /* Below the header "+" of the Group list, at the main area's right edge (heading row = --size-plus tall). The
+     percentages are of the window without its scrollbar, as the main area is. */
   .create-popover {
-    right: auto;
-    bottom: var(--space-3);
-    left: calc(var(--size-rail) + var(--space-3));
+    top: calc(
+      var(--size-top-bar-total) + var(--space-4) + var(--size-plus) +
+        var(--space-2)
+    );
+    right: calc((100% - min(100%, var(--width-app))) / 2 + var(--space-6));
+    bottom: auto;
+    left: auto;
     width: var(--width-popover);
   }
 
@@ -2585,36 +2602,6 @@ a:where(:not([data-slot="button"])) {
 
 .page-heading h1 {
   margin: 0;
-}
-
-/* The right-click menu of a group icon: placed at the pointer, no motion. */
-.context-menu {
-  position: fixed;
-  z-index: 60;
-  min-width: 10rem;
-  padding: var(--space-1);
-  background: var(--color-surface);
-  border: 1px solid var(--color-rule-strong);
-  border-radius: var(--radius);
-}
-
-.context-menu__item {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  width: 100%;
-  padding: var(--space-2) var(--space-3);
-  border: 0;
-  background: none;
-  color: var(--color-text);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.context-menu__item:hover,
-.context-menu__item:focus-visible {
-  background: var(--color-raised);
 }
 
 /* Spacing rule: a button or action row that follows other content in a panel, the lobby summary, a dialog or popover

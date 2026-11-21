@@ -376,13 +376,10 @@ export const en = {
 
   shell: {
     mainNav: "Main",
-    groupsNav: "Groups",
     home: "Home",
     groups: "Groups",
     you: "You",
     createGroupButton: "Create a group",
-    groupMenu: (group: string) => `${group} menu`,
-    invitePeople: "Invite people",
     openProfile: (name: string) => `${name}, your profile`,
   },
 
@@ -411,7 +408,6 @@ export const en = {
 
   dashboard: {
     loading: "Loading your lobbies.",
-    groupStripLabel: "Your groups",
     noGroups: "You are not in a group yet",
     noGroupsHint:
       "Create one on the Group list, or open an invite link from a friend.",

@@ -9,7 +9,7 @@ import { navigate } from "./navigation";
 import { NotFoundPage, ProtectedPage } from "./Pages";
 import type { Route } from "./route";
 
-/** Every page of a logged-in user: the shell around the page. The group list loads once, for the rail and the pages. */
+/** Every page of a logged-in user: the shell around the page. The group list loads once, for the pages. */
 export function LoggedInApp({
   user,
   route,
@@ -48,26 +48,28 @@ export function LoggedInApp({
   return (
     <AppShell
       user={user}
-      groups={groups.state}
       active={activeNavOf(route)}
       onGroupCreated={(group) => openGroup(group.id)}
       onUnauthenticated={onUnauthenticated}
     >
-      {route.name === "notFound" ? (
-        <NotFoundPage />
-      ) : (
-        <ProtectedPage
-          key={pathname}
-          route={route}
-          user={user}
-          groups={groups}
-          logoutError={logoutError}
-          onOpenGroup={openGroup}
-          onLeftGroup={leaveGroup}
-          onLogout={onLogout}
-          onUnauthenticated={onUnauthenticated}
-        />
-      )}
+      {(createGroupButton) =>
+        route.name === "notFound" ? (
+          <NotFoundPage />
+        ) : (
+          <ProtectedPage
+            key={pathname}
+            route={route}
+            user={user}
+            groups={groups}
+            createGroupButton={createGroupButton}
+            logoutError={logoutError}
+            onOpenGroup={openGroup}
+            onLeftGroup={leaveGroup}
+            onLogout={onLogout}
+            onUnauthenticated={onUnauthenticated}
+          />
+        )
+      }
     </AppShell>
   );
 }

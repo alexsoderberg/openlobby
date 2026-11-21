@@ -38,6 +38,20 @@ describe("moving between pages", () => {
     expect(window.location.pathname).toBe("/profile");
   });
 
+  it("puts the header plus in the Group list heading, beside the page heading", async () => {
+    renderLoggedIn("/groups");
+    const heading = await screen.findByRole("heading", {
+      level: 1,
+      name: en.groupsHeading,
+    });
+
+    const plus = within(screen.getByRole("main")).getByRole("button", {
+      name: en.shell.createGroupButton,
+    });
+    expect(plus.closest(".page-heading")).toBe(heading.parentElement);
+    expect(plus.classList).toContain("plus-button--header");
+  });
+
   it("reloads the group list, then opens a created group without a page load", async () => {
     const client = renderLoggedIn("/groups");
     await screen.findByRole("main");
