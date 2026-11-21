@@ -10,6 +10,8 @@ import { ApiError, ApiProvider, type ApiClient, type Game } from "../../api";
 import { en } from "../../i18n/messages/en";
 import { chooseOption } from "../../test/chooseOption";
 import { fakeApiClient } from "../../test/fakeApiClient";
+import { expectNoToast, findToast } from "../../test/toasts";
+import { Toaster } from "../../ui";
 import { GamesPage } from "./GamesPage";
 
 const catan: Game = {
@@ -24,6 +26,10 @@ const chess: Game = {
   defaultMaxPlayers: null,
   genre: null,
 };
+
+/** What held the change has closed, so focus waits on the page heading. */
+const pageHeading = () =>
+  screen.getByRole("heading", { level: 1, name: en.gameListHeading });
 
 /** A row's text as a screen reader reads it: without the game's monogram, which is hidden from it. */
 const readText = (row: HTMLElement) =>
@@ -40,6 +46,7 @@ function renderPage(client: ApiClient, isSystemAdmin = true) {
         isSystemAdmin={isSystemAdmin}
         onUnauthenticated={onUnauthenticated}
       />
+      <Toaster />
     </ApiProvider>,
   );
   return { onUnauthenticated };
@@ -169,7 +176,7 @@ describe("modes in the list", () => {
 });
 
 describe("add", () => {
-  it("sends name and max, refreshes the list, resets the form and focuses the status", async () => {
+  it("sends name and max, refreshes the list, resets the form and confirms with a toast", async () => {
     const client = adminClient();
     renderPage(client);
     const form = await addForm();
@@ -186,8 +193,8 @@ describe("add", () => {
         modes: [],
       }),
     );
-    const status = await screen.findByText(en.gameAdded);
-    await waitFor(() => expect(document.activeElement).toBe(status));
+    await findToast(en.gameAdded);
+    expect(document.activeElement).toBe(pageHeading());
     expect(client.listGames).toHaveBeenCalledTimes(2);
     expect(valueOf(form, en.gameNameLabel)).toBe("");
   });
@@ -403,7 +410,7 @@ describe("change", () => {
       .closest("form")!;
   }
 
-  it("saves the whole game, closes the form and focuses the status", async () => {
+  it("saves the whole game, closes the form and confirms with a toast", async () => {
     const client = adminClient();
     renderPage(client);
     const form = await startEdit();
@@ -424,8 +431,8 @@ describe("change", () => {
         modes: [],
       }),
     );
-    const status = await screen.findByText(en.gameChanged);
-    await waitFor(() => expect(document.activeElement).toBe(status));
+    await findToast(en.gameChanged);
+    expect(document.activeElement).toBe(pageHeading());
     expect(
       screen.queryByRole("button", { name: en.gameEditSubmit }),
     ).toBeNull();
@@ -527,8 +534,8 @@ describe("remove", () => {
     );
 
     await waitFor(() => expect(client.deleteGame).toHaveBeenCalledWith("g1"));
-    const status = await screen.findByText(en.gameRemoved);
-    await waitFor(() => expect(document.activeElement).toBe(status));
+    await findToast(en.gameRemoved);
+    expect(document.activeElement).toBe(pageHeading());
     expect(screen.queryByRole("alertdialog")).toBeNull();
   });
 
@@ -562,6 +569,7 @@ describe("remove", () => {
     );
     expect(screen.getAllByRole("alert")).toHaveLength(1);
     expect(screen.queryByRole("alertdialog")).toBeNull();
+    await expectNoToast();
   });
 
   it("keeps the list on screen while it refreshes after a removal", async () => {
@@ -575,7 +583,7 @@ describe("remove", () => {
       within(dialog).getByRole("button", { name: en.gameRemoveSubmit }),
     );
 
-    await screen.findByText(en.gameRemoved);
+    await findToast(en.gameRemoved);
     expect(screen.getByText("Catan")).toBeTruthy();
     expect(screen.queryByText(en.gameListLoading)).toBeNull();
   });
@@ -597,6 +605,7 @@ describe("remove", () => {
         en.errors[code],
       );
       expect(screen.getByRole("alertdialog")).toBeTruthy();
+      await expectNoToast();
     },
   );
 });

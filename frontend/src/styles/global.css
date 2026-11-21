@@ -207,6 +207,14 @@
   --z-popover: 65;
   /* Confirm dialog (ADR 0023 point 5): above every other layer, as the native modal dialog was, below the toaster. */
   --z-dialog: 80;
+  /* Toast region (ADR 0023 point 4, REQ-0022): on phones above the floating "+", which sits above the tab bar.
+     The wide layout has neither and resets it to the 16px window margin. */
+  --toast-bottom: calc(
+    var(--size-tab-bar) + env(safe-area-inset-bottom) + var(--size-plus-tab) +
+      2 * var(--space-3)
+  );
+  /* The toast region's width: sonner's own 356px, kept as a token so phones can cap it (REQ-0022). */
+  --width-toast: 22.25rem;
   --width-dialog: min(var(--content-width), calc(100vw - var(--space-4)));
   --height-dialog: calc(100dvh - var(--space-4));
   --width-accent-edge: 2px;
@@ -726,6 +734,47 @@ a:where(:not([data-slot="button"])) {
   animation: dropdown-out var(--duration-page-out) var(--ease-in) forwards;
 }
 
+/* Toast (ADR 0023 point 4): colour, radius and box are utilities in ui/Toast.tsx. sonner's own style tag comes
+   after this file, so each rule here has two attributes to win over its one. */
+[data-sonner-toaster][data-y-position] {
+  font-family: var(--font-sans);
+}
+
+[data-sonner-toaster] [data-sonner-toast] {
+  /* border utility's style is a registered variable; some browsers lack it (ADR 0023 B2 amendment d) */
+  border-style: solid;
+  font-size: var(--font-size-small);
+  transition-property: transform, opacity;
+  transition-duration: var(--duration-base);
+  transition-timing-function: var(--ease-out);
+}
+
+/* Below 600px sonner stretches the toaster and its toast across the window; REQ-0022 wants the bottom-right corner.
+   The toaster keeps its width, capped by the window margins, and the toast keeps its own width at the right. */
+[data-sonner-toaster][data-x-position="right"] {
+  left: auto;
+  width: min(var(--width-toast), calc(100vw - 2 * var(--space-3)));
+}
+
+[data-sonner-toaster][data-x-position="right"] [data-sonner-toast] {
+  left: auto;
+  width: auto;
+  max-width: 100%;
+}
+
+/* sonner drops the outline of a toast, which Tab reaches, so it gets the app's focus ring back. */
+[data-sonner-toaster] [data-sonner-toast]:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/* The exit is a fade (REQ-0022): sonner would also move the toast by its height. */
+[data-sonner-toaster] [data-sonner-toast][data-removed="true"] {
+  transform: none;
+  transition-duration: var(--duration-fast);
+  transition-timing-function: var(--ease-in);
+}
+
 /* The highlighted row is the keyboard focus: the wash and an accent edge mark it in place of the outline. */
 /* Gold here is focus under the Gold rule (REQ-0028 item 1, DECISION, user, 2026-11-18). */
 [data-slot="select-item"]:focus-visible {
@@ -851,8 +900,8 @@ a:where(:not([data-slot="button"])) {
 }
 
 /* A heading with its view toggle. Below 98rem it is a plain block, so the toggle sits on its own line under the
-   heading and the Lobbies status; beside a side column it is one row (see the side layout below). */
-.heading-row > .status + .view-switch {
+   Lobbies heading and its button, which have no margin; beside a side column it is one row (see the side layout below). */
+.heading-row > .panel__head + .view-switch {
   margin-top: var(--space-3);
 }
 
@@ -887,14 +936,6 @@ a:where(:not([data-slot="button"])) {
     align-items: center;
     column-gap: var(--space-2);
     min-height: var(--size-heading-row);
-  }
-
-  /* The Lobbies status gets its own line under the row; empty, that line is 0 tall, so nothing moves.
-     No text measure here: a narrower basis would let it share the first line. */
-  .side-layout .heading-row > .status {
-    flex-basis: 100%;
-    max-width: none;
-    order: 1;
   }
 
   /* The h2's margins, at :where's zero specificity so the panel's first-child rule still removes the top margin
@@ -2642,6 +2683,10 @@ a:where(:not([data-slot="button"])) {
 }
 
 @media (min-width: 47.5rem) {
+  :root {
+    --toast-bottom: var(--space-3);
+  }
+
   .shell {
     grid-template-columns: var(--size-rail) minmax(0, 1fr);
     grid-template-areas:
@@ -2827,7 +2872,7 @@ a:where(:not([data-slot="button"])) {
 }
 
 /* Spacing rule: a button or action row that follows other content in a panel, the lobby summary, a dialog or popover
-   sits one space-3 below it, and the invite popover's blocks after a status line do the same.
+   sits one space-3 below it, and in a Create frame the blocks after a form or a status line do the same.
    Headings, .status, .row-list and .step-card__text keep their own spacing, so this is not a
    blanket rule. Specificity (0,2,0) beats the .alert reset whatever the source order.
    .login-panel has its own button margin and is left alone. The Next up card is no panel, so what
@@ -2840,7 +2885,7 @@ a:where(:not([data-slot="button"])) {
   )
   > *
   + :is([data-slot="button"], .tooltip, .form-actions, .view-switch),
-.create-popover__card > .status + *,
+.create-popover__card > :is(.status, .group-form) + *,
 .next-up__spots > .next-up__figure + *,
 .next-up__spots > .meter + * {
   margin-top: var(--space-3);

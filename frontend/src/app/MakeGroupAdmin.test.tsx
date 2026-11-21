@@ -114,7 +114,7 @@ describe("making a member group admin", () => {
 
     await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
     expect(client.makeGroupAdmin).toHaveBeenCalledWith("g1", sam.userId);
-    expect(client.getGroup).toHaveBeenCalledTimes(2);
+    await waitFor(() => expect(client.getGroup).toHaveBeenCalledTimes(2));
     await waitFor(() =>
       expect(
         screen.queryByRole("button", { name: /^Make .* a group admin$/ }),

@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { declarations, stylesheet } from "../test/cssTokens";
+// Imported for its side effect: sonner puts its stylesheet, with the toaster's z-index, into the document head.
+import "../ui/Toast";
 
 // ADR 0023 point 4 (Amendment 2026-11-17): every overlay is a portal with a z-index token below 1000, so the
 // toaster (sonner's own z-index) stays above them all.
@@ -33,5 +35,23 @@ describe("z-index layers", () => {
     ])
       expect(dialog).toBeGreaterThan(below);
     expect(dialog).toBeLessThan(TOASTER_FLOOR);
+  });
+
+  // ADR 0023 point 4: the toaster's layer comes from sonner's own stylesheet, so it is checked there.
+  it("keeps the toaster above every z-index token of global.css", () => {
+    const sonnerCss = Array.from(document.head.querySelectorAll("style"))
+      .map((style) => style.textContent)
+      .join("");
+    const toaster = Number(
+      /\[data-sonner-toaster\]\{[^}]*z-index:\s*(\d+)/.exec(sonnerCss)?.[1],
+    );
+    expect(toaster).toBeGreaterThanOrEqual(TOASTER_FLOOR);
+    const tokens = Array.from(declarations)
+      .filter(([name]) => name.startsWith("--z-"))
+      .map(([, value]) => Number(value));
+    expect(tokens.length).toBeGreaterThan(0);
+    for (const layer of tokens) expect(layer).toBeLessThan(toaster);
+    // global.css never gives the toaster a z-index of its own.
+    expect(stylesheet).not.toMatch(/data-sonner-toaster[^{]*\{[^}]*z-index/);
   });
 });

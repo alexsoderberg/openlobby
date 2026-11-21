@@ -1,5 +1,4 @@
 import {
-  act,
   fireEvent,
   render,
   screen,
@@ -10,9 +9,8 @@ import { describe, expect, it, vi } from "vitest";
 import { ApiError, ApiProvider } from "../api";
 import { en } from "../i18n/messages/en";
 import { fakeApiClient, testUser } from "../test/fakeApiClient";
-import { GROUPS_PATH, groupPath } from "../features/groups";
+import { expectNoToast, findToast } from "../test/toasts";
 import { App } from "./App";
-import { navigate } from "./navigation";
 
 function renderLoggedIn(path = "/") {
   window.history.replaceState(null, "", path);
@@ -140,28 +138,16 @@ describe("leaving a group", () => {
     return client;
   }
 
-  it("goes to the group list with a notice and reloads the groups on success", async () => {
+  it("goes to the group list, confirms with a toast and reloads the groups on success", async () => {
     const client = await leaveFromGroupView();
 
-    const notice = await screen.findByText(en.groupLeft(group.name));
-    expect(notice.getAttribute("role")).toBe("status");
+    await findToast(en.groupLeft(group.name));
+    expect(screen.getAllByText(en.groupLeft(group.name))).toHaveLength(1);
     expect(client.leaveGroup).toHaveBeenCalledWith("g1");
     await waitFor(() => expect(client.listGroups).toHaveBeenCalledTimes(2));
     await waitFor(() =>
       expect(screen.queryByRole("link", { name: group.name })).toBeNull(),
     );
-  });
-
-  it("drops the notice when the user moves on, so a later visit to the list is clean", async () => {
-    await leaveFromGroupView();
-    await screen.findByText(en.groupLeft(group.name));
-
-    act(() => navigate(groupPath(group.id)));
-    await screen.findByRole("main");
-    act(() => navigate(GROUPS_PATH));
-
-    await screen.findByRole("heading", { name: en.groupsHeading });
-    expect(screen.queryByText(en.groupLeft(group.name))).toBeNull();
   });
 
   it("keeps the dialog and the page when upcoming lobbies block leaving", async () => {
@@ -180,6 +166,7 @@ describe("leaving a group", () => {
       en.errors.own_upcoming_lobbies_exist,
     );
     expect(window.location.pathname).toBe("/groups/g1");
+    await expectNoToast();
   });
 
   it("treats a group that is already gone as left", async () => {
@@ -195,6 +182,8 @@ describe("leaving a group", () => {
     );
 
     await waitFor(() => expect(window.location.pathname).toBe("/groups"));
+    // Already gone counts as left, so it is confirmed like a leave.
+    await findToast(en.groupLeft(group.name));
   });
 
   it("disables the confirm button while the call runs", async () => {

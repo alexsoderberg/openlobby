@@ -10,6 +10,8 @@ import { ApiError, ApiProvider, type ApiClient } from "../../api";
 import { en } from "../../i18n/messages/en";
 import { chooseOption } from "../../test/chooseOption";
 import { fakeApiClient } from "../../test/fakeApiClient";
+import { expectNoToast, findToast } from "../../test/toasts";
+import { Toaster } from "../../ui";
 import { InviteLinks } from "./InviteLinks";
 
 const members = [
@@ -41,6 +43,7 @@ function renderLinks(client: ApiClient) {
         onUnauthenticated={onUnauthenticated}
         onClose={onClose}
       />
+      <Toaster />
     </ApiProvider>,
   );
   return { onUnauthenticated, onClose };
@@ -201,8 +204,12 @@ describe("create invite link", () => {
     await waitFor(() =>
       expect(client.createInviteLink).toHaveBeenCalledWith("g1", 3),
     );
-    expect(await screen.findByText(en.inviteLinkCreated)).toBeTruthy();
+    await findToast(en.inviteLinkCreated);
     expect(await screen.findByText("0/3")).toBeTruthy();
+    // The form's button was disabled while saving, so focus goes to the heading.
+    expect(document.activeElement).toBe(
+      screen.getByRole("heading", { name: en.inviteHeading("Friday crew") }),
+    );
   });
 
   it("shows the server's error for the number of uses", async () => {
@@ -221,6 +228,7 @@ describe("create invite link", () => {
     expect((await screen.findByRole("alert")).textContent).toBe(
       en.errors.invalid_max_uses,
     );
+    await expectNoToast();
   });
 });
 
@@ -240,53 +248,34 @@ describe("copy invite link", () => {
         `${window.location.origin}/invite/tok-1`,
       ),
     );
-    expect(await screen.findByText(en.inviteLinkCopied)).toBeTruthy();
+    await findToast(en.inviteLinkCopied);
+    // A toast, never also inline (REQ-0022).
+    expect(screen.getAllByText(en.inviteLinkCopied)).toHaveLength(1);
   });
 
-  it("copy confirmation still lands in the persistent status region", async () => {
-    stubClipboard();
+  it("announces a repeated copy failure again as a new message in the status region", async () => {
+    const writeText = stubClipboard();
+    writeText.mockRejectedValue(new Error("denied"));
     renderLinks(
       fakeApiClient({ listInviteLinks: () => Promise.resolve([link]) }),
     );
-    const regions = await screen.findAllByRole("status");
 
     fireEvent.click(
       await screen.findByRole("button", { name: named(en.inviteLinkCopy) }),
     );
+    const first = await screen.findByText(en.inviteLinkCopyFailed);
+    const region = first.closest('[role="status"]');
 
-    const confirmation = await screen.findByText(en.inviteLinkCopied);
-    expect(regions.some((region) => region.contains(confirmation))).toBe(true);
+    fireEvent.click(
+      screen.getByRole("button", { name: named(en.inviteLinkCopy) }),
+    );
+
+    await waitFor(() => {
+      const second = screen.getByText(en.inviteLinkCopyFailed);
+      expect(second).not.toBe(first);
+      expect(region?.contains(second)).toBe(true);
+    });
   });
-
-  it.each([
-    ["copy", en.inviteLinkCopied, undefined],
-    ["failure", en.inviteLinkCopyFailed, new Error("denied")],
-  ])(
-    "announces a repeated copy (%s) again as a new message in the status region",
-    async (_, text, failure) => {
-      const writeText = stubClipboard();
-      if (failure) writeText.mockRejectedValue(failure);
-      renderLinks(
-        fakeApiClient({ listInviteLinks: () => Promise.resolve([link]) }),
-      );
-
-      fireEvent.click(
-        await screen.findByRole("button", { name: named(en.inviteLinkCopy) }),
-      );
-      const first = await screen.findByText(text);
-      const region = first.closest('[role="status"]');
-
-      fireEvent.click(
-        screen.getByRole("button", { name: named(en.inviteLinkCopy) }),
-      );
-
-      await waitFor(() => {
-        const second = screen.getByText(text);
-        expect(second).not.toBe(first);
-        expect(region?.contains(second)).toBe(true);
-      });
-    },
-  );
 
   it("shows a message when the browser cannot copy", async () => {
     const writeText = stubClipboard();
@@ -300,6 +289,7 @@ describe("copy invite link", () => {
     );
 
     expect(await screen.findByText(en.inviteLinkCopyFailed)).toBeTruthy();
+    await expectNoToast();
   });
 });
 
@@ -323,7 +313,7 @@ describe("revoke invite link", () => {
       expect(client.revokeInviteLink).toHaveBeenCalledWith("g1", "l1"),
     );
     expect(await screen.findByText(en.inviteLinksEmpty)).toBeTruthy();
-    expect(await screen.findByText(en.inviteLinkRevoked)).toBeTruthy();
+    await findToast(en.inviteLinkRevoked);
   });
 
   it("keeps the link when the confirmation is cancelled", async () => {
@@ -398,5 +388,6 @@ describe("revoke invite link", () => {
     expect(
       within(screen.getByRole("listitem")).getByText(/Created by/),
     ).toBeTruthy();
+    await expectNoToast();
   });
 });

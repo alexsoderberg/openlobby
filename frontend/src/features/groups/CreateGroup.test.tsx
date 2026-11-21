@@ -3,6 +3,8 @@ import { describe, expect, it, vi } from "vitest";
 import { ApiError, ApiProvider, type ApiClient } from "../../api";
 import { en } from "../../i18n/messages/en";
 import { fakeApiClient } from "../../test/fakeApiClient";
+import { expectNoToast, findToast } from "../../test/toasts";
+import { Toaster } from "../../ui";
 import { CreateGroup } from "./CreateGroup";
 
 const NAME_LABEL = en.groupNameLabel;
@@ -19,6 +21,7 @@ function renderForm(client: ApiClient) {
         onCancel={onCancel}
         onUnauthenticated={onUnauthenticated}
       />
+      <Toaster />
     </ApiProvider>,
   );
   return { onUnauthenticated, onCreated, onCancel };
@@ -116,18 +119,17 @@ describe("create group form", () => {
     await waitFor(() => expect(document.activeElement).toBe(input));
   });
 
-  it("moves focus to the success message and clears the field", async () => {
+  it("confirms with a toast, clears the field and focuses it", async () => {
     renderForm(fakeApiClient());
 
     typeName("Friday crew");
+    screen.getByRole("button", { name: SUBMIT }).focus();
     submit();
 
-    const status = await screen.findByText(en.groupCreated);
-    await waitFor(() => expect(document.activeElement).toBe(status));
-    expect(
-      (screen.getByRole("textbox", { name: NAME_LABEL }) as HTMLInputElement)
-        .value,
-    ).toBe("");
+    await findToast(en.groupCreated);
+    const input = screen.getByRole("textbox", { name: NAME_LABEL });
+    expect((input as HTMLInputElement).value).toBe("");
+    await waitFor(() => expect(document.activeElement).toBe(input));
   });
 
   it("shows a service error and keeps what was typed", async () => {
@@ -148,6 +150,7 @@ describe("create group form", () => {
       (screen.getByRole("textbox", { name: NAME_LABEL }) as HTMLInputElement)
         .value,
     ).toBe("Friday crew");
+    await expectNoToast();
   });
 
   it("sends an expired session to login", async () => {

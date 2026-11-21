@@ -15,7 +15,14 @@ import {
 } from "../../api";
 import { useChangeAction } from "../../hooks";
 import { toLobbyMessage, useMessages } from "../../i18n";
-import { Button, ConfirmDialog, ErrorAlert, Icon, Select } from "../../ui";
+import {
+  Button,
+  ConfirmDialog,
+  ErrorAlert,
+  Icon,
+  Select,
+  showToast,
+} from "../../ui";
 import { LOBBY_CHANGED, LOBBY_GAME_SET, NOT_ALLOWED } from "./lobbyErrors";
 import { fieldProps, LobbyField } from "./LobbyField";
 import { hasEnded } from "./lobbyTime";
@@ -27,6 +34,8 @@ type Outcome = { field: Field; code?: string };
 type Props = {
   groupId: string;
   lobby: LobbyDetail;
+  /** Takes focus after a set game when no settings are left to show: the page heading, which then names it. */
+  headingRef: RefObject<HTMLElement | null>;
   onChanged: () => void;
   onUnauthenticated: () => void;
 };
@@ -50,17 +59,13 @@ export function LobbySettings(props: Props) {
   return <LoadedSettings {...props} />;
 }
 
-/** Keeps the last change here, so the game's result stays when the reload swaps the game control for the modes. */
+/** Keeps the last change here, so a game's refusal stays when the reload swaps the game control for the modes. */
 function LoadedSettings(props: Props) {
   const { lobby } = props;
   const m = useMessages();
   const id = useId();
   const root = useRef<HTMLDivElement>(null);
-  const change = useSettingChange(
-    root,
-    props.onChanged,
-    props.onUnauthenticated,
-  );
+  const change = useSettingChange(root, props);
   const { state, reload } = useGroupGames(
     props.groupId,
     props.onUnauthenticated,
@@ -89,7 +94,7 @@ function LoadedSettings(props: Props) {
           </SettingsSection>
         );
   // Nothing at all when there is nothing to show, so the page gets no empty side column (REQ-0025).
-  if (!section && change.outcome?.field !== "game") return null;
+  if (!section && !gameErrorId) return null;
   return (
     <div ref={root}>
       {section}
@@ -115,20 +120,29 @@ function SettingsSection({
 }
 
 /**
- * One change at a time: runs it, keeps what it ended in, and moves focus to the control it was about. A set game
- * takes the game control off the page on the reload, so focus goes to the game's result instead.
+ * One change at a time: runs it, keeps what it ended in, confirms a saved one with a toast (REQ-0022) and moves
+ * focus to the control it was about. The reload takes the game control off the page: a refusal then focuses the
+ * game's result, and a set game the first control left in the settings (its mode), or else the page heading.
  */
 function useSettingChange(
   root: RefObject<HTMLElement | null>,
-  onChanged: () => void,
-  onUnauthenticated: () => void,
+  {
+    lobby,
+    headingRef,
+    onChanged,
+    onUnauthenticated,
+  }: Pick<Props, "lobby" | "headingRef" | "onChanged" | "onUnauthenticated">,
 ) {
+  const m = useMessages();
   const { busy, run } = useChangeAction(onUnauthenticated);
   const [outcome, setOutcome] = useState<Outcome>();
 
   useEffect(() => {
     if (!outcome) return;
-    const toResult = outcome.field === "game" && reloads(outcome.code);
+    const toResult =
+      outcome.field === "game" &&
+      outcome.code !== undefined &&
+      reloads(outcome.code);
     root.current
       ?.querySelector<HTMLElement>(
         toResult
@@ -137,6 +151,26 @@ function useSettingChange(
       )
       ?.focus();
   }, [outcome, root]);
+
+  const gameSet =
+    outcome?.field === "game" &&
+    outcome.code === undefined &&
+    lobby.gameName !== null;
+  useEffect(() => {
+    if (!gameSet) return;
+    (
+      root.current?.querySelector<HTMLElement>(`[role="combobox"]`) ??
+      headingRef.current
+    )?.focus();
+  }, [gameSet, root, headingRef]);
+
+  function settle(next: Outcome) {
+    setOutcome(next);
+    if (next.code === undefined)
+      showToast(
+        next.field === "game" ? m.lobbyGameSaved : m.lobbySettingsSaved,
+      );
+  }
 
   /** Runs a change and loads the lobby again when that is due; resolves to the error code of a refusal. */
   async function send(call: () => Promise<void>) {
@@ -147,9 +181,9 @@ function useSettingChange(
   }
 
   async function apply(field: Field, call: () => Promise<void>) {
-    setOutcome({ field, code: await send(call) });
+    settle({ field, code: await send(call) });
   }
-  return { busy, outcome, setOutcome, send, apply };
+  return { busy, outcome, settle, send, apply };
 }
 
 type Change = ReturnType<typeof useSettingChange>;
@@ -202,7 +236,7 @@ function SettingsForm({
   modes,
   busy,
   outcome,
-  setOutcome,
+  settle,
   send,
   apply,
 }: Props & Change & { modes: GameMode[] }) {
@@ -224,8 +258,6 @@ function SettingsForm({
         disabled={busy}
         onChoose={setPending}
       />
-      {/* Only a saved mode: a refused one is read in its dialog. */}
-      <Result field="mode" outcome={outcome} />
       {activities.length > 0 && (
         <>
           <ActivitySelect
@@ -257,7 +289,7 @@ function SettingsForm({
           submitIcon="edit"
           keepLabel={m.lobbyModeChangeKeep}
           busy={busy}
-          // A refusal stays in the dialog; only a saved mode is reported beside the control, once it has closed.
+          // A refusal stays in the dialog; a saved mode is confirmed by a toast, once the dialog has closed.
           onConfirm={() =>
             send(() =>
               api.setLobbyMode(
@@ -271,7 +303,7 @@ function SettingsForm({
           toMessage={refusalText}
           onClose={(changed) => {
             setPending(undefined);
-            if (changed) setOutcome({ field: "mode" });
+            if (changed) settle({ field: "mode" });
             // The dialog was opened from the list's option, which is gone, so focus goes back to the mode control.
             document.getElementById(`${id}-mode`)?.focus();
           }}
@@ -361,8 +393,8 @@ function ActivitySelect({
 }
 
 /**
- * "Saved." or the plain-text refusal of the last change, when it was about this field. Only the game's result
- * takes focus, since its control leaves the page when the lobby loads again.
+ * The plain-text refusal of the last change, when it was about this field. Only the game's refusal takes focus,
+ * since its control leaves the page when the lobby loads again.
  */
 function Result({
   field,
@@ -373,17 +405,10 @@ function Result({
   outcome?: Outcome;
   errorId?: string;
 }) {
-  const m = useMessages();
   const refusalText = useRefusalText();
-  if (outcome?.field !== field) return null;
+  if (outcome?.field !== field || outcome.code === undefined) return null;
   const focusable =
     field === "game" ? { tabIndex: -1, "data-result": field } : {};
-  if (outcome.code === undefined)
-    return (
-      <p role="status" className="form-hint" {...focusable}>
-        {field === "game" ? m.lobbyGameSaved : m.lobbySettingsSaved}
-      </p>
-    );
   return (
     <p id={errorId} role="alert" className="field-error" {...focusable}>
       {refusalText(outcome.code)}

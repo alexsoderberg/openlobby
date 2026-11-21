@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useApi, type LobbyDetail } from "../../api";
 import { GenreFrame, GenreName } from "../../genres";
 import { formatDateTimeRange, useMessages } from "../../i18n";
@@ -35,6 +35,7 @@ export function LobbyDetails({
   ...callbacks
 }: Props) {
   const m = useMessages();
+  const headingRef = useRef<HTMLHeadingElement>(null);
   return (
     <>
       <GenreFrame
@@ -46,7 +47,9 @@ export function LobbyDetails({
       >
         <div className="game-heading">
           <LobbyGameLogo lobby={lobby} />
-          <h1>{lobbyLabel(lobby, m)}</h1>
+          <h1 ref={headingRef} tabIndex={-1}>
+            {lobbyLabel(lobby, m)}
+          </h1>
         </div>
         <GenreName genre={lobby.gameGenre} />
       </GenreFrame>
@@ -76,6 +79,7 @@ export function LobbyDetails({
             <LobbySettings
               groupId={groupId}
               lobby={lobby}
+              headingRef={headingRef}
               onChanged={onMembershipChanged}
               onUnauthenticated={callbacks.onUnauthenticated}
             />

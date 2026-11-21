@@ -1,4 +1,11 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   ApiError,
@@ -10,7 +17,9 @@ import {
 import { formatTimeRange, formatWeekdayShort } from "../../i18n";
 import { en } from "../../i18n/messages/en";
 import { fakeApiClient, testUser } from "../../test/fakeApiClient";
+import { findToast } from "../../test/toasts";
 import { dayColumns, selectedColumns } from "../../test/weekGrid";
+import { Toaster } from "../../ui";
 import { Lobbies } from "./Lobbies";
 
 // Wednesday 4 November 2026, 12:00 local time. The week runs Monday 2 to Sunday 8 November.
@@ -75,6 +84,7 @@ function renderLobbies(overrides: Partial<ApiClient> = {}) {
         members={members}
         onUnauthenticated={onUnauthenticated}
       />
+      <Toaster />
     </ApiProvider>,
   );
   return { client, onUnauthenticated, view };
@@ -83,6 +93,10 @@ function renderLobbies(overrides: Partial<ApiClient> = {}) {
 const withLobbies = (...lobbies: Lobby[]) => ({
   listUpcomingLobbies: vi.fn(() => Promise.resolve(lobbies)),
 });
+
+/** sonner hands a toast to the region in a timeout, so a toast that is not shown is checked after one. */
+const settleToasts = () =>
+  act(() => new Promise<void>((resolve) => setTimeout(resolve)));
 
 const occurrences = (text: string | null, part: string) =>
   (text ?? "").split(part).length - 1;
@@ -93,7 +107,7 @@ const dayText = (iso: string) =>
   );
 
 describe("heading row (REQ-0025)", () => {
-  it("holds the heading, Create lobby, the status and the view toggle, in that order", async () => {
+  it("holds the heading, Create lobby and the view toggle, in that order", async () => {
     renderLobbies(withLobbies());
 
     const heading = await screen.findByRole("heading", {
@@ -103,14 +117,12 @@ describe("heading row (REQ-0025)", () => {
     const order = [
       heading,
       within(row).getByRole("button", { name: en.lobbyCreateButton }),
-      within(row).getByRole("status"),
       within(row).getByRole("group", { name: en.lobbyViewLabel }),
     ];
     const following = (a: Element, b: Element) =>
       a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING;
     expect(following(order[0], order[1])).toBeTruthy();
     expect(following(order[1], order[2])).toBeTruthy();
-    expect(following(order[2], order[3])).toBeTruthy();
   });
 });
 
@@ -647,7 +659,8 @@ describe("create lobby popover", () => {
     ).toBe("");
   });
 
-  it("closes after a save, refreshes the list and confirms", async () => {
+  // The new lobby is in the list, so it confirms itself (REQ-0022, place 7).
+  it("closes after a save and refreshes the list, with no toast and no inline text", async () => {
     const { client } = renderLobbies({
       ...withLobbies(catan),
       createLobby: vi.fn(() => Promise.resolve(catan)),
@@ -666,10 +679,11 @@ describe("create lobby popover", () => {
       within(dialog()!).getByRole("button", { name: en.lobbyCreateSubmit }),
     );
 
-    expect(await screen.findByText(en.lobbyCreated)).toBeTruthy();
-    expect(dialog()).toBeNull();
+    await waitFor(() => expect(dialog()).toBeNull());
     expect(client.listUpcomingLobbies).toHaveBeenCalledTimes(2);
     expect(document.activeElement).toBe(openButton());
+    await settleToasts();
+    expect(screen.queryByText(en.lobbyCreated)).toBeNull();
   });
 
   it("keeps Tab and Shift+Tab inside the form, through the game select", async () => {
@@ -704,10 +718,15 @@ describe("create lobby from the calendar", () => {
     fireEvent.click(calendarButton());
   }
 
-  it("closes after a save with focus back on the day's control", async () => {
+  /** Creates `created` from Friday's control of the calendar; the reloaded list then has it. */
+  async function createFromCalendar(created: Lobby) {
+    const listUpcomingLobbies = vi
+      .fn<ApiClient["listUpcomingLobbies"]>()
+      .mockResolvedValueOnce([catan])
+      .mockResolvedValue([catan, created]);
     renderLobbies({
-      ...withLobbies(catan),
-      createLobby: vi.fn(() => Promise.resolve(catan)),
+      listUpcomingLobbies,
+      createLobby: vi.fn(() => Promise.resolve(created)),
     });
     await screen.findByRole("link", { name: "Catan" });
     fireEvent.click(calendarButton());
@@ -725,10 +744,38 @@ describe("create lobby from the calendar", () => {
     fireEvent.click(
       within(dialog()!).getByRole("button", { name: en.lobbyCreateSubmit }),
     );
+    await waitFor(() => expect(dialog()).toBeNull());
+    await waitFor(() => expect(listUpcomingLobbies).toHaveBeenCalledTimes(2));
+    return day;
+  }
 
-    expect(await screen.findByText(en.lobbyCreated)).toBeTruthy();
-    expect(dialog()).toBeNull();
+  it("closes after a save with focus back on the day's control, and a lobby in the week shown gets no toast", async () => {
+    const day = await createFromCalendar(
+      lobby({
+        id: "l3",
+        gameName: "Catan",
+        startsAt: local(6, 18),
+        endsAt: local(6, 20),
+      }),
+    );
+
     expect(document.activeElement).toBe(day);
+    await settleToasts();
+    expect(screen.queryByText(en.lobbyCreated)).toBeNull();
+  });
+
+  it("confirms with a toast a lobby that the reloaded list has outside the week shown", async () => {
+    await createFromCalendar(
+      lobby({
+        id: "l3",
+        gameName: "Catan",
+        startsAt: local(13, 18),
+        endsAt: local(13, 20),
+      }),
+    );
+
+    await findToast(en.lobbyCreated);
+    expect(screen.getAllByText(en.lobbyCreated)).toHaveLength(1);
   });
 
   it("opens the form with that day's date and empty times, from the day's control", async () => {

@@ -1,29 +1,34 @@
 import { useState, type RefObject } from "react";
 import type { Game, GameInput } from "../../api";
 import { GAME_NOT_FOUND } from "./gameErrors";
-import { useGameChanges } from "./useGameChanges";
+import { useGameChanges, type GameChange } from "./useGameChanges";
 import { useGames } from "./useGames";
 
 /**
  * State of the game list page: the games, which one is being changed or removed, and the focus after a
- * change, which goes to `statusRef`. Each action resolves to the error code the form or dialog should show. A success closes
- * what held the change and moves focus to the status message. So does a vanished game: the page
- * shows that message itself, so the form or dialog does not show it a second time. An added game opens in its
- * form, because its images can be added only once it has an ID (ADR 0026).
+ * change, which goes to `focusRef`. Each action resolves to the error code the form or dialog should show. A success closes
+ * what held the change, moves focus to `focusRef` and is handed to `onDone`. A vanished game closes and moves focus
+ * too: the page shows that message itself, so the form or dialog does not show it a second time. An added game
+ * opens in its form, because its images can be added only once it has an ID (ADR 0026).
  */
 export function useGameAdmin(
   onUnauthenticated: () => void,
-  statusRef: RefObject<HTMLElement | null>,
+  focusRef: RefObject<HTMLElement | null>,
+  onDone: (change: GameChange) => void,
 ) {
   const { state: games, reload, refresh } = useGames(onUnauthenticated);
   const changes = useGameChanges(refresh, onUnauthenticated);
   const [editingId, setEditingId] = useState<string>();
   const [removing, setRemoving] = useState<Game>();
 
-  function closeUnlessFailed(code: string | undefined): string | undefined {
+  function closeUnlessFailed(
+    change: GameChange,
+    code: string | undefined,
+  ): string | undefined {
     if (code !== undefined && code !== GAME_NOT_FOUND) return code;
     setEditingId(undefined);
-    statusRef.current?.focus();
+    focusRef.current?.focus();
+    if (code === undefined) onDone(change);
     return undefined;
   }
 
@@ -37,21 +42,24 @@ export function useGameAdmin(
     setEditingId,
     removing,
     setRemoving,
-    /** After the confirm dialog's exit; a success (or a vanished game) moves focus to the status. */
+    /** After the confirm dialog's exit, so that its scrim no longer hides the toast; a vanished game only moves focus. */
     closeRemove: (removed: boolean) => {
       setRemoving(undefined);
-      if (removed) statusRef.current?.focus();
+      if (!removed) return;
+      focusRef.current?.focus();
+      if (changes.state.status === "done") onDone("removed");
     },
     add: async (input: GameInput) => {
       let addedId: string | undefined;
       const code = closeUnlessFailed(
+        "added",
         await changes.add(input, (game) => (addedId = game.id)),
       );
       if (addedId !== undefined) setEditingId(addedId);
       return code;
     },
     save: async (gameId: string, input: GameInput) =>
-      closeUnlessFailed(await changes.replace(gameId, input)),
+      closeUnlessFailed("changed", await changes.replace(gameId, input)),
     // A vanished game closes the dialog too: the page shows that message itself.
     confirmRemove: async (gameId: string) => {
       const code = await changes.remove(gameId);

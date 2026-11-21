@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { LandingPage } from "../features/landing";
 import { useSession } from "../features/session";
-import { Brand } from "../ui";
+import { Brand, Toaster } from "../ui";
 import { LoggedInApp } from "./LoggedInApp";
 import { NotFoundPage } from "./Pages";
 import { RequireLogin } from "./RequireLogin";
@@ -12,7 +12,17 @@ import { useEntryLocation } from "./useEntryLocation";
 const START_PATH = "/";
 const START: Route = { name: "start" };
 
+/** The screen for the session and the address, with the one toast region beside it (ADR 0023 point 4). */
 export function App() {
+  return (
+    <>
+      <Screen />
+      <Toaster />
+    </>
+  );
+}
+
+function Screen() {
   const entry = useEntryLocation();
   const pathname = usePathname();
   const { session, reload, logout, logoutError, markExpired } = useSession();
