@@ -6,10 +6,10 @@ import type { ComponentProps } from "react";
 import { classNames } from "./classNames";
 
 const dialogVariants = {
-  overlay: "fixed inset-(--space-0) z-(--z-dialog) bg-(--color-frost)",
+  overlay: "fixed inset-(--space-0) z-(--z-dialog) bg-(--color-scrim)",
   // Centred by auto margins at its own size, as the native dialog was, so a transform is free for the motion.
   content:
-    "fixed inset-(--space-0) z-(--z-dialog) m-auto w-fit h-fit max-w-(--width-dialog) max-h-(--height-dialog) overflow-y-auto p-(--space-4) border border-(--color-border) rounded-(--radius-panel) bg-(--color-bg-raised) text-(--color-text)",
+    "fixed inset-(--space-0) z-(--z-dialog) m-auto w-fit h-fit max-w-(--width-dialog) max-h-(--height-dialog) overflow-y-auto p-(--space-4) border border-(--color-rule-strong) rounded-(--radius) bg-(--color-surface) text-(--color-text)",
 };
 
 export const AlertDialog = RadixAlertDialog.Root;

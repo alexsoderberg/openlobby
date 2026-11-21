@@ -3,7 +3,6 @@ import {
   WCAG_AA_UI,
   contrastRatio,
   cssRules as rules,
-  overPage,
   solid,
 } from "../test/cssTokens";
 
@@ -45,13 +44,37 @@ describe("scrollbars", () => {
     }
   });
 
+  // The thumb colours the CSS really uses: the first value of scrollbar-color and the WebKit thumb's background.
+  const thumbs = [
+    ...standardRules.flatMap(({ body }) =>
+      Array.from(
+        body.matchAll(/scrollbar-color:\s*var\((--[\w-]+)\)/g),
+        ([, name]) => name,
+      ),
+    ),
+    ...webkitRules
+      .filter(({ selector }) => selector.includes("thumb"))
+      .flatMap(({ body }) =>
+        Array.from(
+          body.matchAll(/background:\s*var\((--[\w-]+)\)/g),
+          ([, name]) => name,
+        ),
+      ),
+  ];
+
+  it("finds the thumb colour of both engines", () => {
+    expect(thumbs).toHaveLength(2);
+  });
+
   it.each([
-    ["the page", solid("--color-bg")],
-    ["a panel", overPage("--color-surface")],
-    ["the popover card", solid("--color-popover-top")],
+    ["the page", "--color-ground"],
+    ["a panel", "--color-surface"],
+    ["a hovered row", "--color-raised"],
   ])("the thumb stands out at 3:1 or more on %s", (_, plate) => {
-    expect(
-      contrastRatio(solid("--color-scrollbar-thumb"), plate),
-    ).toBeGreaterThanOrEqual(WCAG_AA_UI);
+    for (const thumb of thumbs)
+      expect(
+        contrastRatio(solid(thumb), solid(plate)),
+        thumb,
+      ).toBeGreaterThanOrEqual(WCAG_AA_UI);
   });
 });

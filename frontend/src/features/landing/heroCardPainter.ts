@@ -61,13 +61,13 @@ export function readCardStyle(element: Element): CardStyle {
   const styles = getComputedStyle(element);
   const read = (name: string) => styles.getPropertyValue(name).trim();
   return {
-    surface: read("--color-bg-raised"),
-    border: read("--color-border"),
+    surface: read("--color-surface"),
+    border: read("--color-rule"),
     text: read("--color-text"),
-    muted: read("--color-muted-themed"),
+    muted: read("--color-muted"),
     glow: read("--color-online"),
     headingFont: read("--font-heading"),
-    bodyFont: read("--font-sans"),
+    bodyFont: read("--font-text"),
   };
 }
 
@@ -135,7 +135,7 @@ function paintArt(ctx: CanvasRenderingContext2D, theme: CardTheme) {
     );
 }
 
-/** The time in a pill tinted with the genre accent. */
+/** The time in the text colour, in a pill tinted with the genre accent: an accent is no text colour. */
 function paintTimePill(
   ctx: CanvasRenderingContext2D,
   timeText: string,
@@ -150,7 +150,7 @@ function paintTimePill(
   ctx.fillStyle = theme.accent;
   ctx.fill();
   ctx.restore();
-  ctx.fillStyle = theme.accent;
+  ctx.fillStyle = style.text;
   ctx.fillText(
     timeText,
     CARD_PADDING + PILL_PADDING,

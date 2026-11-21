@@ -42,7 +42,7 @@ function blend(over: string, alpha: number, under: string) {
 
 describe.each(HERO_SAMPLE_CARDS)("hero card text ($genre)", ({ genre }) => {
   const accent = solid(themeForGenre(genre).accentVar);
-  const surface = solid("--color-bg-raised");
+  const surface = solid("--color-surface");
   const plates = {
     filling: blend(accent, PATTERN_ALPHA, surface),
     full: blend(
@@ -55,12 +55,14 @@ describe.each(HERO_SAMPLE_CARDS)("hero card text ($genre)", ({ genre }) => {
   it.each(Object.entries(plates))(
     "reads at 4.5:1 or more in the %s state",
     (_, plate) => {
-      for (const text of [solid("--color-text"), solid("--color-muted-themed")])
+      for (const text of [solid("--color-text"), solid("--color-muted")])
         expect(contrastRatio(text, plate), text).toBeGreaterThanOrEqual(
           WCAG_AA_TEXT,
         );
       const pill = blend(accent, CARD_TINT_ALPHA, plate);
-      expect(contrastRatio(accent, pill)).toBeGreaterThanOrEqual(WCAG_AA_TEXT);
+      expect(contrastRatio(solid("--color-text"), pill)).toBeGreaterThanOrEqual(
+        WCAG_AA_TEXT,
+      );
     },
   );
 });

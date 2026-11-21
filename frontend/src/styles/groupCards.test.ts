@@ -55,10 +55,9 @@ describe("Group list cards", () => {
     );
   });
 
-  it("move only by opacity, and not at all under reduced motion", () => {
-    expect(rule(".group-card::after")).toMatch(
-      /transition: opacity var\(--duration-base\) var\(--ease-out\);/,
-    );
+  // Colour changes on hover are instant (ADR 0028 section 2).
+  it("show their hover at once, and move not at all under reduced motion", () => {
+    expect(rule(".group-card::after")).not.toMatch(/transition/);
     expect(REDUCED_MOTION_ALL.exec(stylesheet)?.[1]).toMatch(
       /transition:\s*none !important;/,
     );

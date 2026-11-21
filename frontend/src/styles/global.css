@@ -9,86 +9,91 @@
   }
 }
 
-/* Self-hosted fonts (OFL, Latin subset). font-display: swap keeps text visible in the fallback stack while a file loads. */
+/* Self-hosted fonts (OFL, Latin subset; ADR 0028). font-display: optional: a file not ready in time leaves the
+   fallback in place, so nothing shifts when it arrives. */
 @font-face {
-  font-family: "Space Grotesk";
-  src: url("/fonts/space-grotesk-latin-500-normal.woff2") format("woff2");
-  font-weight: 500;
+  font-family: "Big Shoulders Display";
+  src: url("/fonts/big-shoulders-display-latin-800-normal.woff2")
+    format("woff2");
+  font-weight: 800;
   font-style: normal;
-  font-display: swap;
+  font-display: optional;
 }
 
 @font-face {
-  font-family: "Space Grotesk";
-  src: url("/fonts/space-grotesk-latin-600-normal.woff2") format("woff2");
-  font-weight: 600;
+  font-family: "Big Shoulders Display";
+  src: url("/fonts/big-shoulders-display-latin-900-normal.woff2")
+    format("woff2");
+  font-weight: 900;
   font-style: normal;
-  font-display: swap;
+  font-display: optional;
 }
 
 @font-face {
-  font-family: "Space Grotesk";
-  src: url("/fonts/space-grotesk-latin-700-normal.woff2") format("woff2");
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Inter";
-  src: url("/fonts/inter-latin-400-normal.woff2") format("woff2");
+  font-family: "Archivo";
+  src: url("/fonts/archivo-latin-400-normal.woff2") format("woff2");
   font-weight: 400;
   font-style: normal;
-  font-display: swap;
+  font-display: optional;
 }
 
 @font-face {
-  font-family: "Inter";
-  src: url("/fonts/inter-latin-500-normal.woff2") format("woff2");
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Inter";
-  src: url("/fonts/inter-latin-600-normal.woff2") format("woff2");
+  font-family: "Archivo";
+  src: url("/fonts/archivo-latin-600-normal.woff2") format("woff2");
   font-weight: 600;
   font-style: normal;
-  font-display: swap;
+  font-display: optional;
 }
 
-/* Design tokens: the only place with colour, radius, font, spacing and motion values.
-   Text contrast is pinned by styles/tokens.test.ts. */
+@font-face {
+  font-family: "Archivo";
+  src: url("/fonts/archivo-latin-700-normal.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: optional;
+}
+
+/* Design tokens: the only place with colour, font, spacing, radius and motion values. One dark theme, "Stage"
+   (ADR 0028 section 16). Text contrast is pinned by styles/tokens.test.ts; where signal may go by
+   styles/orangeRule.test.ts. A light theme later is a second set of values for these names. */
 :root {
   color-scheme: dark;
 
-  --color-bg: #0a0a0d;
-  --color-bg-raised: #111116;
-  --color-surface: rgba(255, 255, 255, 0.03);
-  --color-border: rgba(255, 255, 255, 0.08);
-  --color-text: #e9e9ee;
-  --color-muted: #8c8d96;
-  --color-accent: #f0c75e;
-  --color-on-accent: #14110a;
-  --color-accent-tint: rgba(240, 199, 94, 0.12);
-  /* A faint cool grey glow at the top of the page, for depth without gold (REQ-0028 item 1). */
-  --color-page-wash: rgba(150, 165, 190, 0.06);
-  --color-focus: var(--color-accent);
+  --color-ground: #161412;
+  /* Panels, the Next up band, floating panels and text fields. */
+  --color-surface: #201d1a;
+  /* Hover, the highlighted option, avatars, monograms and toasts. */
+  --color-raised: #2b2723;
+  /* Dividers only. */
+  --color-rule: #332f2a;
+  /* The 1px edge of floating panels; decorative, never a control. */
+  --color-rule-strong: #4b453f;
+  /* The 1px edge of a control: 3:1 or more on ground, surface and raised (WCAG 1.4.11). */
+  --color-control-line: #7a7268;
+  --color-text: #f2ede5;
+  --color-muted: #aaa298;
+  /* The one accent: the closed list of the Orange rule (ADR 0028 section 16.4). Text only on the Next up band. */
+  --color-signal: #ff6a2b;
+  --color-on-signal: #161412;
+  --color-danger: #ff7a85;
+  --color-scrim: rgb(0 0 0 / 0.6);
   --color-online: #3ddc84;
-  --color-danger: #ff7b72;
-  --color-danger-bg: #2a1214;
-  --color-frost: rgba(10, 10, 13, 0.72);
-  --color-highlight: rgba(255, 255, 255, 0.35);
-  --color-shade: rgba(0, 0, 0, 0.18);
-  --color-sheen: rgba(255, 255, 255, 0.45);
-  --color-row-hover: rgba(255, 255, 255, 0.04);
-  /* The lit top edge of a raised card, so it reads as a plate above the page. */
-  --color-card-edge: rgba(255, 255, 255, 0.06);
+  /* Group colours (ADR 0028 sections 5 and 16.7): one dark text colour on every fill. */
+  --color-group-1: #6f97f7;
+  --color-group-2: #4fbf7f;
+  --color-group-3: #e0b83a;
+  --color-group-4: #ec7aa6;
+  --color-group-5: #3dbab5;
+  --color-group-6: #a98be8;
+  --color-on-group: #161412;
 
-  --font-heading: "Space Grotesk", system-ui, sans-serif;
-  --font-sans:
-    "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  /* Two radii only (ADR 0028 section 16.5): containers and controls, and small marks. */
+  --radius: 8px;
+  --radius-sm: 4px;
+
+  --font-heading: "Big Shoulders Display", system-ui, sans-serif;
+  --font-text:
+    "Archivo", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 
   --space-0: 0;
   --space-1: 0.25rem;
@@ -97,44 +102,31 @@
   --space-4: 1.5rem;
   --space-6: 3rem;
 
-  --radius-panel: 12px;
-  --radius-control: 8px;
-  --radius-badge: 4px;
   --content-width: 40rem;
 
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --duration-fast: 0.1s;
   --duration-base: 0.45s;
   --duration-slow: 1s;
-  --tracking-tight: -0.03em;
-  --tracking-snug: -0.02em;
   --tracking-wide: 0.14em;
   --press-scale: 0.97;
   --reveal-offset: 40px;
-  --blur-glass: 8px;
 
   --font-size-hero: clamp(2.75rem, 8vw, 5.5rem);
-  --font-size-title: clamp(1.75rem, 4vw, 2.25rem);
+  --font-size-title: clamp(2.25rem, 5vw, 3.25rem);
   --font-size-small: 0.875rem;
   --font-size-caption: 0.6875rem;
-  --font-size-heading: 1.25rem;
+  --font-size-heading: 1.625rem;
   --font-size-figure: 2.5rem;
   --line-hero: 0.98;
   --width-landing: 64rem;
   --stage-height: clamp(17rem, 60vw, 24rem);
-  --radius-chip: 999px;
-  --rise-offset: 110%;
   --stagger-fade: 0.15s;
   --stagger-step: 0.1s;
   /* Group cards fade up one after another; from the limit on they start together, so a long list is not slow. */
   --stagger-card: 0.04s;
   --stagger-card-limit: 8;
   --reveal-delay: 0s;
-  --duration-meter: 1.6s;
-  --duration-flash: 1.8s;
-  --flash-offset: 0.5rem;
-  --duration-rise: 1.1s;
 
   /* App shell. The wide layout starts at 760px (47.5rem); media queries cannot read tokens, so it is written out there.
      The main area box is at most 100rem including its padding (REQ-0025). */
@@ -146,34 +138,7 @@
   --size-heading-row: calc(var(--size-tap) + 2 * var(--space-1) + 2 * 1px);
   /* Buttons (ADR 0021): compact under a mouse; on touch every target is --size-tap (A10). */
   --size-button: 2rem;
-  /* Button hover: light from above lights the top edge, a glow in the button's own colour breathes in, a soft
-     light follows the pointer, and press sinks the button into an inner shadow. */
-  --color-button-edge: rgba(255, 255, 255, 0.18);
-  --color-button-edge-danger: rgba(255, 123, 114, 0.5);
-  --color-button-top-light: rgba(255, 255, 255, 0.07);
-  --color-button-top-light-primary: rgba(255, 251, 240, 0.24);
-  --color-button-top-light-danger: rgba(255, 123, 114, 0.12);
-  --color-button-glow-accent: rgba(240, 199, 94, 0.34);
-  --color-button-glow-danger: rgba(255, 123, 114, 0.3);
-  --color-button-light: rgba(255, 255, 255, 0.12);
-  --color-button-light-primary: rgba(255, 250, 235, 0.6);
-  --color-button-light-danger: rgba(255, 123, 114, 0.22);
-  --color-button-press-shade: rgba(0, 0, 0, 0.42);
-  --shadow-button-glow-primary: 0 6px 24px -6px var(--color-button-glow-accent);
-  --shadow-button-glow-danger: 0 0 20px -6px var(--color-button-glow-danger);
-  --shadow-button-press: inset 0 2px 6px var(--color-button-press-shade);
-  --size-button-light: 7rem;
-  --duration-button-hover: 0.28s;
-  --duration-button-glow: 0.4s;
-  /* The light trails the pointer a little, which reads as liquid rather than stuck to the cursor. */
-  --duration-button-follow: 0.22s;
-  --scale-button-glow-rest: 0.9;
-  --scale-button-light-pressed: 0.55;
-  --opacity-button-glow-pressed: 0.45;
   --offset-button-sink: 1px;
-  /* Where the lit edge's light from above has faded out; the primary's stops earlier so its gold stays full. */
-  --stop-button-top-light: 60%;
-  --stop-button-top-light-primary: 55%;
   /* A lobby row is a card: one and a half taps tall keeps it roomy yet calm. */
   --size-lobby-row: calc(var(--size-tap) * 1.5);
   --font-size-lobby-name: 1.125rem; /* a step above body text so the game leads the row */
@@ -194,13 +159,9 @@
   --size-game-logo: 2.5rem;
   /* Where the game is central: Next up and the lobby page (REQ-0026). */
   --size-game-logo-large: 4rem;
+  /* One text line of a week block: its 0.75rem type at the block's line height (ADR 0026 Amendment item 11). */
+  --size-game-logo-small: calc(0.75rem * var(--line-time-block));
   --width-popover: 22rem;
-  --radius-popover: 16px;
-  --color-chrome: #0c0c10;
-  --color-scrim: rgba(0, 0, 0, 0.45);
-  --color-accent-line: rgba(240, 199, 94, 0.45);
-  --color-popover-top: #18181e;
-  --shadow-popover: 0 30px 80px rgba(0, 0, 0, 0.55);
   /* Dropdown list (ADR 0027 point 4): above the tab bar (60) and the floating "+" (55), below the toaster. */
   --z-dropdown-list: 70;
   /* Popover (ADR 0023 Amendment 2026-11-17): above the tab bar (60), below the dropdown list and the toaster. */
@@ -217,8 +178,7 @@
   --width-toast: 22.25rem;
   --width-dialog: min(var(--content-width), calc(100vw - var(--space-4)));
   --height-dialog: calc(100dvh - var(--space-4));
-  --width-accent-edge: 2px;
-  --size-scrim-spread: 100vmax; /* a shadow this wide covers any window */
+  --width-edge: 2px;
   --size-sheet-max: 70dvh;
   --sheet-safe-bottom: calc(var(--space-2) + env(safe-area-inset-bottom));
   --ease-overshoot: cubic-bezier(0.3, 1.35, 0.5, 1);
@@ -231,7 +191,6 @@
   --duration-pop-fade-out: 0.2s;
   --delay-pop-fade-out: 0.18s;
   --duration-scrim: 0.35s;
-  --duration-icon: 0.5s;
   --duration-page: 0.24s;
   --duration-page-out: 0.12s;
   --page-shift: 12px;
@@ -240,8 +199,8 @@
   --size-grid-title: 3rem;
   --size-grid-gutter: 3.25rem;
 
-  /* Genre themes (ADR 0016): one accent per genre. Each reads at 4.5:1 or more on the page and panels,
-     pinned by genres/genreContrast.test.ts. The art in public/genre-art uses the same values. */
+  /* Genre themes (ADR 0016), decorative until PR5a removes them (ADR 0028 section 7). The art in
+     public/genre-art uses the same values. */
   --color-genre-shooter: #ff5f6d;
   --color-genre-moba: #4da3ff;
   --color-genre-racing: #ff8a3d;
@@ -251,26 +210,20 @@
   --color-genre-rpg: #e9d172;
   --color-genre-sports: #3fd6c4;
   --color-genre-neutral: #9a9ba6;
-  /* Set per view by GenreFrame; outside a frame the app accent shows. */
-  --genre-accent: var(--color-accent);
+  /* Set per view by GenreFrame; outside a frame it is the text colour. */
+  --genre-accent: var(--color-text);
   --genre-pattern: none;
   --genre-tint: 4%;
   --genre-wash: 5%;
-  /* Muted text inside a genre frame: lighter, because the pattern, tint and motif lift the plate behind it. */
-  --color-muted-themed: #a8a9b2;
-  --genre-motif-opacity: 0.12;
+  --genre-motif-opacity: 0.08; /* on the dark surface, muted text stays at 4.5:1 over the light accents */
   --size-genre-icon: 1.5rem;
   --size-genre-motif: 6rem;
-  /* Over a game cover: dark enough that every text passes AA over a pure white image, the brightest any cover
-     can be. The gold Next up timing binds at about 0.69; 0.83 is kept for the look, with muted text, the genre
-     name and field errors in the text colour (ADR 0026 Amendment 2026-11-18 item 3, pinned by
-     genres/genreContrast.test.ts). */
-  --color-cover-scrim: rgba(10, 10, 13, 0.83);
+  /* Over a game cover: dark enough that the text colour passes AA over a pure white image, the lightest any cover
+     can be (pinned by genres/genreContrast.test.ts). Goes with the cover look in PR5a (ADR 0028 section 7). */
+  --color-cover-scrim: rgba(22, 20, 18, 0.9);
   --ratio-cover-preview: 16 / 9;
   --width-cover-preview: 16rem;
 
-  /* Scrollbars: a dim thumb that still stands out at 3:1 on the page, panels and the popover card. */
-  --color-scrollbar-thumb: #63646d;
   --size-scrollbar: 0.5rem;
 }
 
@@ -287,7 +240,7 @@
 @media (pointer: fine) {
   @supports (scrollbar-color: auto) {
     :root {
-      scrollbar-color: var(--color-scrollbar-thumb) transparent;
+      scrollbar-color: var(--color-muted) transparent;
     }
 
     * {
@@ -308,48 +261,40 @@
     }
 
     ::-webkit-scrollbar-thumb {
-      border-radius: var(--radius-chip);
-      background: var(--color-scrollbar-thumb);
+      background: var(--color-muted);
     }
   }
 }
 
 body {
   margin: 0;
-  font-family: var(--font-sans);
+  font-family: var(--font-text);
   font-size: 1rem;
   line-height: 1.5;
   color: var(--color-text);
-  background-color: var(--color-bg);
-  background-image:
-    radial-gradient(
-      60rem 40rem at 85% 0%,
-      var(--color-page-wash),
-      transparent 70%
-    ),
-    linear-gradient(180deg, var(--color-bg-raised), var(--color-bg) 30rem);
-  background-repeat: no-repeat;
+  background-color: var(--color-ground);
 }
 
+/* Headings are uppercase by CSS, not by the text (ADR 0028 section 2). */
 h1 {
   font-family: var(--font-heading);
   font-size: var(--font-size-title);
-  font-weight: 700;
-  letter-spacing: var(--tracking-tight);
-  line-height: 1.2;
+  font-weight: 900;
+  line-height: 1;
+  text-transform: uppercase;
   margin: 0 0 var(--space-3);
 }
 
 h2 {
   font-family: var(--font-heading);
   font-size: var(--font-size-heading);
-  font-weight: 600;
-  letter-spacing: var(--tracking-snug);
-  line-height: 1.3;
+  font-weight: 800;
+  line-height: 1;
+  text-transform: uppercase;
   margin: var(--space-4) 0 var(--space-2);
 }
 
-/* Links stay text-coloured and underlined; gold appears only on hover or focus. A ButtonLink is left out: these
+/* Links stay in the text colour and underlined; hover thickens the line at once, with no colour. A ButtonLink is left out: these
    unlayered rules would beat its Tailwind colour utilities, which sit in a layer. :where keeps the specificity of a
    plain a, so a class such as .brand still wins. */
 a:where(:not([data-slot="button"])) {
@@ -359,11 +304,11 @@ a:where(:not([data-slot="button"])) {
 }
 
 :where(a:not([data-slot="button"])):hover {
-  color: var(--color-accent);
+  text-decoration-thickness: var(--width-edge);
 }
 
 :focus-visible {
-  outline: 3px solid var(--color-focus);
+  outline: var(--width-edge) solid var(--color-text);
   outline-offset: 2px;
 }
 
@@ -375,19 +320,18 @@ a:where(:not([data-slot="button"])) {
   gap: var(--space-2) var(--space-3);
   padding: var(--space-3) var(--space-4);
   padding-top: calc(var(--space-3) + env(safe-area-inset-top));
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-rule);
 }
 
 .brand {
   font-family: var(--font-heading);
   font-size: 1.125rem;
-  font-weight: 700;
-  letter-spacing: var(--tracking-snug);
+  font-weight: 800;
   color: var(--color-text);
   text-decoration: none;
 }
 
-/* Frosted bar that stays at the top; the scroll state is set by the page that uses it. */
+/* A bar that stays at the top; the scroll state is set by the page that uses it. */
 .topbar {
   position: sticky;
   top: 0;
@@ -395,16 +339,15 @@ a:where(:not([data-slot="button"])) {
   border-bottom: 1px solid transparent;
 }
 
-/* The frost is a layer that fades by opacity, so the scroll state change repaints nothing. It also covers the
-   bar's transparent bottom border. */
+/* The ground behind the bar is a layer that fades by opacity, so the scroll state change repaints nothing. It also
+   covers the bar's transparent bottom border. */
 .topbar::before {
   content: "";
   position: absolute;
   inset: 0 0 -1px;
   z-index: -1;
-  background: var(--color-frost);
-  backdrop-filter: blur(var(--blur-glass));
-  border-bottom: 1px solid var(--color-border);
+  background: var(--color-ground);
+  border-bottom: 1px solid var(--color-rule);
   opacity: 0;
   pointer-events: none;
   transition: opacity var(--duration-base) var(--ease-out);
@@ -437,9 +380,9 @@ a:where(:not([data-slot="button"])) {
   margin: 0;
   overflow: visible;
   padding: var(--space-1) var(--space-2);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-badge);
-  background: var(--color-bg-raised);
+  border: 1px solid var(--color-rule-strong);
+  border-radius: var(--radius);
+  background: var(--color-surface);
   color: var(--color-text);
   font-size: var(--font-size-small);
   white-space: nowrap;
@@ -471,167 +414,33 @@ a:where(:not([data-slot="button"])) {
   }
 }
 
-/* Button (ADR 0023 1b): colour, radius and box are utilities in ui/Button.tsx; type, shadow, hover and press
-   motion are here. */
+/* Button (ADR 0023 1b, ADR 0028 section 16.3): colour, edge and box are utilities in ui/Button.tsx; type, hover and
+   press are here. Hover lays the raised fill over the button at once, except on the primary, which keeps its signal
+   fill; press sinks the button by transform. */
 [data-slot="button"] {
   /* border utility's style is a registered variable; some browsers lack it (ADR 0023 B2 amendment d) */
   border-style: solid;
   text-decoration: none;
   font: inherit;
-  font-weight: 600;
-}
-
-[data-slot="button"][data-variant="primary"] {
-  box-shadow:
-    inset 0 1px 0 var(--color-highlight),
-    inset 0 -1px 0 var(--color-shade);
-}
-
-/* Button hover: light from above lights the top edge (::before), a glow in the button's own colour breathes in
-   (::after), and in a Button a soft light follows the pointer (--pointer-x/y from ui/Button.tsx). Press sinks the
-   button into an inner shadow. Every layer only fades by opacity or moves by transform. */
-[data-slot="button"] {
+  font-weight: 700;
   transition: transform var(--duration-fast) var(--ease-out);
 }
 
-[data-slot="button"]::before,
-[data-slot="button"]::after,
-[data-slot="button-light"],
-[data-slot="button-light"]::after {
+[data-slot="button"]::after {
   content: "";
   position: absolute;
-  inset: -1px;
+  inset: 0;
   z-index: -1;
   border-radius: inherit;
+  background: var(--color-raised);
+  opacity: 0;
   pointer-events: none;
-}
-
-/* The lit edge. It fades out halfway down, so the primary's lower half stays full gold. */
-[data-slot="button"]::before {
-  opacity: 0;
-  background: linear-gradient(
-    var(--color-button-top-light),
-    transparent var(--stop-button-top-light)
-  );
-  box-shadow:
-    inset 0 1px 0 var(--color-button-edge),
-    inset 0 0 0 1px var(--color-button-top-light);
-  transition: opacity var(--duration-button-hover) var(--ease-out);
-}
-
-[data-slot="button"][data-variant="ghost"]::before {
-  background:
-    linear-gradient(
-      var(--color-button-top-light),
-      transparent var(--stop-button-top-light)
-    ),
-    var(--color-row-hover);
-}
-
-[data-slot="button"][data-variant="primary"]::before {
-  background: linear-gradient(
-    var(--color-button-top-light-primary),
-    transparent var(--stop-button-top-light-primary)
-  );
-  box-shadow: inset 0 1px 0 var(--color-sheen);
-}
-
-[data-slot="button"][data-variant="danger"]::before {
-  background: linear-gradient(
-    var(--color-button-top-light-danger),
-    transparent var(--stop-button-top-light)
-  );
-  box-shadow: inset 0 1px 0 var(--color-button-edge-danger);
-}
-
-/* The glow. Ghosts and secondaries have none, so only the main and destructive actions call out (REQ-0028 item 4). */
-[data-slot="button"]::after {
-  opacity: 0;
-  transform: scale(var(--scale-button-glow-rest));
-  transition:
-    opacity var(--duration-button-glow) var(--ease-out),
-    transform var(--duration-button-glow) var(--ease-out);
-}
-
-[data-slot="button"][data-variant="primary"]::after {
-  box-shadow: var(--shadow-button-glow-primary);
-}
-
-[data-slot="button"][data-variant="danger"]::after {
-  box-shadow: var(--shadow-button-glow-danger);
-}
-
-[data-slot="button"]:is(
-    [data-variant="ghost"],
-    [data-variant="secondary"]
-  )::after {
-  content: none;
-}
-
-/* The light span clips the follow light to the button's shape. */
-[data-slot="button-light"] {
-  overflow: hidden;
-}
-
-[data-slot="button-light"]::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: var(--size-button-light);
-  aspect-ratio: 1;
-  margin: calc(var(--size-button-light) / -2) 0 0
-    calc(var(--size-button-light) / -2);
-  border-radius: 50%;
-  background: radial-gradient(
-    closest-side,
-    var(--color-button-light),
-    transparent
-  );
-  opacity: 0;
-  transform: translate(var(--pointer-x, 0px), var(--pointer-y, 0px));
-  transition:
-    opacity var(--duration-button-hover) var(--ease-out),
-    transform var(--duration-button-follow) var(--ease-out);
-}
-
-[data-slot="button"][data-variant="primary"]
-  > [data-slot="button-light"]::before {
-  background: radial-gradient(
-    closest-side,
-    var(--color-button-light-primary),
-    transparent
-  );
-}
-
-[data-slot="button"][data-variant="danger"]
-  > [data-slot="button-light"]::before {
-  background: radial-gradient(
-    closest-side,
-    var(--color-button-light-danger),
-    transparent
-  );
-}
-
-/* The press shade. */
-[data-slot="button-light"]::after {
-  inset: 0;
-  opacity: 0;
-  box-shadow: var(--shadow-button-press);
-  transition: opacity var(--duration-fast) var(--ease-out);
 }
 
 /* Hover only where a pointer can hover, so a tap on a phone leaves nothing lit. */
 @media (hover: hover) and (pointer: fine) {
-  [data-slot="button"]:not(:disabled):hover::before,
-  [data-slot="button"]:not(:disabled):hover
-    > [data-slot="button-light"]::before {
+  [data-slot="button"]:not(:disabled, [data-variant="primary"]):hover::after {
     opacity: 1;
-  }
-
-  [data-slot="button"]:not(:disabled):hover::after {
-    opacity: 1;
-    transform: none;
   }
 }
 
@@ -639,27 +448,7 @@ a:where(:not([data-slot="button"])) {
   transform: translateY(var(--offset-button-sink));
 }
 
-[data-slot="button"]:not(:disabled):active::before {
-  opacity: 0;
-}
-
-[data-slot="button"]:not(:disabled):active::after {
-  opacity: var(--opacity-button-glow-pressed);
-  transform: none;
-}
-
-/* On press the light gathers under the pointer. */
-[data-slot="button"]:not(:disabled):active
-  > [data-slot="button-light"]::before {
-  transform: translate(var(--pointer-x, 0px), var(--pointer-y, 0px))
-    scale(var(--scale-button-light-pressed));
-}
-
-[data-slot="button"]:not(:disabled):active > [data-slot="button-light"]::after {
-  opacity: 1;
-}
-
-/* Dropdown list (ADR 0027): colour, radius and box are utilities in ui/Select.tsx; type, shadow and motion are
+/* Dropdown list (ADR 0027): colour, edge and box are utilities in ui/Select.tsx; type and motion are
    here. The panel grows from the field; on phones it is a sheet that rises from the bottom edge. */
 [data-slot="select-trigger"],
 [data-slot="select-content"] {
@@ -673,7 +462,6 @@ a:where(:not([data-slot="button"])) {
 }
 
 [data-slot="select-content"] {
-  box-shadow: var(--shadow-popover);
   transform-origin: var(--radix-select-content-transform-origin);
 }
 
@@ -685,8 +473,8 @@ a:where(:not([data-slot="button"])) {
   animation: dropdown-out var(--duration-page-out) var(--ease-in) forwards;
 }
 
-/* Popover (ADR 0023 Amendment 2026-11-17): colour, radius and box are utilities in ui/AnchoredPopover.tsx; type,
-   shadow and motion are here. The panel grows from its trigger, like the dropdown list. */
+/* Popover (ADR 0023 Amendment 2026-11-17): colour, edge and box are utilities in ui/AnchoredPopover.tsx; type
+   and motion are here. The panel grows from its trigger, like the dropdown list. */
 [data-slot="anchored-popover-trigger"] {
   font: inherit;
 }
@@ -695,7 +483,6 @@ a:where(:not([data-slot="button"])) {
   /* border utility's style is a registered variable; some browsers lack it (ADR 0023 B2 amendment d) */
   border-style: solid;
   font-size: var(--font-size-small);
-  box-shadow: var(--shadow-popover);
   transform-origin: var(--radix-popover-content-transform-origin);
 }
 
@@ -707,7 +494,7 @@ a:where(:not([data-slot="button"])) {
   animation: dropdown-out var(--duration-page-out) var(--ease-in) forwards;
 }
 
-/* Confirm dialog (ADR 0023 point 5): colour, radius and box are utilities in ui/Dialog.tsx; motion is here. The
+/* Confirm dialog (ADR 0023 point 5): colour, edge and box are utilities in ui/Dialog.tsx; motion is here. The
    overlay fades and the panel grows from its centre; Radix waits for the exit before it unmounts them. */
 [data-slot="alert-dialog-content"] {
   /* border utility's style is a registered variable; some browsers lack it (ADR 0023 B2 amendment d) */
@@ -734,10 +521,10 @@ a:where(:not([data-slot="button"])) {
   animation: dropdown-out var(--duration-page-out) var(--ease-in) forwards;
 }
 
-/* Toast (ADR 0023 point 4): colour, radius and box are utilities in ui/Toast.tsx. sonner's own style tag comes
+/* Toast (ADR 0023 point 4): colour, edge and box are utilities in ui/Toast.tsx. sonner's own style tag comes
    after this file, so each rule here has two attributes to win over its one. */
 [data-sonner-toaster][data-y-position] {
-  font-family: var(--font-sans);
+  font-family: var(--font-text);
 }
 
 [data-sonner-toaster] [data-sonner-toast] {
@@ -764,7 +551,7 @@ a:where(:not([data-slot="button"])) {
 
 /* sonner drops the outline of a toast, which Tab reaches, so it gets the app's focus ring back. */
 [data-sonner-toaster] [data-sonner-toast]:focus-visible {
-  outline: 3px solid var(--color-focus);
+  outline: var(--width-edge) solid var(--color-text);
   outline-offset: 2px;
 }
 
@@ -775,14 +562,31 @@ a:where(:not([data-slot="button"])) {
   transition-timing-function: var(--ease-in);
 }
 
-/* The highlighted row is the keyboard focus: the wash and an accent edge mark it in place of the outline. */
-/* Gold here is focus under the Gold rule (REQ-0028 item 1, DECISION, user, 2026-11-18). */
+/* The highlighted row has the raised fill (a utility). Where a keyboard is likely, it is also the keyboard focus, so it
+   gets the focus ring, drawn inside the row so the panel edge does not clip it; a touched sheet shows the fill alone.
+   The selected row has its check mark and a text-colour edge; no signal (ADR 0028 section 16.4). */
+[data-slot="select-item"] {
+  position: relative;
+}
+
 [data-slot="select-item"]:focus-visible {
   outline: none;
 }
 
-[data-slot="select-item"][data-highlighted] {
-  box-shadow: inset var(--width-accent-edge) 0 0 var(--color-accent);
+@media (pointer: fine) {
+  [data-slot="select-item"][data-highlighted] {
+    outline: var(--width-edge) solid var(--color-text);
+    outline-offset: calc(-1 * var(--width-edge));
+  }
+}
+
+[data-slot="select-item"][data-state="checked"]::before {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: var(--width-edge);
+  background: var(--color-text);
 }
 
 @keyframes dropdown-in {
@@ -802,23 +606,35 @@ a:where(:not([data-slot="button"])) {
 @keyframes sheet-in {
   from {
     opacity: 0;
-    transform: translateY(var(--rise-offset));
+    transform: translateY(100%);
   }
 }
 
 @keyframes sheet-out {
   to {
     opacity: 0;
-    transform: translateY(var(--rise-offset));
+    transform: translateY(100%);
   }
 }
 
 @media (width < 47.5rem), (pointer: coarse) {
-  /* The spread shadow dims the page behind the sheet, so a tap outside reads as "close". */
-  [data-slot="select-content"] {
-    box-shadow:
-      var(--shadow-popover),
-      0 0 0 var(--size-scrim-spread) var(--color-scrim);
+  /* A scrim behind the sheet dims the page, so a tap outside reads as "close". It sits on Radix's wrapper, below the
+     sheet in the wrapper's own layer, because Radix sets the sheet's outline inline. It fades with the sheet. */
+  [data-radix-popper-content-wrapper]:has(
+      > [data-slot="select-content"]
+    )::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background: var(--color-scrim);
+    animation: fade-in var(--duration-page) var(--ease-out);
+  }
+
+  [data-radix-popper-content-wrapper]:has(
+      > [data-slot="select-content"][data-state="closed"]
+    )::before {
+    animation: fade-out var(--duration-page-out) var(--ease-in) forwards;
   }
 
   [data-slot="select-content"][data-state="open"] {
@@ -837,13 +653,14 @@ a:where(:not([data-slot="button"])) {
   }
 }
 
+/* A surface with a danger edge and danger text: the text, not the colour, carries the meaning. */
 .alert {
   margin: 0 0 var(--space-3);
   padding: var(--space-3);
-  border-radius: var(--radius-control);
-  background: var(--color-danger-bg);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius);
+  background: var(--color-surface);
   color: var(--color-danger);
-  box-shadow: inset 2px 0 0 var(--color-danger);
 }
 
 .login-panel p {
@@ -876,8 +693,8 @@ a:where(:not([data-slot="button"])) {
 .login-panel {
   padding: var(--space-4);
   background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-panel);
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius);
 }
 
 .panel > :first-child,
@@ -964,7 +781,7 @@ a:where(:not([data-slot="button"])) {
   .side-layout--lobby > .side-column {
     grid-row: 1 / span 2;
     padding-inline-start: var(--space-4);
-    border-inline-start: 1px solid var(--color-border);
+    border-inline-start: 1px solid var(--color-rule);
   }
 
   /* Next up is stacked in the narrow side column. */
@@ -1014,7 +831,6 @@ a:where(:not([data-slot="button"])) {
   gap: var(--space-3);
   min-height: var(--size-tap);
   padding: var(--space-2);
-  border-radius: var(--radius-control);
 }
 
 /* Scoped to real lists. The tint is a layer behind the content that fades by opacity, under a genre
@@ -1030,10 +846,9 @@ a:where(:not([data-slot="button"])) {
   inset: 0;
   z-index: -2;
   border-radius: inherit;
-  background: var(--color-row-hover);
+  background: var(--color-raised);
   opacity: 0;
   pointer-events: none;
-  transition: opacity var(--duration-base) var(--ease-out);
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -1066,10 +881,6 @@ a:where(:not([data-slot="button"])) {
   gap: var(--space-2) var(--space-3);
 }
 
-.game-chips > [data-slot="anchored-popover-trigger"] {
-  border-radius: var(--radius-control);
-}
-
 .game-chip {
   display: inline-flex;
   align-items: center;
@@ -1078,7 +889,7 @@ a:where(:not([data-slot="button"])) {
   min-width: var(--size-tap);
   min-height: var(--size-tap);
   padding-inline: var(--space-0);
-  border-radius: var(--radius-control);
+  border-radius: var(--radius-sm);
   background: var(--color-surface);
   color: var(--color-muted);
   font-size: var(--font-size-small);
@@ -1093,10 +904,9 @@ a:where(:not([data-slot="button"])) {
   inset: 0;
   z-index: -1;
   border-radius: inherit;
-  background: var(--color-row-hover);
+  background: var(--color-raised);
   opacity: 0;
   pointer-events: none;
-  transition: opacity var(--duration-base) var(--ease-out);
 }
 
 /* Room after the last icon or name, so the tint does not end at the glyph. */
@@ -1137,7 +947,8 @@ a:where(:not([data-slot="button"])) {
 .badge {
   display: inline-block;
   padding: 0 var(--space-2);
-  border-radius: var(--radius-badge);
+  border: 1px solid var(--color-rule-strong);
+  border-radius: var(--radius-sm);
   background: var(--color-surface);
   color: var(--color-text);
   font-size: var(--font-size-small);
@@ -1146,10 +957,10 @@ a:where(:not([data-slot="button"])) {
   font-variant-numeric: tabular-nums;
 }
 
-/* A full role slot: filled instead of tinted, with a check mark, so full never rests on colour alone. */
-.badge--full {
-  background: var(--color-accent);
-  color: var(--color-on-accent);
+/* A full role slot (ADR 0028 section 16.4 item 6): the count stays in the text colour and a check icon in signal
+   marks it, so full never rests on colour alone. */
+.badge--full > .role-slot-check {
+  color: var(--color-signal);
 }
 
 .role-slot-check {
@@ -1185,9 +996,8 @@ a:where(:not([data-slot="button"])) {
   font: inherit;
   color: var(--color-text);
   background-color: var(--color-surface);
-  border: 1px solid var(--color-muted);
-  border-radius: var(--radius-control);
-  transition: border-color var(--duration-fast) var(--ease-out);
+  border: 1px solid var(--color-control-line);
+  border-radius: var(--radius);
 }
 
 @media (pointer: coarse) {
@@ -1195,11 +1005,6 @@ a:where(:not([data-slot="button"])) {
   .invite-link__url {
     min-height: var(--size-tap);
   }
-}
-
-.group-form input:where(:not([type="radio"], [type="checkbox"])):enabled:hover,
-.invite-link__url:hover {
-  border-color: var(--color-text);
 }
 
 .group-form input:where(:not([type="radio"], [type="checkbox"])):disabled {
@@ -1235,8 +1040,8 @@ a:where(:not([data-slot="button"])) {
   min-width: 0;
   margin: 0;
   padding: var(--space-3);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-control);
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius);
 }
 
 .group-form .structure > legend {
@@ -1270,8 +1075,9 @@ a:where(:not([data-slot="button"])) {
 .cover-preview {
   width: min(100%, var(--width-cover-preview));
   aspect-ratio: var(--ratio-cover-preview);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-control);
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius);
+  overflow: hidden;
 }
 
 .structure-list {
@@ -1359,8 +1165,8 @@ a:where(:not([data-slot="button"])) {
   text-align: start;
   color: var(--color-text);
   background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-control);
+  border: 1px solid var(--color-control-line);
+  border-radius: var(--radius);
   cursor: pointer;
   transition: transform var(--duration-fast) var(--ease-out);
 }
@@ -1394,16 +1200,15 @@ a:where(:not([data-slot="button"])) {
 .invite-link + .invite-link {
   margin-top: var(--space-3);
   padding-top: var(--space-3);
-  border-top: 1px solid var(--color-border);
+  border-top: 1px solid var(--color-rule);
 }
 
 .invite-link__uses {
   margin: 0;
   font-family: var(--font-heading);
   font-size: var(--font-size-figure);
-  font-weight: 700;
+  font-weight: 800;
   line-height: 1;
-  letter-spacing: var(--tracking-tight);
   color: var(--color-text);
   font-variant-numeric: tabular-nums;
 }
@@ -1457,13 +1262,6 @@ a:where(:not([data-slot="button"])) {
   margin: 0;
 }
 
-/* Confirmations fade in beside the list and fade out on their own. The live region keeps the text. */
-.status-flash {
-  display: inline-block;
-  pointer-events: none;
-  animation: status-flash var(--duration-flash) var(--ease-out) both;
-}
-
 /* Text for screen readers only, e.g. the unit after a count. */
 .visually-hidden {
   position: absolute;
@@ -1491,15 +1289,15 @@ a:where(:not([data-slot="button"])) {
   margin-bottom: var(--space-3);
 }
 
-/* A pill track; the thumb slides by transform to the selected option, so nothing reflows. */
+/* A track; the thumb slides by transform to the selected option, so nothing reflows. */
 .view-toggle {
   position: relative;
   display: inline-grid;
   grid-auto-flow: column;
   grid-auto-columns: var(--size-tap);
   padding: var(--space-1);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-chip);
+  border: 1px solid var(--color-control-line);
+  border-radius: var(--radius);
   background: var(--color-surface);
 }
 
@@ -1508,8 +1306,8 @@ a:where(:not([data-slot="button"])) {
   inset-block: var(--space-1);
   inset-inline-start: var(--space-1);
   width: var(--size-tap);
-  border-radius: var(--radius-chip);
-  background: var(--color-accent);
+  border-radius: var(--radius-sm);
+  background: var(--color-text);
   transition: transform var(--duration-base) var(--ease-out);
 }
 
@@ -1527,15 +1325,14 @@ a:where(:not([data-slot="button"])) {
   height: var(--size-tap);
   padding: 0;
   border: 0;
-  border-radius: var(--radius-chip);
   background: none;
   color: var(--color-muted);
   cursor: pointer;
 }
 
-/* Dark icon on the accent thumb for contrast; the thumb position says the same without colour. */
+/* A dark icon on the light thumb for contrast; the thumb position says the same without colour. */
 .view-toggle__option[aria-pressed="true"] {
-  color: var(--color-bg);
+  color: var(--color-ground);
 }
 
 .view-toggle__icon {
@@ -1548,8 +1345,8 @@ a:where(:not([data-slot="button"])) {
   min-height: var(--size-lobby-row);
   padding: var(--space-3);
   background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-panel);
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius);
 }
 
 .lobby-row + .lobby-row {
@@ -1574,7 +1371,7 @@ a:where(:not([data-slot="button"])) {
 }
 
 .lobby-row:has(.lobby-row__game:focus-visible) {
-  outline: 3px solid var(--color-focus);
+  outline: var(--width-edge) solid var(--color-text);
   outline-offset: 2px;
 }
 
@@ -1632,28 +1429,28 @@ a:where(:not([data-slot="button"])) {
   padding: var(--space-4);
   color: var(--color-text);
   text-decoration: none;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-panel);
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius);
   background: var(--color-surface);
-  box-shadow: inset 0 1px 0 var(--color-card-edge);
 }
 
-/* Hover: an accent edge and a faint tint fade in on a layer, so only opacity moves. */
+/* Hover: a strong edge and the raised fill show at once on a layer (ADR 0028: colour changes are instant). */
 .group-card::after {
   content: "";
   position: absolute;
   inset: -1px;
   z-index: -1;
-  border: 1px solid var(--color-accent-line);
+  border: 1px solid var(--color-rule-strong);
   border-radius: inherit;
-  background: var(--color-row-hover);
+  background: var(--color-raised);
   opacity: 0;
   pointer-events: none;
-  transition: opacity var(--duration-base) var(--ease-out);
 }
 
-.group-card:hover::after {
-  opacity: 1;
+@media (hover: hover) and (pointer: fine) {
+  .group-card:hover::after {
+    opacity: 1;
+  }
 }
 
 .group-card__head {
@@ -1664,8 +1461,7 @@ a:where(:not([data-slot="button"])) {
 .group-card__name {
   font-family: var(--font-heading);
   font-size: var(--font-size-heading);
-  font-weight: 600;
-  letter-spacing: var(--tracking-snug);
+  font-weight: 800;
   overflow-wrap: anywhere;
 }
 
@@ -1674,17 +1470,14 @@ a:where(:not([data-slot="button"])) {
   font-size: var(--font-size-small);
 }
 
-/* Overlapping initials. Each sits on a solid plate with a ring in the card's colour, so the overlap stays crisp. */
+/* Overlapping initials. Each has a ring in the card's colour, so the overlap stays crisp. */
 .group-card__people {
   display: flex;
   align-items: center;
 }
 
 .group-card__people > .initials-icon {
-  background:
-    linear-gradient(var(--color-surface), var(--color-surface)),
-    var(--color-bg-raised);
-  box-shadow: 0 0 0 2px var(--color-bg-raised);
+  outline: var(--width-edge) solid var(--color-surface);
 }
 
 .group-card__people > .initials-icon + .initials-icon {
@@ -1696,23 +1489,25 @@ a:where(:not([data-slot="button"])) {
   color: var(--color-muted);
   font-family: var(--font-heading);
   font-size: var(--font-size-small);
-  font-weight: 600;
+  font-weight: 800;
 }
 
-/* The lobby line sits at the bottom of the card, with its genre's wash and icon (ADR 0016). */
+/* The lobby line sits at the bottom of the card, with its genre's wash and icon (ADR 0016). The wash is mixed into
+   the surface, not over the card, so the card's raised hover fill does not show through and darken the plate the
+   muted text was measured on. */
 .group-card__lobby {
   display: grid;
   gap: var(--space-1);
   margin-top: auto;
   padding: var(--space-2) var(--space-3);
   padding-right: calc(var(--size-genre-icon) + var(--space-3));
-  border-radius: var(--radius-control);
+  border-radius: var(--radius-sm);
   background: var(--color-surface);
   @supports (color: color-mix(in lab, red, red)) {
     background: color-mix(
       in srgb,
       var(--genre-accent) var(--genre-wash),
-      transparent
+      var(--color-surface)
     );
   }
 }
@@ -1771,8 +1566,8 @@ a:where(:not([data-slot="button"])) {
   display: flex;
   height: var(--size-grid-height);
   overflow-y: auto;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-control);
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius);
   background: var(--color-surface);
 }
 
@@ -1803,7 +1598,7 @@ a:where(:not([data-slot="button"])) {
 
 .time-grid__day {
   min-width: 0;
-  border-left: 1px solid var(--color-border);
+  border-left: 1px solid var(--color-rule);
 }
 
 .time-grid__title {
@@ -1813,8 +1608,8 @@ a:where(:not([data-slot="button"])) {
   display: grid;
   place-content: center;
   height: var(--size-grid-title);
-  background: var(--color-bg-raised);
-  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-rule);
   color: var(--color-muted);
   font-size: 0.75rem;
   text-align: center;
@@ -1837,7 +1632,7 @@ a:where(:not([data-slot="button"])) {
   height: calc(var(--size-hour) * 24);
   background: repeating-linear-gradient(
     to bottom,
-    var(--color-border) 0 1px,
+    var(--color-rule) 0 1px,
     transparent 1px var(--size-hour)
   );
 }
@@ -1858,9 +1653,8 @@ a:where(:not([data-slot="button"])) {
   content: "";
   position: absolute;
   inset: 0;
-  background: var(--color-row-hover);
+  background: var(--color-raised);
   opacity: 0;
-  transition: opacity var(--duration-fast) var(--ease-out);
 }
 
 .time-grid__create:hover::before {
@@ -1883,7 +1677,7 @@ a:where(:not([data-slot="button"])) {
   inset-inline: 0;
   height: 2px;
   margin-top: -1px;
-  background: var(--color-accent);
+  background: var(--color-signal);
   pointer-events: none;
 }
 
@@ -1894,8 +1688,7 @@ a:where(:not([data-slot="button"])) {
   left: -4px;
   width: 8px;
   height: 8px;
-  border-radius: 50%;
-  background: var(--color-accent);
+  background: var(--color-signal);
 }
 
 .time-block {
@@ -1918,6 +1711,7 @@ a:where(:not([data-slot="button"])) {
   padding: var(--space-1);
   overflow: hidden;
   padding-right: calc(var(--size-genre-icon) - var(--space-1));
+  border-radius: var(--radius-sm);
   /* Every color-mix() sits in @supports, so Tailwind writes no full-accent fallback for older browsers (ADR 0023,
      amendment b). */
   @supports (color: color-mix(in lab, red, red)) {
@@ -1928,7 +1722,6 @@ a:where(:not([data-slot="button"])) {
     );
     border: 1px solid color-mix(in srgb, var(--genre-accent) 45%, transparent);
   }
-  border-radius: var(--radius-control);
   font-size: 0.75rem;
   line-height: var(--line-time-block);
 }
@@ -1940,14 +1733,10 @@ a:where(:not([data-slot="button"])) {
 
 .time-block[data-continues-before] .time-block__body {
   border-top-style: dashed;
-  border-top-left-radius: 0;
-  border-top-right-radius: 0;
 }
 
 .time-block[data-continues-after] .time-block__body {
   border-bottom-style: dashed;
-  border-bottom-left-radius: 0;
-  border-bottom-right-radius: 0;
 }
 
 .time-block__body > * {
@@ -1959,7 +1748,7 @@ a:where(:not([data-slot="button"])) {
 }
 
 .time-block__body:focus-within {
-  outline: 3px solid var(--color-focus);
+  outline: var(--width-edge) solid var(--color-text);
 }
 
 /* The label is never taller than the block body and is cut at a whole line, so no part of a line shows at any
@@ -2037,9 +1826,8 @@ a:where(:not([data-slot="button"])) {
   margin: 0 0 var(--space-3);
   font-family: var(--font-heading);
   font-size: var(--font-size-hero);
-  font-weight: 700;
+  font-weight: 800;
   line-height: var(--line-hero);
-  letter-spacing: var(--tracking-tight);
 }
 
 /* Descender room: the mask clips the line, so it needs space below the glyphs. */
@@ -2052,7 +1840,6 @@ a:where(:not([data-slot="button"])) {
 
 .hero__line-inner {
   display: block;
-  animation: rise var(--duration-rise) var(--ease-out) both;
 }
 
 .hero__lead {
@@ -2138,8 +1925,7 @@ a:where(:not([data-slot="button"])) {
   margin: 0 0 var(--space-2);
   font-family: var(--font-heading);
   font-size: 1.25rem;
-  font-weight: 600;
-  letter-spacing: var(--tracking-snug);
+  font-weight: 800;
 }
 
 .step-card__text {
@@ -2152,51 +1938,20 @@ a:where(:not([data-slot="button"])) {
 .meter {
   margin-top: var(--space-3);
   height: 0.25rem;
-  border-radius: var(--radius-chip);
-  background: var(--color-border);
+  background: var(--color-raised);
   overflow: hidden;
 }
 
 .meter > span {
   display: block;
   height: 100%;
-  background: var(--genre-accent);
+  background: var(--color-text);
   transform: scaleX(var(--meter-value, 0));
   transform-origin: left;
-  transition: transform var(--duration-meter) var(--ease-out);
-}
-
-/* An invite link has no genre, so its uses meter is neutral (REQ-0028 item 1). */
-.invite-link .meter > span {
-  background: var(--color-muted);
 }
 
 [data-reveal="pending"] .meter > span {
   transform: scaleX(0);
-}
-
-@keyframes rise {
-  from {
-    transform: translateY(var(--rise-offset));
-  }
-}
-
-@keyframes status-flash {
-  0% {
-    opacity: 0;
-    transform: translateY(var(--flash-offset));
-  }
-
-  12%,
-  80% {
-    opacity: 1;
-    transform: none;
-  }
-
-  100% {
-    opacity: 0;
-    transform: none;
-  }
 }
 
 @keyframes fade-up {
@@ -2228,8 +1983,24 @@ a:where(:not([data-slot="button"])) {
   gap: var(--space-3);
   min-height: var(--size-top-bar-total);
   padding: env(safe-area-inset-top) var(--space-3) 0;
-  background: var(--color-bg);
-  border-bottom: 1px solid var(--color-border);
+  background: var(--color-signal);
+  color: var(--color-on-signal);
+}
+
+/* The Top bar is signal at every width (ADR 0028 section 16.4 item 1), so what sits on it takes the on-signal
+   colour. Its focus ring too: the text colour would be under 3:1 on signal. */
+.top-bar .brand,
+.top-bar__user {
+  color: var(--color-on-signal);
+}
+
+.top-bar :focus-visible {
+  outline-color: var(--color-on-signal);
+}
+
+/* My avatar on the Top bar: a ground square with text-colour initials (ADR 0028 section 16.8). */
+.top-bar__user > .initials-icon {
+  background: var(--color-ground);
 }
 
 .top-bar__user {
@@ -2237,7 +2008,6 @@ a:where(:not([data-slot="button"])) {
   align-items: center;
   gap: var(--space-2);
   min-height: var(--size-tap);
-  color: var(--color-text);
   font-size: var(--font-size-small);
   text-decoration: none;
 }
@@ -2278,30 +2048,23 @@ a:where(:not([data-slot="button"])) {
   place-items: center;
   width: var(--size-avatar);
   height: var(--size-avatar);
-  border: 1px solid var(--color-border);
-  border-radius: 50%;
-  background: var(--color-surface);
+  border-radius: var(--radius-sm);
+  background: var(--color-raised);
   color: var(--color-text);
   font-family: var(--font-heading);
   font-size: var(--font-size-small);
-  font-weight: 600;
+  font-weight: 800;
 }
 
-/* GameLogo (ADR 0023 point 2): colour, radius and box are utilities in ui/GameLogo.tsx; the monogram's type is here. */
+/* GameLogo (ADR 0023 point 2): colour and box are utilities in ui/GameLogo.tsx; the monogram's type is here. */
 [data-slot="game-logo"] {
   font-family: var(--font-heading);
   font-size: var(--font-size-small);
-  font-weight: 600;
+  font-weight: 800;
 }
 
 [data-slot="game-logo"][data-size="large"] {
   font-size: var(--font-size-heading);
-}
-
-/* Only the monogram has a border: without its border utility, a solid style would draw the browser's medium width.
-   The border utility's style is a registered variable; some browsers lack it (ADR 0023 B2 amendment d). */
-[data-slot="game-logo"][data-shows="monogram"] {
-  border-style: solid;
 }
 
 /* A game name with its logo before it. The name stays the text that identifies the game. */
@@ -2312,34 +2075,36 @@ a:where(:not([data-slot="button"])) {
   min-width: 0;
 }
 
-/* A group icon is round; the open group, and the one under the pointer, becomes a rounded square, so the mark is not colour alone. */
+/* The group under the pointer gets a strong edge; the open one a text-colour edge and the raised fill, so the
+   mark is not colour alone. */
 .group-icon {
   display: grid;
   place-items: center;
   width: var(--size-group-icon);
   height: var(--size-group-icon);
-  border: 1px solid var(--color-border);
-  border-radius: 50%;
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius-sm);
   background: var(--color-surface);
   color: var(--color-text);
   text-decoration: none;
 }
 
-.group-icon:hover,
-.group-icon[aria-current="page"] {
-  border-radius: var(--radius-panel);
-  border-color: var(--color-accent);
+.group-icon:hover {
+  border-color: var(--color-rule-strong);
 }
 
 .group-icon[aria-current="page"] {
-  background: var(--color-accent-tint);
+  border-color: var(--color-text);
+}
+
+.group-icon[aria-current="page"] {
+  background: var(--color-raised);
 }
 
 .group-icon > .initials-icon {
   width: 100%;
   height: 100%;
   border: 0;
-  border-radius: inherit;
   background: none;
   font-size: 1rem;
 }
@@ -2353,6 +2118,8 @@ a:where(:not([data-slot="button"])) {
   display: none;
 }
 
+/* Edge to edge, so only its items take --radius: a rounded bar on the window's own edges would show the page
+   through its corners. The approved mockup (option 1, ADR 0028 section 16) draws it the same way. */
 .tab-bar {
   position: fixed;
   z-index: 60;
@@ -2364,8 +2131,8 @@ a:where(:not([data-slot="button"])) {
   align-items: center;
   padding: var(--space-2) var(--space-2)
     calc(var(--space-2) + env(safe-area-inset-bottom));
-  background: var(--color-chrome);
-  border-top: 1px solid var(--color-border);
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-rule-strong);
 }
 
 .tab {
@@ -2374,17 +2141,21 @@ a:where(:not([data-slot="button"])) {
   align-content: center;
   gap: 2px;
   min-height: var(--size-tap);
+  border-radius: var(--radius);
   color: var(--color-muted);
   font-size: 0.75rem;
   font-weight: 500;
   text-decoration: none;
 }
 
+/* The active tab: a signal fill with on-signal text (ADR 0028 section 16.4 item 5). */
 .tab[aria-current="page"] {
-  color: var(--color-accent);
+  background: var(--color-signal);
+  color: var(--color-on-signal);
 }
 
-/* The "+": two bars from one centre, turned into a cross while the form is open. Only the icon rotates. */
+/* The "+" is a primary action (ADR 0028 section 16.4 item 2): two bars from one centre, turned into a cross while
+   the form is open. */
 .plus-button {
   position: relative;
   display: inline-grid;
@@ -2392,17 +2163,16 @@ a:where(:not([data-slot="button"])) {
   width: var(--size-plus);
   height: var(--size-plus);
   padding: 0;
-  border: 1px solid var(--color-accent-line);
-  border-radius: 50%;
-  background: var(--color-accent-tint);
-  color: var(--color-accent);
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--color-signal);
+  color: var(--color-on-signal);
   cursor: pointer;
 }
 
 .plus-button__icon {
   width: 1.5rem;
   height: 1.5rem;
-  transition: transform var(--duration-icon) var(--ease-spring);
 }
 
 .plus-button[aria-expanded="true"] .plus-button__icon {
@@ -2419,9 +2189,6 @@ a:where(:not([data-slot="button"])) {
   );
   width: var(--size-plus-tab);
   height: var(--size-plus-tab);
-  border-color: var(--color-accent);
-  background: var(--color-accent);
-  color: var(--color-on-accent);
 }
 
 /* --origin-x and --origin-y are set inline to the centre of the pressed "+" (like --meter-value, so they have a fallback). The Create group form grows out of the pressed "+". The frame stays put; only the card scales, so the
@@ -2463,14 +2230,9 @@ a:where(:not([data-slot="button"])) {
 
 .create-popover__card {
   padding: var(--space-4);
-  background: linear-gradient(
-    180deg,
-    var(--color-popover-top),
-    var(--color-bg-raised)
-  );
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-popover);
-  box-shadow: var(--shadow-popover);
+  background: var(--color-surface);
+  border: 1px solid var(--color-rule-strong);
+  border-radius: var(--radius);
   opacity: 0;
   transform: scale(var(--scale-closed));
   transform-origin: var(--origin-x, 0) var(--origin-y, 0);
@@ -2532,7 +2294,7 @@ a:where(:not([data-slot="button"])) {
 .profile__name {
   font-family: var(--font-heading);
   font-size: 1.25rem;
-  font-weight: 600;
+  font-weight: 800;
 }
 
 /* A settings row that opens another page: the whole row is the link, so it drops the underline. The negative
@@ -2551,7 +2313,7 @@ a:where(:not([data-slot="button"])) {
 .empty-state__title {
   margin: 0 0 var(--space-1);
   font-family: var(--font-heading);
-  font-weight: 600;
+  font-weight: 800;
 }
 
 .group-strip .row-list {
@@ -2570,28 +2332,20 @@ a:where(:not([data-slot="button"])) {
   display: grid;
   gap: var(--space-3);
   padding: var(--space-4);
-  border: 1px solid var(--color-border);
-  /* In @supports so Tailwind writes no full-accent fallback (ADR 0023, amendment b). */
-  @supports (color: color-mix(in lab, red, red)) {
-    background:
-      radial-gradient(
-        26rem 14rem at 0 0,
-        color-mix(in srgb, var(--genre-accent) var(--genre-wash), transparent),
-        transparent 70%
-      ),
-      var(--color-surface);
-  }
-  border-radius: var(--radius-panel);
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius);
+  background: var(--color-surface);
 }
 
 .next-up p {
   margin: 0;
 }
 
+/* Text colour on the card: signal text is only for the Next up band of PR2 (ADR 0028 section 16.4 item 4). */
 .next-up__timing {
-  color: var(--color-accent);
+  color: var(--color-text);
   font-family: var(--font-heading);
-  font-weight: 600;
+  font-weight: 800;
 }
 
 /* The card is narrow in the side column, so the logo sits above the game name and the name keeps the full width. */
@@ -2605,7 +2359,7 @@ a:where(:not([data-slot="button"])) {
   margin: var(--space-1) 0;
   font-family: var(--font-heading);
   font-size: var(--font-size-title);
-  letter-spacing: var(--tracking-tight);
+  line-height: 1;
 }
 
 .next-up__game a {
@@ -2622,7 +2376,7 @@ a:where(:not([data-slot="button"])) {
   font-variant-numeric: tabular-nums;
   font-family: var(--font-heading);
   font-size: 1.5rem;
-  font-weight: 700;
+  font-weight: 800;
 }
 
 /* Phones: one day at a time. From 760px the pills go and all seven days show. */
@@ -2650,8 +2404,8 @@ a:where(:not([data-slot="button"])) {
   gap: 2px;
   min-height: var(--size-tap);
   padding: var(--space-2) 0;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-control);
+  border: 1px solid var(--color-control-line);
+  border-radius: var(--radius);
   background: var(--color-surface);
   color: var(--color-muted);
   font: inherit;
@@ -2671,14 +2425,13 @@ a:where(:not([data-slot="button"])) {
 }
 
 .day-pill[aria-pressed="true"] {
-  border-color: var(--color-accent);
-  background: var(--color-accent-tint);
+  border-color: var(--color-text);
+  background: var(--color-raised);
 }
 
 .day-pill__dot {
   width: 5px;
   height: 5px;
-  border-radius: 50%;
   background: var(--color-muted);
 }
 
@@ -2719,13 +2472,13 @@ a:where(:not([data-slot="button"])) {
     gap: var(--space-3);
     height: calc(100dvh - var(--size-top-bar-total));
     padding: var(--space-3) 0;
-    border-right: 1px solid var(--color-border);
+    border-right: 1px solid var(--color-rule);
   }
 
   .group-rail__separator {
     width: 1.75rem;
     height: 1px;
-    background: var(--color-border);
+    background: var(--color-rule);
   }
 
   .group-rail__groups {
@@ -2809,12 +2562,7 @@ a:where(:not([data-slot="button"])) {
     scroll-behavior: auto !important;
   }
 
-  /* The plain lit edge and glow: no follow light, no glow scale, no sink. */
-  [data-slot="button-light"]::before {
-    display: none;
-  }
-
-  [data-slot="button"]::after,
+  /* No sink on press. */
   [data-slot="button"]:not(:disabled):active {
     transform: none;
   }
@@ -2845,10 +2593,9 @@ a:where(:not([data-slot="button"])) {
   z-index: 60;
   min-width: 10rem;
   padding: var(--space-1);
-  background: var(--color-bg-raised);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-panel);
-  box-shadow: var(--shadow-popover);
+  background: var(--color-surface);
+  border: 1px solid var(--color-rule-strong);
+  border-radius: var(--radius);
 }
 
 .context-menu__item {
@@ -2858,7 +2605,6 @@ a:where(:not([data-slot="button"])) {
   width: 100%;
   padding: var(--space-2) var(--space-3);
   border: 0;
-  border-radius: var(--radius-panel);
   background: none;
   color: var(--color-text);
   font: inherit;
@@ -2868,7 +2614,7 @@ a:where(:not([data-slot="button"])) {
 
 .context-menu__item:hover,
 .context-menu__item:focus-visible {
-  background: var(--color-row-hover);
+  background: var(--color-raised);
 }
 
 /* Spacing rule: a button or action row that follows other content in a panel, the lobby summary, a dialog or popover
@@ -2914,7 +2660,6 @@ a:where(:not([data-slot="button"])) {
 }
 
 .genre-frame {
-  --color-muted: var(--color-muted-themed);
   isolation: isolate;
 }
 
@@ -2936,8 +2681,8 @@ a:where(:not([data-slot="button"])) {
   z-index: -2;
   width: 100%;
   height: 100%;
-  object-fit: cover;
   border-radius: inherit;
+  object-fit: cover;
   pointer-events: none;
 }
 
@@ -2978,8 +2723,9 @@ a:where(:not([data-slot="button"])) {
   pointer-events: none;
 }
 
+/* Muted, not the accent: an accent is no text colour (ADR 0028 section 16.4; the genre look goes in PR5a). */
 .genre-name {
-  color: var(--genre-accent);
+  color: var(--color-muted);
   font-size: var(--font-size-small);
   font-weight: 600;
 }
@@ -2998,7 +2744,6 @@ a:where(:not([data-slot="button"])) {
 
 .time-block.genre-frame::before {
   inset: 1px;
-  border-radius: var(--radius-control);
 }
 
 .lobby-head {
@@ -3008,8 +2753,8 @@ a:where(:not([data-slot="button"])) {
   padding: var(--space-4);
   padding-right: calc(var(--size-genre-icon) + var(--space-4));
   background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-panel);
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius);
 }
 
 .lobby-head h1 {
@@ -3034,7 +2779,7 @@ a:where(:not([data-slot="button"])) {
   width: auto;
   min-height: 0;
   margin: 0;
-  accent-color: var(--color-accent);
+  accent-color: var(--color-text);
 }
 
 .group-form .choice-option:has(input:disabled) {

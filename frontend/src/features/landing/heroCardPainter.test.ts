@@ -84,13 +84,13 @@ describe("paintHeroCard", () => {
 describe("readCardStyle", () => {
   it("reads colours and fonts from the custom properties", () => {
     const element = document.createElement("div");
-    element.style.setProperty("--color-accent", " #f0c75e ");
+    element.style.setProperty("--sample-accent", " #f0c75e ");
     element.style.setProperty("--font-heading", "Space Grotesk");
     document.body.append(element);
 
     const style = readCardStyle(element);
 
-    expect(readCssValue(element, "--color-accent")).toBe("#f0c75e");
+    expect(readCssValue(element, "--sample-accent")).toBe("#f0c75e");
     expect(style.headingFont).toBe("Space Grotesk");
     element.remove();
   });

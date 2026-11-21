@@ -3,9 +3,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   WCAG_AA_TEXT,
-  WCAG_AA_UI,
   contrastRatio,
-  overPage,
   publicDir,
   solid,
   stylesheet,
@@ -13,14 +11,18 @@ import {
 } from "../test/cssTokens";
 import { GENRE_THEMES } from "./genreThemes";
 
+// Until PR5a removes the genre look (ADR 0028 section 7), the accents are decoration on the dark theme: no text and
+// no meter is drawn in an accent. These tests pin that the text and muted colours still read on every plate the look
+// paints.
+
 /** A translucent layer: a colour at an alpha. */
 type Layer = readonly [colour: string, alpha: number];
 
 const channels = (hex: string) =>
   [1, 3, 5].map((start) => Number.parseInt(hex.slice(start, start + 2), 16));
 
-/** Paints the layers in order over the page (or another backdrop), the way the browser stacks them, and returns the plate the text sits on. */
-function plate(layers: Layer[], backdrop = solid("--color-bg")): string {
+/** Paints the layers in order over a backdrop, the way the browser stacks them, and returns the plate the text sits on. */
+function plate(layers: Layer[], backdrop: string): string {
   let current = channels(backdrop);
   for (const [colour, alpha] of layers)
     current = channels(colour).map((over, index) =>
@@ -46,43 +48,55 @@ const accents = Object.values(GENRE_THEMES).map((theme) => ({
   key: theme.key,
   accent: solid(theme.accentVar).toLowerCase(),
 }));
+const texts = () => [solid("--color-text"), solid("--color-muted")];
+/** The hover fill of a row: the solid raised colour on its layer. */
+const raised = (): Layer => [solid("--color-raised"), 1];
 
-/**
- * The real stacks, worst case where parts overlap: what is painted behind the text in each view.
- * Next up and the lobby head put the pattern and the motif over the panel fill; Next up adds the accent wash;
- * the week block puts its tint over the pattern.
- */
-const views: Record<string, (accent: string) => Layer[]> = {
+/** The real stacks, worst case where parts overlap, over their backdrop: what is painted behind the text in each view. */
+const views: Record<string, (accent: string) => [Layer[], string]> = {
   "lobby row": (accent) => [
-    rgbaLayer("--color-surface"),
-    [accent, PATTERN_ALPHA],
+    [[accent, PATTERN_ALPHA]],
+    solid("--color-surface"),
   ],
   "lobby row on hover": (accent) => [
-    rgbaLayer("--color-row-hover"),
-    [accent, PATTERN_ALPHA],
+    [raised(), [accent, PATTERN_ALPHA]],
+    solid("--color-surface"),
   ],
   "week block": (accent) => [
-    [accent, PATTERN_ALPHA],
-    [accent, percent("--genre-tint")],
+    [
+      [accent, PATTERN_ALPHA],
+      [accent, percent("--genre-tint")],
+    ],
+    solid("--color-ground"),
   ],
-  "Next up card": (accent) => [
-    rgbaLayer("--color-surface"),
-    [accent, percent("--genre-wash")],
-    [accent, PATTERN_ALPHA],
-    [accent, MOTIF_ALPHA],
+  "Next up card and lobby head": (accent) => [
+    [
+      [accent, PATTERN_ALPHA],
+      [accent, MOTIF_ALPHA],
+    ],
+    solid("--color-surface"),
   ],
-  "lobby head": (accent) => [
-    rgbaLayer("--color-surface"),
-    [accent, PATTERN_ALPHA],
-    [accent, MOTIF_ALPHA],
+  // The wash is mixed into the surface, so the plate is the same on a hovered card (pinned below).
+  "Group card lobby line": (accent) => [
+    [
+      [accent, percent("--genre-wash")],
+      [accent, PATTERN_ALPHA],
+    ],
+    solid("--color-surface"),
   ],
 };
 
+it("mixes the Group card lobby line's wash into the surface, so a hovered card cannot show through", () => {
+  expect(stylesheet).toMatch(
+    /\.group-card__lobby\s*\{[^}]*color-mix\(\s*in srgb,\s*var\(--genre-accent\) var\(--genre-wash\),\s*var\(--color-surface\)\s*\)/,
+  );
+});
+
 const stacks = accents.flatMap(({ key, accent }) =>
-  Object.entries(views).map(
-    ([view, layers]) =>
-      [`${key} ${view}`, accent, plate(layers(accent))] as const,
-  ),
+  Object.entries(views).map(([view, layers]) => {
+    const [over, backdrop] = layers(accent);
+    return [`${key} ${view}`, plate(over, backdrop)] as const;
+  }),
 );
 
 describe("genre theme contrast (WCAG AA)", () => {
@@ -90,24 +104,10 @@ describe("genre theme contrast (WCAG AA)", () => {
     expect(new Set(accents.map(({ accent }) => accent)).size).toBe(9);
   });
 
-  it.each(accents)(
-    "$key: the accent carries meaning at 3:1 or more on the page and as a meter fill on its track",
-    ({ accent }) => {
-      for (const behind of [solid("--color-bg"), overPage("--color-border")])
-        expect(contrastRatio(accent, behind)).toBeGreaterThanOrEqual(
-          WCAG_AA_UI,
-        );
-    },
-  );
-
   it.each(stacks)(
-    "%s: text reads at 4.5:1 or more on the composed plate",
-    (_, accent, behind) => {
-      for (const text of [
-        accent,
-        solid("--color-text"),
-        solid("--color-muted-themed"),
-      ])
+    "%s: text and muted read at 4.5:1 or more on the composed plate",
+    (_, behind) => {
+      for (const text of texts())
         expect(
           contrastRatio(text, behind),
           `${text} on ${behind}`,
@@ -115,26 +115,8 @@ describe("genre theme contrast (WCAG AA)", () => {
     },
   );
 
-  it.each(stacks)(
-    "%s: a count badge reads at 4.5:1 or more on its surface",
-    (_, _accent, behind) => {
-      expect(
-        contrastRatio(
-          solid("--color-text"),
-          plate([rgbaLayer("--color-surface")], behind),
-        ),
-      ).toBeGreaterThanOrEqual(WCAG_AA_TEXT);
-    },
-  );
-
-  it("keeps the gold Next up text readable on the Next up plate", () => {
-    for (const { accent } of accents)
-      expect(
-        contrastRatio(
-          solid("--color-accent"),
-          plate(views["Next up card"](accent)),
-        ),
-      ).toBeGreaterThanOrEqual(WCAG_AA_TEXT);
+  it("draws no text in a genre accent", () => {
+    expect(stylesheet).not.toMatch(/[^-]color:\s*var\(--genre-accent\)/);
   });
 
   it("draws the art in the token colour and the patterns no stronger than the tested alpha", () => {
@@ -162,9 +144,9 @@ describe("genre theme contrast (WCAG AA)", () => {
 });
 
 /**
- * A game cover can be any image, so the bound is the brightest one: pure white. The scrim over white is the plate
- * every text on a cover sits on: Next up and the lobby head add the motif, a hovered lobby row its hover tint, which
- * a covered row draws over the scrim so the hover stays visible (ADR 0026 point 8).
+ * A game cover can be any image. Under the dark scrim the lightest cover, pure white, is the bound for the text
+ * colour. Next up and the lobby head add the motif; a hovered lobby row its raised fill, which a covered row draws
+ * over the scrim (ADR 0026 point 8).
  */
 const WHITE_COVER = "#ffffff";
 const coverViews: Record<string, (accent: string) => Layer[]> = {
@@ -173,19 +155,15 @@ const coverViews: Record<string, (accent: string) => Layer[]> = {
     [accent, MOTIF_ALPHA],
   ],
   "lobby row": () => [rgbaLayer("--color-cover-scrim")],
-  "lobby row on hover": () => [
-    rgbaLayer("--color-cover-scrim"),
-    rgbaLayer("--color-row-hover"),
-  ],
+  "lobby row on hover": () => [rgbaLayer("--color-cover-scrim"), raised()],
 };
 const coverStacks = accents.flatMap(({ key, accent }) =>
   Object.entries(coverViews).map(
-    ([view, layers]) => [`${key} ${view}`, accent, layers(accent)] as const,
+    ([view, layers]) =>
+      [`${key} ${view}`, plate(layers(accent), WHITE_COVER)] as const,
   ),
 );
-const coverPlate = (layers: Layer[], ...over: Layer[]) =>
-  plate([...layers, ...over], WHITE_COVER);
-/** The rules of a covered frame, joined: they swap the muted text and the genre name to the text colour. */
+/** The rules of a covered frame, joined: they swap muted text, the genre name and a field error to the text colour. */
 const coverRules = [
   ...stylesheet.matchAll(/([^{}]*\[data-cover\][^{}]*)\{([^}]*)\}/g),
 ]
@@ -193,48 +171,13 @@ const coverRules = [
   .join(" ");
 
 describe("game cover contrast (WCAG AA, worst case: a white cover)", () => {
-  it.each(coverStacks)(
-    "%s: the text colour and the accent read at 4.5:1 or more",
-    (_, _accent, layers) => {
-      for (const text of [solid("--color-text"), solid("--color-accent")])
-        expect(
-          contrastRatio(text, coverPlate(layers)),
-          text,
-        ).toBeGreaterThanOrEqual(WCAG_AA_TEXT);
-    },
-  );
-
-  it.each(coverStacks)(
-    "%s: a count badge, a game monogram and the Leave button read at 4.5:1 or more on their surface",
-    (_, _accent, layers) => {
-      expect(
-        contrastRatio(
-          solid("--color-text"),
-          coverPlate(layers, rgbaLayer("--color-surface")),
-        ),
-      ).toBeGreaterThanOrEqual(WCAG_AA_TEXT);
-    },
-  );
-
-  it.each(accents)(
-    "$key: the gold Next up timing reads at 4.5:1 or more on the Next up cover plate",
-    ({ accent }) => {
-      expect(
-        contrastRatio(
-          solid("--color-accent"),
-          coverPlate(coverViews["Next up card and lobby head"](accent)),
-        ),
-      ).toBeGreaterThanOrEqual(WCAG_AA_TEXT);
-    },
-  );
-
-  it("the Join button and a full slot read on their solid accent, whatever is behind", () => {
-    expect(
-      contrastRatio(solid("--color-on-accent"), solid("--color-accent")),
-    ).toBeGreaterThanOrEqual(WCAG_AA_TEXT);
+  it.each(coverStacks)("%s: text reads at 4.5:1 or more", (_, behind) => {
+    expect(contrastRatio(solid("--color-text"), behind)).toBeGreaterThanOrEqual(
+      WCAG_AA_TEXT,
+    );
   });
 
-  it("gives the muted text, the genre name and a field error the tested text colour on a cover", () => {
+  it("gives muted text, the genre name and a field error the tested text colour on a cover", () => {
     expect(coverRules).toMatch(/--color-muted:\s*var\(--color-text\)/);
     for (const name of ["genre-name", "field-error"])
       expect(coverRules, name).toMatch(
@@ -244,7 +187,7 @@ describe("game cover contrast (WCAG AA, worst case: a white cover)", () => {
       );
   });
 
-  it("draws a covered row's hover tint over the scrim, as tested", () => {
+  it("draws a covered row's hover fill over the scrim, as tested", () => {
     expect(coverRules).toMatch(/\.row-list[^{]*::after\s*\{[^}]*z-index:\s*-1/);
   });
 });

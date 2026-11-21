@@ -159,6 +159,18 @@ describe("Select values", () => {
   });
 });
 
+describe("Select look (ADR 0028 section 16.4)", () => {
+  it("marks the selected option, and only that one, with its check mark", async () => {
+    render(<Field initial="g-chess" />);
+    await openWith("Enter");
+
+    const marked = screen
+      .getAllByRole("option")
+      .filter((option) => option.querySelector("svg"));
+    expect(marked.map((option) => option.textContent)).toEqual(["Chess"]);
+  });
+});
+
 describe("Select keyboard (REQ-0027)", () => {
   it.each([["Enter"], [" "], ["ArrowDown"]])(
     "opens on %j with focus on the chosen option",

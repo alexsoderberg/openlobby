@@ -55,7 +55,9 @@ describe("Settings rows (REQ-0020)", () => {
 
   it("draws a visible outline on every keyboard focus", () => {
     const rule = /(?:^|\})\s*:focus-visible\s*\{([^}]*)\}/.exec(stylesheet);
-    expect(rule?.[1]).toMatch(/outline:\s*3px solid var\(--color-focus\)/);
+    expect(rule?.[1]).toMatch(
+      /outline:\s*var\(--width-edge\) solid var\(--color-text\)/,
+    );
   });
 });
 

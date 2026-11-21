@@ -10,7 +10,7 @@ export const TOAST_DURATION_MS = 4000;
 const OFFSET = { bottom: "var(--toast-bottom)", right: "var(--space-3)" };
 
 const TOAST_CLASS =
-  "flex items-center gap-(--space-2) px-(--space-3) py-(--space-2) border border-(--color-border) rounded-(--radius-control) bg-(--color-bg-raised) text-(--color-text)";
+  "flex items-center gap-(--space-2) px-(--space-3) py-(--space-2) border border-(--color-rule-strong) rounded-(--radius) bg-(--color-raised) text-(--color-text)";
 
 const REGION = "[data-toast-region]";
 
