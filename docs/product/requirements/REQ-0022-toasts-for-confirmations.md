@@ -9,6 +9,8 @@ DECISION, user, 2026-11-13: toasts are shown in the bottom-right corner and fade
 
 DECISION, user, 2026-11-13 (second answer): the toast lasts 4 seconds and pauses while the pointer is over it or keyboard focus is inside the toast region. On phones the toast sits bottom right, above the floating "+" button, and never covers the tab bar. The toasts are built as part of the shadcn rollout (ADR 0023), right after ADR 0022 PR5 and before A4 (backlog A3a). The margin of 16 px and the other values marked ASSUMPTION are not decided by the user.
 
+DECISION, user, 2026-11-21 (Amendment 2026-11-21, ADR 0023): the pause on keyboard focus stays, but when keyboard focus leaves the toast region, the toast starts again with its full 4 seconds. The time left is not carried over. The pointer pause is unchanged and keeps the time left. The criterion under "Fade-out" is the one that applies.
+
 DECISION, user, 2026-11-13 (build order): in the shadcn rollout, Dialog is built before toasts (order Button → Dialog → Toasts → Tooltip → Menu → Popover), so a toast is never hidden under a dialog. The criterion on a toast shown while a dialog is open depends on this order.
 
 ## Problem
@@ -43,7 +45,7 @@ Position (DECISION, user, 2026-11-13):
 Fade-out (DECISION, user, 2026-11-13: after a few seconds):
 - Given that a toast is shown and no pointer is over it and no keyboard focus is inside the toast region, when 4 seconds have passed, then it fades out and is removed from the page, and leaves nothing on the page (DECISION, user, 2026-11-13: 4 seconds; the fade-out is the decision).
 - Given that the pointer is over a toast, when the timer would end, then the timer pauses, and it continues after the pointer leaves (DECISION, user, 2026-11-13).
-- Given that keyboard focus is inside the toast region, when the timer would end, then the timer pauses, and it continues after focus leaves the region (DECISION, user, 2026-11-13).
+- Given that keyboard focus is inside the toast region, when the timer would end, then the timer pauses. Given that keyboard focus then leaves the region, when the toast is still shown, then the timer starts again with its full 4 seconds, and the time left is not carried over (DECISION, user, 2026-11-21, Amendment 2026-11-21 of ADR 0023; the pause on focus is DECISION, user, 2026-11-13).
 - Given that a toast is shown, when I read its text, then its text meets WCAG AA contrast against its background, as all text in the app does (dark spec 2026-11-03, accessibility rule).
 
 Lobby created (the one conditional case):
@@ -77,7 +79,7 @@ These replace the inline success status of the place, which is removed. Each is 
 | 3 | Invite popover, after a link is copied | `features/invites/InviteLinks.tsx` | `inviteLinkCopied` | "Link copied." |
 | 4 | Create group form, after the group is created | `features/groups/CreateGroupForm.tsx` | `groupCreated` | the same text |
 | 5 | Group list, after leaving a group | `app/LoggedInApp.tsx` | `groupLeft` | the same text, with the group name |
-| 6 | Game list (system admin), after a game is added, changed or removed | `features/games/GamesPage.tsx` | `gameAdded`, `gameChanged`, `gameRemoved` | the same texts, except after a game is added: "Game added. Its form is open in the list, where you can add a logo." (Amendment 2026-11-15, REQ-0026) |
+| 6 | Game list (system admin), after a game is added, changed or removed | `features/games/GamesPage.tsx` | `gameAdded`, `gameChanged`, `gameRemoved` | the same texts, except after a game is added: "Game added. Its form is open in the list, where you can add a logo and a cover." (Amendment 2026-11-15, REQ-0026) |
 | 7 | Group view, after a lobby is created, only when the lobby is not visible (criteria above) | `features/lobbies/Lobbies.tsx` | `lobbyCreated` | "Lobby created. You are the first player." |
 | 8 | Lobby page, mode or activity saved | `features/lobbies/LobbySettings.tsx` (`Result`) | `lobbySettingsSaved` | "Saved." |
 | 9 | Lobby page, game set | `features/lobbies/LobbySettings.tsx` (`Result`) | `lobbyGameSaved` | "Game set." |

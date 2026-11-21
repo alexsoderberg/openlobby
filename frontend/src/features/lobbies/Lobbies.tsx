@@ -1,5 +1,5 @@
-import { useState } from "react";
-import type { Group } from "../../api";
+import { useCallback, useState } from "react";
+import type { Group, Lobby } from "../../api";
 import { usePopover } from "../../hooks";
 import type { PickedStart } from "../../calendar";
 import { useMessages } from "../../i18n";
@@ -21,7 +21,8 @@ type LobbyView = "list" | "calendar";
 /**
  * The lobby sections of a group page: the upcoming lobbies as a list or a week calendar, and the popover
  * form that adds one, opened by the Create lobby button or from a time of the calendar. The list is the first
- * view of every visit, because the choice is not saved (REQ-0004).
+ * view of every visit, because the choice is not saved (REQ-0004). A lobby created in the list view is always in
+ * the list, so only the calendar may confirm it with a toast (REQ-0022).
  */
 export function Lobbies({
   groupId,
@@ -35,19 +36,26 @@ export function Lobbies({
   const m = useMessages();
   const [view, setView] = useState<LobbyView>("list");
   const [initialStart, setInitialStart] = useState<PickedStart>();
-  const [created, setCreated] = useState(false);
+  const [createdId, setCreatedId] = useState<string>();
   const upcoming = useUpcomingLobbies(groupId, onUnauthenticated);
   const popover = usePopover();
 
   const openForm = (start: PickedStart | undefined, button: HTMLElement) => {
     setInitialStart(start);
-    setCreated(false);
     popover.press(button);
   };
-  const handleCreated = () => {
+  const handleCreated = (lobby: Lobby) => {
     upcoming.refresh();
-    setCreated(true);
+    if (view === "calendar") setCreatedId(lobby.id);
     popover.close();
+  };
+  const clearCreated = useCallback(() => setCreatedId(undefined), []);
+  // A failed reload shows the error, not the lobby: no later reload may confirm it.
+  if (createdId !== undefined && upcoming.state.status === "error")
+    setCreatedId(undefined);
+  const changeView = (next: LobbyView) => {
+    clearCreated();
+    setView(next);
   };
 
   return (
@@ -66,9 +74,6 @@ export function Lobbies({
               {m.lobbyCreateButton}
             </Button>
           </div>
-          <p role="status" className="status">
-            {created && m.lobbyCreated}
-          </p>
           <ViewToggle
             label={m.lobbyViewLabel}
             value={view}
@@ -80,7 +85,7 @@ export function Lobbies({
                 icon: "calendar",
               },
             ]}
-            onChange={setView}
+            onChange={changeView}
           />
         </div>
         <LobbyViews
@@ -88,6 +93,8 @@ export function Lobbies({
           members={members}
           view={view}
           upcoming={upcoming}
+          createdId={createdId}
+          onCreatedSettled={clearCreated}
           onCreate={openForm}
         />
       </Panel>
@@ -121,12 +128,16 @@ function LobbyViews({
   members,
   view,
   upcoming: { state, reload },
+  createdId,
+  onCreatedSettled,
   onCreate,
 }: {
   groupId: string;
   members: Group["members"];
   view: LobbyView;
   upcoming: ReturnType<typeof useUpcomingLobbies>;
+  createdId?: string;
+  onCreatedSettled: () => void;
   onCreate: (start: PickedStart, button: HTMLElement) => void;
 }) {
   const m = useMessages();
@@ -141,6 +152,8 @@ function LobbyViews({
     <LobbyCalendar
       groupId={groupId}
       lobbies={state.value}
+      createdId={createdId}
+      onCreatedSettled={onCreatedSettled}
       onCreate={onCreate}
     />
   );

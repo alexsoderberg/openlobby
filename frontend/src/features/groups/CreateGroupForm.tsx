@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { toUserMessage, useMessages } from "../../i18n";
-import { Alert, Button, Icon } from "../../ui";
+import { Alert, Button, Icon, showToast } from "../../ui";
 import { INVALID_GROUP_NAME } from "./groupErrors";
 import type { CreateGroupState } from "./useCreateGroup";
 
@@ -8,8 +8,8 @@ const HINT_ID = "group-name-hint";
 const ERROR_ID = "group-name-error";
 
 /**
- * Focus moves to the field when the form opens and after an error, and to the success message after
- * creation. The form is opened by remounting it, so it starts empty each time.
+ * Focus moves to the field when the form opens, after an error and after creation. A created group is confirmed
+ * by a toast (REQ-0022). The form is opened by remounting it, so it starts empty each time.
  */
 export function CreateGroupForm({
   state,
@@ -23,7 +23,6 @@ export function CreateGroupForm({
   const m = useMessages();
   const formRef = useRef<HTMLFormElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const statusRef = useRef<HTMLParagraphElement>(null);
 
   useEffect(() => {
     inputRef.current?.focus({ preventScroll: true });
@@ -33,9 +32,11 @@ export function CreateGroupForm({
     if (state.status === "failed") inputRef.current?.focus();
     if (state.status === "created") {
       formRef.current?.reset();
-      statusRef.current?.focus();
+      // The submit button was disabled while saving, so focus goes back to the now empty field.
+      inputRef.current?.focus();
+      showToast(m.groupCreated);
     }
-  }, [state]);
+  }, [state, m]);
 
   const fieldFailed =
     state.status === "failed" && state.code === INVALID_GROUP_NAME;
@@ -84,11 +85,6 @@ export function CreateGroupForm({
         </div>
       </form>
       {otherFailure && <Alert>{toUserMessage(otherFailure)}</Alert>}
-      {state.status === "created" && (
-        <p ref={statusRef} tabIndex={-1} role="status">
-          {m.groupCreated}
-        </p>
-      )}
     </>
   );
 }

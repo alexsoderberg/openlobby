@@ -5,6 +5,7 @@ import {
   waitFor,
   within,
 } from "@testing-library/react";
+import { createRef } from "react";
 import { describe, expect, it, vi } from "vitest";
 import {
   ApiError,
@@ -16,6 +17,8 @@ import {
 import { en } from "../../i18n/messages/en";
 import { chooseOption, optionNames } from "../../test/chooseOption";
 import { fakeApiClient } from "../../test/fakeApiClient";
+import { expectNoToast, findToast } from "../../test/toasts";
+import { Toaster } from "../../ui";
 import { LobbySettings } from "./LobbySettings";
 
 const HOUR_MS = 60 * 60 * 1000;
@@ -69,17 +72,31 @@ function renderSettings(
     ...overrides,
   });
   const onChanged = vi.fn();
-  const { container } = render(
+  const headingRef = createRef<HTMLHeadingElement>();
+  // The page heading, which takes focus when a set game leaves no settings to show.
+  const page = (shown: Partial<LobbyDetail>) => (
     <ApiProvider client={client}>
-      <LobbySettings
-        groupId="g1"
-        lobby={{ ...lobby, ...shown }}
-        onChanged={onChanged}
-        onUnauthenticated={vi.fn()}
-      />
-    </ApiProvider>,
+      <h1 ref={headingRef} tabIndex={-1}>
+        Lobby
+      </h1>
+      <div>
+        <LobbySettings
+          groupId="g1"
+          lobby={{ ...lobby, ...shown }}
+          headingRef={headingRef}
+          onChanged={onChanged}
+          onUnauthenticated={vi.fn()}
+        />
+      </div>
+      <Toaster />
+    </ApiProvider>
   );
-  return { client, onChanged, container };
+  const view = render(page(shown));
+  const heading = headingRef.current!;
+  const container = heading.nextElementSibling!;
+  /** Shows the lobby as the page has it once it has loaded again. */
+  const reloadAs = (next: Partial<LobbyDetail>) => view.rerender(page(next));
+  return { client, onChanged, container, heading, reloadAs };
 }
 
 const modeSelect = () =>
@@ -200,7 +217,7 @@ describe("changing the mode", () => {
       "m-raid",
     );
     expect(screen.queryByRole("alertdialog")).toBeNull();
-    expect(await screen.findByText(en.lobbySettingsSaved)).toBeTruthy();
+    await findToast(en.lobbySettingsSaved);
     const mode = await modeSelect();
     await waitFor(() => expect(document.activeElement).toBe(mode));
   });
@@ -313,6 +330,7 @@ describe("changing the mode", () => {
 
       expect((await dialogAlert()).textContent).toBe(text);
       expect(onChanged).not.toHaveBeenCalled();
+      await expectNoToast();
     },
   );
 });
@@ -328,7 +346,7 @@ describe("the activity", () => {
 
     await waitFor(() => expect(onChanged).toHaveBeenCalled());
     expect(client.setLobbyActivity).toHaveBeenCalledWith("g1", "l1", "a-vault");
-    expect(await screen.findByText(en.lobbySettingsSaved)).toBeTruthy();
+    await findToast(en.lobbySettingsSaved);
   });
 
   it("clears the activity and keeps the mode", async () => {
@@ -400,15 +418,30 @@ describe("setting the game of an open lobby", () => {
     expect(client.setLobbyGame).not.toHaveBeenCalled();
   });
 
-  it("sets the chosen game, loads the lobby again and focuses the result", async () => {
-    const { client, onChanged } = renderSettings(open);
+  it("sets the chosen game, confirms with a toast, and focuses the mode once the lobby has loaded again", async () => {
+    const { client, onChanged, reloadAs } = renderSettings(open);
 
     await setGame();
 
     await waitFor(() => expect(onChanged).toHaveBeenCalled());
     expect(client.setLobbyGame).toHaveBeenCalledWith("g1", "l1", "game1");
-    const status = await screen.findByText(en.lobbyGameSaved);
-    await waitFor(() => expect(document.activeElement).toBe(status));
+    await findToast(en.lobbyGameSaved);
+    reloadAs({ modeId: null, modeName: null });
+    const mode = await modeSelect();
+    await waitFor(() => expect(document.activeElement).toBe(mode));
+  });
+
+  // No settings are left to show, so focus goes to the page heading, which now names the game.
+  it("focuses the page heading after setting a game without modes", async () => {
+    const { heading, reloadAs } = renderSettings(open, {
+      listGroupGames: vi.fn(() => Promise.resolve([{ ...game, modes: [] }])),
+    });
+
+    await setGame();
+    await findToast(en.lobbyGameSaved);
+    reloadAs({});
+
+    await waitFor(() => expect(document.activeElement).toBe(heading));
   });
 
   it("explains that someone set the game first, loads the lobby again and focuses the message", async () => {
@@ -442,5 +475,6 @@ describe("setting the game of an open lobby", () => {
     const select = await gameSelect();
     expect(select.getAttribute("aria-describedby")).toContain(alert.id);
     await waitFor(() => expect(document.activeElement).toBe(select));
+    await expectNoToast();
   });
 });

@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import type { Group } from "../../api";
 import { toUserMessage, useMessages } from "../../i18n";
-import { Alert, Button, Icon } from "../../ui";
+import { Alert, Button, Icon, showToast } from "../../ui";
 import { CreateInviteLinkForm } from "./CreateInviteLinkForm";
 import { InviteLinkList } from "./InviteLinkList";
 import { useCopyInviteLink } from "./useCopyInviteLink";
@@ -9,8 +9,9 @@ import { useInviteLinkChanges } from "./useInviteLinkChanges";
 import { useInviteLinks } from "./useInviteLinks";
 
 /**
- * The body of the invite popover. The two status regions stay in the page and only their
- * text changes, so screen readers announce each message. Focus moves to the change message.
+ * The body of the invite popover. A done change or copy is confirmed by a toast (REQ-0022). A change takes its
+ * button off the page or disables it, so focus moves to the heading. A failed copy stays in its status region,
+ * which stays in the page, so screen readers announce each message.
  */
 export function InviteLinks({
   groupId,
@@ -33,23 +34,27 @@ export function InviteLinks({
     revoke,
   } = useInviteLinkChanges(groupId, reload, onUnauthenticated);
   const { result: copy, copy: copyLink } = useCopyInviteLink();
-  const changeRef = useRef<HTMLParagraphElement>(null);
+  const headingRef = useRef<HTMLHeadingElement>(null);
   const saving = change.status === "saving";
 
   useEffect(() => {
-    if (change.status === "done") changeRef.current?.focus();
-  }, [change]);
+    if (change.status !== "done") return;
+    headingRef.current?.focus();
+    showToast(
+      change.change === "created" ? m.inviteLinkCreated : m.inviteLinkRevoked,
+    );
+  }, [change, m]);
+
+  useEffect(() => {
+    if (copy?.outcome === "copied") showToast(m.inviteLinkCopied);
+  }, [copy, m]);
 
   return (
     <>
-      <h2>{m.inviteHeading(groupName)}</h2>
+      <h2 ref={headingRef} tabIndex={-1}>
+        {m.inviteHeading(groupName)}
+      </h2>
       <CreateInviteLinkForm busy={saving} onSubmit={create} />
-      <p ref={changeRef} tabIndex={-1} role="status" className="status">
-        {change.status === "done" &&
-          (change.change === "created"
-            ? m.inviteLinkCreated
-            : m.inviteLinkRevoked)}
-      </p>
       {change.status === "failed" && (
         <Alert>{toUserMessage(change.code)}</Alert>
       )}
@@ -62,11 +67,9 @@ export function InviteLinks({
         onRevoke={revoke}
       />
       <p role="status" className="status">
-        {copy && (
+        {copy?.outcome === "failed" && (
           <span key={copy.attempt} className="status-flash">
-            {copy.outcome === "copied"
-              ? m.inviteLinkCopied
-              : m.inviteLinkCopyFailed}
+            {m.inviteLinkCopyFailed}
           </span>
         )}
       </p>

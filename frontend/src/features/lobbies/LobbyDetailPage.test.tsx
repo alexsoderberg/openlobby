@@ -444,10 +444,10 @@ describe("an open lobby on the page", () => {
 
     expect(await screen.findByRole("heading", { name: "Catan" })).toBeTruthy();
     expect(client.setLobbyGame).toHaveBeenCalledWith("g1", "l1", "game1");
-    expect(
-      await screen.findByRole("combobox", { name: en.lobbyModeLabel }),
-    ).toBeTruthy();
-    expect(document.activeElement).toBe(screen.getByText(en.lobbyGameSaved));
+    const mode = await screen.findByRole("combobox", {
+      name: en.lobbyModeLabel,
+    });
+    await waitFor(() => expect(document.activeElement).toBe(mode));
   });
 });
 

@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import type { AuthUser } from "../api";
 import { GROUPS_PATH, groupPath, useMyGroups } from "../features/groups";
 import { AppShell } from "../features/shell";
 import { useMessages } from "../i18n";
+import { showToast } from "../ui";
 import { activeNavOf } from "./activeNav";
 import { navigate } from "./navigation";
 import { NotFoundPage, ProtectedPage } from "./Pages";
@@ -36,21 +37,14 @@ export function LoggedInApp({
     },
     [reload],
   );
-  const [leftGroupName, setLeftGroupName] = useState<string>();
   const leaveGroup = useCallback(
     (group: { name: string }) => {
-      setLeftGroupName(group.name);
+      showToast(m.groupLeft(group.name));
       reload();
       navigate(GROUPS_PATH);
     },
-    [reload],
+    [m, reload],
   );
-  // The notice belongs to the visit to the Group list that the leave led to, so moving on from the list drops it.
-  const [previousPathname, setPreviousPathname] = useState(pathname);
-  if (previousPathname !== pathname) {
-    setPreviousPathname(pathname);
-    if (previousPathname === GROUPS_PATH) setLeftGroupName(undefined);
-  }
   return (
     <AppShell
       user={user}
@@ -59,10 +53,6 @@ export function LoggedInApp({
       onGroupCreated={(group) => openGroup(group.id)}
       onUnauthenticated={onUnauthenticated}
     >
-      {/* Always rendered, so a screen reader announces the text when it is set. */}
-      <p role="status" className="status">
-        {leftGroupName !== undefined && m.groupLeft(leftGroupName)}
-      </p>
       {route.name === "notFound" ? (
         <NotFoundPage />
       ) : (

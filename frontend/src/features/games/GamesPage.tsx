@@ -1,6 +1,6 @@
-import { useRef, type RefObject } from "react";
+import { useRef } from "react";
 import { toUserMessage, useMessages } from "../../i18n";
-import { Alert, Panel } from "../../ui";
+import { Alert, Panel, showToast } from "../../ui";
 import { GROUPS_PATH } from "../groups";
 import { DeleteGameDialog } from "./DeleteGameDialog";
 import { GameForm } from "./GameForm";
@@ -47,21 +47,22 @@ type Admin = ReturnType<typeof useGameAdmin>;
 
 function GameAdmin({ onUnauthenticated }: { onUnauthenticated: () => void }) {
   const m = useMessages();
-  const statusRef = useRef<HTMLParagraphElement>(null);
-  const admin = useGameAdmin(onUnauthenticated, statusRef);
+  // A change closes the form or dialog that held it, so focus goes to the page heading.
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const admin = useGameAdmin(onUnauthenticated, headingRef, (change) =>
+    showToast(m[CHANGE_MESSAGE[change]]),
+  );
 
   if (admin.games.status === "error" && admin.games.code === NOT_ALLOWED)
     return <GamesDenied />;
 
   return (
     <>
-      <h1>{m.gameListHeading}</h1>
+      <h1 ref={headingRef} tabIndex={-1}>
+        {m.gameListHeading}
+      </h1>
       <div className="panel-group">
-        <GameListPanel
-          admin={admin}
-          statusRef={statusRef}
-          onUnauthenticated={onUnauthenticated}
-        />
+        <GameListPanel admin={admin} onUnauthenticated={onUnauthenticated} />
         <Panel>
           <h2>{m.gameAddHeading}</h2>
           <GameForm
@@ -91,17 +92,14 @@ function RemoveGame({ admin }: { admin: Admin }) {
   );
 }
 
-/** The list, then the status line that receives focus after a change, then a notice for a vanished game. */
+/** The list, then a notice for a vanished game. */
 function GameListPanel({
   admin,
-  statusRef,
   onUnauthenticated,
 }: {
   admin: Admin;
-  statusRef: RefObject<HTMLParagraphElement | null>;
   onUnauthenticated: () => void;
 }) {
-  const m = useMessages();
   const { change } = admin;
 
   return (
@@ -118,9 +116,6 @@ function GameListPanel({
         onImageChanged={admin.refresh}
         onUnauthenticated={onUnauthenticated}
       />
-      <p ref={statusRef} tabIndex={-1} role="status" className="status">
-        {change.status === "done" && m[CHANGE_MESSAGE[change.change]]}
-      </p>
       {change.status === "gone" && <Alert>{toUserMessage(change.code)}</Alert>}
     </Panel>
   );

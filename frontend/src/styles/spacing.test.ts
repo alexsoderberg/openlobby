@@ -27,7 +27,7 @@ describe("Next up card spacing", () => {
 });
 
 describe("Panel button rows", () => {
-  // In the Lobbies panel the view switch follows an empty p.status line, which has no margin, so it needs the rule's gap.
+  // In the Lobbies panel the view switch follows the heading and its button, which have no margin, so it needs the rule's gap.
   it("spaces the view switch from the content above by space-3", () => {
     expect(declarationsFor(String.raw`\.view-switch\s*\)`)).toMatch(
       /margin-top:\s*var\(--space-3\)/,
