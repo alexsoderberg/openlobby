@@ -565,20 +565,6 @@ describe("empty and error states", () => {
   });
 });
 
-describe("group strip", () => {
-  it("links each group icon to its group by name", async () => {
-    renderDashboard({});
-    await nextUpCard();
-
-    const strip = within(
-      screen.getByRole("navigation", { name: t.groupStripLabel }),
-    );
-    expect(
-      strip.getByRole("link", { name: "Friday crew" }).getAttribute("href"),
-    ).toBe("/groups/g1");
-  });
-});
-
 describe("Next up join and leave", () => {
   const upcoming = (overrides: Partial<Lobby> = {}) => ({
     g1: [lobby("l1", "Overwatch 2", at(4, 20), at(4, 22), overrides)],

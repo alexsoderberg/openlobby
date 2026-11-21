@@ -74,11 +74,7 @@ describe("week time grid layout", () => {
     expect(side).toContain("gap: var(--space-3);");
     const rem = (name: string) => parseFloat(token(name));
     const mainColumn =
-      98 -
-      rem("--size-rail") -
-      2 * rem("--space-6") -
-      rem("--width-aside") -
-      rem("--space-3");
+      98 - 2 * rem("--space-6") - rem("--width-aside") - rem("--space-3");
     expect(mainColumn).toBeGreaterThanOrEqual(66);
   });
 

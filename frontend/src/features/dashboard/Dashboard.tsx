@@ -5,7 +5,6 @@ import { useMessages } from "../../i18n";
 import { ErrorAlert } from "../../ui";
 import { GROUPS_PATH, type GroupsState } from "../groups";
 import { nextUpOf, type DashboardLobby } from "./dashboardLobby";
-import { GroupStrip } from "./GroupStrip";
 import { NextUpCard } from "./NextUpCard";
 import { ThisWeek } from "./ThisWeek";
 import { useDashboardLobbies } from "./useDashboardLobbies";
@@ -62,13 +61,10 @@ function DashboardBody({
       </div>
     );
   return (
-    <>
-      <GroupStrip groups={groups.groups} />
-      <DashboardLobbies
-        groups={groups.groups}
-        onUnauthenticated={onUnauthenticated}
-      />
-    </>
+    <DashboardLobbies
+      groups={groups.groups}
+      onUnauthenticated={onUnauthenticated}
+    />
   );
 }
 

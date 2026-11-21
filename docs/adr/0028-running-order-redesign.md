@@ -206,13 +206,13 @@ DECISION (user, 2026-11-21): accepted. Order: PR1a, PR1b, PR2, PR3a, PR3b, PR4, 
 ### 15. Dead code and where it is deleted
 | Code | Replaced by | Deleted in |
 |---|---|---|
-| `features/shell/GroupRail.tsx`, `GroupContextMenu.tsx`, `.group-rail` CSS, `--size-rail`, `--size-group-icon` | Top bar (section 3) | PR1b |
+| `features/shell/GroupRail.tsx`, `GroupContextMenu.tsx`, `.group-rail` CSS, `--size-rail`; `dashboard/GroupStrip.tsx`, `ui/GroupIcon.tsx`, `.group-strip` and `.group-icon` CSS, `--size-group-icon` (16.12 item 1) | Top bar (section 3) | PR1b |
 | `features/shell/TabBar.tsx` (merged into `TopBar.tsx`) | One nav | PR1b |
 | Radius, shadow, glass and the glow, sweep, grain, meter, flash and icon motion tokens (section 2) | Flat tokens | PR1a |
 | `--color-accent`, `--color-focus`, `--color-danger-bg` and the other removed colours (section 1) | Orange rule, ink focus | PR1a |
 | Space Grotesk and Inter `@font-face`, files, `OFL-SpaceGrotesk.txt`, `OFL-Inter.txt` | Big Shoulders Display, Archivo | PR1a |
 | `styles/goldRule.test.ts` | `orangeRule.test.ts` | PR1a |
-| `dashboard/NextUpCard.tsx`, `DayList.tsx`, `GroupStrip.tsx`, `ThisWeek.tsx`, their tests, `.side-layout` use on the Dashboard | `NextUpBand`, `RunningOrder`, legend | PR2 |
+| `dashboard/NextUpCard.tsx`, `DayList.tsx`, `ThisWeek.tsx`, their tests, `.side-layout` use on the Dashboard | `NextUpBand`, `RunningOrder`, legend | PR2 |
 | `hooks/useStoredChoice.ts`, its test and its export (its only user was the This week toggle) | None | PR2 |
 | `calendar/week.ts` | Moved to `runningOrder/week.ts` | PR2 |
 | `calendar/` (`WeekTimeGrid`, `TimeGrid`, `TimeGridDay`, `TimeBlock`, `DayPills`, `gridGeometry`, `useGridTop`, index and their tests); `styles/timeGrid.test.ts`; `--size-hour`, `--size-grid-height`, `--size-grid-title`, `--size-grid-gutter`, `--size-game-logo-small` | `RunningOrder` | PR3a |
@@ -338,6 +338,20 @@ DECISION, architect, on the deviations the UI/UX expert built. Each one amends t
 7. **Phone Tab bar corners (amends 16.5, accepted from the UI/UX expert).** The phone Tab bar stays edge to edge with square corners. Only its items take `--radius`. The bar is fixed to the bottom and side edges of the window, so rounded corners would show the page through the screen edge. The approved option 1 mockup draws it the same way.
 
 Temporary tokens, with the PR that deletes them: `--color-online` (PR5b), `--genre-motif-opacity` and the game-cover hover (PR5a), the genre tokens (PR5a). Section 15 is the list of what is deleted where.
+
+### 16.12 Rulings on the PR1b build (2026-11-21)
+DECISION, architect, on the deviations the UI/UX expert built for the Top bar. Each one amends the section it names.
+1. **Group strip deleted in PR1b (amends section 15).** The reviewer found that `GroupStrip` on Home was still a second nav on phones. So `GroupStrip`, `ui/GroupIcon`, `.group-icon`, `.group-strip` and `--size-group-icon` are all deleted in PR1b, as section 15 first planned. Section 15's row for `--size-group-icon` moves from PR2 to PR1b. Between PR1b and PR2 Home has no group strip; the groups are reached through the Groups tab, as REQ-0029 item 3 allows. PR2 gives Home its running order and links. Accepted.
+2. **Top bar z-index (amends section 3). The header does not get 60.** A header at `z-index: 60` puts the Top bar above the scrim (40) and the Create frame (50) at every width. The Top bar is part of the page and is dimmed like it, and the Tab bar stays above the scrim (60) as before this PR. Rule: the Top bar is `--z-top-bar: 10`, `position: sticky` from 760 px only. Under 760 px it has no `position: sticky` and no z-index. Its nav, the Tab bar, is then `position: fixed` in the page's stacking context and sits at its own z-index 60. A sticky header would make its own stacking context and would cap the Tab bar, which is why the phone Top bar scrolls away with the page. This gives up the sticky phone bar of the option 1 mockup. DECISION, to be shown to the user with the PR. The one-nav rule of section 3 is kept, so the Tab bar cannot move out of the header.
+3. **No skip link (pre-existing, not a PR1b blocker).** The rail had no skip link either. Focus on navigation moves to `main`. A skip link is a separate small task for WCAG 2.4.1, to be recorded in the backlog by the product owner.
+4. **Avatar link without `aria-current` on `/profile` (accepted).** The You tab carries `aria-current`, so the page has one current link.
+5. **Header "+" through a render prop on the AppShell children (accepted).** `AppShell` keeps the one `CreateFrame` (section 3). `GroupListPage` receives the opener through the render prop. No second frame and no context.
+6. **Group context menu removed, with "Invite people" (accepted).** No requirement needs it. REQ-0029 (the Top bar requirements) removes the right-click menu on a group icon and the right-click invite path, and the Invite popover opens only from the Group view header's Invite button. The menu had one item. ADR 0023 point 5 and its PR F (the `DropdownMenu` for `GroupContextMenu`) are cancelled with it.
+7. **Active desktop tab: bold with a 3 px `--color-on-signal` underline drawn by `::after` (accepted, with a limit).** This is the underline of section 16.4 item 5. The weight is the token `--font-weight-tab-active` (700), so no component writes a weight. The bold weight must not move the other tabs: the nav keeps its width when the active tab changes, checked at 760 px and 1280 px.
+8. **Focus order of the Top bar (WCAG 2.4.3, accepted with a limit).** The DOM order is Wordmark, nav, avatar. On a desktop this is the visual order. On a phone the nav is at the bottom of the window, so Tab goes Wordmark, then the tabs at the bottom, then the avatar at the top right, then the page. No single DOM order fits both widths. `order` and CSS `reading-flow` do not change focus order in every browser (`reading-flow` needs Chrome 137 or later), so neither is used. The sequence is still complete, consistent and operable on both widths, so 2.4.3 holds. Limit: if a keyboard test shows that a user loses their place on the phone, the phone fix is a second avatar or a change of the nav position, decided by the architect. Accepted for PR1b.
+
+### Removed from the Top bar build in PR1b
+- `--size-rail`, `.group-rail`, `GroupRail.tsx`, `GroupContextMenu.tsx`, `TabBar.tsx` (merged into `TopBar.tsx`), `GroupStrip`, `ui/GroupIcon`, `.group-icon`, `.group-strip` and `--size-group-icon` (item 1).
 
 ## Amendments made with this ADR
 Each amended ADR carries a pointer section "Amendment 2026-11-21 (ADR 0028)". The rule of this ADR wins where they differ. ADRs 0014, 0015, 0016, 0018, 0021, 0023, 0026 and 0027.

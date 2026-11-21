@@ -16,7 +16,7 @@ export function CreateFrame({
   children,
 }: {
   label: string;
-  /** Centred in the window instead of next to the Group rail or the floating "+". */
+  /** Centred in the window instead of below the header "+" (wide) or above the floating "+" (phones). */
   centered?: boolean;
   /** False keeps the form open on a tap outside, so typed input is not lost. Esc and Cancel still close it. */
   closeOnScrim?: boolean;
