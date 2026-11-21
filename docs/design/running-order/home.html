@@ -1,0 +1,48 @@
+<!-- Reference mockup for REQ-0029, not app code. -->
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Home - OpenLobby (Concept A)</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700&family=Big+Shoulders+Display:wght@700;800;900&display=swap">
+<link rel="stylesheet" href="style.css"></head>
+<body>
+<header class="top">
+  <a class="wordmark" href="#">OpenLobby</a>
+  <nav class="tabs" aria-label="Main"><a href="#" aria-current="page">Home</a><a href="group.html">Groups</a><a href="#">You</a></nav>
+  <div class="top__end"><button class="btn btn--primary"><i data-lucide="plus"></i>Create lobby</button><span class="me" aria-label="Alex">A</span></div>
+</header>
+<main>
+  <h1 style="margin-bottom:24px">Home</h1>
+  <section class="nextup" aria-label="Next up">
+    <div><p class="nextup__when">Next up, in 2 h 8 min</p><p class="nextup__time">12:35</p></div>
+    <div>
+      <p class="nextup__title">Overwatch 2 › Competitive</p>
+      <p style="margin-top:8px"><span class="tag g1">Fredagsgänget</span> &nbsp;Sat 21 Nov, 12:35-14:35, 3/5 players</p>
+      <p class="slots"><span class="full"><i data-lucide="shield"></i>Tank 1/1 (you)</span><span><i data-lucide="sword"></i>Damage 1/2</span><span><i data-lucide="cross"></i>Support 1/2</span></p>
+    </div>
+    <div style="display:flex;gap:12px"><a class="btn" href="#">Leave lobby</a><a class="btn btn--primary" href="lobby.html">Open lobby</a></div>
+  </section>
+
+  <h2>This week</h2>
+  <div class="ro" role="table" aria-label="This week, 16-22 Nov">
+    <div class="ro__scale" aria-hidden="true"><span></span><div class="ro__hours"><span>08</span><span>10</span><span>12</span><span>14</span><span>16</span><span>18</span><span>20</span><span>22</span></div></div>
+    <div class="ro__day ro__day--past ro__day--empty"><div class="ro__label"><b>Mon</b><small>16 Nov</small></div><div class="ro__track"><span class="ro__empty">Nothing booked</span></div></div>
+    <div class="ro__day ro__day--past"><div class="ro__label"><b>Tue</b><small>17 Nov</small></div><div class="ro__track">
+      <a class="act g2" style="left:75%;width:9.375%" href="#"><b>Rocket League</b><small>3/3</small></a></div><ul class="ro__list"><li><a href="#"><b>20:00</b>Rocket League › Ranked 3v3<span class="tag g2">3/3</span></a></li></ul></div>
+    <div class="ro__day ro__day--past ro__day--empty"><div class="ro__label"><b>Wed</b><small>18 Nov</small></div><div class="ro__track"><span class="ro__empty">Nothing booked</span></div></div>
+    <div class="ro__day ro__day--past"><div class="ro__label"><b>Thu</b><small>19 Nov</small></div><div class="ro__track">
+      <a class="act g1" style="left:81.25%;width:12.5%" href="#"><b>Overwatch 2 › Quick Play</b><small>Fredagsgänget, 5/5</small></a></div><ul class="ro__list"><li><a href="#"><b>21:00</b>Overwatch 2 › Quick Play<span class="tag g1">5/5</span></a></li></ul></div>
+    <div class="ro__day ro__day--past ro__day--empty"><div class="ro__label"><b>Fri</b><small>20 Nov</small></div><div class="ro__track"><span class="ro__empty">Nothing booked</span></div></div>
+    <div class="ro__day ro__day--today ro__day--future"><div class="ro__label"><b>Sat</b><small>21 Nov, today</small></div><div class="ro__track">
+      <span class="now" style="left:15.3%"></span>
+      <a class="act g1 act--mine" style="left:28.65%;width:12.5%" href="lobby.html"><b>Overwatch 2 › Comp</b><small>Fredagsgänget, 3/5, you</small></a>
+      <a class="act g3" style="left:75%;width:21.875%" href="#"><b>Baldur's Gate 3 › Campaign</b><small>Raidkvällen, 3/4</small></a></div><ul class="ro__list"><li><a href="lobby.html"><b>12:35</b>Overwatch 2 › Competitive, you<span class="tag g1">3/5</span></a></li><li><a href="#"><b>20:00</b>Baldur's Gate 3 › Campaign<span class="tag g3">3/4</span></a></li></ul></div>
+    <div class="ro__day ro__day--future"><div class="ro__label"><b>Sun</b><small>22 Nov</small></div><div class="ro__track">
+      <a class="act g2" style="left:56.25%;width:9.375%" href="#"><b>Rocket League</b><small>Bastukompisarna, full</small></a>
+      <a class="act g1" style="left:68.75%;width:18.75%" href="#"><b>Deep Rock Galactic › Deep Dive</b><small>Fredagsgänget, 2/4</small></a></div><ul class="ro__list"><li><a href="#"><b>17:00</b>Rocket League › Ranked 3v3<span class="tag g2">Full</span></a></li><li><a href="#"><b>19:00</b>Deep Rock Galactic › Deep Dive<span class="tag g1">2/4</span></a></li></ul></div>
+  </div>
+  <p class="legend"><span><i class="g1"></i>Fredagsgänget</span><span><i class="g2"></i>Bastukompisarna</span><span><i class="g3"></i>Raidkvällen</span><span><i style="outline:3px solid #15171a;outline-offset:-3px"></i>You are in</span></p>
+</main>
+<nav class="tabbar" aria-label="Main"><a href="#" aria-current="page"><i data-lucide="house"></i>Home</a><a href="group.html"><i data-lucide="users"></i>Groups</a><a href="#"><i data-lucide="user"></i>You</a></nav>
+<button class="fab" aria-label="Create lobby"><i data-lucide="plus"></i></button>
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script><script>lucide.createIcons()</script>
+</body></html>

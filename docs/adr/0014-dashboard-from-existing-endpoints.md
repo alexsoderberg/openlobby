@@ -1,5 +1,6 @@
 # 0014. Dashboard from existing endpoints
 Status: Accepted (2026-11-04)
+Amended 2026-11-21 by ADR 0028 (REQ-0029, running order redesign): see the Amendment 2026-11-21 section at the end of this file.
 
 ## Context
 REQ-0012 (F-028) shows the "Next up" lobby and "This week" across all groups of a member. REQ-0004 excludes cross-group views on purpose; the dashboard is the one exception. The data already exists: `GET /api/groups` (`calendar`) returns the caller's groups as `GroupSummary` (`id`, `name`), `GET /api/groups/{groupId}/lobbies` (REQ-0004, `calendar`) returns each group's upcoming lobbies, including running ones, sorted by `startsAt` and then `id`, and `GET /api/auth/me` (`auth`) gives the display name and system admin flag. Every request passes the gateway, which validates the session with `auth` (ADR 0002).
@@ -34,3 +35,6 @@ DECISION, user, 2026-11-18 (REQ-0028 item 6; REQ-0012 Amendment 2026-11-18). Poi
 - The visible word for this page is "Home": the Home tab of the Tab bar, the Home control of the Group rail and the heading of the page at `/`. The Home control's accessible name is "Home".
 - The word is in one text key of the catalogue (ADR 0013), used by the Tab bar and the page heading, so they cannot drift apart.
 - The term "Dashboard" stays for code, contracts and documents, and the route is still `/`. The page is not called "Dashboard" in any visible place.
+
+## Amendment 2026-11-21 (ADR 0028, REQ-0029)
+- The Dashboard's Next up card and its side column become the Next up band, full width above the running order (ADR 0028 section 4). The This week view toggle (REQ-0012 Amendment 2026-11-07) is removed; the running order is the only view. The Group rail is replaced by the Top bar (ADR 0028 section 3), so the Home control is the Home tab. Point 6 (route `/`) and the term stay. No API change.

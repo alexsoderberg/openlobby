@@ -1,5 +1,6 @@
 # 0018. Discord avatars: picture stored at login, served to members by calendar
 Status: Proposed (2026-11-10)
+Amended 2026-11-21 by ADR 0028 (REQ-0029, running order redesign): see the Amendment 2026-11-21 section at the end of this file.
 Requirement: REQ-0016 (F-029).
 Amends: ADR 0003 (auth owns the picture bytes), ADR 0005 (the rule "Avatar is not fetched" is replaced), ADR 0002 (one new route, to `calendar`). Introduces one external endpoint, Discord's image CDN, which is a new external dependency and therefore needs this ADR.
 
@@ -119,3 +120,6 @@ Upload or choice of a picture, pictures other than Discord's, a privacy setting,
 
 ## Open questions
 - None for the user. The animated-picture question is answered: the first frame is shown.
+
+## Amendment 2026-11-21 (ADR 0028, REQ-0029)
+- The Avatar is a square, not a circle (ADR 0028 section 9). A picture, when it exists, sits in a square box the size of the initials box. The week view and day list named in "Checked" are now the running order and the Next up band (ADR 0028 section 4). Storage and API are unchanged.

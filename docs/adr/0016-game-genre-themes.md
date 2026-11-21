@@ -1,5 +1,6 @@
 # 0016. Game genre: fixed list on the game, genre themes in the frontend
 Status: Accepted (2026-11-07)
+Amended 2026-11-21 by ADR 0028 (REQ-0029, running order redesign): see the Amendment 2026-11-21 section at the end of this file.
 Amended by ADR 0026 (section 7: on the Next up card a game cover replaces the genre background pattern; the genre icon stays) and by Amendment 2026-11-18 below (the genre accent stripe is drawn on week blocks only)
 Amends ADR 0010 (genre only: read live from the game, unlike name and preset max)
 Amends ADR 0015 (points 2, 4, 5, 6, 7 and 10, and a new fill cycle, section 8)
@@ -251,3 +252,6 @@ DECISION, user, 2026-11-18 (REQ-0014 Amendment 2026-11-18, REQ-0028 item 2). Ame
 4. The stripe is decorative and the genre name stays text. Two genres in one view still differ by icon and pattern (REQ-0014).
 5. The header pointer to ADR 0026 no longer names an accent border (ADR 0026 Amendment 2026-11-18).
 Consequence for the implementation: the stripe rule stays on the week block only. The stripe declarations on the lobby row, the group card lobby line and the lobby page header are removed.
+
+## Amendment 2026-11-21 (ADR 0028, REQ-0029)
+- The visual parts of the genre theme are superseded: tint, background pattern, genre icon, 3D motif, accent stripe and the cover layer are removed from the UI (REQ-0029 item 10, user DECISION 2026-11-21; ADR 0028 section 7). The genre stays a stored value, editable in the game form; `GenreName` and `GENRE_OPTIONS` stay. `GenreFrame`, the theme data of `genreThemes.ts` and their tests are deleted in PR5a. Section 7 and the glow phase of the hero cycle (section 8) are no longer built.

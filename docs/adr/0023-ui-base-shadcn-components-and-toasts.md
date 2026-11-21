@@ -1,6 +1,7 @@
 # 0023. UI base: shadcn/ui components, Radix primitives, sonner toasts
 
 Status: Accepted (2026-11-13)
+Amended 2026-11-21 by ADR 0028 (REQ-0029, running order redesign): see the Amendment 2026-11-21 section at the end of this file.
 Requirement: REQ-0022 (product owner, Decided) covers the toasts: placement, duration, pause, the nine places and the layering. This ADR implements it.
 Amended 2026-11-21 (Amendment 2026-11-21 at the end of this file: a toast's timer restarts after keyboard focus leaves the region, point 4). Amended 2026-11-19 (Amendments 2026-11-19 at the end of this file: ButtonLink, point 1b; Dialog, points 4 and 5). Amended 2026-11-18 (Amendment 2026-11-18 at the end of this file: glow by variant, touch size). Amended 2026-11-17 (Amendment 2026-11-17 at the end of this file): the Popover is pulled forward as `ui/AnchoredPopover.tsx` on Radix Popover for the Game chip (ADR 0022 Amendment 2026-11-17); the create frame is renamed `ui/CreateFrame.tsx` and is not converted. It amends the Popover row (point 1), the Popover paragraph (point 5), row G (point 6) and the "below 60" sentence (point 4).
 Amended by ADR 0027 (Select, dropdown lists, Amendment 2026-11-16 at the end of this file): the "Not adopted" row for Select (line 36) and the "Not adopted" list (line 140) are overridden there, and the z-index rule of point 4 ("below 60") is amended there too. Where they differ, the amendment wins.
@@ -300,3 +301,9 @@ DECISION, architect, 2026-11-21. Amends the focus sentence of point 4 ("sonner p
 - **Consequences.** `Toaster` in `ui/Toast.tsx` re-issues each shown toast with `duration: Infinity` on focus in, and with `TOAST_DURATION_MS` on focus out. A pointer pause and a focus pause therefore differ: after a pointer pause the toast keeps its time left, after a focus pause it starts again. Accepted, because the case is rare (one toast is shown at a time, REQ-0022).
 - **Alternatives considered.** (a) Keep the time left with the Toaster's own clock, counting pointer and focus pauses: rejected, a second timer that can count wrongly when the pointer and focus pauses overlap. (b) Own timer for every toast (`duration: Infinity`, the Toaster owns the pointer and focus pauses): exact, but it gives up sonner's timer, which point 4 uses on purpose ("sonner gives ... timers, pause"). Not built (YAGNI); the upgrade path if the user wants the exact time left.
 - **Decided, DECISION, user, 2026-11-21.** The user accepted the restart: a toast's timer starts again with its full duration once keyboard focus leaves the toast region; it does not continue the time left. REQ-0022 is updated to this wording (the 2026-11-13 criterion "the timer pauses ... and it continues after focus leaves the region" is replaced). If the user later wants the time left, alternative (b) is built and this amendment is replaced.
+
+## Amendment 2026-11-21 (ADR 0028, REQ-0029)
+- Point 1, Button: the glow rule of Amendment 2026-11-18 is removed; no button has a glow or a shadow (ADR 0028 section 2). Variant looks follow ADR 0021 Amendment 2026-11-21.
+- Dialog and Create frame: a white surface with a 2 px ink border and no shadow; the scrim is `--color-scrim` (REQ-0029 item 9).
+- Toast: an ink surface with white text and a 2 px ink border; the corner, timing and pause rules of Amendment 2026-11-21 (timer) are unchanged (REQ-0029 item 9).
+- Point 2 (token names): the colour and radius names change as ADR 0028 sections 1 and 2 list. The rule that every colour class names a token stays.

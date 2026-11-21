@@ -1,5 +1,6 @@
 # 0026. Game logo and game cover: stored in calendar, uploaded per image, served behind the gateway
 Status: Accepted (2026-11-15); amended 2026-11-15, 2026-11-16, 2026-11-17 and 2026-11-18 (see the amendment sections at the end)
+Amended 2026-11-21 by ADR 0028 (REQ-0029, running order redesign): see the Amendment 2026-11-21 section at the end of this file.
 Requirement: REQ-0026 (F-030).
 Amends: ADR 0001 (the 16 KiB body rule gets one exception, the game image upload, which reads at most 524288 bytes; the constant `httpapi.MaxBodyBytes` in `pkg/httpapi/httpapi.go` line 16 stays 16 KiB; the exemption is in the calendar transport, `services/calendar/internal/transport/router.go` line 32, and the info text of `api/calendar/openapi.yaml` line 17 names it). ADR 0016 section 7 (`GenreFrame`: on the Next up card a game cover replaces the genre background pattern; the genre icon stays; the accent border was removed by Amendment 2026-11-18). ADR 0010 and ADR 0017 get two more optional game fields and two more lobby fields, with no change to their rules.
 
@@ -288,3 +289,9 @@ DECISION, user, 2026-11-18 (REQ-0028; REQ-0026 Amendment 2026-11-18). Where it d
 4. **Layout rule unchanged.** Every text element and badge still lies inside the dark part (Amendment 2026-11-17 item 3).
 5. **Tests.** `frontend/src/genres/genreContrast.test.ts` gets the cases of item 2: gold on the Next up cover plate, and `--color-text` on the `--color-surface` count badge over the plate. Both must pass at the token alpha.
 6. **Glossary.** The row "Game cover" in `CLAUDE.md` says the genre icon stays, with no accent border (updated in the same change).
+
+## Amendment 2026-11-21 (ADR 0028, REQ-0029)
+- Covers are not shown anywhere in the redesign (REQ-0029 item 10, user DECISION 2026-11-21). Upload, storage and `coverVersion` are unchanged. The cover places of Amendments 2026-11-16 (point 9), 2026-11-17 and 2026-11-18 are removed from the UI.
+- Logos are not in running order blocks (point 10 of Amendment 2026-11-16 for week blocks is removed). The logo sizes stay for the remaining places. `--size-game-logo-small` is removed with the old grid in PR3a.
+- `GameLogo` and the Monogram are squares (no rounded corners). The Monogram keeps its letter-size rules.
+- The genre cover layer of point 8 goes with `GenreFrame` in PR5a (ADR 0028 section 7).

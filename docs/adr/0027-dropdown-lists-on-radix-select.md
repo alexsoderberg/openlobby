@@ -1,6 +1,7 @@
 # 0027. Dropdown lists on Radix Select
 
 Status: Proposed (2026-11-16)
+Amended 2026-11-21 by ADR 0028 (REQ-0029, running order redesign): see the Amendment 2026-11-21 section at the end of this file.
 Requirement: REQ-0027 (F-045, product owner, Decided). The game-choice logos are REQ-0026 Amendment 2026-11-16, which waits for PR A of this ADR.
 Amends ADR 0021 (point A9, the native-select choice is reversed for the look) and ADR 0023 (point 1 table, point 5 and the "Not adopted" list, point 6 rollout, point 7 pins, the z-index rule of point 4). Each amendment is recorded in those files, and the superseded rows there are fixed in place.
 
@@ -148,3 +149,9 @@ Each PR is reviewed on its own, after its own work. The reviewer checks A and B2
 - **Put `name` on Radix Select and let its bubble select carry the value.** The bubble would carry the sentinel. Rejected (point 2).
 - **Change the empty choice to a real value (e.g. "none") in the saved data.** Changes the API and the stored values. Rejected: REQ-0027 says the saved values are the same.
 - **A text field to filter the list.** Out of scope (REQ-0027, DECISION 2026-11-16).
+
+## Amendment 2026-11-21 (ADR 0028, REQ-0029)
+- The panel is a white surface with a 2 px ink border, no radius and no shadow (ADR 0028 section 2).
+- The trigger border is ink, at least 3:1 on the ground (REQ-0029 item 1).
+- Selected option: check mark and 2 px ink edge, no fill. Highlighted option: ink wash and the focus ring, with no orange. This changes REQ-0029 item 9 (orange tint); the user decided ink wash on 2026-11-21 (ADR 0028 section 12, item 2).
+- The bottom sheet, its 44 px rows on touch, the z-index order and the behaviour are unchanged.

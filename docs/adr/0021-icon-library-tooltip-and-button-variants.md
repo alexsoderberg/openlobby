@@ -1,6 +1,7 @@
 # 0021. Icon library, tooltip and button variants
 
 Status: Accepted (2026-11-11)
+Amended 2026-11-21 by ADR 0028 (REQ-0029, running order redesign): see the Amendment 2026-11-21 section at the end of this file.
 Requirement: none. Visual improvement requested by the user, decided by the orchestrator on 2026-11-11.
 Amended by ADR 0023 (points 2, 3 and 4; the A3 amendment is superseded), by ADR 0027 (A9, the native select choice for dropdown lists) and by Amendment 2026-11-18 (A10, the touch button height is the tap size). ADR 0023 overturns two rejected alternatives below: "Radix or another tooltip library" (line 104) and "A `Button` component with `variant` and `size` props" (line 107). Replaces the button sizes and colour rules in `frontend/src/styles/global.css` (section "Primary button is solid accent").
 
@@ -177,3 +178,6 @@ DECISION, user, 2026-11-18 (REQ-0028 item 8). Where it differs from the Decision
 - Rejected alternative "Hit area via `::before`": its reason stands. The 2.75rem box on coarse pointers is used instead of the 2.5rem box.
 
 Consequence: a touch target is 44 px high in the same token as the tap size of REQ-0012 and REQ-0004, and there is one value, not two.
+
+## Amendment 2026-11-21 (ADR 0028, REQ-0029)
+- Button variant names and sizes stay (`primary`, `secondary`, `ghost`, `danger`; ADR 0023 point 1). They are restyled: 2 px ink border (not on ghost), no radius, no shadow, no glow, and hover is an instant fill change (ADR 0028 sections 2 and 6). The primary button is the orange fill with ink text (Orange rule); the danger button is `--color-danger` with white text. The Gold rule in the `global.css` button section is replaced by the Orange rule. Icon library, Tooltip and IconButton behaviour are unchanged.
