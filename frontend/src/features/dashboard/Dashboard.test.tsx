@@ -18,7 +18,6 @@ import {
   formatDate,
   formatDateTimeRange,
   formatTime,
-  formatTimeRange,
   formatWeekdayShort,
 } from "../../i18n";
 import { en } from "../../i18n/messages/en";
@@ -183,7 +182,10 @@ describe("Next up", () => {
     const card = await nextUpCard();
     expect(card.getByText(formatTime(at(4, 20)))).toBeTruthy();
     expect(
-      card.getByText(formatDateTimeRange(at(4, 20), at(4, 22))),
+      // Keep the node text as is: en-US ranges hold thin spaces, which the default normalizer collapses in the node text but not in the matcher.
+      card.getByText(formatDateTimeRange(at(4, 20), at(4, 22)), {
+        normalizer: (text) => text,
+      }),
     ).toBeTruthy();
   });
 });
@@ -254,7 +256,9 @@ describe("This week", () => {
     expect(block.textContent).toContain("Ranked grind");
     expect(block.textContent).toContain("3/5");
     expect(link.getAttribute("aria-label")).toContain("3/5 players");
-    expect(block.textContent).toContain(formatTimeRange(at(4, 20), at(4, 22)));
+    expect(block.textContent).toContain(
+      en.runningOrder.times(formatTime(at(4, 20)), formatTime(at(4, 22))),
+    );
     expect(
       column(at(6, 0)).getByRole("link", { name: /^Counter-Strike 2, / }),
     ).toBeTruthy();
