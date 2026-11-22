@@ -119,7 +119,9 @@ describe("RunningOrder", () => {
     renderWeek([lobby("Catan", at(4, 19), at(4, 20), { joinedByMe: true })]);
     const block = day(at(4, 0)).getByRole("link").closest("li")!;
     expect(block.textContent).toContain("Catan");
-    expect(block.textContent).toContain(formatTimeRange(at(4, 19), at(4, 20)));
+    expect(block.textContent).toContain(
+      en.runningOrder.times(formatTime(at(4, 19)), formatTime(at(4, 20))),
+    );
     expect(block.textContent).toContain("Friday crew");
     expect(block.textContent).toContain("3/5");
     expect(block.textContent).toContain(en.runningOrder.you);
