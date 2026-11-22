@@ -51,6 +51,7 @@ export function GroupDetails({
       <div className="panel-group side-layout">
         <Lobbies
           groupId={state.group.id}
+          groupName={state.group.name}
           members={state.group.members}
           onUnauthenticated={onUnauthenticated}
         />

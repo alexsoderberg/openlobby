@@ -14,11 +14,10 @@ import {
   type Group,
   type Lobby,
 } from "../../api";
-import { formatTimeRange, formatWeekdayShort } from "../../i18n";
+import { formatTime, formatWeekday, formatWeekdayShort } from "../../i18n";
 import { en } from "../../i18n/messages/en";
 import { fakeApiClient, testUser } from "../../test/fakeApiClient";
 import { findToast } from "../../test/toasts";
-import { dayColumns, selectedColumns } from "../../test/weekGrid";
 import { Toaster } from "../../ui";
 import { Lobbies } from "./Lobbies";
 
@@ -81,6 +80,7 @@ function renderLobbies(overrides: Partial<ApiClient> = {}) {
     <ApiProvider client={client}>
       <Lobbies
         groupId="g1"
+        groupName="Friday crew"
         members={members}
         onUnauthenticated={onUnauthenticated}
       />
@@ -156,17 +156,6 @@ describe("lobby list", () => {
     ).toBe("");
   });
 
-  it("themes the week calendar blocks by genre", async () => {
-    renderLobbies(withLobbies({ ...catan, gameGenre: "racing" }));
-    await screen.findAllByRole("listitem");
-    fireEvent.click(screen.getByRole("button", { name: en.lobbyViewCalendar }));
-
-    const block = (await screen.findByRole("link", { name: "Catan" })).closest(
-      "li",
-    )!;
-    expect(block.getAttribute("data-genre")).toBe("racing");
-  });
-
   it("links each lobby to its detail page", async () => {
     renderLobbies(withLobbies(catan));
 
@@ -229,17 +218,20 @@ describe("lobby list", () => {
 
 const calendarButton = () =>
   screen.getByRole("button", { name: en.lobbyViewCalendar });
-/** The placement a block was given: start and span in minutes, column and number of columns. */
+/** The placement a block was given: start and length as fractions of the day, and its lane. */
 const blockStyle = (element: HTMLElement) => {
-  const style = element.closest<HTMLElement>("li.time-block")!.style;
+  const style = element.closest<HTMLElement>("li")!.style;
   const read = (name: string) => style.getPropertyValue(`--${name}`);
-  return {
-    start: read("start"),
-    span: read("span"),
-    column: read("column"),
-    columns: read("columns"),
-  };
+  return { from: read("from"), length: read("length"), lane: read("lane") };
 };
+/** A block's link in the running order, found by the start of its accessible name: its label. */
+const blockLink = (label: string) =>
+  screen.getByRole("link", { name: new RegExp(`^${label},`) });
+/** The seven days of the running order, Monday first. */
+const dayGroups = () =>
+  within(
+    screen.getByRole("region", { name: en.runningOrder.scrollLabel }),
+  ).getAllByRole("group");
 const listButton = () => screen.getByRole("button", { name: en.lobbyViewList });
 
 describe("game cover", () => {
@@ -274,7 +266,7 @@ describe("game cover", () => {
     await screen.findAllByRole("listitem");
     fireEvent.click(screen.getByRole("button", { name: en.lobbyViewCalendar }));
 
-    await screen.findByRole("link", { name: "Catan" });
+    await screen.findByRole("link", { name: /^Catan,/ });
     expect(document.querySelector(".genre-frame__cover")).toBeNull();
   });
 });
@@ -338,28 +330,24 @@ describe("label and role slots", () => {
     expect(slots[0].textContent).toBe("Tank 0/1");
   });
 
-  it("shows the game name in full in the week view block and lets only the mode and activity shorten", async () => {
+  it("shows the full label in the week view block", async () => {
     renderLobbies({ listUpcomingLobbies: () => Promise.resolve([overwatch]) });
     await screen.findByRole("link", { name: full });
     fireEvent.click(calendarButton());
 
-    const link = screen.getByRole("link", { name: full });
-    expect(link.className).toContain("time-block__game");
-    expect(within(link).getByText("Overwatch 2")).toBeTruthy();
-    expect(within(link).getByText("› Competitive › Control").className).toBe(
-      "time-block__detail",
-    );
+    expect(within(blockLink(full)).getByText(full)).toBeTruthy();
   });
 
-  it("labels a lobby with no game Open, with the neutral theme, in the list and the week view", async () => {
+  it("labels a lobby with no game Open, in the list and the week view", async () => {
     const open = lobby({ id: "l10", gameId: null, gameName: null });
     renderLobbies(withLobbies(open));
 
     const listLink = await screen.findByRole("link", { name: en.lobbyOpen });
     expect(listLink.closest("li")!.getAttribute("data-genre")).toBe("neutral");
     fireEvent.click(calendarButton());
-    const block = screen.getByRole("link", { name: en.lobbyOpen });
-    expect(block.closest("li")!.getAttribute("data-genre")).toBe("neutral");
+    expect(
+      within(blockLink(en.lobbyOpen)).getByText(en.lobbyOpen),
+    ).toBeTruthy();
   });
 });
 
@@ -391,18 +379,25 @@ describe("calendar view", () => {
     ).toBeNull();
   });
 
-  it("shows the week Monday to Sunday with each lobby in the column of its day", async () => {
+  it("shows the week Monday to Sunday as the running order, each lobby in the row of its day", async () => {
     renderLobbies(withLobbies(catan, chess));
     await screen.findByRole("link", { name: "Catan" });
     fireEvent.click(calendarButton());
 
-    expect(dayColumns()).toHaveLength(7);
-    expect(screen.getAllByRole("heading", { level: 4 })).toHaveLength(7);
     expect(
-      within(dayColumns()[3]).getByRole("link", { name: "Catan" }),
+      screen.getByRole("heading", { level: 3, name: /^Week / }),
     ).toBeTruthy();
-    expect(dayColumns()[0].textContent).toContain(
+    expect(dayGroups()).toHaveLength(7);
+    expect(screen.getAllByRole("heading", { level: 4 })).toHaveLength(7);
+    expect(within(dayGroups()[3]).getByRole("link")).toBe(blockLink("Catan"));
+    expect(dayGroups()[0].textContent).toContain(
       formatWeekdayShort(new Date(2026, 10, 2)),
+    );
+    expect(blockLink("Catan").getAttribute("href")).toBe(
+      "/groups/g1/lobbies/l1",
+    );
+    expect(blockLink("Catan").getAttribute("aria-label")).toContain(
+      "Friday crew",
     );
   });
 
@@ -411,31 +406,20 @@ describe("calendar view", () => {
     await screen.findByRole("link", { name: "Chess" });
     fireEvent.click(calendarButton());
 
-    const friday = within(dayColumns()[4]).getByRole("link", { name: "Chess" });
-    const saturday = within(dayColumns()[5]).getByRole("link", {
-      name: "Chess",
+    const friday = within(dayGroups()[4]).getByRole("link");
+    const saturday = within(dayGroups()[5]).getByRole("link");
+    expect(friday.getAttribute("aria-label")).toContain("ends next day");
+    expect(saturday.getAttribute("aria-label")).toContain(
+      "started the day before",
+    );
+    expect(blockStyle(friday)).toMatchObject({
+      from: String(1320 / 1440),
+      length: String(120 / 1440),
     });
-    expect(friday.closest("li")!.textContent).toContain(
-      en.calendarContinuesAfter,
-    );
-    expect(saturday.closest("li")!.textContent).toContain(
-      en.calendarContinuesBefore,
-    );
-    expect(
-      within(friday.closest("li")!).getByText("ends next day"),
-    ).toBeTruthy();
-    expect(
-      within(saturday.closest("li")!).getByText("started the day before"),
-    ).toBeTruthy();
-    // Right after the label: the smallest block shows two lines, and leaves the time out first.
-    expect(friday.nextElementSibling!.textContent).toBe(
-      en.calendarContinuesAfter,
-    );
-    expect(saturday.nextElementSibling!.textContent).toBe(
-      en.calendarContinuesBefore,
-    );
-    expect(blockStyle(friday)).toMatchObject({ start: "1320", span: "120" });
-    expect(blockStyle(saturday)).toMatchObject({ start: "0", span: "120" });
+    expect(blockStyle(saturday)).toMatchObject({
+      from: "0",
+      length: String(120 / 1440),
+    });
   });
 
   it("shows a lobby that started last week and still runs on Monday", async () => {
@@ -449,13 +433,13 @@ describe("calendar view", () => {
     await screen.findByRole("link", { name: "Poker" });
     fireEvent.click(calendarButton());
 
-    const poker = within(dayColumns()[0]).getByRole("link", { name: "Poker" });
-    expect(blockStyle(poker)).toMatchObject({ start: "0", span: "180" });
-    expect(poker.closest("li")!.textContent).toContain(
-      en.calendarContinuesBefore,
+    const poker = within(dayGroups()[0]).getByRole("link");
+    expect(blockStyle(poker)).toMatchObject({ from: "0", length: "0.125" });
+    expect(poker.getAttribute("aria-label")).toContain(
+      "started the day before",
     );
     fireEvent.click(screen.getByRole("button", { name: en.calendarNextWeek }));
-    expect(screen.queryByRole("link", { name: "Poker" })).toBeNull();
+    expect(screen.queryByRole("link", { name: /^Poker,/ })).toBeNull();
   });
 
   it("places a block by its start and duration, and shows game, time range and spots", async () => {
@@ -463,20 +447,27 @@ describe("calendar view", () => {
     await screen.findByRole("link", { name: "Catan" });
     fireEvent.click(calendarButton());
 
-    const block = screen.getByRole("link", { name: "Catan" }).closest("li")!;
-    expect(blockStyle(block)).toMatchObject({ start: "1080", span: "120" });
+    const block = blockLink("Catan").closest("li")!;
+    expect(blockStyle(block)).toMatchObject({
+      from: "0.75",
+      length: String(120 / 1440),
+    });
     expect(block.textContent).toContain(
-      formatTimeRange(catan.startsAt, catan.endsAt),
+      en.runningOrder.times(
+        formatTime(catan.startsAt),
+        formatTime(catan.endsAt),
+      ),
     );
-    expect(block.textContent).toContain("2/4 players");
+    expect(block.textContent).toContain("2/4");
+    expect(blockLink("Catan").getAttribute("aria-label")).toContain(
+      "2/4 players",
+    );
     expect(
-      within(dayColumns()[4])
-        .getByRole("link", { name: "Chess" })
-        .closest("li")!.textContent,
+      within(dayGroups()[4]).getByRole("link").closest("li")!.textContent,
     ).toContain("3 players");
   });
 
-  it("shows overlapping lobbies side by side in the same day", async () => {
+  it("puts overlapping lobbies of a day in lanes, so none hides another", async () => {
     const overlapping = lobby({
       id: "l3",
       gameName: "Go",
@@ -487,29 +478,8 @@ describe("calendar view", () => {
     await screen.findByRole("link", { name: "Catan" });
     fireEvent.click(calendarButton());
 
-    const catanBlock = screen
-      .getByRole("link", { name: "Catan" })
-      .closest("li")!;
-    const goBlock = screen.getByRole("link", { name: "Go" }).closest("li")!;
-    expect(blockStyle(catanBlock)).toMatchObject({ column: "0", columns: "2" });
-    expect(blockStyle(goBlock)).toMatchObject({ column: "1", columns: "2" });
-  });
-
-  it("shows only the selected day on phones, switched with the Day pills", async () => {
-    renderLobbies(withLobbies(catan, chess));
-    await screen.findByRole("link", { name: "Catan" });
-    fireEvent.click(calendarButton());
-
-    expect(selectedColumns()).toEqual([dayColumns()[2]]);
-    const pills = within(
-      screen.getByRole("group", { name: en.calendarDayPillsLabel }),
-    );
-    fireEvent.click(
-      pills.getByRole("button", {
-        name: new RegExp(formatWeekdayShort(new Date(2026, 10, 5))),
-      }),
-    );
-    expect(selectedColumns()).toEqual([dayColumns()[3]]);
+    expect(blockStyle(blockLink("Catan"))).toMatchObject({ lane: "0" });
+    expect(blockStyle(blockLink("Go"))).toMatchObject({ lane: "1" });
   });
 
   it("moves to the next week, and has no way back", async () => {
@@ -522,61 +492,56 @@ describe("calendar view", () => {
     renderLobbies(withLobbies(catan, later));
     await screen.findByRole("link", { name: "Catan" });
     fireEvent.click(calendarButton());
-    expect(screen.queryByRole("link", { name: "Risk" })).toBeNull();
+    expect(screen.queryByRole("link", { name: /^Risk,/ })).toBeNull();
 
     fireEvent.click(screen.getByRole("button", { name: en.calendarNextWeek }));
 
-    expect(screen.getByRole("link", { name: "Risk" })).toBeTruthy();
-    expect(screen.queryByRole("link", { name: "Catan" })).toBeNull();
+    expect(blockLink("Risk")).toBeTruthy();
+    expect(screen.queryByRole("link", { name: /^Catan,/ })).toBeNull();
     expect(
       screen.queryByRole("button", { name: /previous|back|this week/i }),
     ).toBeNull();
   });
 
   it("opens scrolled to the hour of the next lobby", async () => {
-    // jsdom does no layout: an hour row is 100 px, and the hours list is stretched to the grid's visible height.
-    vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockImplementation(
-      function (this: HTMLElement) {
-        return this.matches(".time-grid__hours li") ? 100 : 600;
-      },
-    );
+    // jsdom does no layout: the axis is 2400 px wide, 100 px an hour, and the view shows less than 12 hours.
+    vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockReturnValue(2400);
     renderLobbies(withLobbies(catan));
     await screen.findByRole("link", { name: "Catan" });
 
     fireEvent.click(calendarButton());
 
     expect(
-      screen.getByRole("region", { name: en.calendarGridLabel }).scrollTop,
+      screen.getByRole("region", { name: en.runningOrder.scrollLabel })
+        .scrollLeft,
     ).toBe(18 * 100);
   });
 
-  it("keeps the scroll position and goes back to Monday when the next week is shown", async () => {
+  it("keeps the scroll position when the next week is shown", async () => {
     renderLobbies(withLobbies(catan));
     await screen.findByRole("link", { name: "Catan" });
     fireEvent.click(calendarButton());
-    const grid = screen.getByRole("region", { name: en.calendarGridLabel });
-    grid.scrollTop = 1234;
+    const scroll = () =>
+      screen.getByRole("region", { name: en.runningOrder.scrollLabel });
+    scroll().scrollLeft = 1234;
 
     fireEvent.click(screen.getByRole("button", { name: en.calendarNextWeek }));
 
-    expect(
-      screen.getByRole("region", { name: en.calendarGridLabel }).scrollTop,
-    ).toBe(1234);
-    expect(selectedColumns()).toEqual([dayColumns()[0]]);
+    expect(scroll().scrollLeft).toBe(1234);
   });
 
-  it("draws the Now line at the current minute in today's column only, hidden from screen readers", async () => {
+  it("draws the Now line at the current minute in today's row only, hidden from screen readers", async () => {
     renderLobbies(withLobbies(catan));
     await screen.findByRole("link", { name: "Catan" });
     fireEvent.click(calendarButton());
 
     const lines = () =>
-      document.querySelectorAll<HTMLElement>(".time-grid__now");
+      document.querySelectorAll<HTMLElement>(".running-order__now");
     expect(lines()).toHaveLength(1);
     const [line] = lines();
-    expect(line.closest("li.time-grid__day")).toBe(dayColumns()[2]);
-    expect(line.style.getPropertyValue("--now")).toBe(String(12 * 60));
-    expect(line.getAttribute("aria-hidden")).toBe("true");
+    expect(dayGroups()[2].contains(line)).toBe(true);
+    expect(line.style.getPropertyValue("--now")).toBe("0.5");
+    expect(line.closest("[aria-hidden='true']")).not.toBeNull();
 
     fireEvent.click(screen.getByRole("button", { name: en.calendarNextWeek }));
     expect(lines()).toHaveLength(0);
@@ -703,14 +668,17 @@ describe("create lobby popover", () => {
 });
 
 describe("create lobby from the calendar", () => {
-  const dayButton = (name: string) =>
-    screen.getByRole("button", { name: en.calendarCreateOnDay(name) });
-  const dayName = (day: number) =>
-    new Intl.DateTimeFormat(undefined, {
-      weekday: "long",
-      day: "numeric",
-      month: "short",
-    }).format(new Date(2026, 10, day));
+  const dayButton = (day: number) =>
+    screen.getByRole("button", {
+      name: en.runningOrder.createOn(formatWeekday(new Date(2026, 10, day))),
+    });
+  /** The pointer area over a day's future time: hidden from screen readers, so found by its class. */
+  const createArea = (day: number) =>
+    dayButton(day)
+      .closest('[role="group"]')!
+      .querySelector<HTMLElement>(".running-order__create")!;
+  const value = async (label: string) =>
+    (await screen.findByLabelText<HTMLInputElement>(label)).value;
 
   async function showCalendar() {
     renderLobbies(withLobbies(catan));
@@ -718,7 +686,7 @@ describe("create lobby from the calendar", () => {
     fireEvent.click(calendarButton());
   }
 
-  /** Creates `created` from Friday's control of the calendar; the reloaded list then has it. */
+  /** Creates `created` from Friday's button of the calendar; the reloaded list then has it. */
   async function createFromCalendar(created: Lobby) {
     const listUpcomingLobbies = vi
       .fn<ApiClient["listUpcomingLobbies"]>()
@@ -730,16 +698,11 @@ describe("create lobby from the calendar", () => {
     });
     await screen.findByRole("link", { name: "Catan" });
     fireEvent.click(calendarButton());
-    const day = dayButton(dayName(6));
+    const day = dayButton(6);
     fireEvent.click(day);
-    for (const [label, value] of [
-      [en.lobbyGameLabel, "g-catan"],
-      [en.lobbyStartLabel, "18:00"],
-      [en.lobbyEndLabel, "20:00"],
-    ])
-      fireEvent.change(await screen.findByLabelText(label), {
-        target: { value },
-      });
+    fireEvent.change(await screen.findByLabelText(en.lobbyGameLabel), {
+      target: { value: "g-catan" },
+    });
 
     fireEvent.click(
       within(dialog()!).getByRole("button", { name: en.lobbyCreateSubmit }),
@@ -749,7 +712,7 @@ describe("create lobby from the calendar", () => {
     return day;
   }
 
-  it("closes after a save with focus back on the day's control, and a lobby in the week shown gets no toast", async () => {
+  it("closes after a save with focus back on the day's button, and a lobby in the week shown gets no toast", async () => {
     const day = await createFromCalendar(
       lobby({
         id: "l3",
@@ -778,73 +741,76 @@ describe("create lobby from the calendar", () => {
     expect(screen.getAllByText(en.lobbyCreated)).toHaveLength(1);
   });
 
-  it("opens the form with that day's date and empty times, from the day's control", async () => {
+  it("opens the form from a later day's button with its date, 18:00 and an end two hours later", async () => {
     await showCalendar();
 
-    fireEvent.click(dayButton(dayName(6)));
+    fireEvent.click(dayButton(6));
 
-    const value = async (label: string) =>
-      (await screen.findByLabelText<HTMLInputElement>(label)).value;
     expect(await value(en.lobbyDateLabel)).toBe("2026-11-06");
-    expect(await value(en.lobbyStartLabel)).toBe("");
-    expect(await value(en.lobbyEndLabel)).toBe("");
+    expect(await value(en.lobbyStartLabel)).toBe("18:00");
+    expect(await value(en.lobbyEndLabel)).toBe("20:00");
   });
 
-  it("opens the form with date and start rounded down to the half hour, and an end two hours later, from a click on the grid", async () => {
+  it("opens the form from today's button at the next half hour", async () => {
     await showCalendar();
-    const friday = dayButton(dayName(6));
-    // The column is 1440 px tall, so one px is one minute.
+
+    fireEvent.click(dayButton(4));
+
+    expect(await value(en.lobbyDateLabel)).toBe("2026-11-04");
+    expect(await value(en.lobbyStartLabel)).toBe("12:30");
+    expect(await value(en.lobbyEndLabel)).toBe("14:30");
+  });
+
+  it("opens the form with date and start rounded down to the half hour, and an end two hours later, from a click on the time", async () => {
+    await showCalendar();
+    const friday = createArea(6);
+    // The day is 1440 px wide, so one px is one minute.
     vi.spyOn(friday, "getBoundingClientRect").mockReturnValue({
-      top: 100,
-      height: 1440,
+      left: 100,
+      width: 1440,
     } as DOMRect);
 
-    fireEvent.click(friday, { detail: 1, clientY: 100 + 21 * 60 + 50 });
+    fireEvent.click(friday, { clientX: 100 + 21 * 60 + 50 });
 
-    const value = async (label: string) =>
-      (await screen.findByLabelText<HTMLInputElement>(label)).value;
     expect(await value(en.lobbyDateLabel)).toBe("2026-11-06");
     expect(await value(en.lobbyStartLabel)).toBe("21:30");
     expect(await value(en.lobbyEndLabel)).toBe("23:30");
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(document.activeElement).toBe(dayButton(6));
   });
 
-  it("makes only the time from now on clickable today", async () => {
+  it("makes only the time from the next half hour on clickable today", async () => {
     await showCalendar();
-    const today = dayButton(dayName(4));
-    // Now is 12:00, so the control starts at minute 720 and a click 90 px into its 720 px is at 13:30.
-    expect(today.style.getPropertyValue("--from")).toBe("720");
+    const today = createArea(4);
+    // Now is 12:00, so the area starts at 12:30 (minute 750), and a click 90 px into its 690 px is at 14:00.
+    expect(today.style.getPropertyValue("--from")).toBe(String(750 / 1440));
     vi.spyOn(today, "getBoundingClientRect").mockReturnValue({
-      top: 0,
-      height: 720,
+      left: 0,
+      width: 690,
     } as DOMRect);
 
-    fireEvent.click(today, { detail: 1, clientY: 90 });
+    fireEvent.click(today, { clientX: 90 });
 
-    expect(
-      (await screen.findByLabelText<HTMLInputElement>(en.lobbyStartLabel))
-        .value,
-    ).toBe("13:30");
+    expect(await value(en.lobbyStartLabel)).toBe("14:00");
   });
 
-  it("does not open from a click on a lobby card, which still links to its page", async () => {
+  it("does not open from a click on a lobby block, which still links to its page", async () => {
     await showCalendar();
-    const card = screen.getByRole("link", { name: "Catan" }).closest("li")!;
+    const block = blockLink("Catan").closest("li")!;
 
-    fireEvent.click(within(card).getByText(/2\/4 players/));
-    fireEvent.click(within(card).getByRole("link", { name: "Catan" }));
+    fireEvent.click(within(block).getByText("2/4"));
+    fireEvent.click(blockLink("Catan"));
 
     expect(dialog()).toBeNull();
   });
 
-  it("has no control on days before today, and returns focus to the day's control on close", async () => {
+  it("has no button and no clickable time on days before today, and returns focus to the day's button on close", async () => {
     await showCalendar();
 
-    expect(
-      screen.queryByRole("button", {
-        name: en.calendarCreateOnDay(dayName(3)),
-      }),
-    ).toBeNull();
-    const today = dayButton(dayName(4));
+    const tuesday = dayGroups()[1];
+    expect(within(tuesday).queryByRole("button")).toBeNull();
+    expect(tuesday.querySelector(".running-order__create")).toBeNull();
+    const today = dayButton(4);
     fireEvent.click(today);
     await screen.findByLabelText(en.lobbyGameLabel);
     fireEvent.keyDown(document, { key: "Escape" });

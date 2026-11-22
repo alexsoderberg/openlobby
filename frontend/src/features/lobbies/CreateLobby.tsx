@@ -1,5 +1,4 @@
 import type { Lobby } from "../../api";
-import type { PickedStart } from "../../calendar";
 import { useMessages } from "../../i18n";
 import { ErrorAlert } from "../../ui";
 import { CreateLobbyForm } from "./CreateLobbyForm";
@@ -19,7 +18,7 @@ export function CreateLobby({
   onUnauthenticated,
 }: {
   groupId: string;
-  initialStart?: PickedStart;
+  initialStart?: Date;
   onCreated: (lobby: Lobby) => void;
   onCancel: () => void;
   onUnauthenticated: () => void;

@@ -1,5 +1,4 @@
 import type { MouseEvent } from "react";
-import type { PickedStart } from "../../calendar";
 import { useMessages } from "../../i18n";
 import { LobbyField, fieldProps } from "./LobbyField";
 import { localClockText, localDateText, suggestedEnd } from "./lobbyTime";
@@ -21,8 +20,8 @@ export function LobbyTimeFields({
 }: {
   id: string;
   errorId?: string;
-  /** The date the fields begin with, and the start time and an end two hours later when it has a time; today and empty times when absent. */
-  initialStart?: PickedStart;
+  /** The date and start the fields begin with, and an end two hours later; today and empty times when absent. */
+  initialStart?: Date;
 }) {
   const m = useMessages();
   return (
@@ -33,7 +32,7 @@ export function LobbyTimeFields({
           name="date"
           type="date"
           onClick={openPicker}
-          defaultValue={localDateText(initialStart?.moment ?? new Date())}
+          defaultValue={localDateText(initialStart ?? new Date())}
         />
       </LobbyField>
       <LobbyField id={`${id}-start`} label={m.lobbyStartLabel}>
@@ -42,11 +41,7 @@ export function LobbyTimeFields({
           name="start"
           type="time"
           onClick={openPicker}
-          defaultValue={
-            initialStart?.timed
-              ? localClockText(initialStart.moment)
-              : undefined
-          }
+          defaultValue={initialStart ? localClockText(initialStart) : undefined}
         />
       </LobbyField>
       <LobbyField
@@ -60,8 +55,8 @@ export function LobbyTimeFields({
           type="time"
           onClick={openPicker}
           defaultValue={
-            initialStart?.timed
-              ? localClockText(suggestedEnd(initialStart.moment))
+            initialStart
+              ? localClockText(suggestedEnd(initialStart))
               : undefined
           }
         />

@@ -157,8 +157,6 @@
   --size-game-logo: 2.5rem;
   /* Where the game is central: Next up and the lobby page (REQ-0026). */
   --size-game-logo-large: 4rem;
-  /* One text line of a week block: its 0.75rem type at the block's line height (ADR 0026 Amendment item 11). */
-  --size-game-logo-small: calc(0.75rem * var(--line-time-block));
   --width-popover: 22rem;
   /* Top bar, sticky from 760px: below the scrim (40), so it dims with the page. */
   --z-top-bar: 10;
@@ -207,10 +205,6 @@
   --duration-page: 0.24s;
   --duration-page-out: 0.12s;
   --page-shift: 12px;
-  --size-hour: 4rem;
-  --size-grid-height: 32rem;
-  --size-grid-title: 3rem;
-  --size-grid-gutter: 3.25rem;
   /* Running order (ADR 0028 section 4, amended by the user 2026-11-22): about this many hours show at once beside the
      day names on wide screens, the rest scrolls sideways; an hour is never narrower than the hour minimum, so a
      1-hour block keeps its label, start and spots. */
@@ -1579,259 +1573,6 @@ a:where(:not([data-slot="button"])) {
   text-align: center;
 }
 
-.calendar__bar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
-}
-
-.calendar__bar h3 {
-  margin: 0;
-  font-family: var(--font-heading);
-  font-size: 1rem;
-}
-
-/* The week time grid, shared by the group calendar and the dashboard. Each block's top and height come from its
-   start and span in minutes (--start, --span), and its share of the width from --column of --columns. */
-.time-grid {
-  display: flex;
-  height: var(--size-grid-height);
-  overflow-y: auto;
-  border: 1px solid var(--color-rule);
-  border-radius: var(--radius);
-  background: var(--color-surface);
-}
-
-.time-grid__hours {
-  flex: none;
-  width: var(--size-grid-gutter);
-  margin: var(--size-grid-title) 0 0;
-  padding: 0;
-  list-style: none;
-  color: var(--color-muted);
-  font-size: 0.75rem;
-  text-align: right;
-}
-
-.time-grid__hours li {
-  height: var(--size-hour);
-  padding-right: var(--space-1);
-}
-
-.time-grid__days {
-  display: grid;
-  flex: 1;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.time-grid__day {
-  min-width: 0;
-  border-left: 1px solid var(--color-rule);
-}
-
-.time-grid__title {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  display: grid;
-  place-content: center;
-  height: var(--size-grid-title);
-  background: var(--color-surface);
-  border-bottom: 1px solid var(--color-rule);
-  color: var(--color-muted);
-  font-size: 0.75rem;
-  text-align: center;
-  font-family: inherit;
-  font-weight: 400;
-  margin: 0;
-}
-
-.time-grid__title b {
-  color: var(--color-text);
-}
-
-.time-grid__title[aria-current="date"] b {
-  text-decoration: underline;
-  text-underline-offset: 0.2em;
-}
-
-.time-grid__track {
-  position: relative;
-  height: calc(var(--size-hour) * 24);
-  background: repeating-linear-gradient(
-    to bottom,
-    var(--color-rule) 0 1px,
-    transparent 1px var(--size-hour)
-  );
-}
-
-/* The part of the day that can start a lobby: from --from minutes to midnight. Only this part has a hover and a
-   pointer. The blocks sit above it and take the clicks that land on them. */
-.time-grid__create {
-  position: absolute;
-  inset: calc(var(--size-hour) * var(--from, 0) / 60) 0 0;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  cursor: pointer;
-}
-
-/* The wash fades by opacity on a layer, so the button's own focus ring is never faded with it. */
-.time-grid__create::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: var(--color-raised);
-  opacity: 0;
-}
-
-.time-grid__create:hover::before {
-  opacity: 1;
-}
-
-.time-grid__blocks {
-  position: absolute;
-  inset: 0;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  pointer-events: none;
-}
-
-/* The Now line at --now minutes. It sits above the blocks but lets the pointer through to them. */
-.time-grid__now {
-  position: absolute;
-  top: calc(var(--size-hour) * var(--now, 0) / 60);
-  inset-inline: 0;
-  height: 2px;
-  margin-top: -1px;
-  background: var(--color-signal);
-  pointer-events: none;
-}
-
-.time-grid__now::before {
-  content: "";
-  position: absolute;
-  top: -3px;
-  left: -4px;
-  width: 8px;
-  height: 8px;
-  background: var(--color-signal);
-}
-
-.time-block {
-  position: absolute;
-  top: calc(var(--size-hour) * var(--start, 0) / 60);
-  height: max(calc(var(--size-hour) * var(--span, 60) / 60), var(--size-tap));
-  left: calc(100% * var(--column, 0) / var(--columns, 1));
-  width: calc(100% / var(--columns, 1));
-  padding: 1px;
-  pointer-events: auto;
-}
-
-/* Lines that do not fit wrap into a second column, which the gap pushes outside the block, so a short block
-   leaves out whole lines from the end (TimeBlock orders them by priority) instead of squeezing every line. */
-.time-block__body {
-  display: flex;
-  flex-flow: column wrap;
-  column-gap: 100%;
-  height: 100%;
-  padding: var(--space-1);
-  overflow: hidden;
-  padding-right: calc(var(--size-genre-icon) - var(--space-1));
-  border-radius: var(--radius-sm);
-  /* Every color-mix() sits in @supports, so Tailwind writes no full-accent fallback for older browsers (ADR 0023,
-     amendment b). */
-  @supports (color: color-mix(in lab, red, red)) {
-    background: color-mix(
-      in srgb,
-      var(--genre-accent) var(--genre-tint),
-      transparent
-    );
-    border: 1px solid color-mix(in srgb, var(--genre-accent) 45%, transparent);
-  }
-  font-size: 0.75rem;
-  line-height: var(--line-time-block);
-}
-
-/* The accent stripe: only week grid blocks draw it, and only for a game with a genre (REQ-0028 item 2). */
-.time-block:not([data-genre="neutral"]) > .time-block__body {
-  border-left: 3px solid var(--genre-accent);
-}
-
-.time-block[data-continues-before] .time-block__body {
-  border-top-style: dashed;
-}
-
-.time-block[data-continues-after] .time-block__body {
-  border-bottom-style: dashed;
-}
-
-.time-block__body > * {
-  flex: none;
-  width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.time-block__body:focus-within {
-  outline: var(--width-edge) solid var(--color-text);
-}
-
-/* The label is never taller than the block body and is cut at a whole line, so no part of a line shows at any
-   block height: max-height rounds the body height (100%) down to whole lines (1lh), and overflow clips the
-   lines below that cap (without it they would spill out and the body would clip them mid-line). round() and lh
-   need Chrome 125, Firefox 120 or Safari 16.4; an older browser drops that line and keeps the first, one whole
-   line (the line height in em, which needs neither), which always fits the smallest block. The clip does not
-   reach the link's ::after (positioned against .time-block) or the focus ring (drawn by the body). Limit: a
-   game name cut this way has no ellipsis. */
-.time-block__game {
-  display: flex;
-  max-height: calc(var(--line-time-block) * 1em);
-  max-height: round(down, 100%, 1lh);
-  overflow: hidden;
-  font-weight: 600;
-}
-
-/* The game name wraps, so it shows in full where the block holds it, and is cut at a whole line only where it
-   does not (see .time-block__game; REQ-0004, REQ-0015). The mode and activity are shortened with an ellipsis. */
-.time-block__game > :first-child {
-  flex: none;
-  max-width: 100%;
-  overflow-wrap: anywhere;
-  white-space: normal;
-}
-
-.time-block__detail {
-  margin-inline-start: 0.25em;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* The link covers the whole .time-block (its containing block, at least --size-tap tall), not the smaller
-   body inside its padding, so the click target is never under 44px. The body's overflow does not clip it. */
-.time-block__game::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-}
-
-.time-block__game:focus-visible {
-  outline: none;
-}
-
-.time-block__marker {
-  color: var(--color-muted);
-  font-style: italic;
-}
-
 /* Landing page. Start states live in the keyframes, so with animations off the final layout shows at once. */
 .landing-topbar {
   display: flex;
@@ -2426,8 +2167,18 @@ a:where(:not([data-slot="button"])) {
   margin-top: var(--space-6);
 }
 
-.running-order > h2 {
+/* The heading, and beside it an action such as the next week (Group view). */
+.running-order__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
   margin: 0 0 var(--space-2);
+}
+
+.running-order__head > * {
+  margin: 0;
 }
 
 .running-order__scroll {
@@ -2457,13 +2208,22 @@ a:where(:not([data-slot="button"])) {
   border-bottom: 1px solid var(--color-rule);
 }
 
+/* The day's heading and, in the Group view, its Create lobby button at the right. */
 .running-order__name {
   position: sticky;
   left: 0;
   display: flex;
-  align-items: baseline;
+  align-items: center;
+  justify-content: space-between;
   gap: var(--space-2);
   width: 100cqi;
+}
+
+.running-order__heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--space-2);
   margin: 0;
 }
 
@@ -2488,7 +2248,7 @@ a:where(:not([data-slot="button"])) {
 }
 
 /* The marker of today: a signal bar under the day name (Orange rule item 3). */
-.running-order__name[aria-current="date"] .running-order__weekday::after {
+.running-order__heading[aria-current="date"] .running-order__weekday::after {
   content: "";
   display: block;
   width: var(--size-today-marker);
@@ -2521,16 +2281,30 @@ a:where(:not([data-slot="button"])) {
   font-size: var(--font-size-small);
 }
 
-/* Today with no lobby: the line under its axis, at the left of the view while the axis scrolls. */
+/* Today with no lobby: the line under its axis, at the left of the view while the axis scrolls. A click on it
+   reaches the empty time under it. */
 .running-order__track > .running-order__empty {
   position: sticky;
   left: 0;
   width: max-content;
+  pointer-events: none;
 }
 
 .running-order__track {
+  position: relative;
   display: flex;
   flex-direction: column;
+}
+
+/* The future time of a day in the Group view: a click there opens Create lobby at that time. On phones it lies over
+   the strip of bars; the bars take their own clicks, so a booked time opens nothing. */
+.running-order__create {
+  position: absolute;
+  top: var(--space-2);
+  right: 0;
+  left: calc(var(--from, 0) * 100%);
+  height: calc(var(--lanes, 1) * var(--size-lane-phone));
+  cursor: pointer;
 }
 
 /* The ruled hour lines, every two hours, as hard stops (ADR 0028 section 16.6). */
@@ -2555,6 +2329,7 @@ a:where(:not([data-slot="button"])) {
   height: calc(var(--size-lane-phone) - var(--space-1));
   border-radius: var(--radius-sm);
   background: var(--group-color, var(--color-raised));
+  pointer-events: auto;
 }
 
 .running-order__bar[data-mine] {
@@ -2764,10 +2539,16 @@ a:where(:not([data-slot="button"])) {
     z-index: 1;
     flex-direction: column;
     align-items: flex-start;
-    gap: 0;
+    justify-content: flex-start;
+    gap: var(--space-1);
     width: auto;
     padding: var(--space-2) 0;
     background: var(--color-ground);
+  }
+
+  .running-order__heading {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
   .running-order__day[data-empty] .running-order__name {
@@ -2788,10 +2569,10 @@ a:where(:not([data-slot="button"])) {
     padding-left: var(--space-2);
   }
 
+  /* At least its lanes; a row whose name column holds a Create lobby button grows to it. */
   .running-order__track {
-    position: relative;
     display: block;
-    height: calc(var(--lanes, 1) * var(--size-lane));
+    min-height: calc(var(--lanes, 1) * var(--size-lane));
     background: repeating-linear-gradient(
       to right,
       var(--color-rule) 0 1px,
@@ -2809,6 +2590,12 @@ a:where(:not([data-slot="button"])) {
 
   .running-order__bar {
     display: none;
+  }
+
+  .running-order__create {
+    top: 0;
+    bottom: 0;
+    height: auto;
   }
 
   .running-order__lobbies {
@@ -2915,6 +2702,20 @@ a:where(:not([data-slot="button"])) {
 }
 
 @media (hover: hover) and (pointer: fine) {
+  /* The raised fill of a control on the empty future time, faded by opacity on a layer. */
+  .running-order__create::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: var(--color-raised);
+    opacity: 0;
+    transition: opacity var(--duration-fast) var(--ease-out);
+  }
+
+  .running-order__create:hover::before {
+    opacity: 1;
+  }
+
   .running-order__block > a {
     transition: transform var(--duration-fast) var(--ease-out);
   }
@@ -2922,62 +2723,6 @@ a:where(:not([data-slot="button"])) {
   .running-order__block > a:hover {
     transform: translateY(var(--offset-block-lift));
   }
-}
-
-/* Phones: one day at a time. From 760px the pills go and all seven days show. */
-@media (max-width: 47.499rem) {
-  .time-grid__days {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .time-grid__day:not([data-selected]) {
-    display: none;
-  }
-}
-
-.day-pills {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: var(--space-1);
-  margin-bottom: var(--space-3);
-}
-
-.day-pill {
-  display: grid;
-  justify-items: center;
-  align-content: center;
-  gap: 2px;
-  min-height: var(--size-tap);
-  padding: var(--space-2) 0;
-  border: 1px solid var(--color-control-line);
-  border-radius: var(--radius);
-  background: var(--color-surface);
-  color: var(--color-muted);
-  font: inherit;
-  font-size: 0.75rem;
-  cursor: pointer;
-}
-
-.day-pill b {
-  color: var(--color-text);
-  font-family: var(--font-heading);
-  font-size: 1rem;
-}
-
-.day-pill[aria-current="date"] b {
-  text-decoration: underline;
-  text-underline-offset: 0.2em;
-}
-
-.day-pill[aria-pressed="true"] {
-  border-color: var(--color-text);
-  background: var(--color-raised);
-}
-
-.day-pill__dot {
-  width: 5px;
-  height: 5px;
-  background: var(--color-muted);
 }
 
 @media (min-width: 47.5rem) {
@@ -3077,20 +2822,6 @@ a:where(:not([data-slot="button"])) {
     bottom: auto;
     left: auto;
     width: var(--width-popover);
-  }
-
-  .day-pills {
-    display: none;
-  }
-
-  /* The week grid reaches the bottom of the window from where it starts on the page (--grid-top, set by
-     useGridTop), but never gets shorter than it is on phones. The margin is the main area's bottom padding, so
-     a page that ends with the grid fits the window and does not scroll. */
-  .time-grid {
-    height: max(
-      var(--size-grid-height),
-      calc(100dvh - var(--grid-top, 0px) - var(--space-6))
-    );
   }
 }
 
@@ -3271,17 +3002,6 @@ a:where(:not([data-slot="button"])) {
 .lobby-row > .genre-frame__icon {
   position: static;
   flex: none;
-}
-
-.time-block > .genre-frame__icon {
-  top: var(--space-1);
-  right: var(--space-1);
-  width: calc(var(--size-genre-icon) - var(--space-2));
-  height: calc(var(--size-genre-icon) - var(--space-2));
-}
-
-.time-block.genre-frame::before {
-  inset: 1px;
 }
 
 .lobby-head {

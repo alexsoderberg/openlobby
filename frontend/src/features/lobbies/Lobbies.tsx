@@ -1,8 +1,8 @@
 import { useCallback, useState } from "react";
 import type { Group, Lobby } from "../../api";
 import { usePopover } from "../../hooks";
-import type { PickedStart } from "../../calendar";
 import { useMessages } from "../../i18n";
+import type { CreateOn } from "../../runningOrder";
 import {
   Button,
   CreateFrame,
@@ -20,27 +20,29 @@ type LobbyView = "list" | "calendar";
 
 /**
  * The lobby sections of a group page: the upcoming lobbies as a list or a week calendar, and the popover
- * form that adds one, opened by the Create lobby button or from a time of the calendar. The list is the first
+ * form that adds one, opened by the Create lobby button or from a day of the calendar. The list is the first
  * view of every visit, because the choice is not saved (REQ-0004). A lobby created in the list view is always in
  * the list, so only the calendar may confirm it with a toast (REQ-0022).
  */
 export function Lobbies({
   groupId,
+  groupName,
   members,
   onUnauthenticated,
 }: {
   groupId: string;
+  groupName: string;
   members: Group["members"];
   onUnauthenticated: () => void;
 }) {
   const m = useMessages();
   const [view, setView] = useState<LobbyView>("list");
-  const [initialStart, setInitialStart] = useState<PickedStart>();
+  const [initialStart, setInitialStart] = useState<Date>();
   const [createdId, setCreatedId] = useState<string>();
   const upcoming = useUpcomingLobbies(groupId, onUnauthenticated);
   const popover = usePopover();
 
-  const openForm = (start: PickedStart | undefined, button: HTMLElement) => {
+  const openForm = (start: Date | undefined, button: HTMLElement) => {
     setInitialStart(start);
     popover.press(button);
   };
@@ -90,6 +92,7 @@ export function Lobbies({
         </div>
         <LobbyViews
           groupId={groupId}
+          groupName={groupName}
           members={members}
           view={view}
           upcoming={upcoming}
@@ -125,6 +128,7 @@ export function Lobbies({
 /** Loading, error, empty (the same text in both views) or the chosen view. */
 function LobbyViews({
   groupId,
+  groupName,
   members,
   view,
   upcoming: { state, reload },
@@ -133,12 +137,13 @@ function LobbyViews({
   onCreate,
 }: {
   groupId: string;
+  groupName: string;
   members: Group["members"];
   view: LobbyView;
   upcoming: ReturnType<typeof useUpcomingLobbies>;
   createdId?: string;
   onCreatedSettled: () => void;
-  onCreate: (start: PickedStart, button: HTMLElement) => void;
+  onCreate: CreateOn;
 }) {
   const m = useMessages();
   if (state.status === "loading")
@@ -151,6 +156,7 @@ function LobbyViews({
   ) : (
     <LobbyCalendar
       groupId={groupId}
+      groupName={groupName}
       lobbies={state.value}
       createdId={createdId}
       onCreatedSettled={onCreatedSettled}

@@ -49,7 +49,6 @@ describe("GameLogo", () => {
   it.each([
     [undefined, "size-(--size-game-logo)"],
     ["large" as const, "size-(--size-game-logo-large)"],
-    ["small" as const, "size-(--size-game-logo-small)"],
   ])("draws the square box of size %s", (size, sizeClass) => {
     const { container } = render(
       <GameLogo gameId="g1" name="Deep Rock" size={size} />,

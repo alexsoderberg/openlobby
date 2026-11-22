@@ -1,10 +1,11 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   formatDate,
   formatDateTimeRange,
   formatTime,
   formatTimeRange,
+  formatWeekday,
   formatWeekdayShort,
 } from "../i18n";
 import { en } from "../i18n/messages/en";
@@ -39,12 +40,17 @@ const lobby = (
   ...overrides,
 });
 
-function renderWeek(lobbies: RunningOrderLobby[], now = NOW) {
+function renderWeek(
+  lobbies: RunningOrderLobby[],
+  now = NOW,
+  onCreateOn?: (start: Date, origin: HTMLElement) => void,
+) {
   render(
     <RunningOrder
       heading="This week"
       days={weekItems(MONDAY, lobbies)}
       now={now}
+      onCreateOn={onCreateOn}
     />,
   );
 }
@@ -193,9 +199,66 @@ describe("RunningOrder", () => {
     expect(document.querySelector(".running-order__now")).toBeNull();
   });
 
-  it("offers no create button", () => {
+  it("offers no create button without onCreateOn", () => {
     renderWeek([lobby("Catan", at(5, 20), at(5, 22))]);
     expect(screen.queryByRole("button")).toBeNull();
+    expect(document.querySelector(".running-order__create")).toBeNull();
+  });
+
+  it("offers one create button per future day with onCreateOn, today included", () => {
+    renderWeek([], NOW, vi.fn());
+    const buttons = screen.getAllByRole("button");
+    expect(buttons.map((button) => button.getAttribute("aria-label"))).toEqual(
+      [4, 5, 6, 7, 8].map((date) =>
+        en.runningOrder.createOn(formatWeekday(at(date, 0))),
+      ),
+    );
+    expect(buttons[0].textContent).toBe(en.lobbyCreateButton);
+    expect(day(at(3, 0)).queryByRole("button")).toBeNull();
+  });
+
+  it("keeps the axis on an empty later day, so its time can be pointed at", () => {
+    renderWeek([], NOW, vi.fn());
+    const friday = dayGroup(at(6, 0));
+    expect(friday.dataset.empty).toBeUndefined();
+    expect(friday.querySelector(".running-order__create")).not.toBeNull();
+    expect(
+      dayGroup(at(3, 0)).querySelector(".running-order__track"),
+    ).toBeNull();
+  });
+
+  it("starts from a button at 18:00 on a later day, and at the next half hour today", () => {
+    const onCreateOn = vi.fn();
+    renderWeek([], NOW, onCreateOn);
+    const thursday = day(at(5, 0)).getByRole("button");
+    fireEvent.click(thursday);
+    expect(onCreateOn).toHaveBeenLastCalledWith(at(5, 18), thursday);
+    fireEvent.click(day(at(4, 0)).getByRole("button"));
+    expect(onCreateOn).toHaveBeenLastCalledWith(
+      at(4, 18, 30),
+      day(at(4, 0)).getByRole("button"),
+    );
+  });
+
+  it("starts from the pointer at the half hour under it, over today's future time only", () => {
+    const onCreateOn = vi.fn();
+    renderWeek([], NOW, onCreateOn);
+    const area = dayGroup(at(4, 0)).querySelector<HTMLElement>(
+      ".running-order__create",
+    )!;
+    expect(area.getAttribute("aria-hidden")).toBe("true");
+    expect(area.tabIndex).toBe(-1);
+    // From 18:30 to midnight is 330 minutes, one a pixel: 100 px in is 20:10, so 20:00.
+    expect(area.style.getPropertyValue("--from")).toBe(String(1110 / 1440));
+    vi.spyOn(area, "getBoundingClientRect").mockReturnValue({
+      left: 50,
+      width: 330,
+    } as DOMRect);
+    fireEvent.click(area, { clientX: 150 });
+    expect(onCreateOn).toHaveBeenCalledWith(
+      at(4, 20),
+      day(at(4, 0)).getByRole("button"),
+    );
   });
 
   it("scrolls once on opening to the hour of the first lobby that has not ended", () => {

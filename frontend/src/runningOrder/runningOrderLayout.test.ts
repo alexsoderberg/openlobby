@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { daySegments, nowPosition, openingMinute } from "./runningOrderLayout";
+import {
+  createWindow,
+  daySegments,
+  momentAt,
+  nowPosition,
+  openingMinute,
+  pointerStartMinute,
+} from "./runningOrderLayout";
 
 const at = (day: number, hour: number, minute = 0) =>
   new Date(2026, 10, day, hour, minute);
@@ -166,5 +173,53 @@ describe("nowPosition", () => {
     expect(nowPosition(at(4, 0))).toBe(0);
     expect(nowPosition(at(4, 12))).toBe(0.5);
     expect(nowPosition(at(4, 18, 18))).toBeCloseTo(1098 / 1440);
+  });
+});
+
+describe("createWindow", () => {
+  const now = at(4, 12, 10);
+
+  it("offers all of a later day, with 18:00 as the default start", () => {
+    expect(createWindow(at(5, 0), now)).toEqual({ from: 0, start: 1080 });
+  });
+
+  it("offers today from the next half hour after now, which is also the default start", () => {
+    expect(createWindow(WEDNESDAY, now)).toEqual({ from: 750, start: 750 });
+    expect(createWindow(WEDNESDAY, at(4, 12, 30))).toEqual({
+      from: 780,
+      start: 780,
+    });
+  });
+
+  it("offers nothing on a past day, or today from its last half hour on", () => {
+    expect(createWindow(at(3, 0), now)).toBeUndefined();
+    expect(createWindow(WEDNESDAY, at(4, 23, 30))).toBeUndefined();
+    expect(createWindow(WEDNESDAY, at(4, 23, 29))).toEqual({
+      from: 1410,
+      start: 1410,
+    });
+  });
+});
+
+describe("pointerStartMinute", () => {
+  it("rounds the pointer's place on the part from `from` to midnight down to the half hour", () => {
+    expect(pointerStartMinute(0, 0)).toBe(0);
+    expect(pointerStartMinute((21 * 60 + 50) / 1440, 0)).toBe(21 * 60 + 30);
+    // Today from 12:30: a quarter of the 690 minutes left is 172.5 minutes on, 15:22, so 15:00.
+    expect(pointerStartMinute(0.25, 750)).toBe(900);
+  });
+
+  it("never picks midnight at the right edge", () => {
+    expect(pointerStartMinute(1, 0)).toBe(1410);
+  });
+
+  it("never picks a start before `from`, even left of the area", () => {
+    expect(pointerStartMinute(-0.1, 750)).toBe(750);
+  });
+});
+
+describe("momentAt", () => {
+  it("is the wall-clock time on that day", () => {
+    expect(momentAt(WEDNESDAY, 1290)).toEqual(at(4, 21, 30));
   });
 });
