@@ -5,7 +5,7 @@ import type { GridLobby } from "./TimeBlock";
 import { TimeGridDay, type CreateAt, type TitleLevel } from "./TimeGridDay";
 import { MINUTES_PER_HOUR, dayBlocks, openingMinute } from "./gridGeometry";
 import { useGridTop } from "./useGridTop";
-import type { WeekDay } from "./week";
+import type { WeekDay } from "../runningOrder";
 
 const HOURS = Array.from({ length: 24 }, (_, hour) => hour);
 // The date is arbitrary: only the clock time is shown.

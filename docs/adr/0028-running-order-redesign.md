@@ -353,5 +353,21 @@ DECISION, architect, on the deviations the UI/UX expert built for the Top bar. E
 ### Removed from the Top bar build in PR1b
 - `--size-rail`, `.group-rail`, `GroupRail.tsx`, `GroupContextMenu.tsx`, `TabBar.tsx` (merged into `TopBar.tsx`), `GroupStrip`, `ui/GroupIcon`, `.group-icon`, `.group-strip` and `--size-group-icon` (item 1).
 
+### 16.13 Rulings on the PR2 build (2026-11-22)
+DECISION, user, 2026-11-22, after seeing PR2 live: items 1 and 3 below. The rest are the architect's rulings. Each one amends the section it names.
+1. **Desktop axis (amends section 4, "Axis" rule). DECISION, user.** Wide screens show at most 16 hours beside the day names (`--running-order-wide-hours: 16`). An hour is never narrower than 4.5rem (`--size-running-order-hour-min`). Visible hours = min(16, floor(track width / 4.5rem)), so a narrow desktop shows fewer hours. The rest of the 00:00 to 24:00 axis scrolls sideways inside the component, as on phones. "Fit 00:00 to 24:00" is withdrawn.
+2. **Opening position (amends section 4, "Opening position"). Architect.** Let `v` be the visible hours.
+   - From 12 visible hours up: the window starts at the earliest start hour of the lobbies that have not ended, but never later than 08:00. Then start = min(earliest hour, 08:00, 24 − v), so the window never runs past 24:00. If no lobby has not ended, the start is the current hour, clamped the same way.
+   - Below 12 visible hours: the view opens at the first lobby that has not ended, or at now, clamped to 24 − v.
+   - With the whole day visible (v = 24) it opens at 00:00.
+3. **Today keeps its axis and Now line (amends section 4, "Empty day"). DECISION, user.** Today with no lobby shows its axis and the Now line, with "Nothing booked" inside the track. Other empty days stay one line with no axis.
+4. **Blocks narrower than 6rem (amends section 4, "Block"). Architect.** The label is kept (clipped with an ellipsis), with the start time and the spots. The time range and the group name are dropped. The group name stays in the accessible name and in the legend. This replaces "under 6 rem the label is hidden".
+5. **Spots (amends section 4, "Block"). Architect.** Blocks show spots as "4/5" at every width. The accessible name keeps "4/5 players".
+6. **Band heading and region (amends section 16.8, Next up band). Architect.** The eyebrow is one heading: "Next up, in 2 h 11 min", or "Next up, running" while the lobby runs (glossary: Running replaces the countdown). The band is a region named "Next up" with `aria-label`.
+7. **Midnight crossing (amends section 4, "Midnight"). Architect.** A block that crosses midnight shows its times without dates ("22:00–02:00") and a chevron icon that marks the continuation. Its accessible name has the full dates. The chevron is an `Icon`, from the existing set or added there (ADR 0021).
+8. **`RunningOrder` props and temporary duplication (amends section 4, "Components"). Architect.** Props are `heading`, `days` and `now`. `onCreateOn` waits for PR3a. Until PR3a, `runningOrder/index.ts` also exports `dayAfter` and `Span` for `calendar/`, and `calendar/gridGeometry.ts` keeps its own copy of the segment logic. Accepted as a temporary duplication of two copies, deleted in PR3a. No third copy.
+9. **Hover (amends section 4). Architect.** A block rises 2 px on hover with a fine pointer only (`@media (hover: hover) and (pointer: fine)`), by transform alone. The hover tint on empty future time belongs to PR3a.
+10. **Band role slots and meta line (amends section 16.8). Architect.** The band's role slots keep the existing badge look (icon, name, count; the full slot follows 16.4 item 6). The band meta line shows the group name.
+
 ## Amendments made with this ADR
 Each amended ADR carries a pointer section "Amendment 2026-11-21 (ADR 0028)". The rule of this ADR wins where they differ. ADRs 0014, 0015, 0016, 0018, 0021, 0023, 0026 and 0027.

@@ -16,16 +16,6 @@ function declarationsFor(selector: string): string {
   return rule?.[1] ?? "";
 }
 
-describe("Next up card spacing", () => {
-  // The card is no .panel, so what follows the figure or the meter (button, Ended, alert) needs its own gap.
-  it.each([
-    String.raw`\.next-up__spots > \.meter \+ \*`,
-    String.raw`\.next-up__spots > \.next-up__figure \+ \*`,
-  ])("spaces what follows %s by space-3", (selector) => {
-    expect(declarationsFor(selector)).toMatch(/margin-top:\s*var\(--space-3\)/);
-  });
-});
-
 describe("Panel button rows", () => {
   // In the Lobbies panel the view switch follows the heading and its button, which have no margin, so it needs the rule's gap.
   it("spaces the view switch from the content above by space-3", () => {

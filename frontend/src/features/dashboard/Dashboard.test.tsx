@@ -15,13 +15,14 @@ import {
   type Lobby,
 } from "../../api";
 import {
-  formatDayOfMonth,
+  formatDate,
+  formatDateTimeRange,
+  formatTime,
   formatTimeRange,
   formatWeekdayShort,
 } from "../../i18n";
 import { en } from "../../i18n/messages/en";
 import { fakeApiClient } from "../../test/fakeApiClient";
-import { dayColumns, onPhone, selectedColumns } from "../../test/weekGrid";
 import type { GroupsState } from "../groups";
 import { Dashboard } from "./Dashboard";
 
@@ -82,7 +83,7 @@ function renderDashboard(
   return { client, onRetryGroups, onUnauthenticated };
 }
 
-/** The Next up card, once the lobbies have loaded. */
+/** The Next up band, once the lobbies have loaded. */
 async function nextUpCard() {
   const section = await screen.findByRole("region", {
     name: t.nextUpHeading,
@@ -90,9 +91,13 @@ async function nextUpCard() {
   return within(section);
 }
 
-/** The column of a day, found by its place in the week (Monday first). */
+/** A day of the running order, found by its weekday and date heading. */
 function column(day: Date) {
-  return within(dayColumns()[(day.getDay() + 6) % 7]);
+  return within(
+    screen.getByRole("group", {
+      name: new RegExp(`${formatWeekdayShort(day)} ${formatDate(day)}`),
+    }),
+  );
 }
 
 beforeEach(() => {
@@ -114,35 +119,9 @@ describe("Next up", () => {
     expect(
       card.getByText(new RegExp(formatWeekdayShort(at(4, 0)))),
     ).toBeTruthy();
-    expect(card.getByText("in 1 h 42 min")).toBeTruthy();
+    expect(card.getByText(t.nextUpEyebrow("in 1 h 42 min"))).toBeTruthy();
     expect(card.getByText("3/5 players")).toBeTruthy();
     expect(card.queryByText("Counter-Strike 2")).toBeNull();
-  });
-
-  it("shows the genre name and theme on the card, and no genre name for a neutral lobby", async () => {
-    renderDashboard({
-      g1: [
-        lobby("l1", "Overwatch 2", at(4, 20), at(4, 22), {
-          gameGenre: "shooter",
-        }),
-      ],
-    });
-
-    const card = await nextUpCard();
-    expect(card.getByText(en.genre.shooter)).toBeTruthy();
-    expect(card.getByRole("article").getAttribute("data-genre")).toBe(
-      "shooter",
-    );
-  });
-
-  it("shows no genre name on a neutral Next up card", async () => {
-    renderDashboard({ g1: [lobby("l1", "Catan", at(4, 20), at(4, 22))] });
-
-    const card = await nextUpCard();
-    expect(card.getByRole("article").getAttribute("data-genre")).toBe(
-      "neutral",
-    );
-    expect(card.queryByText(en.genre.shooter)).toBeNull();
   });
 
   it("shows players without a max as a plain count", async () => {
@@ -160,7 +139,7 @@ describe("Next up", () => {
     });
 
     const card = await nextUpCard();
-    expect(card.getByText(t.running)).toBeTruthy();
+    expect(card.getByText(t.nextUpEyebrow(t.running))).toBeTruthy();
     expect(card.getByRole("link", { name: "Catan" })).toBeTruthy();
   });
 
@@ -170,12 +149,12 @@ describe("Next up", () => {
     vi.setSystemTime(NOW);
     renderDashboard({ g1: [lobby("l1", "Catan", at(4, 17), at(4, 19))] });
     const card = await nextUpCard();
-    expect(card.getByText(t.running)).toBeTruthy();
+    expect(card.getByText(t.nextUpEyebrow(t.running))).toBeTruthy();
 
     act(() => vi.setSystemTime(at(4, 19, 1)));
     act(() => vi.advanceTimersByTime(15_000));
 
-    expect(card.getByText(t.ended)).toBeTruthy();
+    expect(card.getByText(t.nextUpEyebrow(t.ended))).toBeTruthy();
     expect(card.getByRole("link", { name: "Catan" })).toBeTruthy();
   });
 
@@ -185,132 +164,46 @@ describe("Next up", () => {
     expect((await nextUpCard()).getByText(t.nothingBooked)).toBeTruthy();
   });
 
-  it("is the side column, read before This week (REQ-0025)", async () => {
+  it("is the first band on the page, read before This week, with no side column", async () => {
     renderDashboard({});
 
     const nextUp = await screen.findByRole("region", { name: t.nextUpHeading });
     const thisWeek = screen.getByRole("region", { name: t.thisWeekHeading });
-    expect(nextUp.classList).toContain("side-column");
-    expect(nextUp.parentElement).toBe(thisWeek.parentElement);
     expect(nextUp.compareDocumentPosition(thisWeek)).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING,
     );
+    expect(document.querySelector(".side-layout, .side-column")).toBeNull();
+  });
+
+  it("shows the start time and the date with the time range", async () => {
+    renderDashboard({
+      g1: [lobby("l1", "Overwatch 2", at(4, 20), at(4, 22))],
+    });
+
+    const card = await nextUpCard();
+    expect(card.getByText(formatTime(at(4, 20)))).toBeTruthy();
+    expect(
+      card.getByText(formatDateTimeRange(at(4, 20), at(4, 22))),
+    ).toBeTruthy();
   });
 });
 
-describe("game logo", () => {
-  const VERSION = "c".repeat(64);
-
-  it("shows the logo on Next up, small in the This week grid, and not in the Day list", async () => {
-    renderDashboard({
-      g1: [
-        lobby("l1", "Overwatch 2", at(4, 20), at(4, 22), {
-          gameId: "game1",
-          gameLogoVersion: VERSION,
-        }),
-      ],
-    });
-
-    const card = await nextUpCard();
-    const logo = card
-      .getByRole("article")
-      .querySelector('[data-slot="game-logo"] img');
-    expect(logo?.getAttribute("src")).toBe(
-      `/api/games/game1/images/logo?v=${VERSION}`,
-    );
-    expect(logo?.getAttribute("alt")).toBe("");
-    expect(card.getByRole("link", { name: "Overwatch 2" })).toBeTruthy();
-    const sizes = () =>
-      [...document.querySelectorAll('[data-slot="game-logo"]')].map((box) =>
-        box.getAttribute("data-size"),
-      );
-    expect(sizes()).toEqual(["large", "small"]);
-    const view = (name: string) =>
-      fireEvent.click(screen.getByRole("button", { name }));
-    view(en.dashboard.viewDays);
-    expect(sizes()).toEqual(["large"]);
-    // The view choice is remembered; later tests expect the calendar.
-    view(en.dashboard.viewCalendar);
-  });
-
-  it("shows the monogram for a game without a logo", async () => {
-    renderDashboard({
-      g1: [
-        lobby("l1", "Overwatch 2", at(4, 20), at(4, 22), { gameId: "game1" }),
-      ],
-    });
-
-    const card = await nextUpCard();
-    expect(card.getByText("O2")).toBeTruthy();
-    expect(
-      card.getByRole("article").querySelector('[data-slot="game-logo"] img'),
-    ).toBeNull();
-  });
-
-  it("shows neither logo nor monogram for Other", async () => {
-    renderDashboard({
-      g1: [lobby("l1", "Chess", at(4, 20), at(4, 22), { gameId: null })],
-    });
-
-    const card = await nextUpCard();
-    expect(
-      card.getByRole("article").querySelector('[data-slot="game-logo"]'),
-    ).toBeNull();
-  });
-});
-
-describe("game cover", () => {
-  const VERSION = "d".repeat(64);
-  const coverOf = (card: ReturnType<typeof within>) =>
-    card.getByRole("article").querySelector(".genre-frame__cover");
-
-  it("fills the Next up card behind its content, and not in This week", async () => {
+describe("no game pictures on Home", () => {
+  it("shows no logo, monogram or cover on Next up or in the running order", async () => {
     renderDashboard({
       g1: [
         lobby("l1", "Overwatch 2", at(4, 20), at(4, 22), {
           gameId: "game1",
           gameGenre: "shooter",
-          gameCoverVersion: VERSION,
+          gameLogoVersion: "c".repeat(64),
+          gameCoverVersion: "d".repeat(64),
         }),
       ],
     });
+    await nextUpCard();
 
-    const card = await nextUpCard();
-    expect(coverOf(card)?.getAttribute("src")).toBe(
-      `/api/games/game1/images/cover?v=${VERSION}`,
-    );
-    expect(document.querySelectorAll(".genre-frame__cover")).toHaveLength(1);
-  });
-
-  it("shows the genre theme for a game without a cover", async () => {
-    renderDashboard({
-      g1: [
-        lobby("l1", "Overwatch 2", at(4, 20), at(4, 22), {
-          gameId: "game1",
-          gameGenre: "shooter",
-        }),
-      ],
-    });
-
-    const card = await nextUpCard();
-    expect(coverOf(card)).toBeNull();
-    expect(card.getByRole("article").dataset.genre).toBe("shooter");
-  });
-
-  it("shows the genre theme after the cover fails to load", async () => {
-    renderDashboard({
-      g1: [
-        lobby("l1", "Overwatch 2", at(4, 20), at(4, 22), {
-          gameId: "game1",
-          gameGenre: "shooter",
-          gameCoverVersion: VERSION,
-        }),
-      ],
-    });
-
-    const card = await nextUpCard();
-    fireEvent.error(coverOf(card)!);
-    expect(coverOf(card)).toBeNull();
+    expect(document.querySelector('[data-slot="game-logo"], img')).toBeNull();
+    expect(screen.queryByText(en.genre.shooter)).toBeNull();
   });
 });
 
@@ -347,7 +240,7 @@ describe("label and role slots", () => {
 });
 
 describe("This week", () => {
-  it("places each lobby in the column of its day with game, time, group and spots, as a link to its lobby", async () => {
+  it("places each lobby in the row of its day with label, time, group and spots, as a link to its lobby", async () => {
     renderDashboard({
       g1: [lobby("l1", "Counter-Strike 2", at(6, 21), at(6, 23))],
       g2: [lobby("l2", "Overwatch 2", at(4, 20), at(4, 22))],
@@ -355,19 +248,15 @@ describe("This week", () => {
     await nextUpCard();
 
     const wednesday = column(at(4, 0));
-    const link = wednesday.getByRole("link", { name: "Overwatch 2" });
+    const link = wednesday.getByRole("link", { name: /^Overwatch 2, / });
     expect(link.getAttribute("href")).toBe("/groups/g2/lobbies/l2");
     const block = link.closest("li")!;
     expect(block.textContent).toContain("Ranked grind");
-    expect(block.textContent).toContain("3/5 players");
+    expect(block.textContent).toContain("3/5");
+    expect(link.getAttribute("aria-label")).toContain("3/5 players");
     expect(block.textContent).toContain(formatTimeRange(at(4, 20), at(4, 22)));
     expect(
-      block.style.getPropertyValue("--start") +
-        "/" +
-        block.style.getPropertyValue("--span"),
-    ).toBe("1200/120");
-    expect(
-      column(at(6, 0)).getByRole("link", { name: "Counter-Strike 2" }),
+      column(at(6, 0)).getByRole("link", { name: /^Counter-Strike 2, / }),
     ).toBeTruthy();
     expect(column(at(5, 0)).queryByRole("link")).toBeNull();
   });
@@ -379,10 +268,10 @@ describe("This week", () => {
     await nextUpCard();
 
     expect(
-      column(at(6, 0)).getByRole("link", { name: "Counter-Strike 2" }),
+      column(at(6, 0)).getByRole("link", { name: /^Counter-Strike 2, / }),
     ).toBeTruthy();
     expect(
-      column(at(7, 0)).getByRole("link", { name: "Counter-Strike 2" }),
+      column(at(7, 0)).getByRole("link", { name: /^Counter-Strike 2, / }),
     ).toBeTruthy();
   });
 
@@ -392,122 +281,47 @@ describe("This week", () => {
     });
     await nextUpCard();
 
-    expect(column(at(2, 0)).getByRole("link", { name: "Catan" })).toBeTruthy();
+    expect(
+      column(at(2, 0)).getByRole("link", { name: /^Catan, / }),
+    ).toBeTruthy();
   });
 
-  it("leaves out lobbies of other weeks and says Nothing booked on every day", async () => {
+  it("leaves out lobbies of other weeks and says Nothing booked on every day, with no legend", async () => {
     renderDashboard({
       g1: [lobby("l1", "Catan", at(10, 20), at(10, 22))],
     });
     await nextUpCard();
 
     expect(column(at(4, 0)).queryByRole("link")).toBeNull();
-    expect(screen.getAllByText(en.calendarNothingBooked)).toHaveLength(7);
+    expect(screen.getAllByText(en.runningOrder.nothingBooked)).toHaveLength(7);
+    expect(screen.queryByRole("list", { name: t.legendLabel })).toBeNull();
   });
 
-  it("says Nothing booked only on the days without lobbies", async () => {
-    renderDashboard({ g1: [lobby("l1", "Catan", at(5, 20), at(5, 22))] });
-    await nextUpCard();
-
-    const grid = within(
-      screen.getByRole("region", { name: en.calendarGridLabel }),
-    );
-    expect(grid.getAllByRole("heading", { level: 3 })).toHaveLength(7);
-    expect(column(at(5, 0)).queryByText(en.calendarNothingBooked)).toBeNull();
-    expect(column(at(6, 0)).getByText(en.calendarNothingBooked)).toBeTruthy();
-  });
-
-  describe("opening scroll", () => {
-    const scrollTop = () =>
-      screen.getByRole("region", { name: en.calendarGridLabel }).scrollTop;
-    const twoLobbies = {
-      g1: [
-        lobby("l1", "Catan", at(5, 9), at(5, 10)),
-        lobby("l2", "Chess", at(4, 20), at(4, 22)),
-      ],
-    };
-
-    beforeEach(() => {
-      // jsdom does no layout: an hour row is 100 px. As in a browser, the hours list is stretched to the grid's
-      // visible height (600 px), not to its 24 hours, so it cannot give the scale.
-      vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockImplementation(
-        function (this: HTMLElement) {
-          return this.matches(".time-grid__hours li") ? 100 : 600;
-        },
-      );
-    });
-    afterEach(() => vi.restoreAllMocks());
-
-    it("goes to the next lobby of the week that has not ended on wide screens", async () => {
-      renderDashboard(twoLobbies);
-      await nextUpCard();
-
-      expect(scrollTop()).toBe(20 * 100);
-    });
-
-    it("goes to the selected day on phones, not to an earlier lobby on another day", async () => {
-      onPhone();
-      renderDashboard({ g1: [lobby("l1", "Catan", at(5, 9), at(5, 10))] });
-      await nextUpCard();
-
-      expect(scrollTop()).toBe(18 * 100);
-    });
-
-    it("keeps the scroll position on phones when another Day pill is chosen", async () => {
-      onPhone();
-      renderDashboard(twoLobbies);
-      await nextUpCard();
-      const grid = screen.getByRole("region", { name: en.calendarGridLabel });
-      grid.scrollTop = 1234;
-
-      fireEvent.click(
-        screen.getByRole("button", {
-          name: new RegExp(formatWeekdayShort(at(5, 0))),
-        }),
-      );
-
-      expect(selectedColumns()).toEqual([dayColumns()[3]]);
-      expect(grid.scrollTop).toBe(1234);
-    });
-  });
-
-  it("cannot create a lobby from the grid", async () => {
-    renderDashboard({ g1: [lobby("l1", "Catan", at(5, 20), at(5, 22))] });
-    await nextUpCard();
-
-    expect(screen.queryByRole("button", { name: /create lobby/i })).toBeNull();
-  });
-
-  it("marks days with lobbies on the Day pills, selects today and shows the chosen day on phones", async () => {
+  it("lists the groups with a block this week in the legend, and You are in", async () => {
     renderDashboard({
-      g1: [lobby("l1", "Counter-Strike 2", at(6, 21), at(6, 23))],
-      g2: [lobby("l2", "Overwatch 2", at(4, 20), at(4, 22))],
+      g1: [lobby("l1", "Catan", at(5, 20), at(5, 22))],
+      g2: [lobby("l2", "Chess", at(10, 20), at(10, 22))],
     });
     await nextUpCard();
 
-    const pills = within(
-      screen.getByRole("group", { name: en.calendarDayPillsLabel }),
-    );
-    const pressed = pills
-      .getAllByRole("button")
-      .filter((pill) => pill.getAttribute("aria-pressed") === "true");
-    expect(pressed).toHaveLength(1);
-    expect(pressed[0].textContent).toContain(formatDayOfMonth(at(4, 0)));
-    expect(pills.getAllByText(en.calendarDayHasLobbies)).toHaveLength(2);
-    expect(selectedColumns()).toEqual([dayColumns()[2]]);
+    const legend = within(screen.getByRole("list", { name: t.legendLabel }));
+    expect(
+      legend.getAllByRole("listitem").map((item) => item.textContent),
+    ).toEqual([crew.name, t.legendYou]);
+  });
 
-    fireEvent.click(
-      pills.getByRole("button", {
-        name: new RegExp(formatWeekdayShort(at(6, 0))),
-      }),
-    );
+  it("has no view toggle and cannot create a lobby", async () => {
+    renderDashboard({ g1: [lobby("l1", "Catan", at(5, 20), at(5, 22))] });
+    const card = await nextUpCard();
 
-    expect(selectedColumns()).toEqual([dayColumns()[4]]);
+    const buttons = screen.getAllByRole("button");
+    expect(buttons).toEqual(card.getAllByRole("button"));
+    expect(screen.queryByRole("button", { name: /create lobby/i })).toBeNull();
   });
 });
 
 describe("empty and error states", () => {
-  it("sends a user without groups to the Groups page, and shows no card or week", () => {
+  it("sends a user without groups to the Groups page, and shows no band or week", () => {
     renderDashboard({}, []);
 
     expect(screen.getByText(t.noGroups)).toBeTruthy();
@@ -529,7 +343,7 @@ describe("empty and error states", () => {
     expect((await screen.findByRole("alert")).textContent).toBe(
       en.errors.service_unavailable,
     );
-    expect(screen.queryByRole("link", { name: "Catan" })).toBeNull();
+    expect(screen.queryByRole("link", { name: /Catan/ })).toBeNull();
     expect(screen.queryByRole("region")).toBeNull();
 
     fireEvent.click(screen.getByRole("button", { name: en.tryAgain }));
@@ -619,7 +433,7 @@ describe("Next up join and leave", () => {
     );
 
     const card = await nextUpCard();
-    expect(card.getByText(t.running)).toBeTruthy();
+    expect(card.getByText(t.nextUpEyebrow(t.running))).toBeTruthy();
     fireEvent.click(card.getByRole("button", { name: en.lobbyLeave }));
 
     await waitFor(() =>

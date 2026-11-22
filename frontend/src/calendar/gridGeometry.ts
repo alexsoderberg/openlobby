@@ -1,4 +1,4 @@
-import { dayAfter, type Span } from "./week";
+import { dayAfter, type Span } from "../runningOrder";
 
 export const MINUTES_PER_HOUR = 60;
 export const DAY_MINUTES = 24 * MINUTES_PER_HOUR;
