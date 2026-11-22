@@ -14,16 +14,21 @@ const FILLS = new Set([
   ".top-bar",
   // 2. The header "+" and the floating "+" are primary actions.
   ".plus-button",
-  // 3. The Now line.
+  // 3. The Now line and the marker of today. The week grid's goes with the grid in PR3a.
   ".time-grid__now",
   ".time-grid__now::before",
+  ".running-order__now::before",
+  '.running-order__name[aria-current="date"] .running-order__weekday::after',
   // 5. The active item of the phone Tab bar.
   '.tab[aria-current="page"]',
 ]);
 
-// The rules that may set signal as `color`. Item 4 (the Next up band, the only signal text) comes with PR2; item 6
-// is an icon, not text: the check icon of a full role slot.
-const COLOURS = new Set([".badge--full > .role-slot-check"]);
+// The rules that may set signal as `color`: item 6, an icon and not text (the check icon of a full role slot), and
+// item 4, the only signal text (the eyebrow and the countdown of the Next up band).
+const COLOURS = new Set([
+  ".badge--full > .role-slot-check",
+  ".next-up-band h2.next-up-band__eyebrow",
+]);
 
 const body = (selector: string) => {
   const found = cssRules.filter((rule) => rule.selector === selector);
@@ -49,7 +54,7 @@ describe("Orange rule", () => {
     ).toEqual([]);
   });
 
-  it("sets signal as a colour only for the icon of a full role slot", () => {
+  it("sets signal as a colour only for the icon of a full role slot and the Next up band's eyebrow", () => {
     expect(
       cssRules
         .filter(({ body }) => AS_COLOUR.test(body))
@@ -119,7 +124,7 @@ describe("Orange rule", () => {
     expect(new Set(accents)).toEqual(new Set(["var(--color-text)"]));
   });
 
-  it.each([".badge", ".next-up__figure", ".invite-link__uses"])(
+  it.each([".badge", ".running-order__spots", ".invite-link__uses"])(
     "%s shows its count in tabular figures, without signal",
     (selector) => {
       expect(body(selector)).toMatch(/font-variant-numeric:\s*tabular-nums/);

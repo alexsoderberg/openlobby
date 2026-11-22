@@ -5,7 +5,7 @@ import { DayPills } from "./DayPills";
 import { TimeGrid } from "./TimeGrid";
 import type { GridLobby } from "./TimeBlock";
 import type { CreateAt, TitleLevel } from "./TimeGridDay";
-import type { WeekDay } from "./week";
+import type { WeekDay } from "../runningOrder";
 
 const CLOCK_REFRESH_MS = 60_000;
 

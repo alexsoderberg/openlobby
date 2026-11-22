@@ -292,6 +292,38 @@ export const en = {
   calendarContinuesAfter: "ends next day",
   calendarCreateOnDay: (day: string) => `Create lobby on ${day}`,
 
+  runningOrder: {
+    scrollLabel: "Running order, scrolls sideways",
+    nothingBooked: "Nothing booked",
+    today: (date: string) => `${date}, today`,
+    you: "you",
+    // The short spots on a block, "4/5"; its name says "4/5 players". A lobby without a max shows lobbyPlayers.
+    spots: (count: number, max: number) => `${count}/${max}`,
+    // A block's start and end clock times, "22:00–02:00".
+    times: (start: string, end: string) => `${start}–${end}`,
+    // The name a screen reader reads for a block: the same facts as its visible text, with the midnight markers.
+    blockName: (parts: {
+      label: string;
+      time: string;
+      players: string;
+      group: string;
+      continuesBefore: boolean;
+      continuesAfter: boolean;
+      you: boolean;
+    }) =>
+      [
+        parts.label,
+        parts.time,
+        parts.continuesBefore && "started the day before",
+        parts.continuesAfter && "ends next day",
+        parts.players,
+        parts.group,
+        parts.you && "you",
+      ]
+        .filter(Boolean)
+        .join(", "),
+  },
+
   lobbyCreateHeading: "Create a lobby",
   lobbyCreateButton: "Create lobby",
   gamesLoading: "Loading the games.",
@@ -413,15 +445,14 @@ export const en = {
       "Create one on the Group list, or open an invite link from a friend.",
     noGroupsLink: "Go to Groups",
     nextUpHeading: "Next up",
+    // The band's eyebrow: one phrase with the countdown, "Running" or "Ended".
+    nextUpEyebrow: (timing: string) => `Next up, ${timing}`,
     thisWeekHeading: "This week",
-    viewLabel: "This week view",
-    viewCalendar: "Week calendar",
-    viewDays: "Day list",
-    nothingBookedWeek: "Nothing booked this week",
+    legendLabel: "Groups this week",
+    legendYou: "You are in",
     nothingBooked: "Nothing booked",
     running: "Running",
     ended: "Ended",
-    playersMeter: "Players",
     countdownDays: (days: number, hours: number) => `in ${days} d ${hours} h`,
     countdownHours: (hours: number, minutes: number) =>
       `in ${hours} h ${minutes} min`,

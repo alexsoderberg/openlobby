@@ -4,6 +4,6 @@ export {
   weekItems,
   weekStartOf,
   type WeekDay,
-} from "./week";
+} from "../runningOrder";
 export type { PickedStart } from "./TimeGridDay";
 export { WeekTimeGrid } from "./WeekTimeGrid";

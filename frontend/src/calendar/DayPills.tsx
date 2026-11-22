@@ -1,5 +1,5 @@
 import { formatDayOfMonth, formatWeekdayShort, useMessages } from "../i18n";
-import type { Span, WeekDay } from "./week";
+import type { Span, WeekDay } from "../runningOrder";
 
 /** Phones: seven day buttons. A dot, and text for screen readers, marks a day with lobbies. */
 export function DayPills({

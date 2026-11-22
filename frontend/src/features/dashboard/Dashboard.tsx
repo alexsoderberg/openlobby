@@ -3,17 +3,18 @@ import type { GroupSummary } from "../../api";
 import { useNow } from "../../hooks";
 import { useMessages } from "../../i18n";
 import { ErrorAlert } from "../../ui";
+import { RunningOrder } from "../../runningOrder";
 import { GROUPS_PATH, type GroupsState } from "../groups";
-import { nextUpOf, type DashboardLobby } from "./dashboardLobby";
-import { NextUpCard } from "./NextUpCard";
-import { ThisWeek } from "./ThisWeek";
+import { nextUpOf, thisWeekOf, type DashboardLobby } from "./dashboardLobby";
+import { GroupLegend } from "./GroupLegend";
+import { NextUpBand } from "./NextUpBand";
 import { useDashboardLobbies } from "./useDashboardLobbies";
 
-/** How often the countdown is refreshed (ms). It shows minutes, so a few seconds of delay do not show. */
-const COUNTDOWN_REFRESH_MS = 15_000;
+/** How often the countdown and the Now line are refreshed (ms). They show minutes, so a few seconds of delay do not show. */
+const CLOCK_REFRESH_MS = 15_000;
 
 /**
- * The home screen: Next up and This week across all groups. Any failed request gives one page-level
+ * The home screen: the Next up band and the running order of This week across all groups. Any failed request gives one page-level
  * error with a retry and no partial data (ADR 0014).
  */
 export function Dashboard({
@@ -93,7 +94,7 @@ function DashboardLobbies({
   );
 }
 
-/** The choice of Next up and the week is made once, at loading. Only the card's countdown keeps moving. */
+/** The choice of Next up and the week is made once, at loading. Only the countdown and the Now line keep moving. */
 function DashboardContent({
   lobbies,
   onChanged,
@@ -104,28 +105,24 @@ function DashboardContent({
   onUnauthenticated: () => void;
 }) {
   const m = useMessages();
-  const now = useNow(COUNTDOWN_REFRESH_MS);
+  const now = useNow(CLOCK_REFRESH_MS);
   const [loadedAt] = useState(now);
-  const nextUp = nextUpOf(lobbies, loadedAt);
+  const week = thisWeekOf(lobbies, loadedAt);
 
   return (
-    <div className="side-layout">
-      <section aria-labelledby="next-up-heading" className="side-column">
-        <div className="heading-row">
-          <h2 id="next-up-heading">{m.dashboard.nextUpHeading}</h2>
-        </div>
-        {nextUp ? (
-          <NextUpCard
-            lobby={nextUp}
-            now={now}
-            onChanged={onChanged}
-            onUnauthenticated={onUnauthenticated}
-          />
-        ) : (
-          <p className="empty-state__title">{m.dashboard.nothingBooked}</p>
-        )}
-      </section>
-      <ThisWeek lobbies={lobbies} now={loadedAt} />
-    </div>
+    <>
+      <NextUpBand
+        lobby={nextUpOf(lobbies, loadedAt)}
+        now={now}
+        onChanged={onChanged}
+        onUnauthenticated={onUnauthenticated}
+      />
+      <RunningOrder
+        heading={m.dashboard.thisWeekHeading}
+        days={week}
+        now={new Date(now)}
+      />
+      <GroupLegend days={week} />
+    </>
   );
 }

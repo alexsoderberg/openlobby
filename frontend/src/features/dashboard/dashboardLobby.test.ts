@@ -49,18 +49,28 @@ describe("nextUpOf", () => {
 });
 
 describe("thisWeekOf", () => {
+  const ids = (items: { id: string }[]) => items.map(({ id }) => id);
+
   it("lists lobbies on their start day in start order, including the next up one", () => {
     const wednesdayLate = lobby("late", at(4, 22), at(5, 1));
     const wednesdayEarly = lobby("early", at(4, 18), at(4, 20));
     const saturday = lobby("sat", at(7, 18), at(7, 20));
     const week = thisWeekOf([saturday, wednesdayLate, wednesdayEarly], NOW);
-    expect(week[2].items).toEqual([wednesdayEarly, wednesdayLate]);
-    expect(week[5].items).toEqual([saturday]);
+    expect(ids(week[2].items)).toEqual(["early", "late"]);
+    expect(ids(week[5].items)).toEqual(["sat"]);
+  });
+
+  it("gives each lobby the address of its page", () => {
+    const week = thisWeekOf([lobby("l1", at(4, 18), at(4, 20))], NOW);
+    expect(week[2].items[0]).toEqual({
+      ...lobby("l1", at(4, 18), at(4, 20)),
+      href: "/groups/g1/lobbies/l1",
+    });
   });
 
   it("shows a running lobby that started before Monday on Monday", () => {
     const carried = lobby("carried", new Date(2026, 10, 1, 22), at(4, 15));
-    expect(thisWeekOf([carried], NOW)[0].items).toEqual([carried]);
+    expect(ids(thisWeekOf([carried], NOW)[0].items)).toEqual(["carried"]);
   });
 
   it("leaves out lobbies that ended and lobbies of other weeks", () => {

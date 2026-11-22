@@ -19,7 +19,7 @@ describe("accent stripe", () => {
       ".lobby-row",
       ".group-card__lobby",
       ".lobby-head",
-      ".next-up",
+      ".next-up-band",
     ])
       for (const { body } of cssRules.filter(
         ({ selector }) => selector === host,

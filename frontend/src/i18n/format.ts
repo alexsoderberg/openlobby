@@ -15,6 +15,7 @@ const FORMATS = {
   day: { day: "numeric", month: "short" },
   weekdayShort: { weekday: "short" },
   dayOfMonth: { day: "numeric" },
+  hour: { hour: "numeric" },
   mediumDateTime: { dateStyle: "medium", timeStyle: "short" },
 } satisfies Record<string, Intl.DateTimeFormatOptions>;
 
@@ -26,6 +27,7 @@ const weekday = formatter(FORMATS.weekday);
 const day = formatter(FORMATS.day);
 const weekdayShort = formatter(FORMATS.weekdayShort);
 const dayOfMonth = formatter(FORMATS.dayOfMonth);
+const hour = formatter(FORMATS.hour);
 const mediumDateTime = formatter(FORMATS.mediumDateTime);
 
 const asDate = (moment: Moment) => new Date(moment);
@@ -48,6 +50,10 @@ export const formatWeekdayShort = (moment: Moment) =>
   weekdayShort.format(asDate(moment));
 export const formatDayOfMonth = (moment: Moment) =>
   dayOfMonth.format(asDate(moment));
+/** Day and month, e.g. "21 Nov" under a weekday name. */
+export const formatDate = (moment: Moment) => day.format(asDate(moment));
+/** The hour alone, e.g. a time axis label: "08" or "8 AM" as the browser's locale writes it. */
+export const formatHour = (moment: Moment) => hour.format(asDate(moment));
 /** Date and time with the month spelled out, e.g. when a link expires. */
 export const formatMediumDateTime = (moment: Moment) =>
   mediumDateTime.format(asDate(moment));

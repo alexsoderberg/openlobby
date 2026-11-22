@@ -164,6 +164,17 @@
   --z-top-bar: 10;
   /* The active tab's weight; the hidden copy in every tab label reserves its width (ADR 0028 section 16.12). */
   --font-weight-tab-active: 700;
+  /* Weights and line heights of Home: the Next up band, the running order and its legend (ADR 0028). */
+  --font-weight-strong: 600;
+  --font-weight-bold: 700;
+  --font-weight-heavy: 800;
+  --font-weight-black: 900;
+  --line-height-snug: 1.3;
+  --line-height-tight: 1.1;
+  --line-height-solid: 1;
+  --line-height-title: 0.95;
+  /* The Next up start time: the figures sit tight on their own line. */
+  --line-height-figure: 0.85;
   /* Dropdown list (ADR 0027 point 4): above the tab bar (60) and the floating "+" (55), below the toaster. */
   --z-dropdown-list: 70;
   /* Popover (ADR 0023 Amendment 2026-11-17): above the tab bar (60), below the dropdown list and the toaster. */
@@ -200,6 +211,36 @@
   --size-grid-height: 32rem;
   --size-grid-title: 3rem;
   --size-grid-gutter: 3.25rem;
+  /* Running order (ADR 0028 section 4, amended by the user 2026-11-22): about this many hours show at once beside the
+     day names on wide screens, the rest scrolls sideways; an hour is never narrower than the hour minimum, so a
+     1-hour block keeps its label, start and spots. */
+  --running-order-wide-hours: 16;
+  --size-running-order-hour-min: 4.5rem;
+  --size-running-order-label: 8rem;
+  /* One lane of a day row: a block of three lines and its gap. On phones a lane is one thin bar. */
+  --size-lane: 4.5rem;
+  --size-lane-phone: 1rem;
+  /* About this many hours of the axis show at once on a phone (DECISION, user, 2026-11-21). */
+  --running-order-phone-hours: 6;
+  /* The narrowest block, so a short lobby is still a target (WCAG 2.5.8). */
+  --size-block-min: 1.5rem;
+  /* The time and spots lines of a block. */
+  --font-size-block: 0.75rem;
+  /* The start time of a phone row, beside its label. */
+  --font-size-block-start: 1.375rem;
+  --size-block-start: 3.5rem;
+  /* A hovered block rises this much (fine pointers only). */
+  --offset-block-lift: -2px;
+  /* The 1em icon dropped onto the text baseline. */
+  --offset-icon-baseline: -0.125em;
+  /* The today marker under the day name, and the ground bar the 2px Now line sits on (ADR 0028 section 16.6). */
+  --size-today-marker: 1.75rem;
+  --width-marker: 4px;
+  --size-swatch: 0.875rem;
+  --font-size-eyebrow: 1rem;
+  /* The Next up start time, the largest text of the page (REQ-0029 item 2: 3.5rem to 6rem). */
+  --font-size-next-up-time: 6rem;
+  --font-size-next-up-time-phone: 4.5rem;
 
   /* Genre themes (ADR 0016), decorative until PR5a removes them (ADR 0028 section 7). The art in
      public/genre-art uses the same values. */
@@ -785,15 +826,6 @@ a:where(:not([data-slot="button"])) {
     padding-inline-start: var(--space-4);
     border-inline-start: 1px solid var(--color-rule);
   }
-
-  /* Next up is stacked in the narrow side column. */
-  .side-column .next-up {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .side-column .next-up__spots {
-    text-align: start;
-  }
 }
 
 /* An empty side column takes no gap in a stacked panel group either. */
@@ -967,8 +999,7 @@ a:where(:not([data-slot="button"])) {
 
 .role-slot-check {
   margin-left: var(--space-1);
-  /* Literal, used once: drops the 1em icon onto the text baseline. */
-  vertical-align: -0.125em;
+  vertical-align: var(--offset-icon-baseline);
 }
 
 .eyebrow {
@@ -2307,58 +2338,590 @@ a:where(:not([data-slot="button"])) {
 .empty-state__title {
   margin: 0 0 var(--space-1);
   font-family: var(--font-heading);
-  font-weight: 800;
+  font-weight: var(--font-weight-heavy);
 }
 
-.next-up {
+/* Next up band (REQ-0029 item 4, ADR 0028 section 16.8): the first thing on Home. The eyebrow and the countdown are
+   the only signal text of the app (section 16.4 item 4). No hover: it is a section, not a control. */
+.next-up-band {
   display: grid;
   gap: var(--space-3);
-  padding: var(--space-4);
-  border: 1px solid var(--color-rule);
+  padding: var(--space-4) var(--space-3);
   border-radius: var(--radius);
   background: var(--color-surface);
 }
 
-.next-up p {
+.next-up-band p,
+.next-up-band h2,
+.next-up-band h3 {
   margin: 0;
 }
 
-/* Text colour on the card: signal text is only for the Next up band of PR2 (ADR 0028 section 16.4 item 4). */
-.next-up__timing {
-  color: var(--color-text);
-  font-family: var(--font-heading);
-  font-weight: 800;
+.next-up-band h2.next-up-band__eyebrow {
+  margin-bottom: var(--space-2);
+  color: var(--color-signal);
+  font-family: var(--font-text);
+  font-size: var(--font-size-eyebrow);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-snug);
+  text-transform: none;
+  font-variant-numeric: tabular-nums;
 }
 
-/* The card is narrow in the side column, so the logo sits above the game name and the name keeps the full width. */
-.next-up .game-heading {
-  flex-direction: column;
+/* The start time: the largest text of the page (REQ-0029 item 2). */
+.next-up-band__time {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-next-up-time-phone);
+  font-weight: var(--font-weight-black);
+  line-height: var(--line-height-figure);
+  font-variant-numeric: tabular-nums;
+}
+
+.next-up-band__empty {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-heading);
+  font-weight: var(--font-weight-heavy);
+  text-transform: uppercase;
+}
+
+.next-up-band__label {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-title);
+  font-weight: var(--font-weight-heavy);
+  line-height: var(--line-height-title);
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.next-up-band__label a {
+  text-decoration: none;
+}
+
+.next-up-band__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-3);
+  margin-top: var(--space-2);
+  color: var(--color-muted);
+  font-weight: var(--font-weight-strong);
+  font-variant-numeric: tabular-nums;
+}
+
+.next-up-band .role-slots {
+  margin-top: var(--space-3);
+}
+
+/* The join or leave button, the seat choice or an error. */
+.next-up-band__actions {
+  display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   gap: var(--space-2);
 }
 
-.next-up__game {
-  margin: var(--space-1) 0;
-  font-family: var(--font-heading);
-  font-size: var(--font-size-title);
-  line-height: 1;
+/* Running order (ADR 0028 section 4). Phones are the base: each day is a band with a strip of bars that shows about
+   --running-order-phone-hours at once, and the lobbies as text rows below it. The component is the scroll container,
+   so the axis scrolls sideways inside it and the page never does. cqi is the scroller's own width. */
+.running-order {
+  margin-top: var(--space-6);
 }
 
-.next-up__game a {
+.running-order > h2 {
+  margin: 0 0 var(--space-2);
+}
+
+.running-order__scroll {
+  container-type: inline-size;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  border-top: 1px solid var(--color-rule-strong);
+}
+
+/* 24: the hours of the axis. */
+.running-order__week {
+  width: calc(100cqi * 24 / var(--running-order-phone-hours));
+}
+
+.running-order__hours {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  padding: var(--space-2) 0;
+  color: var(--color-muted);
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-strong);
+  font-variant-numeric: tabular-nums;
+}
+
+.running-order__day {
+  padding: var(--space-2) 0 var(--space-3);
+  border-bottom: 1px solid var(--color-rule);
+}
+
+.running-order__name {
+  position: sticky;
+  left: 0;
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  width: 100cqi;
+  margin: 0;
+}
+
+.running-order__weekday {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-heading);
+  font-weight: var(--font-weight-heavy);
+  line-height: var(--line-height-solid);
+  text-transform: uppercase;
+}
+
+.running-order__date {
+  color: var(--color-muted);
+  font-family: var(--font-text);
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-strong);
+  text-transform: none;
+}
+
+.running-order__day[data-past] .running-order__weekday {
+  color: var(--color-muted);
+}
+
+/* The marker of today: a signal bar under the day name (Orange rule item 3). */
+.running-order__name[aria-current="date"] .running-order__weekday::after {
+  content: "";
+  display: block;
+  width: var(--size-today-marker);
+  height: var(--width-marker);
+  margin-top: var(--space-1);
+  border-radius: var(--radius-sm);
+  background: var(--color-signal);
+}
+
+/* A day with no lobby is one line, with no axis. */
+.running-order__day[data-empty] {
+  position: sticky;
+  left: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0 var(--space-3);
+  width: 100cqi;
+}
+
+.running-order__day[data-empty] .running-order__name {
+  position: static;
+  width: auto;
+}
+
+.running-order__empty {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: var(--font-size-small);
+}
+
+/* Today with no lobby: the line under its axis, at the left of the view while the axis scrolls. */
+.running-order__track > .running-order__empty {
+  position: sticky;
+  left: 0;
+  width: max-content;
+}
+
+.running-order__track {
+  display: flex;
+  flex-direction: column;
+}
+
+/* The ruled hour lines, every two hours, as hard stops (ADR 0028 section 16.6). */
+.running-order__bars {
+  order: -1;
+  position: relative;
+  height: calc(var(--lanes, 1) * var(--size-lane-phone));
+  margin: var(--space-2) 0;
+  background: repeating-linear-gradient(
+    to right,
+    var(--color-rule) 0 1px,
+    transparent 1px calc(100% / 12)
+  );
+  pointer-events: none;
+}
+
+.running-order__bar {
+  position: absolute;
+  top: calc(var(--lane, 0) * var(--size-lane-phone) + var(--space-1) / 2);
+  left: calc(var(--from, 0) * 100%);
+  width: calc(var(--length, 0) * 100%);
+  height: calc(var(--size-lane-phone) - var(--space-1));
+  border-radius: var(--radius-sm);
+  background: var(--group-color, var(--color-raised));
+}
+
+.running-order__bar[data-mine] {
+  outline: var(--width-edge) solid var(--color-text);
+  outline-offset: calc(-1 * var(--width-edge));
+}
+
+/* The Now line: 2px signal over a 4px ground bar, so it reads over a block too (ADR 0028 section 16.6). */
+.running-order__now {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--now, 0) * 100%);
+  width: var(--width-marker);
+  margin-left: calc(var(--width-marker) / -2);
+  background: var(--color-ground);
+}
+
+.running-order__now::before {
+  content: "";
+  position: absolute;
+  inset: 0 calc((var(--width-marker) - var(--width-edge)) / 2);
+  background: var(--color-signal);
+}
+
+.running-order__lobbies {
+  position: sticky;
+  left: 0;
+  display: grid;
+  width: 100cqi;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.running-order__block > a {
+  display: grid;
+  grid-template-columns: var(--size-block-start) minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: var(--space-2);
+  min-height: var(--size-tap);
   color: var(--color-text);
   text-decoration: none;
 }
 
-.next-up__meta {
-  color: var(--color-muted);
+.running-order__block > a > * {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.next-up__figure {
-  color: var(--color-text);
-  font-variant-numeric: tabular-nums;
+.running-order__start {
+  grid-row: span 2;
   font-family: var(--font-heading);
-  font-size: 1.5rem;
-  font-weight: 800;
+  font-size: var(--font-size-block-start);
+  font-weight: var(--font-weight-heavy);
+  font-variant-numeric: tabular-nums;
+}
+
+.running-order__label {
+  font-weight: var(--font-weight-strong);
+}
+
+.running-order__label > svg {
+  vertical-align: var(--offset-icon-baseline);
+}
+
+.running-order__group {
+  grid-column: 2;
+  color: var(--color-muted);
+  font-size: var(--font-size-small);
+}
+
+.running-order__time {
+  display: none;
+}
+
+/* The spots on the group colour. Text on every group fill is on-group (ADR 0028 section 16.7). */
+.running-order__spots {
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  display: inline-flex;
+  gap: var(--space-1);
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--group-color, var(--color-raised));
+  color: var(--color-on-group);
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-bold);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Group colour (ADR 0028 section 5): groupColorIndex sets the number, the token gives the fill. */
+[data-group-color="1"] {
+  --group-color: var(--color-group-1);
+}
+
+[data-group-color="2"] {
+  --group-color: var(--color-group-2);
+}
+
+[data-group-color="3"] {
+  --group-color: var(--color-group-3);
+}
+
+[data-group-color="4"] {
+  --group-color: var(--color-group-4);
+}
+
+[data-group-color="5"] {
+  --group-color: var(--color-group-5);
+}
+
+[data-group-color="6"] {
+  --group-color: var(--color-group-6);
+}
+
+/* The key below the running order: a swatch per group, and the outline of a lobby I am in (16.7). */
+.group-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+  color: var(--color-muted);
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-strong);
+}
+
+.group-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.group-legend__swatch {
+  width: var(--size-swatch);
+  height: var(--size-swatch);
+  border-radius: var(--radius-sm);
+  background: var(--group-color, var(--color-raised));
+}
+
+.group-legend__swatch[data-mine] {
+  outline: var(--width-edge) solid var(--color-text);
+  outline-offset: calc(-1 * var(--width-edge));
+  background: none;
+}
+
+/* Wide screens: the band is one row, and each day is a row of the week with its name in a column that stays at the
+   left while the axis scrolls. About --running-order-wide-hours of the axis show beside the names, never less than
+   the hour minimum per hour, and the rest scrolls sideways inside the component, as on phones. 24: the hours. */
+@media (min-width: 47.5rem) {
+  .next-up-band {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: end;
+    column-gap: var(--space-6);
+    padding: var(--space-4) var(--space-6);
+  }
+
+  .next-up-band__time {
+    font-size: var(--font-size-next-up-time);
+  }
+
+  .next-up-band__actions {
+    max-width: var(--width-popover);
+  }
+
+  .running-order__week {
+    width: calc(
+      var(--size-running-order-label) +
+        (100cqi - var(--size-running-order-label)) * 24 /
+        var(--running-order-wide-hours)
+    );
+    min-width: calc(
+      var(--size-running-order-label) + 24 * var(--size-running-order-hour-min)
+    );
+  }
+
+  .running-order__scale,
+  .running-order__day,
+  .running-order__day[data-empty] {
+    position: static;
+    display: flex;
+    width: auto;
+    padding: 0;
+  }
+
+  .running-order__scale::before {
+    content: "";
+    flex: 0 0 var(--size-running-order-label);
+  }
+
+  .running-order__hours,
+  .running-order__track {
+    flex: 1 1 0;
+  }
+
+  /* Today's row with no lobby keeps its axis; its line stays beside the day name. */
+  .running-order__track > .running-order__empty {
+    left: var(--size-running-order-label);
+    line-height: var(--size-lane);
+  }
+
+  .running-order__name {
+    flex: 0 0 var(--size-running-order-label);
+    z-index: 1;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+    width: auto;
+    padding: var(--space-2) 0;
+    background: var(--color-ground);
+  }
+
+  .running-order__day[data-empty] .running-order__name {
+    position: sticky;
+  }
+
+  .running-order__day[data-empty] {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    gap: 0;
+  }
+
+  /* Sticks beside the day name, so the line stays readable while the axis scrolls. */
+  .running-order__empty {
+    position: sticky;
+    left: var(--size-running-order-label);
+    align-self: center;
+    padding-left: var(--space-2);
+  }
+
+  .running-order__track {
+    position: relative;
+    display: block;
+    height: calc(var(--lanes, 1) * var(--size-lane));
+    background: repeating-linear-gradient(
+      to right,
+      var(--color-rule) 0 1px,
+      transparent 1px calc(100% / 12)
+    );
+  }
+
+  .running-order__bars {
+    position: absolute;
+    inset: 0;
+    height: auto;
+    margin: 0;
+    background: none;
+  }
+
+  .running-order__bar {
+    display: none;
+  }
+
+  .running-order__lobbies {
+    position: static;
+    display: block;
+    width: auto;
+  }
+
+  /* A block: its real start and length, in its lane. Short lobbies keep a size a pointer can hit (WCAG 2.5.8). */
+  .running-order__block {
+    position: absolute;
+    top: calc(var(--lane, 0) * var(--size-lane) + var(--space-1));
+    left: calc(var(--from, 0) * 100%);
+    width: max(calc(var(--length, 0) * 100%), var(--size-block-min));
+    height: calc(var(--size-lane) - var(--space-2));
+    container-type: inline-size;
+  }
+
+  /* Three lines: the label, the time range, then the group and the spots. */
+  .running-order__block > a {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-content: center;
+    align-items: baseline;
+    column-gap: var(--space-1);
+    height: 100%;
+    min-height: 0;
+    padding: 0 var(--space-2);
+    border-radius: var(--radius-sm);
+    background: var(--group-color, var(--color-raised));
+    color: var(--color-on-group);
+    font-size: var(--font-size-block);
+    font-weight: var(--font-weight-strong);
+    line-height: var(--line-time-block);
+  }
+
+  .running-order__label,
+  .running-order__time {
+    grid-column: 1 / -1;
+  }
+
+  .running-order__block[data-mine] > a:not(:focus-visible) {
+    outline: var(--width-edge) solid var(--color-text);
+    outline-offset: calc(-1 * var(--width-edge));
+  }
+
+  .running-order__start {
+    display: none;
+  }
+
+  .running-order__label {
+    font-family: var(--font-heading);
+    font-size: var(--font-size-lobby-name);
+    font-weight: var(--font-weight-heavy);
+    line-height: var(--line-height-tight);
+    text-transform: uppercase;
+  }
+
+  .running-order__time {
+    display: block;
+  }
+
+  .running-order__group {
+    grid-column: 1;
+    color: inherit;
+    font-size: inherit;
+  }
+
+  .running-order__spots {
+    grid-column: 2;
+    grid-row: auto;
+    padding: 0;
+    background: none;
+    color: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+  }
+}
+
+/* A block under 6rem (about 1 hour at 1440px) keeps its label, shows the start in place of the range and leaves
+   the group name to its accessible name. */
+@container (width < 6rem) {
+  .running-order__block > a {
+    padding: 0 var(--space-1);
+  }
+
+  .running-order__time,
+  .running-order__group {
+    display: none;
+  }
+
+  /* After the label, as the range would be. */
+  .running-order__start {
+    display: block;
+    order: 1;
+    grid-row: auto;
+    grid-column: 1 / -1;
+    font: inherit;
+  }
+
+  .running-order__spots {
+    order: 2;
+    grid-column: 1 / -1;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .running-order__block > a {
+    transition: transform var(--duration-fast) var(--ease-out);
+  }
+
+  .running-order__block > a:hover {
+    transform: translateY(var(--offset-block-lift));
+  }
 }
 
 /* Phones: one day at a time. From 760px the pills go and all seven days show. */
@@ -2516,15 +3079,6 @@ a:where(:not([data-slot="button"])) {
     width: var(--width-popover);
   }
 
-  .next-up {
-    grid-template-columns: 1fr auto;
-    align-items: center;
-  }
-
-  .next-up__spots {
-    text-align: right;
-  }
-
   .day-pills {
     display: none;
   }
@@ -2608,8 +3162,7 @@ a:where(:not([data-slot="button"])) {
    sits one space-3 below it, and in a Create frame the blocks after a form or a status line do the same.
    Headings, .status, .row-list and .step-card__text keep their own spacing, so this is not a
    blanket rule. Specificity (0,2,0) beats the .alert reset whatever the source order.
-   .login-panel has its own button margin and is left alone. The Next up card is no panel, so what
-   follows its players figure or meter (the join or leave button, the Ended line or an error) is spaced the same way. */
+   .login-panel has its own button margin and is left alone. */
 :is(
     .panel,
     [data-slot="alert-dialog-content"],
@@ -2618,9 +3171,7 @@ a:where(:not([data-slot="button"])) {
   )
   > *
   + :is([data-slot="button"], .tooltip, .form-actions, .view-switch),
-.create-popover__card > :is(.status, .group-form) + *,
-.next-up__spots > .next-up__figure + *,
-.next-up__spots > .meter + * {
+.create-popover__card > :is(.status, .group-form) + * {
   margin-top: var(--space-3);
 }
 

@@ -1,7 +1,7 @@
 import { act, render } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { dayColumns } from "../test/weekGrid";
-import { weekItems, weekStartOf } from "./week";
+import { weekItems, weekStartOf } from "../runningOrder";
 import { WeekTimeGrid } from "./WeekTimeGrid";
 
 // Wednesday 4 November 2026, half a minute before midnight. The week runs Monday 2 to Sunday 8.

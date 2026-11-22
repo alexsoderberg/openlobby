@@ -1,10 +1,12 @@
 import { en, type Messages } from "./messages/en";
 
 export {
+  formatDate,
   formatDateTime,
   formatDateTimeRange,
   formatDayOfMonth,
   formatDayRange,
+  formatHour,
   formatMediumDateTime,
   formatTime,
   formatTimeRange,
