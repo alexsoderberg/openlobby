@@ -94,3 +94,46 @@ export function openingMinute(
   const earliest = Math.min(LATEST_WINDOW_START, ...candidates);
   return Math.min(toHour(earliest), DAY_MINUTES - visibleMinutes);
 }
+
+const HALF_HOUR = 30;
+/** The start the keyboard route offers on a later day (ADR 0028 section 12, item 1). */
+const EVENING_START = 18 * MINUTES_PER_HOUR;
+
+/**
+ * Where a new lobby can start on `day`, seen at `now`: `from` is the first minute that may be picked, `start` the
+ * default start of the day's Create lobby button. A later day: all of it, 18:00. Today: from the next half hour
+ * after `now` (12:30 at 12:00, so the start is never already past), which is also the default. A past day, or today
+ * from 23:30 on: none.
+ */
+export function createWindow(
+  day: Date,
+  now: Date,
+): { from: number; start: number } | undefined {
+  if (day > now) return { from: 0, start: EVENING_START };
+  if (dayAfter(day) <= now) return undefined;
+  const next = (Math.floor(minuteOfDay(now) / HALF_HOUR) + 1) * HALF_HOUR;
+  return next < DAY_MINUTES ? { from: next, start: next } : undefined;
+}
+
+/**
+ * The start a pointer picks on the part of a day from `from` to midnight, at `fraction` (0 to 1) of that part's
+ * width: rounded down to the half hour, and never midnight itself, so the lobby starts on that day.
+ */
+export function pointerStartMinute(fraction: number, from: number): number {
+  const minute = from + fraction * (DAY_MINUTES - from);
+  // Never before `from`, so the pointer never gives a start at or before now (ADR 0028 section 16.14).
+  return Math.max(
+    from,
+    Math.min(
+      Math.floor(minute / HALF_HOUR) * HALF_HOUR,
+      DAY_MINUTES - HALF_HOUR,
+    ),
+  );
+}
+
+/**
+ * The moment `minute` after midnight of `day`, in local wall-clock time. On a daylight-saving spring-forward day a
+ * pick in the missing hour (02:xx) becomes 03:xx, as the Date constructor moves it.
+ */
+export const momentAt = (day: Date, minute: number) =>
+  new Date(day.getFullYear(), day.getMonth(), day.getDate(), 0, minute);

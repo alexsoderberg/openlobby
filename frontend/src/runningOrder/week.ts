@@ -23,7 +23,7 @@ export function nextWeekStart(weekStart: Date): Date {
 }
 
 /** Midnight of each of the seven days from `weekStart`. */
-export function weekDays(weekStart: Date): Date[] {
+function weekDays(weekStart: Date): Date[] {
   return Array.from({ length: DAYS_IN_WEEK }, (_, offset) =>
     daysFrom(weekStart, offset),
   );

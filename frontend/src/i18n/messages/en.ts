@@ -284,19 +284,14 @@ export const en = {
   lobbyUnknownCreator: "Unknown member",
   calendarWeekHeading: (range: string) => `Week ${range}`,
   calendarNextWeek: "Next week",
-  calendarNothingBooked: "Nothing booked",
-  calendarGridLabel: "Week schedule, scrolls vertically",
-  calendarDayPillsLabel: "Choose a day",
-  calendarDayHasLobbies: "has lobbies",
-  calendarContinuesBefore: "started the day before",
-  calendarContinuesAfter: "ends next day",
-  calendarCreateOnDay: (day: string) => `Create lobby on ${day}`,
 
   runningOrder: {
     scrollLabel: "Running order, scrolls sideways",
     nothingBooked: "Nothing booked",
     today: (date: string) => `${date}, today`,
     you: "you",
+    // The name of a day's Create lobby button: its visible text first (WCAG 2.5.3), then the day.
+    createOn: (day: string) => `Create lobby on ${day}`,
     // The short spots on a block, "4/5"; its name says "4/5 players". A lobby without a max shows lobbyPlayers.
     spots: (count: number, max: number) => `${count}/${max}`,
     // A block's start and end clock times, "22:00–02:00".

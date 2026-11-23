@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { cssRules, token } from "../test/cssTokens";
 
 const WIDE = "@media (min-width: 47.5rem)";
+const FINE_POINTER = "@media (hover: hover) and (pointer: fine)";
 
 /** The declarations of the rules with exactly this selector, at the top level or inside `scope`, joined. */
 function body(selector: string, scope?: string): string {
@@ -70,8 +71,21 @@ describe("running order layout", () => {
       "top: calc(var(--lane, 0) * var(--size-lane) + var(--space-1));",
     );
     expect(body(".running-order__track", WIDE)).toContain(
-      "height: calc(var(--lanes, 1) * var(--size-lane));",
+      "min-height: calc(var(--lanes, 1) * var(--size-lane));",
     );
+  });
+
+  it("puts the create area over the future time only, under the blocks, with a hover tint for a mouse only", () => {
+    expect(body(".running-order__create")).toContain(
+      "left: calc(var(--from, 0) * 100%);",
+    );
+    expect(body(".running-order__create", WIDE)).toContain("bottom: 0;");
+    expect(
+      body(".running-order__create:hover::before", FINE_POINTER),
+    ).toContain("opacity: 1;");
+    expect(() => body(".running-order__create:hover::before")).toThrow();
+    // On phones the bars over it take their own clicks, so a booked time opens nothing.
+    expect(body(".running-order__bar")).toContain("pointer-events: auto;");
   });
 
   it("marks my own block with a text-colour outline set inside it (ADR 0028 section 16.7)", () => {

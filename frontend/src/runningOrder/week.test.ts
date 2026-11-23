@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { nextWeekStart, weekDays, weekItems, weekStartOf } from "./week";
+import { nextWeekStart, weekItems, weekStartOf } from "./week";
 
 const span = (id: string, start: Date, end: Date) => ({
   id,
@@ -19,9 +19,9 @@ describe("weekStartOf", () => {
   });
 });
 
-describe("weekDays and nextWeekStart", () => {
+describe("weekItems days and nextWeekStart", () => {
   it("lists seven days Monday to Sunday and steps a whole week", () => {
-    const days = weekDays(new Date(2026, 10, 2));
+    const days = weekItems(new Date(2026, 10, 2), []).map(({ day }) => day);
     expect(days).toHaveLength(7);
     expect(days[6]).toEqual(new Date(2026, 10, 8));
     expect(nextWeekStart(days[0])).toEqual(new Date(2026, 10, 9));

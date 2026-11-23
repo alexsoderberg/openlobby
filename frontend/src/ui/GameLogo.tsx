@@ -6,7 +6,6 @@ import { initialsOf } from "./initials";
 const SIZE_CLASSES = {
   regular: "size-(--size-game-logo)",
   large: "size-(--size-game-logo-large)",
-  small: "size-(--size-game-logo-small)",
 };
 
 /**
@@ -14,7 +13,7 @@ const SIZE_CLASSES = {
  * caller always shows the game name as text beside it (REQ-0026, WCAG 1.1.1). A square with small corners (ADR 0028
  * section 16.8); the monogram has the colours of an avatar's initials. Its type is in global.css under
  * [data-slot="game-logo"] (ADR 0023 point 2). `large` is for the places where the game is central: Next up and the
- * lobby page; `small` is one text line of a week block (ADR 0026 Amendment item 11).
+ * lobby page.
  */
 export function GameLogo({
   gameId,

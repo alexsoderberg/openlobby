@@ -1,7 +1,13 @@
-import { useId, useLayoutEffect, useRef, useState } from "react";
+import {
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { formatHour, useMessages } from "../i18n";
 import type { RunningOrderLobby } from "./RunningOrderBlock";
-import { RunningOrderDay } from "./RunningOrderDay";
+import { RunningOrderDay, type CreateOn } from "./RunningOrderDay";
 import { DAY_MINUTES, openingMinute } from "./runningOrderLayout";
 import type { WeekDay } from "./week";
 
@@ -18,16 +24,26 @@ const LABELLED_HOURS = Array.from(
  * each lobby a block of its real length in its group colour (ADR 0028 section 4). The component is the scroll
  * container: about 16 hours show on wide screens and about 6 on phones, and the rest of the axis scrolls sideways
  * inside it, never the page. On opening it scrolls once to a window that holds the lobbies (openingMinute).
+ * `onCreateOn` gives the future days a way to create a lobby (the Group view); without it there is none (Home).
  */
 export function RunningOrder({
   heading,
+  headingLevel = 2,
+  action,
   days,
   now,
+  onCreateOn,
 }: {
   heading: string;
+  /** The level of the heading, one below the heading of the section it sits in; the days are one below it. */
+  headingLevel?: 2 | 3;
+  /** A control beside the heading, such as the next week. */
+  action?: ReactNode;
   days: WeekDay<RunningOrderLobby>[];
   now: Date;
+  onCreateOn?: CreateOn;
 }) {
+  const Heading = `h${headingLevel}` as const;
   const m = useMessages();
   const headingId = useId();
   const scroller = useRef<HTMLDivElement>(null);
@@ -56,7 +72,13 @@ export function RunningOrder({
 
   return (
     <section className="running-order" aria-labelledby={headingId}>
-      <h2 id={headingId}>{heading}</h2>
+      <div className="running-order__head">
+        {/* Polite: the heading names the week, which the action may change. */}
+        <Heading id={headingId} aria-live="polite">
+          {heading}
+        </Heading>
+        {action}
+      </div>
       {/* signature: home. The running order track and its Now line (REQ-0029 item 13). */}
       <div
         ref={scroller}
@@ -83,6 +105,8 @@ export function RunningOrder({
               day={day}
               lobbies={items}
               now={now}
+              headingLevel={headingLevel === 2 ? 3 : 4}
+              onCreate={onCreateOn}
             />
           ))}
         </div>

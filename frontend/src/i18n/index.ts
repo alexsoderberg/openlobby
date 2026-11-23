@@ -4,7 +4,6 @@ export {
   formatDate,
   formatDateTime,
   formatDateTimeRange,
-  formatDayOfMonth,
   formatDayRange,
   formatHour,
   formatMediumDateTime,

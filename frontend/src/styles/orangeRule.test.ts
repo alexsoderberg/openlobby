@@ -14,11 +14,9 @@ const FILLS = new Set([
   ".top-bar",
   // 2. The header "+" and the floating "+" are primary actions.
   ".plus-button",
-  // 3. The Now line and the marker of today. The week grid's goes with the grid in PR3a.
-  ".time-grid__now",
-  ".time-grid__now::before",
+  // 3. The Now line and the marker of today.
   ".running-order__now::before",
-  '.running-order__name[aria-current="date"] .running-order__weekday::after',
+  '.running-order__heading[aria-current="date"] .running-order__weekday::after',
   // 5. The active item of the phone Tab bar.
   '.tab[aria-current="page"]',
 ]);

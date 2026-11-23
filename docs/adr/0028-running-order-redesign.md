@@ -369,5 +369,16 @@ DECISION, user, 2026-11-22, after seeing PR2 live: items 1 and 3 below. The rest
 9. **Hover (amends section 4). Architect.** A block rises 2 px on hover with a fine pointer only (`@media (hover: hover) and (pointer: fine)`), by transform alone. The hover tint on empty future time belongs to PR3a.
 10. **Band role slots and meta line (amends section 16.8). Architect.** The band's role slots keep the existing badge look (icon, name, count; the full slot follows 16.4 item 6). The band meta line shows the group name.
 
+### 16.14 Rulings on the PR3a build (2026-11-22)
+DECISION, architect, on the deviations the UI/UX expert built for the Group view's create actions. Each one amends the section it names.
+1. **`onCreateOn` signature (amends section 4, "Components"). ACCEPTED.** `onCreateOn?: (start: Date, origin: HTMLElement) => void`. The pointer route needs a time; the Create frame needs an element to grow from and return focus to. The day comes from `start`. Both routes pass the day's Create lobby button as `origin`.
+2. **Empty future days keep their axis in the Group view (amends section 4, "Empty day"). ACCEPTED.** REQ-0029 item 12 needs empty future time to be a hover and click target, so a Group view day with no lobby and a future date keeps its axis on desktop and phone, with "Nothing booked" inside the track. Only when `onCreateOn` is given. Home is unchanged (16.13 item 3). Past empty days stay one line.
+3. **Default and pointer start today (amends section 4 and 12, item 1). ACCEPTED, with an extension.** The default start is the next half hour strictly after now (12:00 gives 12:30). The pointer route rounds down to the half hour as before, but never to a time at or before now: it takes the next half hour instead. No start is ever in the past (`lobby_in_past`). From 23:30 today there is no next half hour today, so today has no button and no pointer area.
+4. **Heading level and action slot (amends section 4, "Components"; 16.13 item 8). ACCEPTED.** Props are `heading`, `headingLevel?: 2 | 3` (default 2; the Group view uses 3 under its "Lobbies" h2), `action?: ReactNode`, `days`, `now` and `onCreateOn?`. The heading text is `aria-live="polite"`, so a week change is announced. `action` (the "Next week" control) is rendered outside that live element, so its label is not announced.
+5. **Track height (amends section 4, "Desktop"). ACCEPTED.** The desktop track uses `min-height`, not `height`, so a day row grows to hold the Create lobby button in the name column. The lane count still sets the minimum row height, and no block is clipped.
+6. **Hover tint on future time (amends section 4, "Empty future time, pointer"). ACCEPTED.** The tint covers all of a day's future time, as REQ-0029 item 12 asks ("the hover state of a control"). It is a solid token fill (`--color-raised`) at the opacity of its layer, not a gradient, and only with a fine pointer. It is not a preview of the 2-hour slot. Past parts and past days have no tint.
+
+No change to the glossary: the "Running order" row already covers the Group view's Calendar view.
+
 ## Amendments made with this ADR
 Each amended ADR carries a pointer section "Amendment 2026-11-21 (ADR 0028)". The rule of this ADR wins where they differ. ADRs 0014, 0015, 0016, 0018, 0021, 0023, 0026 and 0027.
