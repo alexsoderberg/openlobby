@@ -139,9 +139,15 @@
   /* Buttons (ADR 0021): compact under a mouse; on touch every target is --size-tap (A10). */
   --size-button: 2rem;
   --offset-button-sink: 1px;
-  /* A lobby row is a card: one and a half taps tall keeps it roomy yet calm. */
-  --size-lobby-row: calc(var(--size-tap) * 1.5);
-  --font-size-lobby-name: 1.125rem; /* a step above body text so the game leads the row */
+  /* A step above body text, so a name leads its row: a block label, a member of the Member list. */
+  --font-size-lobby-name: 1.125rem;
+  /* The Group view (REQ-0029 item 5): its name at display size, and the Line-up's start times, the largest text of
+     each row (REQ-0029 item 2: 3.5rem on desktop). */
+  --font-size-display: clamp(2.75rem, 3vw + 1.5rem, 4rem);
+  --font-size-line-up-time: clamp(2rem, 4vw + 1rem, 3.5rem);
+  /* The group colour square: on a Group card, and large beside the Group view's name. */
+  --size-group-swatch: 2.5rem;
+  --size-group-swatch-large: 4rem;
   --size-top-bar: 4rem;
   /* The top bar grows by the notch / status bar inset when viewport-fit=cover applies. */
   --size-top-bar-total: calc(var(--size-top-bar) + env(safe-area-inset-top));
@@ -152,6 +158,8 @@
   --size-plus: 3.25rem;
   --size-plus-tab: 3.5rem;
   --size-avatar: 2.25rem;
+  /* The Avatar beside a name in the Member list. */
+  --size-avatar-compact: 1.75rem;
   --size-avatar-large: 3.5rem;
   /* A game logo or its monogram: one fixed box per place, so a loading image moves nothing (REQ-0026). */
   --size-game-logo: 2.5rem;
@@ -251,7 +259,6 @@
   --genre-accent: var(--color-text);
   --genre-pattern: none;
   --genre-tint: 4%;
-  --genre-wash: 5%;
   --genre-motif-opacity: 0.08; /* on the dark surface, muted text stays at 4.5:1 over the light accents */
   --size-genre-icon: 1.5rem;
   --size-genre-motif: 6rem;
@@ -740,25 +747,6 @@ a:where(:not([data-slot="button"])) {
   margin-top: 0;
 }
 
-/* A panel heading with its action beside it. */
-.panel__head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
-}
-
-.panel__head h2 {
-  margin: 0;
-}
-
-/* A heading with its view toggle. Below 98rem it is a plain block, so the toggle sits on its own line under the
-   Lobbies heading and its button, which have no margin; beside a side column it is one row (see the side layout below). */
-.heading-row > .panel__head + .view-switch {
-  margin-top: var(--space-3);
-}
-
 /* Panels of one screen stack with a gap. */
 .panel-group {
   display: grid;
@@ -800,10 +788,6 @@ a:where(:not([data-slot="button"])) {
 
   .side-layout .heading-row > h2 {
     margin: 0 auto 0 0;
-  }
-
-  .side-layout .heading-row > .panel__head {
-    flex: 1;
   }
 
   .side-layout .heading-row > .view-switch {
@@ -1367,25 +1351,107 @@ a:where(:not([data-slot="button"])) {
   height: 1.4rem;
 }
 
-/* A lobby row is a small card. The accent stripe is for week grid blocks only (REQ-0028 item 2). */
-.lobby-row {
-  min-height: var(--size-lobby-row);
-  padding: var(--space-3);
-  background: var(--color-surface);
-  border: 1px solid var(--color-rule);
-  border-radius: var(--radius);
+/* The Line-up (REQ-0029 item 5): day headings and rows on the ground, divided by rules, with no radius. Every row of
+   every day shares the parent's three columns (subgrid), so the start times and the spots line up down the page. */
+.line-up {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr) max-content;
+  column-gap: var(--space-3);
 }
 
-.lobby-row + .lobby-row {
-  margin-top: var(--space-2);
+.line-up__day {
+  grid-column: 1 / -1;
+  margin: var(--space-4) 0 0;
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--color-rule);
+  font-family: var(--font-heading);
+  font-size: var(--font-size-heading);
+  font-weight: var(--font-weight-heavy);
+  line-height: var(--line-height-solid);
+  text-transform: uppercase;
+}
+
+.line-up__day:first-child {
+  margin-top: 0;
+}
+
+/* subgrid: Chrome 117, Safari 16, Firefox 71; the app's baseline is already newer, as it needs :has(). */
+.line-up__lobbies {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: subgrid;
+}
+
+.lobby-row {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: subgrid;
+  position: relative;
+  isolation: isolate;
+  align-items: center;
+  min-height: var(--size-tap);
+  padding: var(--space-3) var(--space-2);
+  border-bottom: 1px solid var(--color-rule);
+}
+
+.lobby-row__time,
+.lobby-row__spots {
+  display: grid;
+  margin: 0;
+}
+
+.lobby-row__start {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-line-up-time);
+  font-weight: var(--font-weight-black);
+  line-height: var(--line-height-figure);
+  font-variant-numeric: tabular-nums;
+  text-transform: uppercase;
+}
+
+.lobby-row__end,
+.lobby-row__word {
+  color: var(--color-muted);
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-strong);
+}
+
+/* The start time alone sets the column's width; an end on another day wraps under it instead of widening it. */
+.lobby-row__end {
+  margin-top: var(--space-1);
+  contain: inline-size;
+}
+
+.lobby-row__main {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-2);
+  min-width: 0;
 }
 
 .lobby-row__game {
+  font-family: var(--font-heading);
   font-size: var(--font-size-lobby-name);
-  font-weight: 600;
+  font-weight: var(--font-weight-heavy);
+  line-height: var(--line-height-tight);
+  text-transform: uppercase;
+  text-decoration: none;
 }
 
-/* The link covers the whole row (position: relative via .genre-frame), so the tap target is the row.
+.lobby-row__spots {
+  justify-items: end;
+  text-align: end;
+}
+
+.lobby-row__figure {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-heading);
+  font-weight: var(--font-weight-heavy);
+  line-height: var(--line-height-solid);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The link covers the whole row, so the tap target is the row.
    The row shows the focus ring, since the link's own box is only one line. */
 .lobby-row__game::after {
   content: "";
@@ -1410,6 +1476,161 @@ a:where(:not([data-slot="button"])) {
 .lobby-row__game,
 .lobby-row__meta {
   overflow-wrap: anywhere;
+}
+
+/* The group colour square (ADR 0028 section 5): decorative, always beside the group's name. */
+.group-swatch {
+  flex: none;
+  width: var(--size-group-swatch);
+  height: var(--size-group-swatch);
+  border-radius: var(--radius-sm);
+  background: var(--group-color, var(--color-raised));
+}
+
+.group-swatch--large {
+  width: var(--size-group-swatch-large);
+  height: var(--size-group-swatch-large);
+}
+
+/* The Group view (REQ-0029 item 5): the header across the page, then the lobbies, then the members. From 98rem the
+   members sit in the side column beside the lobbies (see the side layout), and the header spans both. */
+/* minmax(0, 1fr): the column never grows to its content's min-content width, so a phone does not scroll sideways. */
+.group-view {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+}
+
+.group-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: end;
+  gap: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-3);
+  padding-bottom: var(--space-4);
+  border-bottom: var(--width-edge) solid var(--color-text);
+}
+
+.group-head h1 {
+  margin: 0;
+  font-size: var(--font-size-display);
+  line-height: var(--line-height-title);
+  overflow-wrap: anywhere;
+}
+
+.group-head__summary {
+  margin: var(--space-2) 0 0;
+  color: var(--color-muted);
+  font-weight: var(--font-weight-strong);
+}
+
+/* Phones: the actions share a row under the name, each half of it. */
+.group-head__actions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.group-head__actions > [data-slot="button"] {
+  flex: 1;
+}
+
+@media (min-width: 47.5rem) {
+  .line-up {
+    column-gap: var(--space-4);
+  }
+
+  .lobby-row__game {
+    font-size: var(--font-size-heading);
+  }
+
+  .group-head {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .group-head__actions {
+    grid-column: auto;
+  }
+
+  .group-head__actions > [data-slot="button"] {
+    flex: none;
+  }
+}
+
+@media (min-width: 98rem) {
+  .group-view > .group-head {
+    grid-column: 1 / -1;
+  }
+
+  .group-view > .side-column {
+    grid-row: 2;
+    padding-inline-start: var(--space-4);
+  }
+}
+
+/* A heading with its view toggle at the right, on one row at every width. */
+.group-view .heading-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-3);
+}
+
+.group-view .heading-row > h2,
+.group-view .heading-row > .view-switch {
+  margin: 0;
+}
+
+/* The Member list, then Leave group last (REQ-0028 item 7). */
+.group-view > .side-column {
+  display: grid;
+  align-content: start;
+  gap: var(--space-4);
+}
+
+.group-view > .side-column > [data-slot="button"] {
+  justify-self: start;
+}
+
+/* A member of the Member list: the name, the admin marker, and the Game chips at the right, wrapping under the name
+   when the row is narrow. */
+.member-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--size-tap);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--color-rule);
+}
+
+.member-row__name {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-lobby-name);
+  font-weight: var(--font-weight-heavy);
+  line-height: var(--line-height-solid);
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+/* The chips fill the rest of their line, at its right end, and the Make group admin button follows them; a row
+   without chips pushes the button to the right. When the chips wrap, the button stays at the right with them. */
+.member-row > .game-chips {
+  flex: 1 1 auto;
+  justify-content: flex-end;
+}
+
+.member-row > :is(.tooltip, [data-slot="button"]) {
+  margin-left: auto;
+}
+
+/* A compact Avatar, so the row stays one tap tall. */
+.member-row > .initials-icon {
+  width: var(--size-avatar-compact);
+  height: var(--size-avatar-compact);
 }
 
 /* The Group list (REQ-0024, REQ-0025): one column on phones, two from 760px, three on wide main areas. */
@@ -1445,29 +1666,31 @@ a:where(:not([data-slot="button"])) {
   );
 }
 
-/* A Group card is one link. The global focus ring draws around the whole card. */
+/* A Group card is one link (REQ-0029 item 7): the group colour square beside the name and count, the initials, and
+   the lobby line at the foot. A 2px bottom rule in the text colour; no shadow. The global focus ring draws around it. */
 .group-card {
   position: relative;
   isolation: isolate;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-rows: auto auto 1fr;
+  align-items: center;
   gap: var(--space-3);
   min-height: var(--size-tap);
   padding: var(--space-4);
   color: var(--color-text);
   text-decoration: none;
-  border: 1px solid var(--color-rule);
+  border-bottom: var(--width-edge) solid var(--color-text);
   border-radius: var(--radius);
   background: var(--color-surface);
 }
 
-/* Hover: a strong edge and the raised fill show at once on a layer (ADR 0028: colour changes are instant). */
+/* Hover: the raised fill shows at once on a layer (ADR 0028: colour changes are instant). */
 .group-card::after {
   content: "";
   position: absolute;
-  inset: -1px;
+  inset: 0;
   z-index: -1;
-  border: 1px solid var(--color-rule-strong);
   border-radius: inherit;
   background: var(--color-raised);
   opacity: 0;
@@ -1499,6 +1722,7 @@ a:where(:not([data-slot="button"])) {
 
 /* Overlapping initials. Each has a ring in the card's colour, so the overlap stays crisp. */
 .group-card__people {
+  grid-column: 1 / -1;
   display: flex;
   align-items: center;
 }
@@ -1519,29 +1743,18 @@ a:where(:not([data-slot="button"])) {
   font-weight: 800;
 }
 
-/* The lobby line sits at the bottom of the card, with its genre's wash and icon (ADR 0016). The wash is mixed into
-   the surface, not over the card, so the card's raised hover fill does not show through and darken the plate the
-   muted text was measured on. */
+/* The lobby line sits at the foot of the card, below a rule, so the lines of one row of cards line up. */
 .group-card__lobby {
+  grid-column: 1 / -1;
+  align-self: end;
   display: grid;
   gap: var(--space-1);
-  margin-top: auto;
-  padding: var(--space-2) var(--space-3);
-  padding-right: calc(var(--size-genre-icon) + var(--space-3));
-  border-radius: var(--radius-sm);
-  background: var(--color-surface);
-  @supports (color: color-mix(in lab, red, red)) {
-    background: color-mix(
-      in srgb,
-      var(--genre-accent) var(--genre-wash),
-      var(--color-surface)
-    );
-  }
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-rule);
 }
 
 .group-card__lobby--none {
   color: var(--color-muted);
-  background: none;
 }
 
 .group-card__label {
@@ -2997,11 +3210,6 @@ a:where(:not([data-slot="button"])) {
   color: var(--color-muted);
   font-size: var(--font-size-small);
   font-weight: 600;
-}
-
-.lobby-row > .genre-frame__icon {
-  position: static;
-  flex: none;
 }
 
 .lobby-head {

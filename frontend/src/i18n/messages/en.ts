@@ -63,6 +63,10 @@ export const en = {
     count === 1 ? "1 member" : `${count} members`,
   groupMoreMembers: (count: number) => `+${count}`,
   groupNoUpcomingLobbies: "No upcoming lobbies",
+  // The line under the Group view's name: "6 members, 4 upcoming lobbies" (REQ-0029 item 5).
+  groupUpcomingLobbyCount: (count: number) =>
+    count === 1 ? "1 upcoming lobby" : `${count} upcoming lobbies`,
+  groupSummary: (members: string, lobbies: string) => `${members}, ${lobbies}`,
   createGroupHeading: "Create a group",
   groupNameLabel: "Group name",
   groupNameHint: `1 to ${GROUP_NAME_MAX_LENGTH} characters.`,
@@ -71,9 +75,9 @@ export const en = {
 
   groupLoading: "Loading the group.",
   membersHeading: "Members",
-  groupAdminMarker: "Group admin",
+  // A neutral label in a member's row of the Member list (REQ-0029 item 5).
+  groupAdminMarker: "Admin",
   makeAdmin: "Make group admin",
-  makeAdminLabel: (member: string) => `Make ${member} a group admin`,
   makeAdminHeading: (member: string) => `Make ${member} a group admin?`,
   makeAdminConfirm:
     "A group admin can revoke the group's invite links and make members group admins. This cannot be undone.",
@@ -256,7 +260,6 @@ export const en = {
 
   lobbiesHeading: "Upcoming lobbies",
   lobbiesLoading: "Loading the lobbies.",
-  lobbiesEmpty: "No lobbies have been created yet.",
   lobbyViewLabel: "View",
   lobbyViewList: "List",
   lobbyViewCalendar: "Calendar",
@@ -281,6 +284,16 @@ export const en = {
   lobbyFlex: (count?: number) =>
     count === undefined ? "Flex" : `Flex ${count}`,
   lobbyCreatedBy: (name: string) => `Created by ${name}`,
+  // The Line-up (REQ-0029 item 5): "to 14:35" under the large start time.
+  lineUpEnds: (time: string) => `to ${time}`,
+  // The spots at the right of a Line-up row, as a large figure and a word: "3/5 players", "3/3 Full", "1 player".
+  lineUpSpotsFigure: (count: number, max: number | null) =>
+    max === null ? `${count}` : `${count}/${max}`,
+  lineUpSpotsWord: (count: number, max: number | null) => {
+    if (max !== null && count >= max) return "Full";
+    if (max === null && count === 1) return "player";
+    return "players";
+  },
   lobbyUnknownCreator: "Unknown member",
   calendarWeekHeading: (range: string) => `Week ${range}`,
   calendarNextWeek: "Next week",

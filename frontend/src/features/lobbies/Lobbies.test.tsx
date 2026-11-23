@@ -14,7 +14,12 @@ import {
   type Group,
   type Lobby,
 } from "../../api";
-import { formatTime, formatWeekday, formatWeekdayShort } from "../../i18n";
+import {
+  formatDateTime,
+  formatTime,
+  formatWeekday,
+  formatWeekdayShort,
+} from "../../i18n";
 import { en } from "../../i18n/messages/en";
 import { fakeApiClient, testUser } from "../../test/fakeApiClient";
 import { findToast } from "../../test/toasts";
@@ -82,6 +87,12 @@ function renderLobbies(overrides: Partial<ApiClient> = {}) {
         groupId="g1"
         groupName="Friday crew"
         members={members}
+        renderHeader={({ createButton, upcomingCount }) => (
+          <header>
+            {createButton}
+            {upcomingCount}
+          </header>
+        )}
         onUnauthenticated={onUnauthenticated}
       />
       <Toaster />
@@ -98,31 +109,32 @@ const withLobbies = (...lobbies: Lobby[]) => ({
 const settleToasts = () =>
   act(() => new Promise<void>((resolve) => setTimeout(resolve)));
 
-const occurrences = (text: string | null, part: string) =>
-  (text ?? "").split(part).length - 1;
+describe("header and heading row (REQ-0029 item 5)", () => {
+  it("hands the page header the Create lobby button, and the number of upcoming lobbies once they are loaded", async () => {
+    renderLobbies(withLobbies(catan, chess));
 
-const dayText = (iso: string) =>
-  new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short" }).format(
-    new Date(iso),
-  );
+    const header = screen.getByRole("banner");
+    expect(
+      within(header).getByRole("button", { name: en.lobbyCreateButton }),
+    ).toBeTruthy();
+    expect(header.textContent).toBe(en.lobbyCreateButton);
+    await screen.findByRole("link", { name: "Catan" });
+    expect(header.textContent).toBe(`${en.lobbyCreateButton}2`);
+  });
 
-describe("heading row (REQ-0025)", () => {
-  it("holds the heading, Create lobby and the view toggle, in that order", async () => {
+  it("puts the view toggle after the heading, in the heading's row", async () => {
     renderLobbies(withLobbies());
 
     const heading = await screen.findByRole("heading", {
       name: en.lobbiesHeading,
     });
-    const row = heading.closest<HTMLElement>(".heading-row")!;
-    const order = [
-      heading,
-      within(row).getByRole("button", { name: en.lobbyCreateButton }),
-      within(row).getByRole("group", { name: en.lobbyViewLabel }),
-    ];
-    const following = (a: Element, b: Element) =>
-      a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING;
-    expect(following(order[0], order[1])).toBeTruthy();
-    expect(following(order[1], order[2])).toBeTruthy();
+    const toggle = within(heading.parentElement!).getByRole("group", {
+      name: en.lobbyViewLabel,
+    });
+    expect(
+      heading.compareDocumentPosition(toggle) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 });
 
@@ -140,20 +152,64 @@ describe("lobby list", () => {
     expect(rows[1].textContent).toContain("3 players");
   });
 
-  it("shows the genre name and its theme on a genre lobby, and no genre name on a neutral one", async () => {
-    renderLobbies(withLobbies({ ...catan, gameGenre: "strategy" }, chess));
+  it("groups the lobbies under one heading per day, today's marked, keeping the server's order", async () => {
+    const go = lobby({
+      id: "l0",
+      gameName: "Go",
+      startsAt: local(4, 18),
+      endsAt: local(4, 20),
+    });
+    const kubb = lobby({
+      id: "l4",
+      gameName: "Kubb",
+      startsAt: local(5, 20),
+      endsAt: local(5, 21),
+    });
+    renderLobbies(withLobbies(go, catan, kubb, chess));
+    await screen.findByRole("link", { name: "Catan" });
 
-    const [themed, neutral] = await screen.findAllByRole("listitem");
-    expect(within(themed).getByText(en.genre.strategy)).toBeTruthy();
-    expect(themed.getAttribute("data-genre")).toBe("strategy");
-    expect(neutral.getAttribute("data-genre")).toBe("neutral");
-    for (const genre of Object.values(en.genre).filter(
-      (name) => name !== en.genre.none,
-    ))
-      expect(within(neutral).queryByText(genre)).toBeNull();
+    const days = screen.getAllByRole("heading", { level: 3 });
+    expect(days.map((day) => day.textContent)).toEqual([
+      en.runningOrder.today(formatWeekday(go.startsAt)),
+      formatWeekday(catan.startsAt),
+      formatWeekday(chess.startsAt),
+    ]);
     expect(
-      themed.querySelector("img[aria-hidden='true']")?.getAttribute("alt"),
-    ).toBe("");
+      days.map((day) =>
+        within(screen.getByRole("list", { name: day.textContent! }))
+          .getAllByRole("link")
+          .map((link) => link.textContent),
+      ),
+    ).toEqual([["Go"], ["Catan", "Kubb"], ["Chess"]]);
+  });
+
+  it("shows the spots as a figure and a word, and Full when no spot is left", async () => {
+    renderLobbies(
+      withLobbies(
+        { ...catan, playerCount: 4 },
+        lobby({ id: "l5", gameName: "Go", maxPlayers: null, playerCount: 1 }),
+      ),
+    );
+
+    const [full, single] = await screen.findAllByRole("listitem");
+    expect(full.textContent).toMatch(/4\/4 Full$/);
+    expect(single.textContent).toMatch(/1 player$/);
+  });
+
+  it("shows no genre name, genre theme or cover on a row (REQ-0029 item 10)", async () => {
+    renderLobbies(
+      withLobbies({
+        ...catan,
+        gameGenre: "strategy",
+        gameId: "game1",
+        gameCoverVersion: "c".repeat(64),
+      }),
+    );
+
+    const [row] = await screen.findAllByRole("listitem");
+    expect(within(row).queryByText(en.genre.strategy)).toBeNull();
+    expect(row.hasAttribute("data-genre")).toBe(false);
+    expect(row.querySelector("img[src*='/images/cover']")).toBeNull();
   });
 
   it("links each lobby to its detail page", async () => {
@@ -163,14 +219,17 @@ describe("lobby list", () => {
     expect(link.getAttribute("href")).toBe("/groups/g1/lobbies/l1");
   });
 
-  it("shows the end date only when the lobby ends the next day", async () => {
+  it("shows the end time under the start, with a date only when the lobby ends on another day", async () => {
     renderLobbies(withLobbies(catan, chess));
 
     const [same, overnight] = await screen.findAllByRole("listitem");
-    // The date of a lobby that ends the same day appears once, whatever the locale.
-    expect(occurrences(same.textContent, dayText(catan.startsAt))).toBe(1);
-    expect(overnight.textContent).toContain(dayText(chess.startsAt));
-    expect(overnight.textContent).toContain(dayText(chess.endsAt));
+    // The day heading holds the start date, so a row repeats no date unless it ends on another day.
+    expect(
+      within(same).getByText(en.lineUpEnds(formatTime(catan.endsAt))),
+    ).toBeTruthy();
+    expect(
+      within(overnight).getByText(en.lineUpEnds(formatDateTime(chess.endsAt))),
+    ).toBeTruthy();
   });
 
   it("names a creator who has left the group as an unknown member", async () => {
@@ -186,9 +245,7 @@ describe("lobby list", () => {
   it("shows the empty text when there are no lobbies", async () => {
     renderLobbies();
 
-    expect(
-      await screen.findByText("No lobbies have been created yet."),
-    ).toBeTruthy();
+    expect(await screen.findByText(en.runningOrder.nothingBooked)).toBeTruthy();
   });
 
   it("shows the error with a retry that loads again", async () => {
@@ -233,43 +290,6 @@ const dayGroups = () =>
     screen.getByRole("region", { name: en.runningOrder.scrollLabel }),
   ).getAllByRole("group");
 const listButton = () => screen.getByRole("button", { name: en.lobbyViewList });
-
-describe("game cover", () => {
-  const VERSION = "c".repeat(64);
-  const covered = { ...catan, gameId: "game1", gameCoverVersion: VERSION };
-  const coverOf = (row: HTMLElement) =>
-    row.querySelector(".genre-frame__cover");
-
-  it("fills each lobby row with its game's cover, and only rows with one", async () => {
-    renderLobbies(withLobbies(covered, { ...chess, gameId: "game2" }));
-
-    const [withCover, without] = await screen.findAllByRole("listitem");
-    expect(coverOf(withCover)?.getAttribute("src")).toBe(
-      `/api/games/game1/images/cover?v=${VERSION}`,
-    );
-    expect(coverOf(withCover)?.getAttribute("alt")).toBe("");
-    expect(coverOf(without)).toBeNull();
-    expect(without.dataset.genre).toBe("neutral");
-  });
-
-  it("shows the genre theme after the cover fails to load", async () => {
-    renderLobbies(withLobbies(covered));
-
-    const [row] = await screen.findAllByRole("listitem");
-    fireEvent.error(coverOf(row)!);
-    expect(coverOf(row)).toBeNull();
-    expect(row.hasAttribute("data-cover")).toBe(false);
-  });
-
-  it("draws no cover in the week calendar", async () => {
-    renderLobbies(withLobbies(covered));
-    await screen.findAllByRole("listitem");
-    fireEvent.click(screen.getByRole("button", { name: en.lobbyViewCalendar }));
-
-    await screen.findByRole("link", { name: /^Catan,/ });
-    expect(document.querySelector(".genre-frame__cover")).toBeNull();
-  });
-});
 
 describe("game logo", () => {
   const VERSION = "d".repeat(64);
@@ -342,8 +362,9 @@ describe("label and role slots", () => {
     const open = lobby({ id: "l10", gameId: null, gameName: null });
     renderLobbies(withLobbies(open));
 
-    const listLink = await screen.findByRole("link", { name: en.lobbyOpen });
-    expect(listLink.closest("li")!.getAttribute("data-genre")).toBe("neutral");
+    expect(
+      await screen.findByRole("link", { name: en.lobbyOpen }),
+    ).toBeTruthy();
     fireEvent.click(calendarButton());
     expect(
       within(blockLink(en.lobbyOpen)).getByText(en.lobbyOpen),
@@ -549,10 +570,10 @@ describe("calendar view", () => {
 
   it("shows the same empty text as the list", async () => {
     renderLobbies();
-    await screen.findByText("No lobbies have been created yet.");
+    await screen.findByText(en.runningOrder.nothingBooked);
     fireEvent.click(calendarButton());
 
-    expect(screen.getByText("No lobbies have been created yet.")).toBeTruthy();
+    expect(screen.getByText(en.runningOrder.nothingBooked)).toBeTruthy();
   });
 
   it("starts in the list again on a later visit", async () => {

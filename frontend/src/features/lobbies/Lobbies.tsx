@@ -1,16 +1,9 @@
-import { useCallback, useState } from "react";
+import { useCallback, useState, type ReactNode } from "react";
 import type { Group, Lobby } from "../../api";
 import { usePopover } from "../../hooks";
 import { useMessages } from "../../i18n";
 import type { CreateOn } from "../../runningOrder";
-import {
-  Button,
-  CreateFrame,
-  ErrorAlert,
-  Icon,
-  Panel,
-  ViewToggle,
-} from "../../ui";
+import { Button, CreateFrame, ErrorAlert, Icon, ViewToggle } from "../../ui";
 import { CreateLobby } from "./CreateLobby";
 import { LobbyCalendar } from "./LobbyCalendar";
 import { LobbyList } from "./LobbyList";
@@ -18,21 +11,30 @@ import { useUpcomingLobbies } from "./useUpcomingLobbies";
 
 type LobbyView = "list" | "calendar";
 
+/** What the lobbies give the page header: the Create lobby button, and the number of upcoming lobbies once loaded. */
+type LobbiesHeaderParts = {
+  createButton: ReactNode;
+  upcomingCount?: number;
+};
+
 /**
  * The lobby sections of a group page: the upcoming lobbies as a list or a week calendar, and the popover
  * form that adds one, opened by the Create lobby button or from a day of the calendar. The list is the first
  * view of every visit, because the choice is not saved (REQ-0004). A lobby created in the list view is always in
- * the list, so only the calendar may confirm it with a toast (REQ-0022).
+ * the list, so only the calendar may confirm it with a toast (REQ-0022). The Create lobby button sits in the page
+ * header, which `renderHeader` draws above the lobbies (REQ-0029 item 5).
  */
 export function Lobbies({
   groupId,
   groupName,
   members,
+  renderHeader,
   onUnauthenticated,
 }: {
   groupId: string;
   groupName: string;
   members: Group["members"];
+  renderHeader: (parts: LobbiesHeaderParts) => ReactNode;
   onUnauthenticated: () => void;
 }) {
   const m = useMessages();
@@ -62,20 +64,26 @@ export function Lobbies({
 
   return (
     <>
-      <Panel>
+      {renderHeader({
+        createButton: (
+          <Button
+            type="button"
+            aria-haspopup="dialog"
+            aria-expanded={popover.open}
+            onClick={(event) => openForm(undefined, event.currentTarget)}
+          >
+            <Icon name="plus" />
+            {m.lobbyCreateButton}
+          </Button>
+        ),
+        upcomingCount:
+          upcoming.state.status === "loaded"
+            ? upcoming.state.value.length
+            : undefined,
+      })}
+      <section>
         <div className="heading-row">
-          <div className="panel__head">
-            <h2>{m.lobbiesHeading}</h2>
-            <Button
-              type="button"
-              aria-haspopup="dialog"
-              aria-expanded={popover.open}
-              onClick={(event) => openForm(undefined, event.currentTarget)}
-            >
-              <Icon name="plus" />
-              {m.lobbyCreateButton}
-            </Button>
-          </div>
+          <h2>{m.lobbiesHeading}</h2>
           <ViewToggle
             label={m.lobbyViewLabel}
             value={view}
@@ -100,7 +108,7 @@ export function Lobbies({
           onCreatedSettled={clearCreated}
           onCreate={openForm}
         />
-      </Panel>
+      </section>
       <CreateFrame
         centered
         closeOnScrim={false}
@@ -150,7 +158,7 @@ function LobbyViews({
     return <p role="status">{m.lobbiesLoading}</p>;
   if (state.status === "error")
     return <ErrorAlert code={state.code} onRetry={reload} />;
-  if (state.value.length === 0) return <p>{m.lobbiesEmpty}</p>;
+  if (state.value.length === 0) return <p>{m.runningOrder.nothingBooked}</p>;
   return view === "list" ? (
     <LobbyList groupId={groupId} lobbies={state.value} members={members} />
   ) : (
