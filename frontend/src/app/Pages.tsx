@@ -14,7 +14,7 @@ import { InviteAction, InvitePage } from "../features/invites";
 import { LobbyDetailPage } from "../features/lobbies";
 import { ProfilePage } from "../features/profile";
 import { useMessages } from "../i18n";
-import { Panel } from "../ui";
+import { ErrorAlert, Panel } from "../ui";
 import { navigate } from "./navigation";
 import type { Route } from "./route";
 
@@ -77,12 +77,10 @@ export function ProtectedPage({
       );
     case "lobby":
       return (
-        <LobbyDetailPage
+        <LobbyPageWithGroup
           groupId={route.groupId}
           lobbyId={route.lobbyId}
           userId={user.userId}
-          backHref={groupPath(route.groupId)}
-          onDeleted={() => navigate(groupPath(route.groupId))}
           onUnauthenticated={onUnauthenticated}
         />
       );
@@ -143,6 +141,40 @@ function GroupPage({
         )
       }
     />
+  );
+}
+
+/**
+ * The lobby page with its group's name and members. Until they load it shows the lobby alone; a failure is shown
+ * with a retry above it and does not block the lobby (REQ-0029 item 6).
+ */
+function LobbyPageWithGroup({
+  groupId,
+  lobbyId,
+  userId,
+  onUnauthenticated,
+}: {
+  groupId: string;
+  lobbyId: string;
+  userId: string;
+  onUnauthenticated: () => void;
+}) {
+  const { state, reload } = useGroup(groupId, onUnauthenticated);
+  return (
+    <>
+      {state.status === "error" && (
+        <ErrorAlert code={state.code} onRetry={reload} />
+      )}
+      <LobbyDetailPage
+        groupId={groupId}
+        lobbyId={lobbyId}
+        group={state.status === "loaded" ? state.group : undefined}
+        userId={userId}
+        backHref={groupPath(groupId)}
+        onDeleted={() => navigate(groupPath(groupId))}
+        onUnauthenticated={onUnauthenticated}
+      />
+    </>
   );
 }
 

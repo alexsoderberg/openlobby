@@ -6,4 +6,3 @@ export {
   preferredGameRolesSentence,
 } from "./PreferredGameRolesNote";
 export { LobbyGameLogo } from "./LobbyGameLogo";
-export { lobbyCoverUrl } from "./lobbyCoverUrl";
