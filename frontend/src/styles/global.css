@@ -145,6 +145,8 @@
      each row (REQ-0029 item 2: 3.5rem on desktop). */
   --font-size-display: clamp(2.75rem, 3vw + 1.5rem, 4rem);
   --font-size-line-up-time: clamp(2rem, 4vw + 1rem, 3.5rem);
+  /* The lobby page's start and end time: the largest text of the page (REQ-0029 item 2: up to 6rem on desktop). */
+  --font-size-lobby-time: clamp(3rem, 5vw + 1rem, 6rem);
   /* The group colour square: on a Group card, and large beside the Group view's name. */
   --size-group-swatch: 2.5rem;
   --size-group-swatch-large: 4rem;
@@ -742,8 +744,7 @@ a:where(:not([data-slot="button"])) {
 }
 
 .panel > :first-child,
-.panel > .heading-row:first-child > h2:first-child,
-.lobby-summary > :first-child {
+.panel > .heading-row:first-child > h2:first-child {
   margin-top: 0;
 }
 
@@ -794,7 +795,7 @@ a:where(:not([data-slot="button"])) {
     margin: 0;
   }
 
-  /* The lobby page: settings beside both the players and the actions, inside the one panel. */
+  /* The lobby page: facts and settings beside both the players and Delete lobby. */
   .side-layout--lobby:has(> .side-column:not(:empty)) {
     row-gap: 0;
   }
@@ -802,7 +803,6 @@ a:where(:not([data-slot="button"])) {
   .side-layout--lobby > .side-column {
     grid-row: 1 / span 2;
     padding-inline-start: var(--space-4);
-    border-inline-start: 1px solid var(--color-rule);
   }
 }
 
@@ -972,6 +972,11 @@ a:where(:not([data-slot="button"])) {
 /* A full role slot (ADR 0028 section 16.4 item 6): the count stays in the text colour and a check icon in signal
    marks it, so full never rests on colour alone. */
 .badge--full > .role-slot-check {
+  color: var(--color-signal);
+}
+
+/* The same check on a full role's heading in the lobby page's player list. */
+.player-group h3 > .role-slot-check {
   color: var(--color-signal);
 }
 
@@ -1596,8 +1601,9 @@ a:where(:not([data-slot="button"])) {
 }
 
 /* A member of the Member list: the name, the admin marker, and the Game chips at the right, wrapping under the name
-   when the row is narrow. */
-.member-row {
+   when the row is narrow. A player of the lobby page's player list has the same row. */
+.member-row,
+.player-row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -1607,7 +1613,8 @@ a:where(:not([data-slot="button"])) {
   border-bottom: 1px solid var(--color-rule);
 }
 
-.member-row__name {
+.member-row__name,
+.player-row__name {
   font-family: var(--font-heading);
   font-size: var(--font-size-lobby-name);
   font-weight: var(--font-weight-heavy);
@@ -3107,12 +3114,7 @@ a:where(:not([data-slot="button"])) {
    Headings, .status, .row-list and .step-card__text keep their own spacing, so this is not a
    blanket rule. Specificity (0,2,0) beats the .alert reset whatever the source order.
    .login-panel has its own button margin and is left alone. */
-:is(
-    .panel,
-    [data-slot="alert-dialog-content"],
-    .create-popover__card,
-    .lobby-summary
-  )
+:is(.panel, [data-slot="alert-dialog-content"], .create-popover__card)
   > *
   + :is([data-slot="button"], .tooltip, .form-actions, .view-switch),
 .create-popover__card > :is(.status, .group-form) + * {
@@ -3212,19 +3214,94 @@ a:where(:not([data-slot="button"])) {
   font-weight: 600;
 }
 
+/* The lobby page (REQ-0029 item 6): the day, the time at the page's largest size, the label, the spots, the role
+   slots and Join or Leave, on the ground with a rule under it, as the Group view's header. */
 .lobby-head {
   display: grid;
-  gap: var(--space-1);
+  justify-items: start;
+  gap: var(--space-2);
   margin-bottom: var(--space-3);
-  padding: var(--space-4);
-  padding-right: calc(var(--size-genre-icon) + var(--space-4));
-  background: var(--color-surface);
-  border: 1px solid var(--color-rule);
-  border-radius: var(--radius);
+  padding-bottom: var(--space-4);
+  border-bottom: var(--width-edge) solid var(--color-text);
+}
+
+.lobby-head > p {
+  margin: 0;
+}
+
+.lobby-head__day {
+  color: var(--color-muted);
+  font-weight: var(--font-weight-strong);
+}
+
+.lobby-head__time {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-lobby-time);
+  font-weight: var(--font-weight-black);
+  line-height: var(--line-height-figure);
+  font-variant-numeric: tabular-nums;
+  text-transform: uppercase;
 }
 
 .lobby-head h1 {
   margin: 0;
+  line-height: var(--line-height-title);
+  overflow-wrap: anywhere;
+}
+
+.lobby-head__spots {
+  font-weight: var(--font-weight-strong);
+  font-variant-numeric: tabular-nums;
+}
+
+.lobby-head > .form-actions {
+  margin-top: var(--space-2);
+}
+
+/* Delete lobby, last in the main column. */
+.side-layout--lobby > .form-actions {
+  margin-top: var(--space-4);
+}
+
+/* A role's players under its heading: the role icon, name and count, in the text colour. */
+.player-group h3 {
+  margin: var(--space-4) 0 0;
+  font-family: var(--font-heading);
+  font-size: var(--font-size-lobby-name);
+  font-weight: var(--font-weight-heavy);
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+}
+
+.player-row > .person-roles {
+  margin-left: auto;
+}
+
+/* My own avatar in a player list (ADR 0028 section 16.4 item 7); the "You" tag says the same in text. */
+.player-row--me > .initials-icon {
+  background: var(--color-signal);
+  color: var(--color-on-signal);
+}
+
+/* The facts of the lobby: a term over its value, one per ruled line. */
+.lobby-facts {
+  margin: 0;
+}
+
+.lobby-facts > div {
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--color-rule);
+}
+
+.lobby-facts dt {
+  color: var(--color-muted);
+  font-size: var(--font-size-small);
+}
+
+.lobby-facts dd {
+  margin: 0;
+  font-weight: var(--font-weight-strong);
+  overflow-wrap: anywhere;
 }
 
 /* The seat choice and the preferred game roles: radio buttons or check boxes with the full label as text. No hover or motion. */

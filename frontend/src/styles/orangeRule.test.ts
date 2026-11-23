@@ -7,8 +7,7 @@ import { cssRules } from "../test/cssTokens";
 const SIGNAL = /var\(--color-signal\)/;
 const AS_COLOUR = /(^|[;\s])color:\s*var\(--color-signal\)/;
 
-// The rules of global.css that may fill with signal, by the item of the list they serve. Item 7 (my avatar in a
-// player list) is not built yet.
+// The rules of global.css that may fill with signal, by the item of the list they serve.
 const FILLS = new Set([
   // 1. The Top bar, at every width.
   ".top-bar",
@@ -19,12 +18,15 @@ const FILLS = new Set([
   '.running-order__heading[aria-current="date"] .running-order__weekday::after',
   // 5. The active item of the phone Tab bar.
   '.tab[aria-current="page"]',
+  // 7. My own avatar in a player list.
+  ".player-row--me > .initials-icon",
 ]);
 
 // The rules that may set signal as `color`: item 6, an icon and not text (the check icon of a full role slot), and
 // item 4, the only signal text (the eyebrow and the countdown of the Next up band).
 const COLOURS = new Set([
   ".badge--full > .role-slot-check",
+  ".player-group h3 > .role-slot-check",
   ".next-up-band h2.next-up-band__eyebrow",
 ]);
 
@@ -52,7 +54,7 @@ describe("Orange rule", () => {
     ).toEqual([]);
   });
 
-  it("sets signal as a colour only for the icon of a full role slot and the Next up band's eyebrow", () => {
+  it("sets signal as a colour only for the check icon of a full role slot and the Next up band's eyebrow", () => {
     expect(
       cssRules
         .filter(({ body }) => AS_COLOUR.test(body))
@@ -82,14 +84,16 @@ describe("Orange rule", () => {
     ).toEqual([]);
   });
 
-  it.each([".top-bar", ".plus-button", '.tab[aria-current="page"]'])(
-    "puts on-signal text on the signal fill of %s",
-    (selector) => {
-      expect(body(selector)).toMatch(
-        /(^|[;\s])color:\s*var\(--color-on-signal\)/,
-      );
-    },
-  );
+  it.each([
+    ".top-bar",
+    ".plus-button",
+    '.tab[aria-current="page"]',
+    ".player-row--me > .initials-icon",
+  ])("puts on-signal text on the signal fill of %s", (selector) => {
+    expect(body(selector)).toMatch(
+      /(^|[;\s])color:\s*var\(--color-on-signal\)/,
+    );
+  });
 
   it("keeps the count of a full role slot in the text colour", () => {
     expect(body(".badge")).toMatch(/(^|[;\s])color:\s*var\(--color-text\)/);

@@ -1,4 +1,4 @@
-import type { LobbyDetail } from "../../api";
+import type { Group, LobbyDetail } from "../../api";
 import { useMessages } from "../../i18n";
 import { ErrorAlert, Icon, Panel } from "../../ui";
 import { LobbyDetails } from "./LobbyDetails";
@@ -8,6 +8,7 @@ import { useLobby } from "./useLobby";
 export function LobbyDetailPage({
   groupId,
   lobbyId,
+  group,
   userId,
   backHref,
   onDeleted,
@@ -15,6 +16,8 @@ export function LobbyDetailPage({
 }: {
   groupId: string;
   lobbyId: string;
+  /** The lobby's group once loaded: its name is the back link, its members name the creator (REQ-0029 item 6). */
+  group?: Pick<Group, "name" | "members">;
   /** The viewer. Only the creator of the lobby is offered the delete button; the server enforces it too. */
   userId: string;
   backHref: string;
@@ -33,7 +36,7 @@ export function LobbyDetailPage({
       <p className="crumb">
         <a href={backHref}>
           <Icon name="back" />
-          {m.lobbyBackToGroup}
+          {group?.name ?? m.lobbyBackToGroup}
         </a>
       </p>
       {state.status === "loading" && <p role="status">{m.lobbyLoading}</p>}
@@ -45,6 +48,8 @@ export function LobbyDetailPage({
         <LobbyDetails
           lobby={state.lobby}
           groupId={groupId}
+          userId={userId}
+          members={group?.members}
           isCreator={state.lobby.createdByUserId === userId}
           seat={seatOf(state.lobby, userId)}
           onDeleted={onDeleted}

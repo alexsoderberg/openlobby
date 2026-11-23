@@ -380,6 +380,12 @@ export const en = {
   lobbyBackToGroup: "Back to the group",
   lobbyLoading: "Loading the lobby.",
   lobbyPlayersHeading: "Players",
+  // The viewer's own row in the player list.
+  lobbyPlayerYou: "You",
+  // The day line of a lobby that ends on another day than it starts.
+  lobbyDays: (start: string, end: string) => `${start} to ${end}`,
+  lobbyFactsHeading: "Lobby",
+  lobbyCreatorLabel: "Created by",
   lobbyNoPlayers: "Nobody has joined this lobby yet.",
   lobbyNotFoundHeading: "Lobby not found",
   lobbyNotFoundText: "This lobby does not exist, or it has already ended.",
