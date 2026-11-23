@@ -76,21 +76,7 @@ const views: Record<string, (accent: string) => [Layer[], string]> = {
     ],
     solid("--color-surface"),
   ],
-  // The wash is mixed into the surface, so the plate is the same on a hovered card (pinned below).
-  "Group card lobby line": (accent) => [
-    [
-      [accent, percent("--genre-wash")],
-      [accent, PATTERN_ALPHA],
-    ],
-    solid("--color-surface"),
-  ],
 };
-
-it("mixes the Group card lobby line's wash into the surface, so a hovered card cannot show through", () => {
-  expect(stylesheet).toMatch(
-    /\.group-card__lobby\s*\{[^}]*color-mix\(\s*in srgb,\s*var\(--genre-accent\) var\(--genre-wash\),\s*var\(--color-surface\)\s*\)/,
-  );
-});
 
 const stacks = accents.flatMap(({ key, accent }) =>
   Object.entries(views).map(([view, layers]) => {

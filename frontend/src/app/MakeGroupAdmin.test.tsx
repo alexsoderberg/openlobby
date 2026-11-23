@@ -43,8 +43,10 @@ function renderGroup(group: Group, overrides = {}) {
   return client;
 }
 
+/** The icon-only button's name: its label, then the member it acts on (ui/IconButton). */
+const makeName = (member: string) => `${en.makeAdmin}, ${member}`;
 const makeButton = () =>
-  screen.findByRole("button", { name: en.makeAdminLabel(sam.displayName) });
+  screen.findByRole("button", { name: makeName(sam.displayName) });
 
 async function openDialog() {
   fireEvent.click(await makeButton());
@@ -66,7 +68,7 @@ describe("making a member group admin", () => {
     await makeButton();
     expect(
       screen.queryByRole("button", {
-        name: en.makeAdminLabel(maja.displayName),
+        name: makeName(maja.displayName),
       }),
     ).toBeNull();
   });

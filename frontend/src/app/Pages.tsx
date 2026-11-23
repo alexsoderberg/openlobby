@@ -127,12 +127,10 @@ function GroupPage({
       onUnauthenticated={onUnauthenticated}
       headerAction={
         state.status === "loaded" && (
-          <div className="form-actions">
-            <InviteAction
-              group={state.group}
-              onUnauthenticated={onUnauthenticated}
-            />
-          </div>
+          <InviteAction
+            group={state.group}
+            onUnauthenticated={onUnauthenticated}
+          />
         )
       }
       footerAction={
