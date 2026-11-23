@@ -236,7 +236,7 @@ describe("game cover in the game form", () => {
     return screen.getByRole("group", { name: en.gameImage.cover });
   }
   const coverOf = (field: HTMLElement) =>
-    field.querySelector(".genre-frame__cover");
+    field.querySelector(".cover-preview img");
 
   it("has no cover field in the add form", async () => {
     renderPage();
@@ -246,7 +246,7 @@ describe("game cover in the game form", () => {
     ).toBeNull();
   });
 
-  it("previews the genre theme without a cover, and the uploaded cover at once", async () => {
+  it("shows an empty plain frame without a cover, and the uploaded cover at once", async () => {
     const setGameImage = vi.fn(() =>
       Promise.resolve({ ...catan, coverVersion: NEW }),
     );
@@ -256,7 +256,6 @@ describe("game cover in the game form", () => {
     });
     const field = await openCoverField();
     expect(coverOf(field)).toBeNull();
-    expect(field.querySelector('[data-genre="strategy"]')).not.toBeNull();
 
     choose(field, png);
 

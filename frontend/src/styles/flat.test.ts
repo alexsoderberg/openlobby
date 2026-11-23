@@ -22,7 +22,7 @@ const uiSources = readdirSync(uiDir)
 
 const RADIUS_TOKEN = /^var\(--radius(-sm)?\)$/;
 /** Layers that follow the radius of the box they cover (ADR 0028 section 16.11 item 3). */
-const LAYER = /::(before|after)\b|\.genre-frame__cover\b/;
+const LAYER = /::(before|after)\b/;
 
 const radii = cssRules.flatMap(({ selector, body }) =>
   Array.from(

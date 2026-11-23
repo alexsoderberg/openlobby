@@ -246,27 +246,11 @@
   --font-size-next-up-time: 6rem;
   --font-size-next-up-time-phone: 4.5rem;
 
-  /* Genre themes (ADR 0016), decorative until PR5a removes them (ADR 0028 section 7). The art in
-     public/genre-art uses the same values. */
+  /* The landing hero's card accents only (ADR 0016); the app shows no genre look. Removed with the hero's genre
+     motifs in PR5b (ADR 0028 section 7). */
   --color-genre-shooter: #ff5f6d;
-  --color-genre-moba: #4da3ff;
   --color-genre-racing: #ff8a3d;
-  --color-genre-strategy: #a78bfa;
-  --color-genre-survival: #7bd36b;
   --color-genre-party: #ff6ad5;
-  --color-genre-rpg: #e9d172;
-  --color-genre-sports: #3fd6c4;
-  --color-genre-neutral: #9a9ba6;
-  /* Set per view by GenreFrame; outside a frame it is the text colour. */
-  --genre-accent: var(--color-text);
-  --genre-pattern: none;
-  --genre-tint: 4%;
-  --genre-motif-opacity: 0.08; /* on the dark surface, muted text stays at 4.5:1 over the light accents */
-  --size-genre-icon: 1.5rem;
-  --size-genre-motif: 6rem;
-  /* Over a game cover: dark enough that the text colour passes AA over a pure white image, the lightest any cover
-     can be (pinned by genres/genreContrast.test.ts). Goes with the cover look in PR5a (ADR 0028 section 7). */
-  --color-cover-scrim: rgba(22, 20, 18, 0.9);
   --ratio-cover-preview: 16 / 9;
   --width-cover-preview: 16rem;
 
@@ -748,11 +732,25 @@ a:where(:not([data-slot="button"])) {
   margin-top: 0;
 }
 
-/* Panels of one screen stack with a gap. */
-.panel-group {
+/* The heading of a page with no header of its own (the You page, the Game list): the display size and the rule of
+   the Group view's header (REQ-0029). */
+.page-head {
+  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-4);
+  border-bottom: var(--width-edge) solid var(--color-text);
+  font-size: var(--font-size-display);
+  line-height: var(--line-height-title);
+  overflow-wrap: anywhere;
+}
+
+/* The sections of such a page, on the ground with no panel, parted by space. */
+.page-sections {
   display: grid;
-  gap: var(--space-3);
-  margin-top: var(--space-3);
+  gap: var(--space-6);
+}
+
+.page-sections h2 {
+  margin-top: 0;
 }
 
 /* Wide windows: the side column sits on the right of the main column, which is the first track (REQ-0025).
@@ -845,8 +843,7 @@ a:where(:not([data-slot="button"])) {
   padding: var(--space-2);
 }
 
-/* Scoped to real lists. The tint is a layer behind the content that fades by opacity, under a genre
-   pattern (::before, z-index -1) as the row's own background was. */
+/* Scoped to real lists. The tint is a layer behind the content that fades by opacity. */
 .row-list > .list-row {
   position: relative;
   isolation: isolate;
@@ -869,10 +866,9 @@ a:where(:not([data-slot="button"])) {
   }
 }
 
-/* IconButton sits in its tooltip wrapper, so the wrapper stands for the button in these sibling rules. */
-/* A game image field in a game being changed keeps its buttons by the image. */
-.list-row :is([data-slot="button"], .tooltip):not(.image-field__row > *),
-.list-row .badge {
+/* IconButton sits in its tooltip wrapper, so the wrapper stands for the button in these sibling rules. Only the
+   row's own buttons: those of a form in a row being changed stay in their place. */
+.list-row > :is([data-slot="button"], .tooltip) {
   margin-left: auto;
 }
 
@@ -1049,25 +1045,43 @@ a:where(:not([data-slot="button"])) {
   gap: var(--space-2);
 }
 
-/* The modes, game roles and activities of the game form: groups with a legend, no hover or motion. */
+/* The groups of a form (game roles, modes, activities, images, the seat choice): on the ground under a ruled
+   heading, no box, no hover or motion. */
 .group-form fieldset.structure {
   display: grid;
   gap: var(--space-2);
   min-width: 0;
-  margin: 0;
-  padding: var(--space-3);
-  border: 1px solid var(--color-rule);
-  border-radius: var(--radius);
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  border: 0;
 }
 
+/* Floated, so it is no rendered legend but a plain grid item: its rule then spans the whole group. */
 .group-form .structure > legend {
-  padding: 0 var(--space-1);
-  font-weight: 600;
+  float: left;
+  width: 100%;
+  padding: 0 0 var(--space-2);
+  border-bottom: 1px solid var(--color-rule);
+  font-family: var(--font-heading);
+  font-size: var(--font-size-lobby-name);
+  font-weight: var(--font-weight-heavy);
+  line-height: var(--line-height-solid);
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
 }
 
-/* Room above the first game's legend, whose logo rises above the fieldset border (REQ-0026). */
-.game-roles-form {
-  margin-top: var(--space-3);
+/* A choice (the You page's game roles, the seat choice): each option is a ruled row, as a member of the Member list. */
+.group-form .structure:has(> .choice-option) {
+  gap: 0;
+}
+
+.group-form .structure > .choice-option {
+  border-bottom: 1px solid var(--color-rule);
+}
+
+/* The You page's rows carry the 2px text-colour rule (REQ-0029, You page). The seat choice keeps the light rule. */
+.game-roles-form .structure > .choice-option {
+  border-bottom: var(--width-edge) solid var(--color-text);
 }
 
 /* A game's legend on the You page: its logo or monogram before the name (REQ-0026). */
@@ -1087,13 +1101,27 @@ a:where(:not([data-slot="button"])) {
   gap: var(--space-2);
 }
 
-/* A game cover's preview: the Next up look in a fixed wide box, so a loading image moves nothing. */
+/* A game cover's preview: a plain frame of a fixed size, so a loading image moves nothing, with the radius of the
+   logo box (ADR 0028 section 16.5). Dashed while empty, as an open seat. */
 .cover-preview {
+  display: block;
   width: min(100%, var(--width-cover-preview));
   aspect-ratio: var(--ratio-cover-preview);
   border: 1px solid var(--color-rule);
-  border-radius: var(--radius);
+  border-radius: var(--radius-sm);
   overflow: hidden;
+}
+
+.cover-preview:empty {
+  border-style: dashed;
+  border-color: var(--color-rule-strong);
+}
+
+.cover-preview > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .structure-list {
@@ -1169,20 +1197,20 @@ a:where(:not([data-slot="button"])) {
   }
 }
 
-/* A mode in the game view: the whole row is the way in. No hover change, only a press. */
+/* A mode in the game view: a ruled row, and the whole row is the way in. No hover change, only a press. */
 .mode-row {
   display: flex;
   align-items: center;
   gap: var(--space-3);
   width: 100%;
   min-height: var(--size-tap);
-  padding: var(--space-2) var(--space-3);
+  padding: var(--space-2) 0;
   font: inherit;
   text-align: start;
   color: var(--color-text);
-  background: var(--color-surface);
-  border: 1px solid var(--color-control-line);
-  border-radius: var(--radius);
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--color-rule);
   cursor: pointer;
   transition: transform var(--duration-fast) var(--ease-out);
 }
@@ -1199,7 +1227,7 @@ a:where(:not([data-slot="button"])) {
 }
 
 .mode-row__name {
-  font-weight: 600;
+  font-weight: var(--font-weight-strong);
   overflow-wrap: anywhere;
 }
 
@@ -1211,6 +1239,44 @@ a:where(:not([data-slot="button"])) {
 
 .list-row--editing > .group-form {
   flex: 1 1 100%;
+}
+
+/* A game of the Game list: a ruled row as a member of the Member list, the name in the heading face, the edit and
+   remove buttons at the right. A game being changed holds its form in place of the row. */
+/* The 2px text-colour row rule of the You page and the Group cards (REQ-0029, Game list). */
+.row-list > .game-row {
+  padding-inline: 0;
+  border-bottom: var(--width-edge) solid var(--color-text);
+}
+
+.row-list > .game-row.list-row--editing {
+  padding-block: var(--space-4);
+}
+
+.game-row__name {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-lobby-name);
+  font-weight: var(--font-weight-heavy);
+  line-height: var(--line-height-solid);
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+/* The name over its facts, so the buttons keep the row's line on a phone. */
+.game-row__text {
+  display: grid;
+  flex: 1 1 0;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.game-row__facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-2);
+  color: var(--color-muted);
+  font-size: var(--font-size-small);
+  font-variant-numeric: tabular-nums;
 }
 
 .invite-link + .invite-link {
@@ -2250,8 +2316,11 @@ a:where(:not([data-slot="button"])) {
   overflow-y: auto;
 }
 
+/* The Create frame's heading carries the rule of a page header (REQ-0029). */
 .create-popover h2 {
   margin-top: 0;
+  padding-bottom: var(--space-3);
+  border-bottom: var(--width-edge) solid var(--color-text);
 }
 
 .profile {
@@ -2263,7 +2332,7 @@ a:where(:not([data-slot="button"])) {
 .profile .initials-icon {
   width: var(--size-avatar-large);
   height: var(--size-avatar-large);
-  font-size: 1.25rem;
+  font-size: var(--font-size-heading);
 }
 
 .profile p {
@@ -2279,14 +2348,19 @@ a:where(:not([data-slot="button"])) {
 
 .profile__name {
   font-family: var(--font-heading);
-  font-size: 1.25rem;
-  font-weight: 800;
+  font-size: var(--font-size-heading);
+  font-weight: var(--font-weight-heavy);
+  line-height: var(--line-height-solid);
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
 }
 
-/* A settings row that opens another page: the whole row is the link, so it drops the underline. The negative
-   inline margin lines the icon up with the section heading while the focus ring keeps its padding. */
+/* A settings row that opens another page: a You page row with its 2px rule, and the whole row is the link, so it
+   drops the underline. */
 .nav-row {
-  margin-inline: calc(-1 * var(--space-2));
+  padding-inline: 0;
+  border-bottom: var(--width-edge) solid var(--color-text);
+  font-weight: var(--font-weight-strong);
   text-decoration: none;
 }
 
@@ -3132,86 +3206,16 @@ a:where(:not([data-slot="button"])) {
 
 /* Only the first button of a row pushes right; the rest follow at the row gap. */
 .list-row
-  :is([data-slot="button"], .tooltip)
+  > :is([data-slot="button"], .tooltip)
   + :is([data-slot="button"], .tooltip) {
   margin-left: 0;
 }
 
-/* Genre themes (ADR 0016). The theme is static: no transition or animation in these rules. The pattern is
-   a layer behind the content; the icon and the motif are decorative images. */
-:where(.genre-frame) {
-  position: relative;
-}
-
-.genre-frame {
-  isolation: isolate;
-}
-
-.genre-frame::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  border-radius: inherit;
-  background-image: var(--genre-pattern);
-  pointer-events: none;
-}
-
-/* A game cover fills the frame under the scrim, which takes the place of the pattern (ADR 0026 point 8). Muted
-   text, the genre name and field errors turn to the text colour, the one the scrim is measured against. */
-.genre-frame__cover {
-  position: absolute;
-  inset: 0;
-  z-index: -2;
-  width: 100%;
-  height: 100%;
-  border-radius: inherit;
-  object-fit: cover;
-  pointer-events: none;
-}
-
-.genre-frame[data-cover] {
-  --color-muted: var(--color-text);
-}
-
-.genre-frame[data-cover]::before {
-  background: var(--color-cover-scrim);
-}
-
-.genre-frame[data-cover] :is(.genre-name, .field-error) {
-  color: var(--color-text);
-}
-
-/* Under the scrim the hover tint of a covered row would not show, so it is drawn over the scrim. */
-.row-list > .genre-frame[data-cover]::after {
-  z-index: -1;
-}
-
-.genre-frame__icon {
-  position: absolute;
-  top: var(--space-2);
-  right: var(--space-2);
-  width: var(--size-genre-icon);
-  height: var(--size-genre-icon);
-  pointer-events: none;
-}
-
-.genre-frame__motif {
-  position: absolute;
-  right: var(--space-3);
-  bottom: var(--space-3);
-  z-index: -1;
-  width: var(--size-genre-motif);
-  height: var(--size-genre-motif);
-  opacity: var(--genre-motif-opacity);
-  pointer-events: none;
-}
-
-/* Muted, not the accent: an accent is no text colour (ADR 0028 section 16.4; the genre look goes in PR5a). */
+/* The genre as plain muted text: the genre has no colour of its own (ADR 0028 section 7). */
 .genre-name {
   color: var(--color-muted);
   font-size: var(--font-size-small);
-  font-weight: 600;
+  font-weight: var(--font-weight-strong);
 }
 
 /* The lobby page (REQ-0029 item 6): the day, the time at the page's largest size, the label, the spots, the role

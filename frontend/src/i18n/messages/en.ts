@@ -237,7 +237,7 @@ export const en = {
   gameImageHint: {
     logo: "PNG, JPEG or WebP. The image is saved as soon as you choose it.",
     cover:
-      "PNG, JPEG or WebP. Shown darkened and cropped to fit behind the Next up card, the lobby page header and each lobby row of the group page. The image is saved as soon as you choose it.",
+      "PNG, JPEG or WebP. The image is saved as soon as you choose it. The app does not show covers at the moment.",
   } satisfies Record<GameImageKind, string>,
   gameImageChoose: "Choose image",
   gameImageRemove: "Remove image",
@@ -251,7 +251,7 @@ export const en = {
   gameImageRemoveConfirm: {
     logo: "Its lobbies show the game's initials instead. You can choose a new image at any time.",
     cover:
-      "The Next up card, the lobby page header and the lobby rows of the group page show the genre pattern instead. You can choose a new image at any time.",
+      "The app does not show covers at the moment. You can choose a new image at any time.",
   } satisfies Record<GameImageKind, string>,
   gameImageRemoveSubmit: "Yes, remove image",
   gameImageRemoveKeep: "Keep image",

@@ -74,16 +74,20 @@ function GameRow({
 }) {
   const m = useMessages();
   return (
-    <li className="list-row">
+    <li className="list-row game-row">
       <GameLogo gameId={game.id} name={game.name} version={game.logoVersion} />
-      <span>{game.name}</span>
-      <GenreName genre={game.genre} />
-      <span className="badge">
-        {game.modes?.length
-          ? m.gameModeCount(game.modes.length)
-          : game.defaultMaxPlayers === null
-            ? m.gameUnlimited
-            : m.gameMaxPlayers(game.defaultMaxPlayers)}
+      <span className="game-row__text">
+        <span className="game-row__name">{game.name}</span>
+        <span className="game-row__facts">
+          <GenreName genre={game.genre} />
+          <span>
+            {game.modes?.length
+              ? m.gameModeCount(game.modes.length)
+              : game.defaultMaxPlayers === null
+                ? m.gameUnlimited
+                : m.gameMaxPlayers(game.defaultMaxPlayers)}
+          </span>
+        </span>
       </span>
       <IconButton
         icon="edit"
@@ -121,7 +125,7 @@ function GameEditRow({
 }) {
   const m = useMessages();
   return (
-    <li className="list-row list-row--editing">
+    <li className="list-row list-row--editing game-row">
       <GameForm
         game={game}
         submitLabel={m.gameEditSubmit}
