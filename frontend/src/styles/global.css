@@ -77,7 +77,6 @@
   --color-on-signal: #161412;
   --color-danger: #ff7a85;
   --color-scrim: rgb(0 0 0 / 0.6);
-  --color-online: #3ddc84;
   /* Group colours (ADR 0028 sections 5 and 16.7): one dark text colour on every fill. */
   --color-group-1: #6f97f7;
   --color-group-2: #4fbf7f;
@@ -119,7 +118,7 @@
   --font-size-heading: 1.625rem;
   --font-size-figure: 2.5rem;
   --line-hero: 0.98;
-  --width-landing: 64rem;
+  --width-landing: 72rem;
   --stage-height: clamp(17rem, 60vw, 24rem);
   --stagger-fade: 0.15s;
   --stagger-step: 0.1s;
@@ -246,11 +245,6 @@
   --font-size-next-up-time: 6rem;
   --font-size-next-up-time-phone: 4.5rem;
 
-  /* The landing hero's card accents only (ADR 0016); the app shows no genre look. Removed with the hero's genre
-     motifs in PR5b (ADR 0028 section 7). */
-  --color-genre-shooter: #ff5f6d;
-  --color-genre-racing: #ff8a3d;
-  --color-genre-party: #ff6ad5;
   --ratio-cover-preview: 16 / 9;
   --width-cover-preview: 16rem;
 
@@ -1882,30 +1876,33 @@ a:where(:not([data-slot="button"])) {
   padding-top: var(--space-6);
 }
 
+/* From a wide window the text and the cards sit side by side, so the cards are in the first view. */
+@media (min-width: 60rem) {
+  .hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+    align-items: center;
+    gap: var(--space-6);
+  }
+
+  .hero .hero-stage {
+    margin-top: 0;
+  }
+}
+
 .hero__title {
   margin: 0 0 var(--space-3);
-  font-family: var(--font-heading);
   font-size: var(--font-size-hero);
   font-weight: 800;
   line-height: var(--line-hero);
-}
-
-/* Descender room: the mask clips the line, so it needs space below the glyphs. */
-.hero__line {
-  display: block;
-  overflow: hidden;
-  padding-bottom: 0.12em;
-  margin-bottom: -0.12em;
-}
-
-.hero__line-inner {
-  display: block;
+  text-wrap: balance;
 }
 
 .hero__lead {
   max-width: 32rem;
   margin: 0 0 var(--space-4);
-  font-size: 1.125rem;
+  /* The one step above body text, the same 1.125rem the lead had before the redesign. */
+  font-size: var(--font-size-lobby-name);
   color: var(--color-muted);
   animation: fade-up var(--duration-slow) var(--ease-out)
     calc(var(--stagger-fade) * 2) both;
@@ -1924,9 +1921,10 @@ a:where(:not([data-slot="button"])) {
 .hero-stage {
   position: relative;
   height: var(--stage-height);
-  /* The static cards' width fit. Without container units: the .landing content box. */
+  /* The static cards' width fit. Without container units: the .landing content box, a little too wide beside the
+     text, which only browsers older than container units see. */
   --stage-width: calc(min(100vw, var(--width-landing)) - 2 * var(--space-4));
-  margin-top: var(--space-4);
+  margin-top: var(--space-6);
   pointer-events: none;
   animation: fade-up var(--duration-slow) var(--ease-out)
     calc(var(--stagger-fade) * 4) both;
@@ -1970,22 +1968,57 @@ a:where(:not([data-slot="button"])) {
   }
 }
 
+/* How it works: four steps along one rule, as the hours of a running order. */
 .steps {
   display: grid;
-  max-width: 40rem;
-  margin-inline: auto;
-  gap: var(--space-3);
+  gap: var(--space-4);
+}
+
+@media (min-width: 47.5rem) {
+  .steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 60rem) {
+  .steps {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 .steps > :nth-child(2) {
   --reveal-delay: var(--stagger-step);
 }
 
+.steps > :nth-child(3) {
+  --reveal-delay: calc(var(--stagger-step) * 2);
+}
+
+.steps > :nth-child(4) {
+  --reveal-delay: calc(var(--stagger-step) * 3);
+}
+
+.step-card {
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-rule);
+}
+
 .step-card__title {
   margin: 0 0 var(--space-2);
   font-family: var(--font-heading);
-  font-size: 1.25rem;
+  font-size: var(--font-size-heading);
   font-weight: 800;
+  line-height: var(--line-height-tight);
+  text-transform: uppercase;
+}
+
+.step-card__number {
+  display: block;
+  margin-bottom: var(--space-2);
+  font-size: var(--font-size-figure);
+  font-weight: 900;
+  line-height: var(--line-height-solid);
+  font-variant-numeric: tabular-nums;
 }
 
 .step-card__text {
@@ -2059,7 +2092,8 @@ a:where(:not([data-slot="button"])) {
 }
 
 /* The Wordmark: uppercase by CSS, not by the text (ADR 0028 section 2). */
-.top-bar .brand {
+.top-bar .brand,
+.landing-topbar .brand {
   font-size: var(--font-size-heading);
   font-weight: 900;
   letter-spacing: 0.01em;

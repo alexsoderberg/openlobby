@@ -1,5 +1,4 @@
 import { useEffect, useRef } from "react";
-import { themeForGenre } from "../../genres";
 import { useMessages, type Messages } from "../../i18n";
 import {
   HERO_MAX_PIXEL_RATIO,
@@ -14,8 +13,6 @@ import {
   CARD_CANVAS_WIDTH,
   paintHeroCard,
   readCardStyle,
-  readCssValue,
-  type CardTheme,
 } from "./heroCardPainter";
 import { browserLoopEnv, startHeroLoop } from "./heroLoop";
 import {
@@ -26,7 +23,6 @@ import {
 } from "./heroPose";
 
 const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
-const THEMES = HERO_SAMPLE_CARDS.map(({ genre }) => themeForGenre(genre));
 /** Where each static card rests. The static frame shows the first two; the third only exists in the scene. */
 const STATIC_PLACES = [HERO_FRONT, HERO_BEHIND, HERO_AWAY];
 const STATIC_VISIBLE_CARDS = 2;
@@ -39,36 +35,6 @@ function hasWebGL(): boolean {
   return context !== null;
 }
 
-/** Resolves to undefined when the image fails, so one missing picture leaves the card without it. */
-function loadImage(url: string, failed: string[]) {
-  return new Promise<HTMLImageElement | undefined>((resolve) => {
-    const image = new Image();
-    image.onload = () => resolve(image);
-    image.onerror = () => {
-      failed.push(url);
-      resolve(undefined);
-    };
-    image.src = url;
-  });
-}
-
-async function loadCardThemes(stage: HTMLElement): Promise<CardTheme[]> {
-  const failed: string[] = [];
-  const themes = await Promise.all(
-    THEMES.map(async ({ accentVar, patternUrl, iconUrl }) => ({
-      accent: readCssValue(stage, accentVar),
-      pattern: await loadImage(patternUrl, failed),
-      icon: await loadImage(iconUrl, failed),
-    })),
-  );
-  if (failed.length > 0)
-    console.error(
-      "Genre art did not load; the cards are painted without it.",
-      failed,
-    );
-  return themes;
-}
-
 /** Paints every card at its start count, which is the static frame. */
 function paintStaticFrame(cards: readonly HeroSceneCard[]) {
   cards.forEach((card, index) =>
@@ -76,28 +42,18 @@ function paintStaticFrame(cards: readonly HeroSceneCard[]) {
   );
 }
 
-/** Waits for the fonts and the art, so the cards have their own fonts and no blank area, then paints the static frame. */
+/** Waits for the fonts, so the cards are painted in their own fonts, then paints the static frame. */
 async function paintCards(
   stage: HTMLElement,
   m: Messages,
 ): Promise<HeroSceneCard[]> {
   const canvases = Array.from(stage.querySelectorAll("canvas"));
-  const [themes] = await Promise.all([
-    loadCardThemes(stage),
-    document.fonts?.ready,
-  ]);
+  await document.fonts?.ready;
   const style = readCardStyle(stage);
   const cards = HERO_SAMPLE_CARDS.map((_, index): HeroSceneCard => ({
     canvas: canvases[index],
-    motif: THEMES[index].motif,
-    accent: themes[index].accent,
     paint: (count) =>
-      paintHeroCard(
-        canvases[index],
-        heroCardContent(m, index, count),
-        style,
-        themes[index],
-      ),
+      paintHeroCard(canvases[index], heroCardContent(m, index, count), style),
   }));
   paintStaticFrame(cards);
   return cards;
@@ -191,9 +147,9 @@ export function LandingHero() {
 
   return (
     <div ref={stageRef} className="hero-stage" aria-hidden="true">
-      {HERO_SAMPLE_CARDS.map(({ genre }, index) => (
+      {HERO_SAMPLE_CARDS.map(({ gameName }, index) => (
         <canvas
-          key={genre}
+          key={gameName}
           className="hero-stage__card"
           width={CARD_CANVAS_WIDTH}
           height={CARD_CANVAS_HEIGHT}

@@ -258,6 +258,13 @@ The order follows the dependencies: the tokens and the shell first, because ever
 
 DECISION (user, 2026-11-21, Amendment 2026-11-21): the redesign is built on the branch `redesign-preview`. Nothing of it reaches `main` until the whole redesign (PR 1 to PR 5) is accepted by the user, and then only on the user's yes. Each PR is still reviewed and approved on its own branch step.
 
+**Delivery status (product owner, 2026-11-24):**
+- PR 5b (landing restyle, the last redesign PR) is built on `redesign-preview`. The landing headline is in Big Shoulders Display; the hero is two columns from 60rem; the steps are four flat columns with large numbers (headings uppercase by CSS; REQ-0013 Amendment 2026-11-24).
+- The hero cards are neutral and unlit: no genre motif, no glow phase, no pointer-following light (DECISION, user, 2026-11-24). A full card is marked by a text-colour edge, not orange (accepted by the user, 2026-11-24). The 3D scene, tilt, float, lazy load, static fallback and reduced-motion rules stay.
+- The genre visuals are removed from the frontend (the genre theme file and the genre art are deleted). The genre value stays stored and editable (ADR 0016; REQ-0014 Amendment 2026-11-24).
+- PR #163 (bug fix, merged into `redesign-preview` on 2026-11-24): a lobby that crosses midnight no longer shows its start time on the next day's row; it shows the end time with the marker (for example "–01:00"), as item 4 already requires. No criterion changes.
+- Status stays `Decided` until the redesign is on `main`. The user's yes for `main` is pending. Then the status moves to `Implemented`.
+
 Each PR goes through the review of CLAUDE.md step 5 and the Definition of Done. ADR 0028 (Accepted 2026-11-21, section 16 Amendment 2026-11-21) records the design (the dark tokens, the radii, the Orange rule, the running order component, the Top bar, the group colour rule) and amends ADR 0014, 0015, 0016, 0018, 0021, 0023, 0026 and 0027 where this requirement supersedes them.
 
 ## Out of scope

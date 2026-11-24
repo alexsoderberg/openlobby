@@ -38,17 +38,17 @@ export function LandingPage({
       <main className="landing">
         {notice && <Alert>{notice}</Alert>}
         <section className="hero">
-          <h1 ref={headingRef} tabIndex={-1} className="hero__title">
-            <span className="hero__line">
-              <span className="hero__line-inner">{t.headline}</span>
-            </span>
-          </h1>
-          <p className="hero__lead">{t.lead}</p>
-          <div className="hero__actions">
-            <ButtonLink href={href}>
-              <Icon name="logIn" />
-              {m.logInWithDiscord}
-            </ButtonLink>
+          <div className="hero__text">
+            <h1 ref={headingRef} tabIndex={-1} className="hero__title">
+              {t.headline}
+            </h1>
+            <p className="hero__lead">{t.lead}</p>
+            <div className="hero__actions">
+              <ButtonLink href={href}>
+                <Icon name="logIn" />
+                {m.logInWithDiscord}
+              </ButtonLink>
+            </div>
           </div>
           <LandingHero />
         </section>
@@ -63,7 +63,8 @@ export function LandingPage({
             {t.steps.map((step, index) => (
               <StepCard
                 key={step.title}
-                title={`${index + 1}. ${step.title}`}
+                number={index + 1}
+                title={step.title}
                 text={step.text}
               />
             ))}

@@ -1,4 +1,4 @@
-/** Already formatted texts for one hero card, plus the numbers behind the avatars and the meter. */
+/** Already formatted texts for one hero card, plus the numbers behind the spot squares and the meter. */
 export interface CardContent {
   gameName: string;
   timeText: string;
@@ -10,52 +10,40 @@ export interface CardContent {
 /** Colours and fonts, read from the app's CSS custom properties so the palette is not copied. */
 export interface CardStyle {
   surface: string;
+  /** The card edge and the meter track. */
   border: string;
+  /** The outline of a free spot: a control line, so it reads at 3:1 (WCAG 1.4.11). */
+  line: string;
   text: string;
-  /** The lighter muted text for plates that carry a genre pattern. */
   muted: string;
-  /** Border, halo and meter of a full card. */
-  glow: string;
   headingFont: string;
   bodyFont: string;
 }
 
-/** The genre's look: its accent colour and the art that sits on the card. A missing image is left out. */
-export interface CardTheme {
-  accent: string;
-  pattern?: HTMLImageElement;
-  icon?: HTMLImageElement;
-}
-
 export const CARD_CANVAS_WIDTH = 640;
 export const CARD_CANVAS_HEIGHT = 400;
-// Sizes are in canvas pixels. A phone shows the card about 200 CSS px wide, so the small text is 42 px here.
-export const CARD_PADDING = 40;
-const RADIUS = 40;
-// The visible border is 3px: the stroke is centred on the edge, so the outer half is clipped away.
-const STROKE_WIDTH = 6;
-const PILL_HEIGHT = 68;
-const PILL_PADDING = 26;
-const METER_HEIGHT = 14;
-const NAME_SIZE = 56;
-const SMALL_SIZE = 42;
+// Sizes are in canvas pixels. A phone shows the card about 200 CSS px wide, so the small text is 40 px here.
+const CARD_PADDING = 40;
+// About the app's --radius at the size the card is shown.
+const RADIUS = 16;
+const SPOT_RADIUS = 6;
+// The stroke is centred on the edge and the outer half is clipped away, so the visible edge is half of it.
+const STROKE_WIDTH = 4;
+const TIME_SIZE = 104;
+const TIME_BASELINE = 124;
+const NAME_SIZE = 44;
+const NAME_BASELINE = 186;
+const NAME_MAX_WIDTH = CARD_CANVAS_WIDTH - CARD_PADDING * 2;
+const SMALL_SIZE = 40;
+// The weights the page already loads (the headline and the buttons), so the canvas never paints a fallback font.
+const WEIGHT_HEAVY = 800;
 const WEIGHT_STRONG = 600;
-const WEIGHT_MEDIUM = 500;
-/** Keeps the name clear of the 3D motif, which floats over the right of the card. */
-const NAME_MAX_WIDTH = 360;
-const NAME_BASELINE = 176;
-const ICON_SIZE = PILL_HEIGHT;
-const AVATAR_RADIUS = 17;
-const AVATAR_GAP = 12;
-const AVATAR_ROW_Y = 232;
-const AVATAR_OUTLINE_WIDTH = STROKE_WIDTH / 2;
+const WEIGHT_TEXT = 400;
+const SPOT_SIZE = 34;
+const SPOT_GAP = 12;
+const SPOT_ROW_TOP = 222;
+const METER_HEIGHT = 12;
 const SPOTS_TEXT_GAP = 18;
-export const CARD_TINT_ALPHA = 0.08;
-/** The full-state halo: the canvas blur has a sigma of half this value. The contrast test derives its bound from it. */
-export const GLOW_BLUR = 24;
-export const FULL_STROKE_WIDTH = 14;
-/** Fraction of the font size from the visual centre of a line to its baseline. */
-const BASELINE_FROM_CENTER = 1 / 3;
 
 export function readCardStyle(element: Element): CardStyle {
   const styles = getComputedStyle(element);
@@ -63,17 +51,13 @@ export function readCardStyle(element: Element): CardStyle {
   return {
     surface: read("--color-surface"),
     border: read("--color-rule"),
+    line: read("--color-control-line"),
     text: read("--color-text"),
     muted: read("--color-muted"),
-    glow: read("--color-online"),
     headingFont: read("--font-heading"),
     bodyFont: read("--font-text"),
   };
 }
-
-/** A custom property's value, for the accent of a genre (`GenreTheme.accentVar`). */
-export const readCssValue = (element: Element, name: string) =>
-  getComputedStyle(element).getPropertyValue(name).trim();
 
 /** Path with arcTo: ctx.roundRect is missing in older browsers, and the fallback must never be blank. */
 function roundedRect(
@@ -94,6 +78,7 @@ function roundedRect(
   ctx.closePath();
 }
 
+/** A full card takes the text colour on its edge, as a seat I hold does in the app. No glow (ADR 0028 section 7). */
 function paintFrame(
   ctx: CanvasRenderingContext2D,
   full: boolean,
@@ -102,143 +87,75 @@ function paintFrame(
   roundedRect(ctx, 0, 0, CARD_CANVAS_WIDTH, CARD_CANVAS_HEIGHT, RADIUS);
   ctx.fillStyle = style.surface;
   ctx.fill();
-  // The stroke is centred on the edge, so the outer half is clipped away.
   ctx.save();
   ctx.clip();
-  ctx.lineWidth = full ? FULL_STROKE_WIDTH : STROKE_WIDTH;
-  ctx.strokeStyle = full ? style.glow : style.border;
-  if (full) {
-    ctx.shadowColor = style.glow;
-    ctx.shadowBlur = GLOW_BLUR;
-  }
+  ctx.lineWidth = STROKE_WIDTH;
+  ctx.strokeStyle = full ? style.text : style.border;
   ctx.stroke();
   ctx.restore();
 }
 
-function paintArt(ctx: CanvasRenderingContext2D, theme: CardTheme) {
-  const tile = theme.pattern && ctx.createPattern(theme.pattern, "repeat");
-  if (tile) {
-    ctx.save();
-    roundedRect(ctx, 0, 0, CARD_CANVAS_WIDTH, CARD_CANVAS_HEIGHT, RADIUS);
-    ctx.clip();
-    ctx.fillStyle = tile;
-    ctx.fillRect(0, 0, CARD_CANVAS_WIDTH, CARD_CANVAS_HEIGHT);
-    ctx.restore();
-  }
-  if (theme.icon)
-    ctx.drawImage(
-      theme.icon,
-      CARD_CANVAS_WIDTH - CARD_PADDING - ICON_SIZE,
-      CARD_PADDING,
-      ICON_SIZE,
-      ICON_SIZE,
-    );
-}
-
-/** The time in the text colour, in a pill tinted with the genre accent: an accent is no text colour. */
-function paintTimePill(
-  ctx: CanvasRenderingContext2D,
-  timeText: string,
-  style: CardStyle,
-  theme: CardTheme,
-) {
-  ctx.font = `${WEIGHT_STRONG} ${SMALL_SIZE}px ${style.bodyFont}`;
-  const width = ctx.measureText(timeText).width + PILL_PADDING * 2;
-  roundedRect(ctx, CARD_PADDING, CARD_PADDING, width, PILL_HEIGHT, PILL_HEIGHT);
-  ctx.save();
-  ctx.globalAlpha = CARD_TINT_ALPHA;
-  ctx.fillStyle = theme.accent;
-  ctx.fill();
-  ctx.restore();
-  ctx.fillStyle = style.text;
-  ctx.fillText(
-    timeText,
-    CARD_PADDING + PILL_PADDING,
-    CARD_PADDING + PILL_HEIGHT / 2 + SMALL_SIZE * BASELINE_FROM_CENTER,
-  );
-}
-
-/** One dot per spot: filled for a player who has arrived, an outline for a free spot. No photo, no name. */
-function paintAvatars(
+/** One square per spot, as the app's avatars: filled for a player who has arrived, an outline for a free spot. */
+function paintSpots(
   ctx: CanvasRenderingContext2D,
   content: CardContent,
   style: CardStyle,
-  theme: CardTheme,
 ) {
-  ctx.lineWidth = AVATAR_OUTLINE_WIDTH;
+  ctx.lineWidth = STROKE_WIDTH / 2;
   for (let spot = 0; spot < content.maxCount; spot++) {
-    ctx.beginPath();
-    ctx.arc(
-      CARD_PADDING + AVATAR_RADIUS + spot * (AVATAR_RADIUS * 2 + AVATAR_GAP),
-      AVATAR_ROW_Y,
-      AVATAR_RADIUS,
-      0,
-      Math.PI * 2,
-    );
+    const x = CARD_PADDING + spot * (SPOT_SIZE + SPOT_GAP);
+    roundedRect(ctx, x, SPOT_ROW_TOP, SPOT_SIZE, SPOT_SIZE, SPOT_RADIUS);
     if (spot < content.count) {
-      ctx.fillStyle = theme.accent;
+      ctx.fillStyle = style.text;
       ctx.fill();
     } else {
-      ctx.strokeStyle = style.border;
+      ctx.strokeStyle = style.line;
       ctx.stroke();
     }
   }
 }
 
-/** The players text above a meter that fills with the count. Full cards use the glow colour. */
+/** The players text above a meter that fills with the count. */
 function paintMeter(
   ctx: CanvasRenderingContext2D,
   content: CardContent,
   style: CardStyle,
-  theme: CardTheme,
 ) {
   const meterWidth = CARD_CANVAS_WIDTH - CARD_PADDING * 2;
   const meterY = CARD_CANVAS_HEIGHT - CARD_PADDING - METER_HEIGHT;
-  ctx.font = `${WEIGHT_MEDIUM} ${SMALL_SIZE}px ${style.bodyFont}`;
+  ctx.font = `${WEIGHT_TEXT} ${SMALL_SIZE}px ${style.bodyFont}`;
   ctx.fillStyle = style.muted;
   ctx.fillText(content.spotsText, CARD_PADDING, meterY - SPOTS_TEXT_GAP);
 
-  roundedRect(
-    ctx,
-    CARD_PADDING,
-    meterY,
-    meterWidth,
-    METER_HEIGHT,
-    METER_HEIGHT,
-  );
   ctx.fillStyle = style.border;
-  ctx.fill();
-  roundedRect(
-    ctx,
+  ctx.fillRect(CARD_PADDING, meterY, meterWidth, METER_HEIGHT);
+  ctx.fillStyle = style.text;
+  ctx.fillRect(
     CARD_PADDING,
     meterY,
     (meterWidth * content.count) / content.maxCount,
     METER_HEIGHT,
-    METER_HEIGHT,
   );
-  ctx.fillStyle = content.count >= content.maxCount ? style.glow : theme.accent;
-  ctx.fill();
 }
 
-/** Paints one hero card: time pill, genre art, game name, avatars, players text and meter. */
+/** Paints one hero card: the start time large, as the line-up shows it, then game name, spots, players text and meter. */
 export function paintHeroCard(
   canvas: HTMLCanvasElement,
   content: CardContent,
   style: CardStyle,
-  theme: CardTheme,
 ): void {
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
   ctx.clearRect(0, 0, CARD_CANVAS_WIDTH, CARD_CANVAS_HEIGHT);
   ctx.textBaseline = "alphabetic";
   paintFrame(ctx, content.count >= content.maxCount, style);
-  paintArt(ctx, theme);
-  paintTimePill(ctx, content.timeText, style, theme);
 
-  ctx.font = `${WEIGHT_STRONG} ${NAME_SIZE}px ${style.headingFont}`;
   ctx.fillStyle = style.text;
+  ctx.font = `${WEIGHT_HEAVY} ${TIME_SIZE}px ${style.headingFont}`;
+  ctx.fillText(content.timeText, CARD_PADDING, TIME_BASELINE, NAME_MAX_WIDTH);
+  ctx.font = `${WEIGHT_STRONG} ${NAME_SIZE}px ${style.bodyFont}`;
   ctx.fillText(content.gameName, CARD_PADDING, NAME_BASELINE, NAME_MAX_WIDTH);
 
-  paintAvatars(ctx, content, style, theme);
-  paintMeter(ctx, content, style, theme);
+  paintSpots(ctx, content, style);
+  paintMeter(ctx, content, style);
 }

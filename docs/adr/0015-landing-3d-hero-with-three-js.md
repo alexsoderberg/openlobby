@@ -1,6 +1,7 @@
 # 0015. Landing 3D hero with three.js, lazy-loaded
 Status: Accepted (2026-11-07)
 Amended 2026-11-21 by ADR 0028 (REQ-0029, running order redesign): see the Amendment 2026-11-21 section at the end of this file.
+Amended 2026-11-24 (REQ-0029 PR5b): the cards are unlit; three.js stays for depth, tilt and float. See the Amendment 2026-11-24 section.
 Amended by ADR 0016 (points 2, 4, 5, 6, 7 and 10: genre themes and the fill cycle)
 
 ## Context
@@ -141,3 +142,10 @@ export interface HeroScene {
 
 ## Amendment 2026-11-21 (ADR 0028, REQ-0029)
 - The hero keeps its 3D scene, lazy load and static fallback. It takes the light palette through the tokens; the colours are still read with `getComputedStyle`. Its cards lose the genre motif and the glow phase (ADR 0028 section 7, PR5b). Pointer, visibility and reduced-motion rules stay.
+
+## Amendment 2026-11-24 (REQ-0029 PR5b, unlit cards)
+DECISION, user, 2026-11-24: "ta bort ljuset" (remove the light). Where this amendment differs from points 2 to 10, it wins.
+1. The hero cards are neutral and unlit: `MeshBasicMaterial`, one flat colour per card. The pointer-following light, the ambient light and the point light are removed.
+2. three.js stays. It gives depth, perspective, the pointer tilt and the float of the cards. Those are the reason for the 3D scene, so the choice of ADR 0015 and its version pin are unchanged.
+3. The pointer tilt, float, sway, lazy load, static fallback, reduced-motion and visibility rules stay as they are.
+4. The glow phase is removed (ADR 0028 section 7), and the full card is marked by a text-colour edge, not orange (user, 2026-11-24).

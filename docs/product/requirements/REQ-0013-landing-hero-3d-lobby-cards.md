@@ -130,3 +130,19 @@ Out of scope (addition): replacing the removed preview with another demo or prev
 
 ## Amendment 2026-11-18 (REQ-0028, item 3: landing headline font)
 DECISION, user, 2026-11-18. The landing headline is set in Space Grotesk 700, the app's heading font, not Cormorant Garamond. The serif font files are dropped. The hero's text criteria above are unchanged. See REQ-0028 item 3. Implemented 2026-11-18 (PR #145).
+
+## Amendment 2026-11-24 (REQ-0029 PR 5b, landing restyle)
+DECISION, user, 2026-11-24 (REQ-0029 items 8 and 10, ADR 0028 section 7). The sample cards are neutral and unlit. Where this amendment and the criteria above differ, this amendment applies. Everything else stays: the 3D scene, the pointer tilt (at most 12 degrees), the float, lazy loading, the static fallback, reduced motion, login never blocked, no layout shift, `aria-hidden`, no focusable element, no click action, and WCAG AA for the visible text.
+
+Changes:
+- No genre look on the cards: no genre theme, background pattern, genre icon or 3D genre motif. The Amendment 2026-11-07 criteria "each card uses its genre's theme" and "a different genre" no longer apply. The cards still differ in game name, start time and count.
+- No glow and no pointer-following light. The glow phase, the glow in a design token colour and the light that follows the pointer are not built. The pointer tilt stays.
+- A full card is marked by a text-colour edge (`--color-text`), not by orange and not by a glow (user accepted 2026-11-24). The full state stays visibly different from the filling state.
+- The cards use the Stage tokens (ADR 0028 section 16.2).
+- The steps below the hero are four flat columns with large numbers (PR 5b). This replaces the stacked single column of Amendment 2026-11-08 on wide screens. The breakpoint is the UI expert's to state.
+
+ASSUMPTION (product owner, user may change): the timing of Amendment 2026-11-07 stays, so the full state still holds for 1.5 seconds, marked only by the text-colour edge.
+
+Status of this amendment: built in PR 5b on `redesign-preview` (2026-11-24). It reaches `main` with the redesign (REQ-0029, the user's yes).
+
+Out of scope (addition): genre motifs, a glow or a pointer light on the hero, in any form.

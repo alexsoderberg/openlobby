@@ -2,7 +2,7 @@
 export interface HeroTiming {
   enterSeconds: number;
   stepSeconds: number;
-  glowSeconds: number;
+  fullSeconds: number;
   leaveSeconds: number;
 }
 
@@ -27,7 +27,7 @@ const arrivalsOf = (card: CountedCard) => card.maxCount - card.startCount;
 export const heroCardSeconds = (card: CountedCard, timing: HeroTiming) =>
   timing.enterSeconds +
   arrivalsOf(card) * timing.stepSeconds +
-  timing.glowSeconds +
+  timing.fullSeconds +
   timing.leaveSeconds;
 
 /** Which card is in focus after this many seconds, and how many seconds into that card we are. */
@@ -61,7 +61,7 @@ function frameInCard(
 ): HeroFrame {
   const fillSeconds = arrivalsOf(card) * timing.stepSeconds;
   const fillEnd = timing.enterSeconds + fillSeconds;
-  const fullEnd = fillEnd + timing.glowSeconds;
+  const fullEnd = fillEnd + timing.fullSeconds;
   const frame = (
     phase: HeroPhase,
     count: number,
@@ -83,7 +83,7 @@ function frameInCard(
     );
   }
   if (seconds < fullEnd)
-    return frame("full", card.maxCount, fillEnd, timing.glowSeconds);
+    return frame("full", card.maxCount, fillEnd, timing.fullSeconds);
   return frame("leave", card.maxCount, fullEnd, timing.leaveSeconds);
 }
 
