@@ -309,6 +309,8 @@ export const en = {
     spots: (count: number, max: number) => `${count}/${max}`,
     // A block's start and end clock times, "22:00–02:00".
     times: (start: string, end: string) => `${start}–${end}`,
+    // The short time of a block that continues from the day before: its end only, "–01:00".
+    until: (end: string) => `–${end}`,
     // The name a screen reader reads for a block: the same facts as its visible text, with the midnight markers.
     blockName: (parts: {
       label: string;

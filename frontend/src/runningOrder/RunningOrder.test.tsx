@@ -169,6 +169,15 @@ describe("RunningOrder", () => {
     }
   });
 
+  it("shows the start only on the day a lobby starts, and the end on the day it continues", () => {
+    renderWeek([lobby("Night", at(4, 22), at(5, 1))]);
+    const startOn = (date: Date) =>
+      day(date).getByRole("link").querySelector(".running-order__start")!
+        .textContent;
+    expect(startOn(at(4, 0))).toBe(formatTime(at(4, 22)));
+    expect(startOn(at(5, 0))).toBe(en.runningOrder.until(formatTime(at(5, 1))));
+  });
+
   it("draws the Now line only in today's row, hidden from the accessibility tree", () => {
     renderWeek([
       lobby("Today", at(4, 20), at(4, 21)),
