@@ -63,8 +63,11 @@ export function RunningOrderBlock({
       data-mine={lobby.joinedByMe || undefined}
     >
       <a href={lobby.href} aria-label={name}>
+        {/* A continuation did not start on this day, so it shows its end instead. */}
         <span className="running-order__start">
-          {formatTime(lobby.startsAt)}
+          {continuesBefore
+            ? m.runningOrder.until(formatTime(lobby.endsAt))
+            : formatTime(lobby.startsAt)}
         </span>
         <span className="running-order__label">
           {continuesBefore && <Icon name="chevronRight" />}
