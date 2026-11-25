@@ -2,21 +2,18 @@ import { describe, expect, it } from "vitest";
 import {
   paintHeroCard,
   readCardStyle,
-  readCssValue,
   type CardStyle,
-  type CardTheme,
 } from "./heroCardPainter";
 
 const STYLE: CardStyle = {
   surface: "#111",
   border: "#222",
+  line: "#777",
   text: "#eee",
   muted: "#888",
-  glow: "#0f0",
   headingFont: "sans-serif",
   bodyFont: "serif",
 };
-const THEME: CardTheme = { accent: "#f00" };
 const CONTENT = {
   gameName: "Sample shooter",
   timeText: "7:00 PM",
@@ -25,17 +22,16 @@ const CONTENT = {
   maxCount: 5,
 };
 
-/** A 2D context that records the texts, the colours that were set and the dots drawn. */
+/** A 2D context that records the texts, the colours that were set and the shapes filled or stroked. */
 function recordingCanvas() {
   const texts: string[] = [];
   const colours: string[] = [];
-  const arcs: unknown[] = [];
+  const shapes: string[] = [];
   const noop = () => undefined;
   const target: Record<string, unknown> = {
     fillText: (text: string) => texts.push(text),
-    measureText: () => ({ width: 100 }),
-    createPattern: () => null,
-    arc: (...args: unknown[]) => arcs.push(args),
+    fill: () => shapes.push(`fill ${String(target.fillStyle)}`),
+    stroke: () => shapes.push(`stroke ${String(target.strokeStyle)}`),
   };
   const context = new Proxy(target, {
     get: (object, name: string) => object[name] ?? noop,
@@ -50,48 +46,56 @@ function recordingCanvas() {
     height: 400,
     getContext: () => context,
   } as unknown as HTMLCanvasElement;
-  return { canvas, texts, colours, arcs };
+  return { canvas, texts, colours, shapes };
 }
 
 describe("paintHeroCard", () => {
-  it("draws exactly the texts it is given and one dot per spot", () => {
-    const { canvas, texts, arcs } = recordingCanvas();
+  it("draws exactly the texts it is given, a filled square per player and an outline per free spot", () => {
+    const { canvas, texts, shapes } = recordingCanvas();
 
-    paintHeroCard(canvas, CONTENT, STYLE, THEME);
+    paintHeroCard(canvas, CONTENT, STYLE);
 
     expect(texts).toEqual(["7:00 PM", "Sample shooter", "3/5 players"]);
-    expect(arcs).toHaveLength(CONTENT.maxCount);
+    expect(
+      shapes.filter((shape) => shape === `fill ${STYLE.text}`),
+    ).toHaveLength(3);
+    expect(
+      shapes.filter((shape) => shape === `stroke ${STYLE.line}`),
+    ).toHaveLength(2);
   });
 
-  it("uses the genre accent while filling and the glow colour only when full", () => {
+  it("uses only the palette it is given, with the text colour on the edge only when full", () => {
     const filling = recordingCanvas();
-    paintHeroCard(filling.canvas, CONTENT, STYLE, THEME);
+    paintHeroCard(filling.canvas, CONTENT, STYLE);
     const full = recordingCanvas();
-    paintHeroCard(full.canvas, { ...CONTENT, count: 5 }, STYLE, THEME);
+    paintHeroCard(full.canvas, { ...CONTENT, count: 5 }, STYLE);
 
-    expect(filling.colours).toContain(THEME.accent);
-    expect(filling.colours).not.toContain(STYLE.glow);
-    expect(full.colours).toContain(STYLE.glow);
+    const palette = Object.values(STYLE);
+    for (const { colours } of [filling, full])
+      expect(colours.filter((colour) => !palette.includes(colour))).toEqual([]);
+    expect(filling.shapes).toContain(`stroke ${STYLE.border}`);
+    expect(full.shapes).not.toContain(`stroke ${STYLE.border}`);
+    expect(full.shapes).toContain(`stroke ${STYLE.text}`);
   });
 
   it("does nothing without a 2D context", () => {
     const canvas = { getContext: () => null } as unknown as HTMLCanvasElement;
 
-    expect(() => paintHeroCard(canvas, CONTENT, STYLE, THEME)).not.toThrow();
+    expect(() => paintHeroCard(canvas, CONTENT, STYLE)).not.toThrow();
   });
 });
 
 describe("readCardStyle", () => {
   it("reads colours and fonts from the custom properties", () => {
     const element = document.createElement("div");
-    element.style.setProperty("--sample-accent", " #f0c75e ");
-    element.style.setProperty("--font-heading", "Space Grotesk");
+    element.style.setProperty("--color-control-line", " #7a7268 ");
+    element.style.setProperty("--font-heading", "Big Shoulders Display");
     document.body.append(element);
 
     const style = readCardStyle(element);
 
-    expect(readCssValue(element, "--sample-accent")).toBe("#f0c75e");
-    expect(style.headingFont).toBe("Space Grotesk");
+    expect(style.line).toBe("#7a7268");
+    expect(style.headingFont).toBe("Big Shoulders Display");
     element.remove();
   });
 });

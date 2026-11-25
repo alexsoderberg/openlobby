@@ -10,7 +10,7 @@ import {
 const TIMING: HeroTiming = {
   enterSeconds: 1,
   stepSeconds: 1,
-  glowSeconds: 1.5,
+  fullSeconds: 1.5,
   leaveSeconds: 1,
 };
 const CARDS = [
@@ -21,7 +21,7 @@ const CARDS = [
 const at = (seconds: number) => heroFrameAt(seconds, CARDS, TIMING);
 
 describe("heroCardSeconds", () => {
-  it("is enter + arrivals + glow + leave, within 6 to 10 seconds", () => {
+  it("is enter + arrivals + full hold + leave, within 6 to 10 seconds", () => {
     const seconds = CARDS.map((card) => heroCardSeconds(card, TIMING));
 
     expect(seconds).toEqual([6.5, 6.5, 8.5]);
@@ -43,7 +43,7 @@ describe("heroFrameAt", () => {
     expect(at(4)).toMatchObject({ phase: "full", count: 5 });
   });
 
-  it("holds the full state for the glow time, then leaves for the leave time", () => {
+  it("holds the full state for the full time, then leaves for the leave time", () => {
     expect(at(5.49).phase).toBe("full");
     expect(at(5.5)).toMatchObject({ phase: "leave", count: 5, focusIndex: 0 });
     expect(at(6.49).phase).toBe("leave");

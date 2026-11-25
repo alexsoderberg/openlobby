@@ -43,7 +43,7 @@ Replacements of the dark tokens (every component uses the new name; the rename i
 | `--color-bg-raised`, `--color-surface` (the dark translucent value), `--color-page-wash`, `--color-chrome`, `--color-popover-top`, `--color-accent-line`, `--color-frost`, `--color-highlight`, `--color-shade`, `--color-sheen`, `--color-button-*` | removed |
 | `--color-online` | removed in PR5b with the hero |
 
-Genre colour tokens (`--color-genre-*`, `--genre-*`, `--size-genre-*`) and `--color-cover-scrim` are removed in PR5a (section 7).
+Genre colour tokens (`--genre-*`, `--size-genre-*`) and `--color-cover-scrim` are removed in PR5a (section 7). The three `--color-genre-*` tokens of the hero are removed in PR5b.
 
 ### 2. Other tokens
 - **Radius.** Every `--radius-*` token is removed. No `border-radius` in `global.css` or in `ui/` class lists. Native controls keep their own rounding. Test: `styles/flat.test.ts`.
@@ -120,10 +120,10 @@ Rules:
 
 ### 7. Genre look, covers and logos (ADR 0016 and 0026 visuals)
 - **Data and API are unchanged.** `genre` stays stored and editable in the game form. `GenreName` and `GENRE_OPTIONS` stay.
-- **Removed from the UI in every place:** tint, background pattern, genre icon, 3D motif, accent stripe, cover. Each screen drops its `GenreFrame` in its own PR, as plain markup. The component `GenreFrame.tsx` and the theme data of `genreThemes.ts` are deleted in PR5a.
+- **Removed from the UI in every place:** tint, background pattern, genre icon, 3D motif, accent stripe, cover. Each screen drops its `GenreFrame` in its own PR, as plain markup. The component `GenreFrame.tsx` is deleted in PR5a. The theme data of `genreThemes.ts` and `public/genre-art/` are fully deleted in PR5b, when the hero (their last user) stopped using them.
 - **Game cover:** shown nowhere. The upload, the storage and `coverVersion` stay (ADR 0026).
 - **Game logo:** not in running order blocks. The small block size and its token are removed with the old grid in PR3a. The regular (2.5 rem) and large (4 rem) sizes stay. The logo box and the Monogram are squares.
-- **Landing hero (ADR 0015).** The hero cards use the neutral look. The genre motif shapes (the motif part of `heroScene.ts` and `MotifDescriptor` in `hero.ts`) and the glow phase of `heroCycle.ts` (`glowSeconds`) are removed in PR5b, because glow is not allowed (REQ-0029 item 1). The 3D scene stays (REQ-0029 ASSUMPTION, item 8). `heroCycle.ts` is the lobby fill cycle, not a genre cycle, so the rest of it stays.
+- **Landing hero (ADR 0015).** The hero cards use the neutral look and are unlit (`MeshBasicMaterial`, ADR 0015 Amendment 2026-11-24): no pointer light, no ambient or point light. The genre motif shapes (the motif part of `heroScene.ts` and `MotifDescriptor` in `hero.ts`) and the glow phase of `heroCycle.ts` (`glowSeconds`) are removed in PR5b, because glow is not allowed (REQ-0029 item 1). The full card holds one extra step and is marked by a text-colour edge, not orange (user, 2026-11-24). three.js stays for depth, perspective, tilt and float (REQ-0029 ASSUMPTION, item 8). `heroCycle.ts` is the lobby fill cycle, not a genre cycle, so the rest of it stays.
 
 ### 8. Layout rules that change (REQ-0025)
 - **Main area:** below the Top bar, centred, at most 100 rem. The rail beside it is gone.
@@ -177,7 +177,7 @@ DECISION (user, 2026-11-21): accepted. Order: PR1a, PR1b, PR2, PR3a, PR3b, PR4, 
 | PR3b | Group view header, line-up list, members with Game chips, Group feed, Group cards without genre frame. |
 | PR4 | Lobby page: large time block, seat boxes, side column for facts and settings, `GenreFrame` removed from the lobby details. |
 | PR5a | Remaining pages (You page, game list, game form, Create lobby form); `GameImageField` plain frame; genre code and genre tokens deleted. |
-| PR5b | Landing headline in `--font-heading`, hero restyled (section 7), last token and dead CSS cleanup, `--color-online` removed. |
+| PR5b | Landing headline in `--font-heading`, hero restyled and unlit (section 7), landing width `--width-landing` 72rem, two-column hero from 60rem and steps in 1, 2 and 4 columns, last token and dead CSS cleanup, `--color-online` and the three `--color-genre-*` tokens removed, `genreThemes.ts` and `public/genre-art/` deleted. Done 2026-11-24. |
 
 ### 14. Tests that guard the tokens and how they change
 | Test | Change | PR |
@@ -200,7 +200,8 @@ DECISION (user, 2026-11-21): accepted. Order: PR1a, PR1b, PR2, PR3a, PR3b, PR4, 
 | `calendar/*.test.*`, `styles/timeGrid.test.ts` | Deleted with the module. | PR3a |
 | `dashboard/ThisWeek.test.tsx`, `Dashboard.test.tsx` | Rewritten for the band and the running order. | PR2 |
 | `hooks/useStoredChoice.test.ts` | Deleted with the hook. | PR2 |
-| `genres/genreContrast.test.ts`, `genreThemes.test.ts`, `accentStripe.test.ts`, `GenreFrame.test.tsx` | Deleted with their code. | PR5a |
+| `genres/genreContrast.test.ts`, `accentStripe.test.ts`, `GenreFrame.test.tsx` | Deleted with their code. | PR5a |
+| `genres/genreThemes.test.ts` | Deleted with its code. | PR5b |
 | `features/landing/heroCycle.test.ts` | Glow assertions removed. | PR5b |
 
 ### 15. Dead code and where it is deleted
@@ -219,8 +220,9 @@ DECISION (user, 2026-11-21): accepted. Order: PR1a, PR1b, PR2, PR3a, PR3b, PR4, 
 | `GenreFrame` in `GroupCard` and `LobbyList` | Plain markup | PR3b |
 | `GenreFrame` in `LobbyDetails` | Plain markup | PR4 |
 | `GenreFrame` in `GameImageField` | Plain frame | PR5a |
-| `genres/GenreFrame.tsx`, the theme data of `genres/genreThemes.ts`, `public/genre-art/`, `--color-genre-*`, `--genre-*`, `--size-genre-*`, `--color-cover-scrim` | None | PR5a |
-| Hero motif shapes (`heroScene.ts`, `MotifDescriptor`), glow phase of `heroCycle.ts`, `--color-online` | Neutral hero card | PR5b |
+| `genres/GenreFrame.tsx`, `--genre-*`, `--size-genre-*`, `--color-cover-scrim` | None | PR5a |
+| `genres/genreThemes.ts` (the theme data, `GenreTheme`, `themeForGenre`), `public/genre-art/`, `--color-genre-*` (the three hero accents) | None; `GenreName` and `GENRE_OPTIONS` stay | PR5b |
+| Hero motif shapes (`heroScene.ts`, `MotifDescriptor`), glow phase of `heroCycle.ts`, `--color-online`, the hero's light objects (ambient and point lights, pointer light) | Neutral unlit hero card | PR5b |
 | Round Avatar and the rounded `GameLogo` box | Squares | PR1a |
 | i18n keys whose last user is deleted (for example `calendarDayPillsLabel`) | None | Same PR as the code (ADR 0013) |
 
@@ -337,7 +339,7 @@ DECISION, architect, on the deviations the UI/UX expert built. Each one amends t
 6. **`--color-online` (landing glow).** Not in the 16.2 table, and not added to it. It stays in PR1a and is removed in PR5b with the hero, as section 1 and section 15 already say. It is not used by any new element.
 7. **Phone Tab bar corners (amends 16.5, accepted from the UI/UX expert).** The phone Tab bar stays edge to edge with square corners. Only its items take `--radius`. The bar is fixed to the bottom and side edges of the window, so rounded corners would show the page through the screen edge. The approved option 1 mockup draws it the same way.
 
-Temporary tokens, with the PR that deletes them: `--color-online` (PR5b), `--genre-motif-opacity` and the game-cover hover (PR5a), the genre tokens (PR5a). Section 15 is the list of what is deleted where.
+Temporary tokens, with the PR that deletes them: `--color-online` (PR5b), `--genre-motif-opacity` and the game-cover hover (PR5a), the genre tokens (PR5a), the three hero `--color-genre-*` tokens (PR5b). Section 15 is the list of what is deleted where.
 
 ### 16.12 Rulings on the PR1b build (2026-11-21)
 DECISION, architect, on the deviations the UI/UX expert built for the Top bar. Each one amends the section it names.

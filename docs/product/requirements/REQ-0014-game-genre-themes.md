@@ -113,3 +113,6 @@ DECISION, user, 2026-11-15 (REQ-0026, ADR 0026). On the Next up card, a game cov
 
 ## Amendment 2026-11-18 (REQ-0028, item 2: accent stripe)
 DECISION, user, 2026-11-18. The 3px genre accent stripe (left edge) is shown only on the week calendar blocks. It is not shown on lobby rows, the lobby page header or the lobby line of a Group card. The genre icon, the genre name and the tint or pattern stay everywhere they are shown. The contrast criterion for "border" in the Contrast section no longer applies to a border; the accent still needs 3:1 for its icon and meter fill. The stripe is removed from Next up and the This week day list too (DECISION, user, 2026-11-18, REQ-0028). Implemented 2026-11-18 (PR #145).
+
+## Amendment 2026-11-24 (REQ-0029 PR 5b, genre look removed from the code)
+DECISION, user, 2026-11-24 (REQ-0029 item 10). The genre look is removed from the frontend in PR 5b on `redesign-preview`: the genre theme file and the genre art are deleted, so no genre tint, pattern, icon, 3D motif or accent stripe is shown anywhere, including the landing hero (REQ-0013 Amendment 2026-11-24). The genre stays a stored value, editable in the game form (F-032, ADR 0016; the data is unchanged). The genre name is shown nowhere in the redesign. This amendment reaches `main` with the redesign (REQ-0029, the user's yes).
