@@ -106,6 +106,7 @@ gateway-frontend|true|frontend,gateway
 services|true|auth,calendar,gateway
 data|true|auth,calendar,postgres
 auth-egress|false|auth
+calendar-egress|false|calendar
 certbot-egress|false|certbot
 NETWORKS
 }

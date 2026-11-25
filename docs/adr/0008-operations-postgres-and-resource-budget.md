@@ -120,3 +120,13 @@ Amendment 2026-11-02 (REQ-0001 calendar). Decided by the architect on the Compos
 **1. `calendar` does not depend on `auth` before REQ-0002 (decided).** The name lookup in `auth` is built with REQ-0002, the first operation that shows names. Until then `infra/compose.yaml` gives `calendar` no `AUTH_URL` and no `depends_on: auth`, so `docker compose up calendar` starts it with `postgres` only, as the rule "each service can run alone" requires. A dependency that is not used would also make `calendar` fail to start when `auth` is down, with no benefit. The network table is unchanged: `calendar` stays on `services`, because `gateway` reaches it there. REQ-0002 adds `AUTH_URL` and `depends_on: auth` (`service_healthy`) together with the generated client (ADR 0012, `services/calendar/internal/infrastructure/authclient/gen`).
 
 Amendment 2026-11-10 (proposed, ADR 0018, 0019; applies when accepted): `auth` uses its existing egress network also for Discord's image CDN, at login only (ADR 0018). Live updates are in-process in `calendar`, so `calendar` runs as one replica (ADR 0019, point 12); DevOps adds that as a comment in `infra/compose.yaml`. Open live streams cost a few kilobytes of memory each in `gateway` and `calendar` (ADR 0019, point 14). No new container.
+
+Amendment 2026-11-25 (ADR 0029, REQ-0030): outbound network of `calendar`. Decided by the architect for ADR 0029 section 4.
+1. **Network table.** The table of Amendment 2026-11-02 (review 5) gets one row:
+
+   | Network | `internal` | Members | Why |
+   |---|---|---|---|
+   | `calendar-egress` | no | `calendar` | Outbound HTTPS calls to Blizzard's Game Data API (`oauth.battle.net`, `{region}.api.blizzard.com` and the icon asset host, ADR 0029 section 4) |
+
+2. **No outbound access.** The sentence of Amendment 2026-11-02 (review 5) that says `gateway`, `calendar`, `frontend` and `postgres` have no outbound access is replaced by: `gateway`, `frontend` and `postgres` have no outbound access. `calendar` has outbound access only through `calendar-egress`, and only to the Blizzard hosts of ADR 0029 section 4. Compose cannot allow hosts by name, so the host allowlist is enforced in the adapter. `calendar` joins no other non-internal network. No port of `calendar` is published.
+3. **Memory budget.** The `calendar` row of the resource budget table above (about 30 MB plus at most about 9 MB for the item cache) is the target. The cap of 64 MB and `GOMEMLIMIT=48MiB` of item 5 are unchanged: 39 MB is below 48 MiB.

@@ -1,7 +1,7 @@
 # 0029. Goals and item drops: Blizzard item IDs in calendar, names and icons fetched and cached
 Status: Accepted (2026-11-25)
 Requirement: REQ-0030 (F-031, EXTEND, Decided 2026-11-25).
-Amends: ADR 0017 section 6 (the game write and the game delete get one step each, section 3), ADR 0008 (the memory budget of `calendar` in its operations table, section 4).
+Amends: ADR 0017 section 6 (the game write and the game delete get one step each, section 3), ADR 0008 (the memory budget of `calendar` in its operations table, section 4; the network table and the no-outbound-access statement of its Amendment 2026-11-02 (review 5), and its Amendment 2026-11-25).
 Builds on: ADR 0017 (Named activities, game tree write), ADR 0018 (shared-group rule; Proposed, related only), ADR 0022 (standing per-person choice, no foreign key on a table the game write re-creates), ADR 0026 (images served behind the gateway, same origin, `img-src 'self'`; the basis of the no-hotlink rule), ADR 0002 (identity headers).
 Introduces: one external dependency (the Blizzard Game Data API, with its OAuth client credentials), therefore this ADR. Adds one egress network to `calendar`. No new service, no asynchronous communication.
 
