@@ -8,7 +8,7 @@ import (
 	"openlobby/services/calendar/internal/domain"
 )
 
-// GameImages holds the use cases about the logo and cover of a game (ADR 0026).
+// GameImages holds the use cases about the logo of a game (ADR 0026).
 type GameImages struct {
 	images GameImageRepository
 	logger *slog.Logger

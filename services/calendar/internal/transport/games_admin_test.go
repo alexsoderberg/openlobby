@@ -131,9 +131,9 @@ func TestListGamesReturnsWholeListToSystemAdmin(t *testing.T) {
 		t.Fatalf("decode %q: %v", response.Body.String(), err)
 	}
 	want := []map[string]any{
-		{"id": counterStrikeID, "name": "Counter-Strike 2", "defaultMaxPlayers": float64(5), "genre": nil, "logoVersion": nil, "coverVersion": nil, "gameRoles": []any{}, "modes": []any{}},
-		{"id": overwatchID, "name": "Overwatch", "defaultMaxPlayers": float64(5), "genre": nil, "logoVersion": nil, "coverVersion": nil, "gameRoles": []any{}, "modes": []any{}},
-		{"id": chessID, "name": "Chess", "defaultMaxPlayers": nil, "genre": nil, "logoVersion": nil, "coverVersion": nil, "gameRoles": []any{}, "modes": []any{}},
+		{"id": counterStrikeID, "name": "Counter-Strike 2", "defaultMaxPlayers": float64(5), "genre": nil, "logoVersion": nil, "gameRoles": []any{}, "modes": []any{}},
+		{"id": overwatchID, "name": "Overwatch", "defaultMaxPlayers": float64(5), "genre": nil, "logoVersion": nil, "gameRoles": []any{}, "modes": []any{}},
+		{"id": chessID, "name": "Chess", "defaultMaxPlayers": nil, "genre": nil, "logoVersion": nil, "gameRoles": []any{}, "modes": []any{}},
 	}
 	if response.Code != http.StatusOK || !reflect.DeepEqual(list, want) {
 		t.Fatalf("status %d, list %v; want 200 and %v", response.Code, list, want)
@@ -212,7 +212,7 @@ func TestCreateGameAddsGameWithGeneratedIDForSystemAdmin(t *testing.T) {
 
 	response := call(gameRouter(store), http.MethodPost, gameRoot, asAdminUser(alexID), `{"name":"  Chess  ","defaultMaxPlayers":2}`)
 
-	want := map[string]any{"id": createdGameID, "name": "Chess", "defaultMaxPlayers": float64(2), "genre": nil, "logoVersion": nil, "coverVersion": nil, "gameRoles": []any{}, "modes": []any{}}
+	want := map[string]any{"id": createdGameID, "name": "Chess", "defaultMaxPlayers": float64(2), "genre": nil, "logoVersion": nil, "gameRoles": []any{}, "modes": []any{}}
 	var body map[string]any
 	if err := json.Unmarshal(response.Body.Bytes(), &body); err != nil {
 		t.Fatalf("decode %q: %v", response.Body.String(), err)
@@ -330,7 +330,7 @@ func TestReplaceGameReplacesNameAndMaxAndKeepsID(t *testing.T) {
 
 	response := call(gameRouter(store), http.MethodPut, gamePath, asAdminUser(alexID), `{"name":"overwatch","defaultMaxPlayers":6}`)
 
-	want := map[string]any{"id": overwatchID, "name": "overwatch", "defaultMaxPlayers": float64(6), "genre": nil, "logoVersion": nil, "coverVersion": nil, "gameRoles": []any{}, "modes": []any{}}
+	want := map[string]any{"id": overwatchID, "name": "overwatch", "defaultMaxPlayers": float64(6), "genre": nil, "logoVersion": nil, "gameRoles": []any{}, "modes": []any{}}
 	var body map[string]any
 	if err := json.Unmarshal(response.Body.Bytes(), &body); err != nil {
 		t.Fatalf("decode %q: %v", response.Body.String(), err)

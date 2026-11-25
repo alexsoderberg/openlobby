@@ -196,20 +196,18 @@ describe("lobby list", () => {
     expect(single.textContent).toMatch(/1 player$/);
   });
 
-  it("shows no genre name, genre theme or cover on a row (REQ-0029 item 10)", async () => {
+  it("shows no genre name, or genre theme on a row (REQ-0029 item 10)", async () => {
     renderLobbies(
       withLobbies({
         ...catan,
         gameGenre: "strategy",
         gameId: "game1",
-        gameCoverVersion: "c".repeat(64),
       }),
     );
 
     const [row] = await screen.findAllByRole("listitem");
     expect(within(row).queryByText(en.genre.strategy)).toBeNull();
     expect(row.hasAttribute("data-genre")).toBe(false);
-    expect(row.querySelector("img[src*='/images/cover']")).toBeNull();
   });
 
   it("links each lobby to its detail page", async () => {

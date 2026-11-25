@@ -184,7 +184,7 @@ func gameBody(game domain.Game) (publicapi.Game, error) {
 		}
 		modes = append(modes, body)
 	}
-	return publicapi.Game{Id: id, Name: game.Name, DefaultMaxPlayers: game.DefaultMaxPlayers, Genre: convertEnum[publicapi.Genre](game.Genre), LogoVersion: game.LogoVersion, CoverVersion: game.CoverVersion, GameRoles: &roles, Modes: &modes}, nil
+	return publicapi.Game{Id: id, Name: game.Name, DefaultMaxPlayers: game.DefaultMaxPlayers, Genre: convertEnum[publicapi.Genre](game.Genre), LogoVersion: game.LogoVersion, GameRoles: &roles, Modes: &modes}, nil
 }
 
 func modeBody(mode domain.GameMode) (publicapi.GameMode, error) {

@@ -1,5 +1,5 @@
 import { useId, useRef, useState } from "react";
-import { gameImageUrl, type Game, type GameImageKind } from "../../api";
+import { type Game, type GameImageKind } from "../../api";
 import { toUserMessage, useMessages } from "../../i18n";
 import { Button, ConfirmDialog, GameLogo, Icon } from "../../ui";
 import { useGameImage } from "./useGameImage";
@@ -34,17 +34,7 @@ export function GameImageField({
     <fieldset className="structure" aria-describedby={hintId}>
       <legend>{m.gameImage[kind]}</legend>
       <div className="image-field__row">
-        {kind === "logo" ? (
-          <GameLogo gameId={game.id} name={game.name} version={image.version} />
-        ) : (
-          // A plain frame of a fixed size, so a loading image moves nothing. The cover is shown nowhere else
-          // (ADR 0028 section 7). A cover that fails to load leaves the frame empty: its alt is empty.
-          <span className="cover-preview" aria-hidden="true">
-            {image.version && (
-              <img src={gameImageUrl(game.id, "cover", image.version)} alt="" />
-            )}
-          </span>
-        )}
+        <GameLogo gameId={game.id} name={game.name} version={image.version} />
         <Button
           type="button"
           variant="secondary"

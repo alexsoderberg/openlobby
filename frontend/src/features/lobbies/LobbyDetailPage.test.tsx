@@ -458,15 +458,14 @@ describe("an open lobby on the page", () => {
   });
 });
 
-describe("no genre theme and no cover (REQ-0029 item 10)", () => {
-  it("shows neither the genre name nor the game cover", async () => {
+describe("no genre theme (REQ-0029 item 10)", () => {
+  it("does not show the genre name", async () => {
     renderDetail({
       getLobby: () =>
         Promise.resolve({
           ...lobby,
           gameId: "game1",
           gameGenre: "survival",
-          gameCoverVersion: "c".repeat(64),
         }),
     });
 
@@ -475,7 +474,6 @@ describe("no genre theme and no cover (REQ-0029 item 10)", () => {
     ).closest("header")!;
     expect(screen.queryByText(en.genre.survival)).toBeNull();
     expect(header.hasAttribute("data-genre")).toBe(false);
-    expect(document.querySelector('img[src*="/images/cover"]')).toBeNull();
   });
 });
 

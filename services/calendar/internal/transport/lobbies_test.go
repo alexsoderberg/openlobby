@@ -259,7 +259,7 @@ func TestCreateLobbyReturns201WithTheContractShape(t *testing.T) {
 			want := map[string]any{
 				"id": createdID, "gameName": tc.wantGame, "gameGenre": nil, "maxPlayers": tc.wantMax, "startsAt": tc.wantStart,
 				"endsAt": validEnd, "createdByUserId": otherID, "playerCount": float64(1), "joinedByMe": true, "flexCount": float64(0),
-				"gameId": nil, "modeId": nil, "modeName": nil, "activityId": nil, "activityName": nil, "gameLogoVersion": nil, "gameCoverVersion": nil,
+				"gameId": nil, "modeId": nil, "modeName": nil, "activityId": nil, "activityName": nil, "gameLogoVersion": nil,
 			}
 			if tc.wantGame == "Chess" {
 				want["gameId"] = chessGameID
@@ -436,7 +436,7 @@ func TestListUpcomingLobbiesReturns200WithTheContractShape(t *testing.T) {
 	want := map[string]any{
 		"id": aliceLobby, "gameName": "Go", "gameGenre": nil, "maxPlayers": nil, "startsAt": "2026-11-02T19:00:00Z",
 		"endsAt": "2026-11-02T20:00:00Z", "createdByUserId": alexID, "playerCount": float64(2), "joinedByMe": false, "flexCount": float64(0),
-		"gameId": nil, "modeId": nil, "modeName": nil, "activityId": nil, "activityName": nil, "gameLogoVersion": nil, "gameCoverVersion": nil,
+		"gameId": nil, "modeId": nil, "modeName": nil, "activityId": nil, "activityName": nil, "gameLogoVersion": nil,
 	}
 	for key, value := range want {
 		if got[0][key] != value {
@@ -596,22 +596,22 @@ func TestJoinAndLeaveLobbyNeedALogin(t *testing.T) {
 	}
 }
 
-// The create response and the lists carry the genre, logo and cover version of the lobby's game (ADR 0016, ADR 0026).
+// The create response and the lists carry the genre and logo version of the lobby's game (ADR 0016, ADR 0026).
 func TestLobbyResponsesCarryTheGameGenre(t *testing.T) {
 	store := lobbyStore()
 	strategy := domain.Genre("strategy")
-	logo, cover := strings.Repeat("b", 64), strings.Repeat("c", 64)
-	store.games[0].Genre, store.games[0].LogoVersion, store.games[0].CoverVersion = &strategy, &logo, &cover
-	store.lobbies[aliceLobby] = domain.Lobby{ID: aliceLobby, GroupID: fridayID, CreatedByUserID: alexID, GameName: strp("Chess"), GameGenre: &strategy, GameLogoVersion: &logo, GameCoverVersion: &cover, EndsAt: clockNow.Add(time.Hour)}
+	logo := strings.Repeat("b", 64)
+	store.games[0].Genre, store.games[0].LogoVersion = &strategy, &logo
+	store.lobbies[aliceLobby] = domain.Lobby{ID: aliceLobby, GroupID: fridayID, CreatedByUserID: alexID, GameName: strp("Chess"), GameGenre: &strategy, GameLogoVersion: &logo, EndsAt: clockNow.Add(time.Hour)}
 
 	created := call(newRouter(store, fridayDirectory()), http.MethodPost, lobbiesPath, asUser(otherID), lobbyJSON(validStart, validEnd, withChess))
 	listed := call(newRouter(store, fridayDirectory()), http.MethodGet, lobbiesPath, asUser(otherID), "")
 	detail := call(newRouter(store, fridayDirectory()), http.MethodGet, lobbiesPath+"/"+aliceLobby, asUser(otherID), "")
 
-	for _, want := range []string{`"gameGenre":"strategy"`, `"gameLogoVersion":"` + logo + `"`, `"gameCoverVersion":"` + cover + `"`} {
+	for _, want := range []string{`"gameGenre":"strategy"`, `"gameLogoVersion":"` + logo + `"`} {
 		for _, body := range []string{created.Body.String(), listed.Body.String(), detail.Body.String()} {
-			if !strings.Contains(body, want) {
-				t.Fatalf("body %q; want %s", body, want)
+			if !strings.Contains(body, want) || strings.Contains(body, "gameCoverVersion") {
+				t.Fatalf("body %q; want %s and no gameCoverVersion (ADR 0026 Amendment 2026-11-25)", body, want)
 			}
 		}
 	}

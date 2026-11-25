@@ -21,17 +21,8 @@ const (
 )
 
 // memoryImages stores the images of memoryGroups with the adapter's rules: an unknown game is not found, and a game read
-// carries the versions of its logo and cover, as the join does.
+// carries the version of its logo, as the join does.
 type memoryImages struct{ store *memoryGroups }
-
-// setVersion keeps the game's version of the kind as the join would read it.
-func (m memoryImages) setVersion(index int, kind string, version *string) {
-	if kind == "cover" {
-		m.store.games[index].CoverVersion = version
-	} else {
-		m.store.games[index].LogoVersion = version
-	}
-}
 
 func (m memoryImages) Save(_ context.Context, gameID string, image domain.GameImage) (domain.Game, error) {
 	index := m.store.gameIndex(gameID)
@@ -39,7 +30,7 @@ func (m memoryImages) Save(_ context.Context, gameID string, image domain.GameIm
 		return domain.Game{}, application.ErrGameNotFound
 	}
 	m.store.images[gameID+image.Kind] = image
-	m.setVersion(index, image.Kind, &image.Version)
+	m.store.games[index].LogoVersion = &image.Version
 	return m.store.games[index], nil
 }
 
@@ -49,7 +40,7 @@ func (m memoryImages) Delete(_ context.Context, gameID, kind string) error {
 		return application.ErrGameNotFound
 	}
 	delete(m.store.images, gameID+kind)
-	m.setVersion(index, kind, nil)
+	m.store.games[index].LogoVersion = nil
 	return nil
 }
 
@@ -204,30 +195,18 @@ func TestGameImageNeedsIdentity(t *testing.T) {
 	}
 }
 
-// The cover has the same routes and rules as the logo, with its own version beside the logo's (ADR 0026).
-func TestCoverIsServedBesideTheLogo(t *testing.T) {
+// The cover was removed, so it is an unknown kind: 404 game_image_not_found for every method, and nothing is stored
+// (ADR 0026 Amendment 2026-11-25 section 3).
+func TestCoverIsAnUnknownKind(t *testing.T) {
 	store := imageStore()
 	router := gameRouter(store)
-	assertErrorEnvelope(t, call(router, http.MethodPut, coverPath, asUser(alexID), pngOf(10)), http.StatusForbidden, "not_allowed")
-	assertErrorEnvelope(t, call(router, http.MethodPut, coverPath, asAdminUser(alexID), pngOf(domain.MaxGameImageBytes+1)), http.StatusRequestEntityTooLarge, "image_too_large")
-	assertErrorEnvelope(t, call(router, http.MethodPut, coverPath, asAdminUser(alexID), "<svg></svg>"), http.StatusBadRequest, "invalid_image_type")
-	body := pngOf(64)
-
-	response := call(router, http.MethodPut, coverPath, asAdminUser(alexID), body)
-
-	var game map[string]any
-	if err := json.Unmarshal(response.Body.Bytes(), &game); err != nil || response.Code != http.StatusOK {
-		t.Fatalf("status %d, body %q, error %v", response.Code, response.Body.String(), err)
+	for _, method := range []string{http.MethodPut, http.MethodGet, http.MethodDelete} {
+		for _, headers := range []map[string]string{asUser(alexID), asAdminUser(alexID)} {
+			headers["Content-Type"] = "image/png"
+			assertErrorEnvelope(t, call(router, method, coverPath+"?v="+strings.Repeat("0", 64), headers, pngOf(10)), http.StatusNotFound, "game_image_not_found")
+		}
 	}
-	version, _ := game["coverVersion"].(string)
-	if len(version) != 64 || game["logoVersion"] != nil {
-		t.Fatalf("game %v, want a cover version and no logo version", game)
-	}
-	if got := call(router, http.MethodGet, coverPath+"?v="+version, asUser(otherID), ""); got.Code != http.StatusOK || got.Body.String() != body {
-		t.Fatalf("status %d, %d bytes; want 200 with the cover", got.Code, got.Body.Len())
-	}
-	assertErrorEnvelope(t, call(router, http.MethodGet, logoPath+"?v="+version, asUser(otherID), ""), http.StatusNotFound, "game_image_not_found")
-	if got := call(router, http.MethodDelete, coverPath, asAdminUser(alexID), ""); got.Code != http.StatusNoContent || len(store.images) != 0 {
-		t.Fatalf("remove status %d, images %v", got.Code, store.images)
+	if len(store.images) != 0 {
+		t.Fatalf("images %v; want none", store.images)
 	}
 }

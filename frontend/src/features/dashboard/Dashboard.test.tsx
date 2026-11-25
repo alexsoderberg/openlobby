@@ -191,14 +191,13 @@ describe("Next up", () => {
 });
 
 describe("no game pictures on Home", () => {
-  it("shows no logo, monogram or cover on Next up or in the running order", async () => {
+  it("shows no logo or monogram on Next up or in the running order", async () => {
     renderDashboard({
       g1: [
         lobby("l1", "Overwatch 2", at(4, 20), at(4, 22), {
           gameId: "game1",
           gameGenre: "shooter",
           gameLogoVersion: "c".repeat(64),
-          gameCoverVersion: "d".repeat(64),
         }),
       ],
     });

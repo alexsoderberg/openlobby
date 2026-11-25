@@ -19,7 +19,6 @@ const catan: Game = {
   defaultMaxPlayers: 4,
   genre: null,
   logoVersion: null,
-  coverVersion: null,
 };
 const png = new File([new Uint8Array([0x89, 0x50])], "catan.png", {
   type: "image/png",
@@ -228,66 +227,10 @@ describe("game logo in the game form", () => {
   });
 });
 
-describe("game cover in the game form", () => {
-  async function openCoverField() {
-    fireEvent.click(
-      await screen.findByRole("button", { name: `${en.gameEdit}, Catan` }),
-    );
-    return screen.getByRole("group", { name: en.gameImage.cover });
-  }
-  const coverOf = (field: HTMLElement) =>
-    field.querySelector(".cover-preview img");
-
-  it("has no cover field in the add form", async () => {
+describe("game form images", () => {
+  it("has the logo field only", async () => {
     renderPage();
-    await screen.findByText("Catan");
-    expect(
-      screen.queryByRole("group", { name: en.gameImage.cover }),
-    ).toBeNull();
-  });
-
-  it("shows an empty plain frame without a cover, and the uploaded cover at once", async () => {
-    const setGameImage = vi.fn(() =>
-      Promise.resolve({ ...catan, coverVersion: NEW }),
-    );
-    renderPage({
-      listGames: () => Promise.resolve([{ ...catan, genre: "strategy" }]),
-      setGameImage,
-    });
-    const field = await openCoverField();
-    expect(coverOf(field)).toBeNull();
-
-    choose(field, png);
-
-    expect(await within(field).findByText(en.gameImageSaved)).toBeTruthy();
-    expect(setGameImage).toHaveBeenCalledWith("g1", "cover", png);
-    expect(coverOf(field)?.getAttribute("src")).toBe(
-      `/api/games/g1/images/cover?v=${NEW}`,
-    );
-    expect(screen.getAllByText(en.gameImageSaved)).toHaveLength(1);
-  });
-
-  it("removes the cover after confirmation and leaves the logo", async () => {
-    const { client } = renderPage({
-      listGames: () =>
-        Promise.resolve([{ ...catan, logoVersion: OLD, coverVersion: OLD }]),
-    });
-    const field = await openCoverField();
-
-    fireEvent.click(
-      within(field).getByRole("button", { name: en.gameImageRemove }),
-    );
-    const dialog = await screen.findByRole("alertdialog", {
-      name: en.gameImageRemoveHeading.cover("Catan"),
-    });
-    fireEvent.click(
-      within(dialog).getByRole("button", { name: en.gameImageRemoveSubmit }),
-    );
-
-    expect(await within(field).findByText(en.gameImageRemoved)).toBeTruthy();
-    expect(client.removeGameImage).toHaveBeenCalledWith("g1", "cover");
-    expect(coverOf(field)).toBeNull();
-    const logoField = screen.getByRole("group", { name: en.gameImage.logo });
-    expect(imageOf(logoField)).not.toBeNull();
+    await openLogoField();
+    expect(document.querySelectorAll('input[type="file"]')).toHaveLength(1);
   });
 });

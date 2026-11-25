@@ -229,15 +229,10 @@ export const en = {
   gameRemoveSubmit: "Yes, remove game",
   gameRemoveKeep: "Keep game",
   gameAdded:
-    "Game added. Its form is open in the list, where you can add a logo and a cover.",
-  gameImage: { logo: "Logo", cover: "Cover" } satisfies Record<
-    GameImageKind,
-    string
-  >,
+    "Game added. Its form is open in the list, where you can add a logo.",
+  gameImage: { logo: "Logo" } satisfies Record<GameImageKind, string>,
   gameImageHint: {
     logo: "PNG, JPEG or WebP. The image is saved as soon as you choose it.",
-    cover:
-      "PNG, JPEG or WebP. The image is saved as soon as you choose it. The app does not show covers at the moment.",
   } satisfies Record<GameImageKind, string>,
   gameImageChoose: "Choose image",
   gameImageRemove: "Remove image",
@@ -246,12 +241,9 @@ export const en = {
   gameImageRemoved: "Image removed.",
   gameImageRemoveHeading: {
     logo: (game: string) => `Remove the logo of ${game}?`,
-    cover: (game: string) => `Remove the cover of ${game}?`,
   } satisfies Record<GameImageKind, (game: string) => string>,
   gameImageRemoveConfirm: {
     logo: "Its lobbies show the game's initials instead. You can choose a new image at any time.",
-    cover:
-      "The app does not show covers at the moment. You can choose a new image at any time.",
   } satisfies Record<GameImageKind, string>,
   gameImageRemoveSubmit: "Yes, remove image",
   gameImageRemoveKeep: "Keep image",

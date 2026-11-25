@@ -21,7 +21,7 @@ var ErrImageType = errors.New("invalid image type")
 var ErrGameImageNotFound = errors.New("game image not found")
 
 // gameImageKinds are the kinds the API accepts, the same as the database check (ADR 0026).
-var gameImageKinds = []string{"logo", "cover"}
+var gameImageKinds = []string{"logo"}
 
 // CheckGameImageKind gives ErrGameImageNotFound for a kind that is not a game image kind (ADR 0026 point 3).
 func CheckGameImageKind(kind string) error {
@@ -31,7 +31,7 @@ func CheckGameImageKind(kind string) error {
 	return nil
 }
 
-// GameImage is a logo or cover of a game (ADR 0026). Version is the hex SHA-256 of Data.
+// GameImage is the logo of a game (ADR 0026). Version is the hex SHA-256 of Data.
 type GameImage struct {
 	Kind      string
 	MediaType string
