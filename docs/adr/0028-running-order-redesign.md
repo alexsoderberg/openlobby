@@ -121,9 +121,9 @@ Rules:
 ### 7. Genre look, covers and logos (ADR 0016 and 0026 visuals)
 - **Data and API are unchanged.** `genre` stays stored and editable in the game form. `GenreName` and `GENRE_OPTIONS` stay.
 - **Removed from the UI in every place:** tint, background pattern, genre icon, 3D motif, accent stripe, cover. Each screen drops its `GenreFrame` in its own PR, as plain markup. The component `GenreFrame.tsx` is deleted in PR5a. The theme data of `genreThemes.ts` and `public/genre-art/` are fully deleted in PR5b, when the hero (their last user) stopped using them.
-- **Game cover:** shown nowhere. The upload, the storage and `coverVersion` stay (ADR 0026).
+- **Game cover:** removed (REQ-0026 Amendment 2026-11-25, ADR 0026 Amendment 2026-11-25): no upload, no storage, no `coverVersion` or `gameCoverVersion`. The cover rows are deleted by migration 0012.
 - **Game logo:** not in running order blocks. The small block size and its token are removed with the old grid in PR3a. The regular (2.5 rem) and large (4 rem) sizes stay. The logo box and the Monogram are squares.
-- **Landing hero (ADR 0015).** The hero cards use the neutral look and are unlit (`MeshBasicMaterial`, ADR 0015 Amendment 2026-11-24): no pointer light, no ambient or point light. The genre motif shapes (the motif part of `heroScene.ts` and `MotifDescriptor` in `hero.ts`) and the glow phase of `heroCycle.ts` (`glowSeconds`) are removed in PR5b, because glow is not allowed (REQ-0029 item 1). The full card holds one extra step and is marked by a text-colour edge, not orange (user, 2026-11-24). three.js stays for depth, perspective, tilt and float (REQ-0029 ASSUMPTION, item 8). `heroCycle.ts` is the lobby fill cycle, not a genre cycle, so the rest of it stays.
+- **Landing hero (ADR 0015).** The hero cards use the neutral look and are unlit (`MeshBasicMaterial`, ADR 0015 Amendment 2026-11-24): no pointer light, no ambient or point light. The genre motif shapes (the motif part of `heroScene.ts` and `MotifDescriptor` in `hero.ts`) and the glow of `heroCycle.ts` are removed in PR5b, because glow is not allowed (REQ-0029 item 1). Only the glow goes: the 1.5 s full hold stays (`fullSeconds` in `heroCycle.ts`, the step of the full card). The full card holds one extra step and is marked by a text-colour edge, not orange (user, 2026-11-24). three.js stays for depth, perspective, tilt and float (REQ-0029 ASSUMPTION, item 8). `heroCycle.ts` is the lobby fill cycle, not a genre cycle, so the rest of it stays.
 
 ### 8. Layout rules that change (REQ-0025)
 - **Main area:** below the Top bar, centred, at most 100 rem. The rail beside it is gone.
@@ -222,7 +222,7 @@ DECISION (user, 2026-11-21): accepted. Order: PR1a, PR1b, PR2, PR3a, PR3b, PR4, 
 | `GenreFrame` in `GameImageField` | Plain frame | PR5a |
 | `genres/GenreFrame.tsx`, `--genre-*`, `--size-genre-*`, `--color-cover-scrim` | None | PR5a |
 | `genres/genreThemes.ts` (the theme data, `GenreTheme`, `themeForGenre`), `public/genre-art/`, `--color-genre-*` (the three hero accents) | None; `GenreName` and `GENRE_OPTIONS` stay | PR5b |
-| Hero motif shapes (`heroScene.ts`, `MotifDescriptor`), glow phase of `heroCycle.ts`, `--color-online`, the hero's light objects (ambient and point lights, pointer light) | Neutral unlit hero card | PR5b |
+| Hero motif shapes (`heroScene.ts`, `MotifDescriptor`), the glow of `heroCycle.ts` (the 1.5 s full hold stays as `fullSeconds`), `--color-online`, the hero's light objects (ambient and point lights, pointer light) | Neutral unlit hero card | PR5b |
 | Round Avatar and the rounded `GameLogo` box | Squares | PR1a |
 | i18n keys whose last user is deleted (for example `calendarDayPillsLabel`) | None | Same PR as the code (ADR 0013) |
 

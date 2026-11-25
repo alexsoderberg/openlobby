@@ -14,8 +14,8 @@ var (
 	webpHeader = []byte("RIFF\x24\x00\x00\x00WEBPVP8 ")
 )
 
-// gameImageKinds are both kinds; every rule is the same for both (ADR 0026).
-var gameImageKinds = []string{"logo", "cover"}
+// gameImageKinds are the game image kinds; the cover was removed (ADR 0026 Amendment 2026-11-25).
+var gameImageKinds = []string{"logo"}
 
 // The type comes from the first bytes only (ADR 0026 point 6). SVG, GIF, HTML and text are refused.
 func TestNewGameImageSniffsTheTypeFromTheBytes(t *testing.T) {
@@ -94,8 +94,9 @@ func TestNewGameImageVersionIsTheSHA256OfTheBytes(t *testing.T) {
 }
 
 // Only the kinds of the API are game images; an unknown kind is game_image_not_found, before the bytes are checked.
+// "cover" is the removed kind (ADR 0026 Amendment 2026-11-25).
 func TestNewGameImageRefusesAnUnknownKind(t *testing.T) {
-	for _, kind := range []string{"", "banner", "Logo", "Cover", "icon"} {
+	for _, kind := range []string{"", "banner", "Logo", "cover", "Cover", "icon"} {
 		if _, err := domain.NewGameImage(kind, []byte("text")); !errors.Is(err, domain.ErrGameImageNotFound) {
 			t.Fatalf("kind %q: error %v; want ErrGameImageNotFound", kind, err)
 		}

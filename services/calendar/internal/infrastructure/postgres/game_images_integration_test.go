@@ -5,6 +5,7 @@ package postgres
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"errors"
 	"strings"
 	"testing"
@@ -120,13 +121,9 @@ func TestGameImageConstraintsAndCascade(t *testing.T) {
 			t.Errorf("%s: stored, want a check violation", name)
 		}
 	}
-	for _, kind := range []string{"logo", "cover"} {
-		data := append([]byte{0xff, 0xd8, 0xff}, make([]byte, domain.MaxGameImageBytes-3)...)
-		image := logoOf(t, data)
-		image.Kind = kind
-		if _, err := store.GameImages().Save(ctx, overwatchID, image); err != nil {
-			t.Fatalf("%s at the limit: %v", kind, err)
-		}
+	atTheLimit := logoOf(t, append([]byte{0xff, 0xd8, 0xff}, make([]byte, domain.MaxGameImageBytes-3)...))
+	if _, err := store.GameImages().Save(ctx, overwatchID, atTheLimit); err != nil {
+		t.Fatalf("logo at the limit: %v", err)
 	}
 
 	if err := store.Games().Delete(ctx, overwatchID); err != nil {
@@ -214,69 +211,42 @@ func TestCreateLobbyAnswersTheLogoVersion(t *testing.T) {
 	}
 }
 
-// The cover is joined beside the logo in every game and lobby read, each with its own version, and a removed cover leaves
-// the logo (ADR 0026 point 5).
-func TestCoverVersionIsJoinedBesideTheLogo(t *testing.T) {
+// Migration 0012 deletes the covers and keeps the logos; its Down accepts a cover again but brings none back (ADR 0026
+// Amendment 2026-11-25 section 4).
+func TestMigration0012RemovesTheCover(t *testing.T) {
 	store := migratedStore(t)
 	seedGroups(t, store)
 	ctx := context.Background()
-	gameID := counterStrikeID
-	byGame := insertLobby(t, store, newLobby(fridayID, alexID, &gameID, "Counter-Strike 2"))
-	open := openLobby(t, store)
-	logo := logoOf(t, []byte{0xff, 0xd8, 0xff})
-	cover, err := domain.NewGameImage("cover", []byte("\x89PNG\r\n\x1a\ncover"))
-	if err != nil {
-		t.Fatal(err)
+	migrateDownTo(t, store, 11)
+	insertImage := func(kind string) error {
+		_, err := store.db.ExecContext(ctx, `INSERT INTO game_images (game_id, kind, media_type, version, image) VALUES ($1, $2, 'image/png', $3, $4)`,
+			overwatchID, kind, strings.Repeat("a", 64), []byte{1})
+		return err
 	}
-	if _, err := store.GameImages().Save(ctx, counterStrikeID, logo); err != nil {
-		t.Fatal(err)
-	}
-
-	saved, err := store.GameImages().Save(ctx, counterStrikeID, cover)
-
-	if err != nil || saved.CoverVersion == nil || *saved.CoverVersion != cover.Version || saved.LogoVersion == nil || *saved.LogoVersion != logo.Version {
-		t.Fatalf("saved %+v, error %v; want the cover beside the logo", saved, err)
-	}
-	found, ok, err := store.GameImages().Find(ctx, counterStrikeID, "cover", cover.Version)
-	if err != nil || !ok || !bytes.Equal(found.Data, cover.Data) {
-		t.Fatalf("found %+v, %v, error %v; want the cover", found, ok, err)
-	}
-	list, err := store.Games().List(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	usages, err := store.Games().ListForGroup(ctx, fridayID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, game := range append(list, gamesOf(usages)...) {
-		if (game.ID == counterStrikeID) != (game.CoverVersion != nil && *game.CoverVersion == cover.Version) {
-			t.Fatalf("game %s has cover version %v in a list", game.ID, game.CoverVersion)
+	for _, kind := range []string{"logo", "cover"} {
+		if err := insertImage(kind); err != nil {
+			t.Fatalf("insert %s before 0012: %v", kind, err)
 		}
 	}
-	upcoming, err := store.Lobbies().Upcoming(ctx, fridayID, alexID, joinedAt)
-	if err != nil {
-		t.Fatal(err)
+
+	if err := store.Migrate(ctx, false); err != nil {
+		t.Fatalf("migrate up: %v", err)
 	}
-	for _, lobby := range upcoming {
-		if (lobby.ID == byGame.ID) != (lobby.GameCoverVersion != nil && *lobby.GameCoverVersion == cover.Version) {
-			t.Fatalf("lobby %s has cover version %v in the list", lobby.ID, lobby.GameCoverVersion)
-		}
+
+	if kinds := count(t, store, `SELECT count(*) FROM game_images WHERE kind = 'cover'`); kinds != 0 {
+		t.Fatalf("%d cover rows after Up; want none", kinds)
 	}
-	withGame, err := seatLobbies(store).SetGame(ctx, fridayID, open.ID, alexID, counterStrikeID)
-	if err != nil || withGame.GameCoverVersion == nil || *withGame.GameCoverVersion != cover.Version {
-		t.Fatalf("set game: lobby %+v, error %v; want the cover version", withGame, err)
+	if logo, ok, err := store.GameImages().Find(ctx, overwatchID, "logo", strings.Repeat("a", 64)); err != nil || !ok || !bytes.Equal(logo.Data, []byte{1}) {
+		t.Fatalf("logo %+v, %v, error %v; want it unchanged", logo, ok, err)
 	}
-	created, err := seatLobbies(store).Create(ctx, domain.NewLobbyRequest{GroupID: fridayID, CreatorID: alexID, GameID: &gameID,
-		StartsAt: joinedAt.Add(time.Hour), EndsAt: joinedAt.Add(3 * time.Hour)})
-	if err != nil || created.GameCoverVersion == nil || *created.GameCoverVersion != cover.Version {
-		t.Fatalf("create: lobby %+v, error %v; want the cover version", created, err)
+	if err := insertImage("cover"); err == nil {
+		t.Fatal("cover stored after Up; want a check violation")
 	}
-	if err := store.GameImages().Delete(ctx, counterStrikeID, "cover"); err != nil {
-		t.Fatal(err)
+	migrateDownTo(t, store, 11)
+	if err := store.db.QueryRowContext(ctx, `SELECT 1 FROM game_images WHERE kind = 'cover'`).Scan(new(int)); !errors.Is(err, sql.ErrNoRows) {
+		t.Fatalf("cover row after Down: error %v; want none back", err)
 	}
-	lobby, _, err := store.Lobbies().Lobby(ctx, fridayID, byGame.ID, alexID, joinedAt)
-	if err != nil || lobby.GameCoverVersion != nil || lobby.GameLogoVersion == nil {
-		t.Fatalf("lobby %+v, error %v; want the logo and no cover", lobby, err)
+	if err := insertImage("cover"); err != nil {
+		t.Fatalf("cover after Down: %v; want it accepted", err)
 	}
 }

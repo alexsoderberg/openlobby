@@ -1089,7 +1089,7 @@ paths:
         - name: v
           in: query
           required: false
-          description: The current version of the image (`logoVersion` or `coverVersion` of the game, `gameLogoVersion` or `gameCoverVersion` of a lobby). A missing or older value gives `game_image_not_found`.
+          description: The current version of the image (`logoVersion` of the game, `gameLogoVersion` of a lobby). A missing or older value gives `game_image_not_found`.
           schema:
             type: string
       responses:
@@ -1663,12 +1663,6 @@ components:
           x-omitempty: false
           pattern: '^[0-9a-f]{64}$'
           description: Version of the logo of the lobby's game as it is in the game list now, for the image URL (ADR 0026). `null` for a lobby with no game, a custom name ("Other"), a game without a logo, or a game that was removed. Not in `required` so that existing fixtures stay valid, but the server always sends it.
-        gameCoverVersion:
-          type: string
-          nullable: true
-          x-omitempty: false
-          pattern: '^[0-9a-f]{64}$'
-          description: Version of the cover of the lobby's game as it is in the game list now, for the image URL (ADR 0026). `null` for a lobby with no game, a custom name ("Other"), a game without a cover, or a game that was removed. Not in `required` so that existing fixtures stay valid, but the server always sends it.
         maxPlayers:
           $ref: '#/components/schemas/MaxPlayers'
         startsAt:
@@ -1904,12 +1898,6 @@ components:
           x-omitempty: false
           pattern: '^[0-9a-f]{64}$'
           description: Version of the game's logo, the hex SHA-256 of its bytes, for the image URL `/api/games/{gameId}/images/logo?v={logoVersion}` (ADR 0026). `null` when the game has no logo. Not in `required` so that existing fixtures stay valid, but the server always sends it.
-        coverVersion:
-          type: string
-          nullable: true
-          x-omitempty: false
-          pattern: '^[0-9a-f]{64}$'
-          description: Version of the game's cover, the hex SHA-256 of its bytes, for the image URL `/api/games/{gameId}/images/cover?v={coverVersion}` (ADR 0026). `null` when the game has no cover. Not in `required` so that existing fixtures stay valid, but the server always sends it.
         gameRoles:
           type: array
           items:
@@ -1923,7 +1911,7 @@ components:
 
     GameImageKind:
       type: string
-      enum: [logo, cover]
+      enum: [logo]
       description: The kind of a game image (REQ-0026, ADR 0026).
 
     CreateGameRequest:

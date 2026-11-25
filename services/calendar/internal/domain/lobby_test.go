@@ -231,20 +231,20 @@ func TestCheckJoinAppliesTheContractOrder(t *testing.T) {
 	}
 }
 
-// The lobby shows the genre, logo and cover of the game it was made with; a custom name has neither (ADR 0016, ADR 0026).
+// The lobby shows the genre and logo of the game it was made with; a custom name has neither (ADR 0016, ADR 0026).
 func TestNewLobbyTakesTheGenreFromTheGame(t *testing.T) {
 	shooter := domain.Genre("shooter")
-	logo, cover := strings.Repeat("a", 64), strings.Repeat("b", 64)
-	game := domain.Game{ID: "game-1", Name: "Chess", Genre: &shooter, LogoVersion: &logo, CoverVersion: &cover}
+	logo := strings.Repeat("a", 64)
+	game := domain.Game{ID: "game-1", Name: "Chess", Genre: &shooter, LogoVersion: &logo}
 	start := time.Date(2026, 11, 7, 18, 0, 0, 0, time.UTC)
 	custom := "Go"
 
 	fromGame, err := domain.NewLobby(domain.NewLobbyRequest{GameID: &game.ID, Game: &game, StartsAt: start, EndsAt: start.Add(time.Hour)}, start.Add(-time.Hour))
-	if err != nil || fromGame.GameGenre == nil || *fromGame.GameGenre != shooter || fromGame.GameLogoVersion != &logo || fromGame.GameCoverVersion != &cover {
-		t.Fatalf("lobby %+v, error %v; want genre shooter, the logo and the cover", fromGame, err)
+	if err != nil || fromGame.GameGenre == nil || *fromGame.GameGenre != shooter || fromGame.GameLogoVersion != &logo {
+		t.Fatalf("lobby %+v, error %v; want genre shooter and the logo", fromGame, err)
 	}
 	named, err := domain.NewLobby(domain.NewLobbyRequest{CustomGameName: &custom, StartsAt: start, EndsAt: start.Add(time.Hour)}, start.Add(-time.Hour))
-	if err != nil || named.GameGenre != nil || named.GameLogoVersion != nil || named.GameCoverVersion != nil {
+	if err != nil || named.GameGenre != nil || named.GameLogoVersion != nil {
 		t.Fatalf("lobby %+v, error %v; want no genre", named, err)
 	}
 }

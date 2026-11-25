@@ -147,15 +147,12 @@ func (e ErrorBodyCode) Valid() bool {
 
 // Defines values for GameImageKind.
 const (
-	Cover GameImageKind = "cover"
-	Logo  GameImageKind = "logo"
+	Logo GameImageKind = "logo"
 )
 
 // Valid indicates whether the value is a known member of the GameImageKind enum.
 func (e GameImageKind) Valid() bool {
 	switch e {
-	case Cover:
-		return true
 	case Logo:
 		return true
 	default:
@@ -352,9 +349,6 @@ type ErrorResponse struct {
 
 // Game defines model for Game.
 type Game struct {
-	// CoverVersion Version of the game's cover, the hex SHA-256 of its bytes, for the image URL `/api/games/{gameId}/images/cover?v={coverVersion}` (ADR 0026). `null` when the game has no cover. Not in `required` so that existing fixtures stay valid, but the server always sends it.
-	CoverVersion *string `json:"coverVersion"`
-
 	// DefaultMaxPlayers Default max players of a game in the game list, an integer from 1 to 2147483647. `null` or omitted means unlimited. Changed by the system admin. Lobbies keep the value they were created with.
 	DefaultMaxPlayers *DefaultMaxPlayers `json:"defaultMaxPlayers"`
 
@@ -544,9 +538,6 @@ type Lobby struct {
 	// FlexCount Number of players without a game role (flex). 0 for a lobby without game roles. Not in `required` so that existing fixtures stay valid, but the server always sends it (ADR 0017).
 	FlexCount *int `json:"flexCount,omitempty"`
 
-	// GameCoverVersion Version of the cover of the lobby's game as it is in the game list now, for the image URL (ADR 0026). `null` for a lobby with no game, a custom name ("Other"), a game without a cover, or a game that was removed. Not in `required` so that existing fixtures stay valid, but the server always sends it.
-	GameCoverVersion *string `json:"gameCoverVersion"`
-
 	// GameGenre Genre of the lobby's game as it is in the game list now. `null` for a lobby with no game, a custom name ("Other"), a game without a genre, or a game that was removed. Not stored in the lobby, so a genre change shows at the next read.
 	GameGenre *Genre `json:"gameGenre"`
 
@@ -596,9 +587,6 @@ type LobbyDetail struct {
 
 	// FlexCount Number of players without a game role (flex). 0 for a lobby without game roles. Not in `required` so that existing fixtures stay valid, but the server always sends it (ADR 0017).
 	FlexCount *int `json:"flexCount,omitempty"`
-
-	// GameCoverVersion Version of the cover of the lobby's game as it is in the game list now, for the image URL (ADR 0026). `null` for a lobby with no game, a custom name ("Other"), a game without a cover, or a game that was removed. Not in `required` so that existing fixtures stay valid, but the server always sends it.
-	GameCoverVersion *string `json:"gameCoverVersion"`
 
 	// GameGenre Genre of the lobby's game as it is in the game list now. `null` for a lobby with no game, a custom name ("Other"), a game without a genre, or a game that was removed. Not stored in the lobby, so a genre change shows at the next read.
 	GameGenre *Genre `json:"gameGenre"`
@@ -863,7 +851,7 @@ type RemoveGameImageParams struct {
 
 // GetGameImageParams defines parameters for GetGameImage.
 type GetGameImageParams struct {
-	// V The current version of the image (`logoVersion` or `coverVersion` of the game, `gameLogoVersion` or `gameCoverVersion` of a lobby). A missing or older value gives `game_image_not_found`.
+	// V The current version of the image (`logoVersion` of the game, `gameLogoVersion` of a lobby). A missing or older value gives `game_image_not_found`.
 	V *string `form:"v,omitempty" json:"v,omitempty"`
 
 	// XRequestId Correlation ID (ADR 0001). A valid value is kept and passed on. A missing or invalid value is replaced by a new one. The response always contains `X-Request-Id`.
