@@ -204,6 +204,7 @@ The following are not in the mockups. They take the tokens (item 1), the fonts (
 - Given reduced motion, when a page changes or the Now line moves, then no slide or fade is shown (item 3). The Now line still moves, without animation.
 - Given the redesign, when I use 200% text zoom or a 390 px wide phone, then no page scrolls sideways except the horizontal axis of the running order, and every tap target is at least 44 px (REQ-0012).
 - Given the Next up band, when its countdown ticks, then no element pulses or blinks (WCAG 2.3.1).
+- Amendment 2026-11-25 (final cross-PR review 2026-11-25; ADR 0028 section 16.12, item 3; WCAG 2.4.1): the skip link was named in ADR 0028 as a separate small task and was never recorded. It is recorded here. Given any logged-in page or the landing page, when I press Tab once from the top, then the first focused element is the "Skip to content" link, hidden until it has focus, and visible on focus with the 2 px focus outline of item 1 (`--color-text`, not signal). When I activate it, then focus moves to the Main area. The other criteria of item 12 are unchanged.
 
 ### 13. Motion and signature details
 - Given the redesign, when a page is shown, then only compositor-only motion is used: transform and opacity, on the page change, on the Create frame and dialogs, and on the entrance of Group cards and the landing page (user preference; REQ-0012; ADR 0028 section 2; colour changes on hover and focus are instant). No animation runs on content sections on hover (REQ-0012, Second amendment 2026-11-04).
@@ -263,6 +264,8 @@ DECISION (user, 2026-11-21, Amendment 2026-11-21): the redesign is built on the 
 - The hero cards are neutral and unlit: no genre motif, no glow phase, no pointer-following light (DECISION, user, 2026-11-24). A full card is marked by a text-colour edge, not orange (accepted by the user, 2026-11-24). The 3D scene, tilt, float, lazy load, static fallback and reduced-motion rules stay.
 - The genre visuals are removed from the frontend (the genre theme file and the genre art are deleted). The genre value stays stored and editable (ADR 0016; REQ-0014 Amendment 2026-11-24).
 - PR #163 (bug fix, merged into `redesign-preview` on 2026-11-24): a lobby that crosses midnight no longer shows its start time on the next day's row; it shows the end time with the marker (for example "–01:00"), as item 4 already requires. No criterion changes.
+- PR #165 (cover removal, REQ-0026 Amendment 2026-11-25) is delivered on `redesign-preview` (2026-11-25).
+- The final fixes PR (a skip link to the main content, WCAG 2.4.1) is delivered on `redesign-preview` (2026-11-25). The final cross-PR review found the skip link missing. Its criterion is item 12, Amendment 2026-11-25 (the Given/When/Then "Skip to content" criterion).
 - Status stays `Decided` until the redesign is on `main`. The user's yes for `main` is pending. Then the status moves to `Implemented`.
 
 Each PR goes through the review of CLAUDE.md step 5 and the Definition of Done. ADR 0028 (Accepted 2026-11-21, section 16 Amendment 2026-11-21) records the design (the dark tokens, the radii, the Orange rule, the running order component, the Top bar, the group colour rule) and amends ADR 0014, 0015, 0016, 0018, 0021, 0023, 0026 and 0027 where this requirement supersedes them.

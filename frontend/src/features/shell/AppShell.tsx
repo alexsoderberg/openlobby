@@ -2,7 +2,7 @@ import { useEffect, type ReactNode } from "react";
 import type { AuthUser, GroupSummary } from "../../api";
 import { usePopover } from "../../hooks";
 import { useMessages } from "../../i18n";
-import { CreateFrame } from "../../ui";
+import { CreateFrame, MAIN_ID, SkipLink } from "../../ui";
 import { CreateGroup } from "../groups";
 import type { ActiveNav } from "./activeNav";
 import { CreateGroupButton } from "./CreateGroupButton";
@@ -38,8 +38,10 @@ export function AppShell({
   }, [canCreateGroup, open, close]);
   return (
     <div className="shell">
+      <SkipLink />
       <TopBar user={user} active={active} />
       <main
+        id={MAIN_ID}
         className={
           canCreateGroup ? "shell__main shell__main--fab" : "shell__main"
         }

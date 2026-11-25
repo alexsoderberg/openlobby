@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { en } from "../../i18n/messages/en";
 import { LandingPage } from "./LandingPage";
@@ -58,6 +58,20 @@ describe("LandingPage", () => {
     expect(
       screen.getByRole("region", { name: en.landing.stepsHeading }),
     ).toBeTruthy();
+  });
+
+  it("starts with the skip link, which moves focus to the main area", () => {
+    renderLanding();
+
+    // jsdom has no Tab key: the first element in DOM order that Tab reaches is the first stop.
+    const first = document.querySelector<HTMLElement>(
+      "a[href], button, input, select, textarea, [tabindex]:not([tabindex='-1'])",
+    );
+    expect(first).toBe(screen.getByRole("link", { name: en.skipToContent }));
+
+    fireEvent.click(first!);
+
+    expect(document.activeElement).toBe(screen.getByRole("main"));
   });
 
   it("shows one card per step, four of them", () => {

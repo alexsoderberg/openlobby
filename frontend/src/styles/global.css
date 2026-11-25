@@ -188,6 +188,8 @@
   --z-popover: 65;
   /* Confirm dialog (ADR 0023 point 5): above every other layer, as the native modal dialog was, below the toaster. */
   --z-dialog: 80;
+  /* The focused skip link: the first keyboard stop, above every bar and layer. */
+  --z-skip-link: 90;
   /* Toast region (ADR 0023 point 4, REQ-0022): on phones above the floating "+", which sits above the tab bar.
      The wide layout has neither and resets it to the 16px window margin. */
   --toast-bottom: calc(
@@ -745,8 +747,8 @@ a:where(:not([data-slot="button"])) {
 }
 
 /* Wide windows: the side column sits on the right of the main column, which is the first track (REQ-0025).
-   DOM order is kept, so focus and reading order are those of the one-column layout. From 98rem the main column
-   is never narrower than the 66rem week grid of before. A side column with nothing in it takes no room. */
+   DOM order is kept, so focus and reading order are those of the one-column layout. A side column with nothing
+   in it takes no room. */
 @media (min-width: 98rem) {
   .side-layout:has(> .side-column:not(:empty)) {
     display: grid;
@@ -1320,6 +1322,21 @@ a:where(:not([data-slot="button"])) {
   overflow: hidden;
   clip: rect(0 0 0 0);
   white-space: nowrap;
+}
+
+/* The skip link shows only while focused, over the bar, on the ground so the default ink focus ring holds. */
+.skip-link:focus {
+  top: var(--space-2);
+  left: var(--space-2);
+  z-index: var(--z-skip-link);
+  width: auto;
+  height: auto;
+  padding: var(--space-2) var(--space-3);
+  overflow: visible;
+  clip: auto;
+  color: var(--color-text);
+  background: var(--color-ground);
+  border-radius: var(--radius);
 }
 
 .form-hint {
@@ -2116,7 +2133,8 @@ a:where(:not([data-slot="button"])) {
   );
 }
 
-.shell__main:focus {
+/* The skip link focuses main only to move the reading point; the page itself shows no ring. */
+main:focus {
   outline: none;
 }
 
