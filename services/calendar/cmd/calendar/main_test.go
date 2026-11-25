@@ -9,6 +9,9 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"openlobby/services/calendar/internal/application"
+	"openlobby/services/calendar/internal/infrastructure/blizzard"
 )
 
 // loopbackFreePort asks the system for a free port (":0"), so that a test never collides with another process.
@@ -92,6 +95,8 @@ func setServeEnv(t *testing.T, authURL string) {
 	t.Setenv("DATABASE_URL", "postgres://calendar@localhost/calendar")
 	t.Setenv("DATABASE_MAX_CONNECTIONS", "5")
 	t.Setenv("AUTH_URL", authURL)
+	t.Setenv("BLIZZARD_CLIENT_ID", "")
+	t.Setenv("BLIZZARD_CLIENT_SECRET", "")
 }
 
 // AUTH_URL is required at startup: calendar reads member names from auth, so it refuses to start without it.
@@ -130,5 +135,51 @@ func TestReadServeConfigRejectsMalformedAuthURL(t *testing.T) {
 				t.Fatalf("error %v, want an AUTH_URL error when wantErr is %v", err, tc.wantErr)
 			}
 		})
+	}
+}
+
+// Both client values empty disables the catalog with a warning; one of them empty, or a wrong region, stops the start
+// (ADR 0029 section 4).
+func TestTheItemCatalogSettings(t *testing.T) {
+	tests := []struct {
+		name, id, secret, region, wantErr string
+	}{
+		{name: "disabled", wantErr: ""},
+		{name: "only the id", id: "id", region: "eu", wantErr: "BLIZZARD_CLIENT_SECRET"},
+		{name: "only the secret", secret: "secret", region: "eu", wantErr: "BLIZZARD_CLIENT_ID"},
+		{name: "no region", id: "id", secret: "secret", wantErr: "BLIZZARD_REGION"},
+		{name: "unknown region", id: "id", secret: "secret", region: "cn", wantErr: "BLIZZARD_REGION"},
+		{name: "enabled", id: "id", secret: "secret", region: "eu", wantErr: ""},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			setServeEnv(t, "http://auth:8080")
+			t.Setenv("BLIZZARD_CLIENT_ID", tc.id)
+			t.Setenv("BLIZZARD_CLIENT_SECRET", tc.secret)
+			t.Setenv("BLIZZARD_REGION", tc.region)
+			t.Setenv("BLIZZARD_NAMESPACE", "static-forever-eu")
+
+			cfg, err := readServeConfig()
+			if err == nil {
+				_, err = itemCatalog(t.Context(), cfg.blizzard, discardLogger())
+			}
+
+			if (tc.wantErr == "") != (err == nil) || (err != nil && !strings.Contains(err.Error(), tc.wantErr)) {
+				t.Fatalf("error %v, want one naming %q", err, tc.wantErr)
+			}
+		})
+	}
+}
+
+func TestTheDisabledCatalogIsUnavailable(t *testing.T) {
+	catalog, err := itemCatalog(t.Context(), blizzard.Config{}, discardLogger())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := catalog.Item(context.Background(), 1); !errors.Is(err, application.ErrCatalogUnavailable) {
+		t.Fatalf("item: %v; want ErrCatalogUnavailable", err)
+	}
+	if _, err := catalog.ItemIcon(context.Background(), 1); !errors.Is(err, application.ErrCatalogUnavailable) {
+		t.Fatalf("icon: %v; want ErrCatalogUnavailable", err)
 	}
 }

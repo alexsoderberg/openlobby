@@ -19,7 +19,10 @@ import (
 	"openlobby/pkg/health"
 	"openlobby/pkg/logging"
 	"openlobby/services/calendar/internal/application"
+	"openlobby/services/calendar/internal/domain"
 	"openlobby/services/calendar/internal/infrastructure/authclient"
+	"openlobby/services/calendar/internal/infrastructure/blizzard"
+	"openlobby/services/calendar/internal/infrastructure/blizzardcache"
 	"openlobby/services/calendar/internal/infrastructure/cryptotoken"
 	"openlobby/services/calendar/internal/infrastructure/postgres"
 	"openlobby/services/calendar/internal/infrastructure/systemclock"
@@ -96,6 +99,7 @@ type serveConfig struct {
 	databaseURL    string
 	maxConnections int
 	authURL        string
+	blizzard       blizzard.Config
 }
 
 func readServeConfig() (serveConfig, error) {
@@ -113,7 +117,59 @@ func readServeConfig() (serveConfig, error) {
 	if cfg.authURL, err = config.String("AUTH_URL"); err != nil {
 		return cfg, err
 	}
-	return cfg, checkHTTPURL("AUTH_URL", cfg.authURL)
+	if err := checkHTTPURL("AUTH_URL", cfg.authURL); err != nil {
+		return cfg, err
+	}
+	cfg.blizzard, err = readBlizzardConfig()
+	return cfg, err
+}
+
+// readBlizzardConfig reads the item catalog settings. Both client values empty disables the catalog; one of them empty
+// is a mistake and stops the start (ADR 0029 section 4). Region and namespace are only needed with credentials.
+func readBlizzardConfig() (blizzard.Config, error) {
+	cfg := blizzard.Config{ClientID: os.Getenv("BLIZZARD_CLIENT_ID"), ClientSecret: os.Getenv("BLIZZARD_CLIENT_SECRET")}
+	if cfg.ClientID == "" && cfg.ClientSecret == "" {
+		return cfg, nil
+	}
+	if cfg.ClientID == "" || cfg.ClientSecret == "" {
+		return cfg, errors.New("BLIZZARD_CLIENT_ID and BLIZZARD_CLIENT_SECRET must both be set or both be empty")
+	}
+	var err error
+	if cfg.Region, err = config.String("BLIZZARD_REGION"); err != nil {
+		return cfg, err
+	}
+	cfg.Namespace, err = config.String("BLIZZARD_NAMESPACE")
+	return cfg, err
+}
+
+// itemCatalog returns the Blizzard catalog behind its cache, or one that is unavailable for every item when the
+// catalog is disabled. The startup line names the namespace, which pins the data version (ADR 0029 section 4). The
+// cache's sweep runs until ctx ends (ADR 0029 Amendment 2026-11-25 item 9).
+func itemCatalog(ctx context.Context, cfg blizzard.Config, logger *slog.Logger) (application.ItemCatalog, error) {
+	if cfg.ClientID == "" {
+		logger.Warn("item catalog disabled", "reason", "BLIZZARD_CLIENT_ID and BLIZZARD_CLIENT_SECRET are empty")
+		return disabledCatalog{}, nil
+	}
+	clock := systemclock.Clock{}
+	catalog, err := blizzard.New(cfg, clock, logger)
+	if err != nil {
+		return nil, fmt.Errorf("BLIZZARD_REGION: %w", err)
+	}
+	logger.Info("item catalog enabled", "region", cfg.Region, "namespace", cfg.Namespace)
+	cache := blizzardcache.New(catalog, clock)
+	go cache.RunSweeps(ctx)
+	return cache, nil
+}
+
+// disabledCatalog is unavailable for every item, so calendar runs without Blizzard credentials.
+type disabledCatalog struct{}
+
+func (disabledCatalog) Item(context.Context, domain.ItemID) (domain.CatalogItem, error) {
+	return domain.CatalogItem{}, application.ErrCatalogUnavailable
+}
+
+func (disabledCatalog) ItemIcon(context.Context, domain.ItemID) (domain.ItemIcon, error) {
+	return domain.ItemIcon{}, application.ErrCatalogUnavailable
 }
 
 // checkHTTPURL refuses a value that is not an absolute http or https URL with a host, so a typo fails at startup and
@@ -142,6 +198,11 @@ func serve(logger *slog.Logger) error {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, os.Interrupt)
 	defer stop()
 
+	catalog, err := itemCatalog(ctx, cfg.blizzard, logger)
+	if err != nil {
+		return err
+	}
+
 	directory, err := authclient.New(cfg.authURL)
 	if err != nil {
 		return err
@@ -153,7 +214,8 @@ func serve(logger *slog.Logger) error {
 	games := application.NewGames(repo, store.Games(), store.Games(), logger)
 	lobbies := application.NewLobbies(store.Lobbies(), store.Lobbies(), store.Games(), directory, clock)
 	gameImages := application.NewGameImages(store.GameImages(), logger)
-	handler := transport.NewRouter(groups, invites, games, gameImages, lobbies, application.NewMemberships(store.Memberships(), clock), application.NewPreferredGameRoles(store.PreferredGameRoles(), store.Games()), store.Ping, logger)
+	items := application.NewItems(store.DropLists(), catalog, logger)
+	handler := transport.NewRouter(groups, invites, games, gameImages, lobbies, application.NewMemberships(store.Memberships(), clock), application.NewPreferredGameRoles(store.PreferredGameRoles(), store.Games()), items, store.Ping, logger)
 	return listen(ctx, logger, cfg.httpAddr, handler)
 }
 

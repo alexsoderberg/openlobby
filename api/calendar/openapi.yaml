@@ -31,6 +31,8 @@ tags:
     description: Joining and leaving a lobby (REQ-0005).
   - name: Game list
     description: The game list. Maintained by the system admin. Members see it in their group's order (REQ-0009, REQ-0010, ADR 0010).
+  - name: Items
+    description: Drop lists of Named activities and the Blizzard item catalog (REQ-0030, ADR 0029).
   - name: Preferred game roles
     description: The game roles a person usually plays, one choice for all groups (REQ-0021, ADR 0022).
 security:
@@ -1209,6 +1211,194 @@ paths:
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
 
+  /api/games/{gameId}/items:
+    get:
+      operationId: listGameItems
+      tags: [Items]
+      summary: List the drop-list items of a game
+      description: |
+        Any signed-in person, no membership needed (REQ-0030, ADR 0029 section 5). The items of the drop lists of the game's Named activities, each item once. Activities are in the game's order (mode order, then activity order), and each activity's items in the order they were added. With `activityId`, only that activity's items, in its order; `dropsIn` still lists every activity of the game that has the item.
+        Names are resolved within a budget of 3 seconds; an item not answered in that time is `unavailable` for this request.
+        `q` filters by name: an item with status `known` is kept only when its name contains `q`, ignoring case. Items that are `unknown` or `unavailable` are always kept, because their name cannot be matched. `nameSearchComplete` is `false` when any item of the answer is `unavailable`.
+        Rules in this order: a `gameId` in invalid form (404 `game_not_found`), `activityId` not a uuid or `q` longer than 50 characters after trim (400 `invalid_request`), unknown `gameId` (404 `game_not_found`), `activityId` not an activity of the game (400 `invalid_activity`).
+      parameters:
+        - $ref: '#/components/parameters/RequestIdHeader'
+        - $ref: '#/components/parameters/GameIdPath'
+        - name: activityId
+          in: query
+          required: false
+          description: Only the drop list of this Named activity of the game. A value that is not a uuid gives `invalid_request`, checked after identity and the `gameId` form.
+          schema:
+            type: string
+        - name: q
+          in: query
+          required: false
+          description: Name search, trimmed, at most 50 characters. Empty means no filter.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The items.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameItemList'
+        '400':
+          description: "`invalid_request` (`activityId` is not a uuid, or `q` is too long) or `invalid_activity` (`activityId` is not an activity of the game)."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          description: "`game_not_found`: the game does not exist, or the ID in the path has an invalid form."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+  /api/games/{gameId}/activities/{activityId}/items/{itemId}:
+    put:
+      operationId: addDropItem
+      tags: [Items]
+      summary: Add an item to a drop list (system admin)
+      description: |
+        System admin only. Adds the item to the end of the drop list of the Named activity. The item does not need to be known by Blizzard: the answer gives its name status at once, resolved within 3 seconds (REQ-0030, ADR 0029 section 5).
+        Rules in this order: a `gameId` in invalid form (404 `game_not_found`), an `activityId` in invalid form (400 `invalid_activity`), permission (403 `not_allowed`), `itemId` not a whole number from 1 to 2147483647 (400 `invalid_item`), unknown `gameId` (404 `game_not_found`), `activityId` not an activity of the game (400 `invalid_activity`), the item already on this drop list (409 `drop_item_taken`, nothing changes).
+      parameters:
+        - $ref: '#/components/parameters/RequestIdHeader'
+        - $ref: '#/components/parameters/GameIdPath'
+        - $ref: '#/components/parameters/ActivityIdPath'
+        - $ref: '#/components/parameters/ItemIdPath'
+      responses:
+        '201':
+          description: The item is on the drop list, with its name status.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Item'
+        '400':
+          description: "`invalid_item` or `invalid_activity` (see the rules above)."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: "`not_allowed`: the caller is not a system admin."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: "`game_not_found`: the game does not exist, or the ID in the path has an invalid form."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: "`drop_item_taken`: the item is already on this drop list."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+    delete:
+      operationId: removeDropItem
+      tags: [Items]
+      summary: Remove an item from a drop list (system admin)
+      description: |
+        System admin only. Removes the item from the drop list of the Named activity. Idempotent once the checks pass: an item that is not on the list also gives 204. Goals of the item are kept (REQ-0030). The client asks for confirmation first.
+        Rules in this order: a `gameId` in invalid form (404 `game_not_found`), an `activityId` in invalid form (400 `invalid_activity`), permission (403 `not_allowed`), `itemId` not a whole number from 1 to 2147483647 (400 `invalid_item`), unknown `gameId` (404 `game_not_found`), `activityId` not an activity of the game (400 `invalid_activity`).
+      parameters:
+        - $ref: '#/components/parameters/RequestIdHeader'
+        - $ref: '#/components/parameters/GameIdPath'
+        - $ref: '#/components/parameters/ActivityIdPath'
+        - $ref: '#/components/parameters/ItemIdPath'
+      responses:
+        '204':
+          description: The item is not on the drop list.
+        '400':
+          description: "`invalid_item` or `invalid_activity` (see the rules above)."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: "`not_allowed`: the caller is not a system admin."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: "`game_not_found`: the game does not exist, or the ID in the path has an invalid form."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+  /api/items/{itemId}/icon:
+    get:
+      operationId: getItemIcon
+      tags: [Items]
+      summary: Get the icon of an item
+      description: |
+        Any signed-in person. The icon of an item that is on a drop list or in a goal, fetched from Blizzard by the server and kept in its cache, so the browser never calls Blizzard (ADR 0029 section 4). It also answers for a goal's item after the item left every drop list (REQ-0030).
+        Rules in this order: `itemId` not a whole number from 1 to 2147483647 (400 `invalid_item`), the item on no drop list and in no goal (404 `item_not_found`), Blizzard does not know the item or has no usable icon for it (404 `item_not_found`), Blizzard unavailable (503 `service_unavailable`).
+      parameters:
+        - $ref: '#/components/parameters/RequestIdHeader'
+        - $ref: '#/components/parameters/ItemIdPath'
+      responses:
+        '200':
+          description: The icon, `image/jpeg` or `image/png`, at most 16384 bytes.
+          headers:
+            Cache-Control:
+              description: "`private, max-age=3600`."
+              schema:
+                type: string
+            X-Content-Type-Options:
+              description: "`nosniff`."
+              schema:
+                type: string
+          content:
+            image/*:
+              schema:
+                type: string
+                format: binary
+        '400':
+          description: "`invalid_item`: `itemId` is not a whole number from 1 to 2147483647."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          description: "`item_not_found` (see the rules above)."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
   /api/users/me/preferred-game-roles:
     get:
       operationId: getPreferredGameRoles
@@ -1336,6 +1526,20 @@ components:
       description: The kind of game image. An unknown kind gives `game_image_not_found`.
       schema:
         $ref: '#/components/schemas/GameImageKind'
+    ActivityIdPath:
+      name: activityId
+      in: path
+      required: true
+      description: The ID of a Named activity of the game (uuid). An invalid form, or an activity of another game, gives `invalid_activity`.
+      schema:
+        type: string
+    ItemIdPath:
+      name: itemId
+      in: path
+      required: true
+      description: A Blizzard item ID, a whole number from 1 to 2147483647 in decimal digits. Anything else gives `invalid_item`.
+      schema:
+        type: string
 
   responses:
     Unauthenticated:
@@ -1412,6 +1616,9 @@ components:
             - invalid_image_type
             - image_too_large
             - game_image_not_found
+            - invalid_item
+            - drop_item_taken
+            - item_not_found
             - internal_error
             - not_found
             - method_not_allowed
@@ -2160,3 +2367,60 @@ components:
           items:
             $ref: '#/components/schemas/ActivityInput'
           description: The activities of the mode. A mode entry replaces the stored mode, so an omitted list means no activities.
+
+    ItemStatus:
+      type: string
+      enum: [known, unknown, unavailable]
+      description: "`known`: Blizzard gave the name. `unknown`: Blizzard does not know the item. `unavailable`: Blizzard did not answer in time or is not configured (ADR 0029 section 4)."
+
+    Item:
+      type: object
+      required: [itemId, name, status]
+      properties:
+        itemId:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+          description: The Blizzard item ID.
+        name:
+          type: string
+          nullable: true
+          description: The English name from Blizzard when `status` is `known`, otherwise `null`. Never stored by the app (ADR 0029 C1, C2).
+        status:
+          $ref: '#/components/schemas/ItemStatus'
+
+    DropActivity:
+      type: object
+      required: [activityId, activityName, modeName]
+      properties:
+        activityId:
+          type: string
+          format: uuid
+        activityName:
+          type: string
+        modeName:
+          type: string
+
+    GameItem:
+      allOf:
+        - $ref: '#/components/schemas/Item'
+        - type: object
+          required: [dropsIn]
+          properties:
+            dropsIn:
+              type: array
+              items:
+                $ref: '#/components/schemas/DropActivity'
+              description: The Named activities of the game whose drop list has the item, in the game's order.
+
+    GameItemList:
+      type: object
+      required: [items, nameSearchComplete]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/GameItem'
+        nameSearchComplete:
+          type: boolean
+          description: "`false` when an item of the answer is `unavailable`, so the name search could not match it."

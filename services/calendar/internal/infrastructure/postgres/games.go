@@ -70,6 +70,7 @@ var takenByConstraint = map[string]error{
 	"game_roles_game_name_key": application.ErrGameRoleTaken,
 	"game_roles_mode_name_key": application.ErrGameRoleTaken,
 	"activities_mode_name_key": application.ErrActivityTaken,
+	"drop_items_pkey":          application.ErrDropItemTaken,
 }
 
 // queryer is what the readers need; a connection pool and a transaction both have it.
@@ -198,7 +199,8 @@ func (r gameRepo) Replace(ctx context.Context, game domain.Game) (stored domain.
 	return stored, gameWriteError(err)
 }
 
-// Delete removes the game with the ID, and the choices of its game roles in the same transaction (ADR 0022 point 2).
+// Delete removes the game with the ID, and the choices of its game roles and the drop lists of its activities in the same
+// transaction (ADR 0022 point 2, ADR 0029 section 3).
 // Lobbies have no foreign key to games, so they are not touched (ADR 0010).
 func (r gameRepo) Delete(ctx context.Context, id string) error {
 	err := r.s.inTx(ctx, func(tx *sql.Tx) error {
@@ -209,8 +211,7 @@ func (r gameRepo) Delete(ctx context.Context, id string) error {
 		if err := requireOneGame(result); err != nil {
 			return err
 		}
-		_, err = tx.ExecContext(ctx, deleteOrphanChoicesSQL)
-		return err
+		return deleteOrphans(ctx, tx)
 	})
 	return gameWriteError(err)
 }
@@ -319,7 +320,8 @@ func eachRow(ctx context.Context, q queryer, scan func(*sql.Rows) error, query s
 // writeTree replaces the game roles and modes that the write gives (nil leaves them as they are). It deletes first and
 // inserts after, so a swap of two names never meets a unique index half way (ADR 0017 section 6). It ends with the
 // cleanup of the choices of removed game roles on every run, also when only the modes were replaced, because their roles
-// cascade (ADR 0022 point 2). A kept role is re-inserted with its ID first, so its choices stay.
+// cascade (ADR 0022 point 2), and of the drop lists of removed activities (ADR 0029 section 3). A kept role or activity is
+// re-inserted with its ID first, so its choices and its drop list stay.
 func writeTree(ctx context.Context, tx *sql.Tx, game domain.Game) error {
 	if game.GameRoles != nil {
 		if _, err := tx.ExecContext(ctx, deleteGameRolesSQL, game.ID); err != nil {
@@ -339,7 +341,15 @@ func writeTree(ctx context.Context, tx *sql.Tx, game domain.Game) error {
 			return err
 		}
 	}
-	_, err := tx.ExecContext(ctx, deleteOrphanChoicesSQL)
+	return deleteOrphans(ctx, tx)
+}
+
+// deleteOrphans removes what pointed at a removed game role or activity: preferred game roles and drop-list entries.
+func deleteOrphans(ctx context.Context, tx *sql.Tx) error {
+	if _, err := tx.ExecContext(ctx, deleteOrphanChoicesSQL); err != nil {
+		return err
+	}
+	_, err := tx.ExecContext(ctx, deleteOrphanDropsSQL)
 	return err
 }
 

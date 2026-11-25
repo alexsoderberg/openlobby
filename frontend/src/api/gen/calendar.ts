@@ -493,6 +493,76 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/games/{gameId}/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the drop-list items of a game
+         * @description Any signed-in person, no membership needed (REQ-0030, ADR 0029 section 5). The items of the drop lists of the game's Named activities, each item once. Activities are in the game's order (mode order, then activity order), and each activity's items in the order they were added. With `activityId`, only that activity's items, in its order; `dropsIn` still lists every activity of the game that has the item.
+         *     Names are resolved within a budget of 3 seconds; an item not answered in that time is `unavailable` for this request.
+         *     `q` filters by name: an item with status `known` is kept only when its name contains `q`, ignoring case. Items that are `unknown` or `unavailable` are always kept, because their name cannot be matched. `nameSearchComplete` is `false` when any item of the answer is `unavailable`.
+         *     Rules in this order: a `gameId` in invalid form (404 `game_not_found`), `activityId` not a uuid or `q` longer than 50 characters after trim (400 `invalid_request`), unknown `gameId` (404 `game_not_found`), `activityId` not an activity of the game (400 `invalid_activity`).
+         */
+        get: operations["listGameItems"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/games/{gameId}/activities/{activityId}/items/{itemId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Add an item to a drop list (system admin)
+         * @description System admin only. Adds the item to the end of the drop list of the Named activity. The item does not need to be known by Blizzard: the answer gives its name status at once, resolved within 3 seconds (REQ-0030, ADR 0029 section 5).
+         *     Rules in this order: a `gameId` in invalid form (404 `game_not_found`), an `activityId` in invalid form (400 `invalid_activity`), permission (403 `not_allowed`), `itemId` not a whole number from 1 to 2147483647 (400 `invalid_item`), unknown `gameId` (404 `game_not_found`), `activityId` not an activity of the game (400 `invalid_activity`), the item already on this drop list (409 `drop_item_taken`, nothing changes).
+         */
+        put: operations["addDropItem"];
+        post?: never;
+        /**
+         * Remove an item from a drop list (system admin)
+         * @description System admin only. Removes the item from the drop list of the Named activity. Idempotent once the checks pass: an item that is not on the list also gives 204. Goals of the item are kept (REQ-0030). The client asks for confirmation first.
+         *     Rules in this order: a `gameId` in invalid form (404 `game_not_found`), an `activityId` in invalid form (400 `invalid_activity`), permission (403 `not_allowed`), `itemId` not a whole number from 1 to 2147483647 (400 `invalid_item`), unknown `gameId` (404 `game_not_found`), `activityId` not an activity of the game (400 `invalid_activity`).
+         */
+        delete: operations["removeDropItem"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/items/{itemId}/icon": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get the icon of an item
+         * @description Any signed-in person. The icon of an item that is on a drop list or in a goal, fetched from Blizzard by the server and kept in its cache, so the browser never calls Blizzard (ADR 0029 section 4). It also answers for a goal's item after the item left every drop list (REQ-0030).
+         *     Rules in this order: `itemId` not a whole number from 1 to 2147483647 (400 `invalid_item`), the item on no drop list and in no goal (404 `item_not_found`), Blizzard does not know the item or has no usable icon for it (404 `item_not_found`), Blizzard unavailable (503 `service_unavailable`).
+         */
+        get: operations["getItemIcon"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/users/me/preferred-game-roles": {
         parameters: {
             query?: never;
@@ -531,7 +601,7 @@ export interface components {
              * @description Machine-readable error code. The text for the user belongs to the frontend. not_found and method_not_allowed are returned by the gateway only.
              * @enum {string}
              */
-            code: "unauthenticated" | "service_unavailable" | "invalid_request" | "not_allowed" | "group_not_found" | "member_not_found" | "own_upcoming_lobbies_exist" | "invalid_group_name" | "invite_invalid" | "invalid_max_uses" | "lobby_not_found" | "lobby_in_past" | "lobby_end_not_after_start" | "lobby_too_long" | "lobby_has_ended" | "lobby_full" | "invalid_game" | "invalid_capacity" | "invalid_genre" | "invalid_mode" | "invalid_activity" | "invalid_game_role" | "invalid_role_icon" | "game_role_full" | "lobby_game_set" | "lobby_changed" | "lobby_has_more_players" | "game_taken" | "mode_taken" | "activity_taken" | "game_role_taken" | "game_not_found" | "invalid_image_type" | "image_too_large" | "game_image_not_found" | "internal_error" | "not_found" | "method_not_allowed";
+            code: "unauthenticated" | "service_unavailable" | "invalid_request" | "not_allowed" | "group_not_found" | "member_not_found" | "own_upcoming_lobbies_exist" | "invalid_group_name" | "invite_invalid" | "invalid_max_uses" | "lobby_not_found" | "lobby_in_past" | "lobby_end_not_after_start" | "lobby_too_long" | "lobby_has_ended" | "lobby_full" | "invalid_game" | "invalid_capacity" | "invalid_genre" | "invalid_mode" | "invalid_activity" | "invalid_game_role" | "invalid_role_icon" | "game_role_full" | "lobby_game_set" | "lobby_changed" | "lobby_has_more_players" | "game_taken" | "mode_taken" | "activity_taken" | "game_role_taken" | "game_not_found" | "invalid_image_type" | "image_too_large" | "game_image_not_found" | "invalid_item" | "drop_item_taken" | "item_not_found" | "internal_error" | "not_found" | "method_not_allowed";
             /** @description Same value as `X-Request-Id` in the response. Used to match logs. */
             requestId: string;
         };
@@ -918,6 +988,33 @@ export interface components {
             /** @description The activities of the mode. A mode entry replaces the stored mode, so an omitted list means no activities. */
             activities?: components["schemas"]["ActivityInput"][] | null;
         };
+        /**
+         * @description `known`: Blizzard gave the name. `unknown`: Blizzard does not know the item. `unavailable`: Blizzard did not answer in time or is not configured (ADR 0029 section 4).
+         * @enum {string}
+         */
+        ItemStatus: "known" | "unknown" | "unavailable";
+        Item: {
+            /** @description The Blizzard item ID. */
+            itemId: number;
+            /** @description The English name from Blizzard when `status` is `known`, otherwise `null`. Never stored by the app (ADR 0029 C1, C2). */
+            name: string | null;
+            status: components["schemas"]["ItemStatus"];
+        };
+        DropActivity: {
+            /** Format: uuid */
+            activityId: string;
+            activityName: string;
+            modeName: string;
+        };
+        GameItem: components["schemas"]["Item"] & {
+            /** @description The Named activities of the game whose drop list has the item, in the game's order. */
+            dropsIn: components["schemas"]["DropActivity"][];
+        };
+        GameItemList: {
+            items: components["schemas"]["GameItem"][];
+            /** @description `false` when an item of the answer is `unavailable`, so the name search could not match it. */
+            nameSearchComplete: boolean;
+        };
     };
     responses: {
         /** @description No valid session, or the user identity from the gateway is missing or invalid. */
@@ -973,6 +1070,10 @@ export interface components {
         GameIdPath: string;
         /** @description The kind of game image. An unknown kind gives `game_image_not_found`. */
         GameImageKindPath: components["schemas"]["GameImageKind"];
+        /** @description The ID of a Named activity of the game (uuid). An invalid form, or an activity of another game, gives `invalid_activity`. */
+        ActivityIdPath: string;
+        /** @description A Blizzard item ID, a whole number from 1 to 2147483647 in decimal digits. Anything else gives `invalid_item`. */
+        ItemIdPath: string;
     };
     requestBodies: never;
     headers: never;
@@ -2378,6 +2479,236 @@ export interface operations {
                 };
             };
             /** @description `game_not_found` (the game does not exist, or the ID in the path has an invalid form) or `game_image_not_found` (unknown `kind`). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            500: components["responses"]["InternalError"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    listGameItems: {
+        parameters: {
+            query?: {
+                /** @description Only the drop list of this Named activity of the game. A value that is not a uuid gives `invalid_request`, checked after identity and the `gameId` form. */
+                activityId?: string;
+                /** @description Name search, trimmed, at most 50 characters. Empty means no filter. */
+                q?: string;
+            };
+            header?: {
+                /** @description Correlation ID (ADR 0001). A valid value is kept and passed on. A missing or invalid value is replaced by a new one. The response always contains `X-Request-Id`. */
+                "X-Request-Id"?: components["parameters"]["RequestIdHeader"];
+            };
+            path: {
+                /** @description The game's ID (uuid). An invalid form gives `game_not_found`. */
+                gameId: components["parameters"]["GameIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The items. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GameItemList"];
+                };
+            };
+            /** @description `invalid_request` (`activityId` is not a uuid, or `q` is too long) or `invalid_activity` (`activityId` is not an activity of the game). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            /** @description `game_not_found`: the game does not exist, or the ID in the path has an invalid form. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            500: components["responses"]["InternalError"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    addDropItem: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Correlation ID (ADR 0001). A valid value is kept and passed on. A missing or invalid value is replaced by a new one. The response always contains `X-Request-Id`. */
+                "X-Request-Id"?: components["parameters"]["RequestIdHeader"];
+            };
+            path: {
+                /** @description The game's ID (uuid). An invalid form gives `game_not_found`. */
+                gameId: components["parameters"]["GameIdPath"];
+                /** @description The ID of a Named activity of the game (uuid). An invalid form, or an activity of another game, gives `invalid_activity`. */
+                activityId: components["parameters"]["ActivityIdPath"];
+                /** @description A Blizzard item ID, a whole number from 1 to 2147483647 in decimal digits. Anything else gives `invalid_item`. */
+                itemId: components["parameters"]["ItemIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The item is on the drop list, with its name status. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Item"];
+                };
+            };
+            /** @description `invalid_item` or `invalid_activity` (see the rules above). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            /** @description `not_allowed`: the caller is not a system admin. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `game_not_found`: the game does not exist, or the ID in the path has an invalid form. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `drop_item_taken`: the item is already on this drop list. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            500: components["responses"]["InternalError"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    removeDropItem: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Correlation ID (ADR 0001). A valid value is kept and passed on. A missing or invalid value is replaced by a new one. The response always contains `X-Request-Id`. */
+                "X-Request-Id"?: components["parameters"]["RequestIdHeader"];
+            };
+            path: {
+                /** @description The game's ID (uuid). An invalid form gives `game_not_found`. */
+                gameId: components["parameters"]["GameIdPath"];
+                /** @description The ID of a Named activity of the game (uuid). An invalid form, or an activity of another game, gives `invalid_activity`. */
+                activityId: components["parameters"]["ActivityIdPath"];
+                /** @description A Blizzard item ID, a whole number from 1 to 2147483647 in decimal digits. Anything else gives `invalid_item`. */
+                itemId: components["parameters"]["ItemIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The item is not on the drop list. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `invalid_item` or `invalid_activity` (see the rules above). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            /** @description `not_allowed`: the caller is not a system admin. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `game_not_found`: the game does not exist, or the ID in the path has an invalid form. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            500: components["responses"]["InternalError"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    getItemIcon: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Correlation ID (ADR 0001). A valid value is kept and passed on. A missing or invalid value is replaced by a new one. The response always contains `X-Request-Id`. */
+                "X-Request-Id"?: components["parameters"]["RequestIdHeader"];
+            };
+            path: {
+                /** @description A Blizzard item ID, a whole number from 1 to 2147483647 in decimal digits. Anything else gives `invalid_item`. */
+                itemId: components["parameters"]["ItemIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The icon, `image/jpeg` or `image/png`, at most 16384 bytes. */
+            200: {
+                headers: {
+                    /** @description `private, max-age=3600`. */
+                    "Cache-Control"?: string;
+                    /** @description `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/*": string;
+                };
+            };
+            /** @description `invalid_item`: `itemId` is not a whole number from 1 to 2147483647. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            /** @description `item_not_found` (see the rules above). */
             404: {
                 headers: {
                     [name: string]: unknown;

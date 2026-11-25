@@ -537,6 +537,9 @@ export const en = {
     image_too_large:
       "This image is larger than 512 KiB. Choose a smaller file.",
     game_image_not_found: "This image does not exist anymore.",
+    invalid_item: "An item ID must be a whole number from 1 to 2147483647.",
+    drop_item_taken: "This item is already on the drop list of this activity.",
+    item_not_found: "No item with this ID was found.",
   } satisfies Record<ApiErrorCode, string>,
 };
 

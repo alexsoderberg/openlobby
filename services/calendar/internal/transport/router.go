@@ -16,11 +16,11 @@ import (
 
 // NewRouter wires the contract operations, the health endpoints and the correlation ID.
 // ready checks the service's own database (ADR 0008).
-func NewRouter(groups *application.Groups, invites *application.InviteLinks, games *application.Games, gameImages *application.GameImages, lobbies *application.Lobbies, memberships *application.Memberships, preferredGameRoles *application.PreferredGameRoles, ready func(context.Context) error, logger *slog.Logger) http.Handler {
+func NewRouter(groups *application.Groups, invites *application.InviteLinks, games *application.Games, gameImages *application.GameImages, lobbies *application.Lobbies, memberships *application.Memberships, preferredGameRoles *application.PreferredGameRoles, items *application.Items, ready func(context.Context) error, logger *slog.Logger) http.Handler {
 	mux := http.NewServeMux()
 	health.Register(mux, ready)
 
-	strict := publicapi.NewStrictHandlerWithOptions(publicHandler{groups: groups, invites: invites, games: games, gameImages: gameImages, lobbies: lobbies, memberships: memberships, preferredGameRoles: preferredGameRoles}, nil,
+	strict := publicapi.NewStrictHandlerWithOptions(publicHandler{groups: groups, invites: invites, games: games, gameImages: gameImages, lobbies: lobbies, memberships: memberships, preferredGameRoles: preferredGameRoles, items: items}, nil,
 		publicapi.StrictHTTPServerOptions{
 			RequestErrorHandlerFunc:  httpapi.InvalidRequestHandler,
 			ResponseErrorHandlerFunc: errorHandler(logger),
