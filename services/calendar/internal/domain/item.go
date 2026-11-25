@@ -114,3 +114,11 @@ func GameItemsOf(drops []Drop, activityID string) []GameItem {
 	}
 	return items
 }
+
+// GameGoals is a person's goals of one game, with the activities of the game whose drop list has each item.
+type GameGoals struct {
+	GameID          string
+	GameName        string
+	GameLogoVersion *string // nil for no logo (ADR 0026)
+	Goals           []GameItem
+}

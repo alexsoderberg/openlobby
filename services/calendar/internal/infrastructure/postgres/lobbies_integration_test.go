@@ -450,7 +450,7 @@ func addMember(t *testing.T, store *Store, groupID, userID string) {
 // joinAt joins through the application use case with the clock fixed at now.
 func joinAt(store *Store, groupID, lobbyID, userID string, now time.Time) error {
 	ctx := context.Background()
-	return application.NewLobbies(store.Lobbies(), store.Lobbies(), nil, nil, fixedNow{now}).Join(ctx, groupID, lobbyID, userID, domain.Seat{})
+	return application.NewLobbies(store.Lobbies(), store.Lobbies(), nil, nil, nil, fixedNow{now}).Join(ctx, groupID, lobbyID, userID, domain.Seat{})
 }
 
 type fixedNow struct{ at time.Time }
@@ -462,7 +462,7 @@ func TestJoinAndLeaveUpdateThePlayers(t *testing.T) {
 	seedGroups(t, store)
 	lobby := insertLobby(t, store, newLobby(fridayID, alexID, nil, "Go"))
 	addMember(t, store, fridayID, otherID)
-	lobbies := application.NewLobbies(store.Lobbies(), store.Lobbies(), nil, nil, fixedNow{joinedAt})
+	lobbies := application.NewLobbies(store.Lobbies(), store.Lobbies(), nil, nil, nil, fixedNow{joinedAt})
 	ctx := context.Background()
 
 	for range 2 {

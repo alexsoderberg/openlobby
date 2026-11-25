@@ -589,6 +589,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/users/me/goals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get the caller's goals
+         * @description Any signed-in person, no membership needed (REQ-0030, ADR 0029 section 5). Only the caller's own goals.
+         *     `games` are the games with at least one goal of the caller or at least one drop-list item, sorted by name ignoring case, then `id` (the order of `GET /api/games`). Each game's `goals` are ordered by `itemId`. A goal whose item left every drop list is still listed, with an empty `dropsIn`.
+         *     Names are resolved within a budget of 3 seconds; an item not answered in that time is `unavailable` for this request.
+         */
+        get: operations["getGoals"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/users/me/games/{gameId}/goals/{itemId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Add a goal
+         * @description Any signed-in person, no membership needed (REQ-0030, ADR 0029 section 5). Adds the item as the caller's goal for the game. The caller is always the owner; no user ID is taken from the path. Idempotent: an existing goal gives 204 and no second goal.
+         *     Rules in this order: a `gameId` in invalid form (404 `game_not_found`), `itemId` not a whole number from 1 to 2147483647 (400 `invalid_item`), unknown `gameId` (404 `game_not_found`), for a new goal only, the item on no drop list of the game's Named activities (400 `invalid_item`). An existing goal gives 204 whatever the drop lists hold now.
+         */
+        put: operations["addGoal"];
+        post?: never;
+        /**
+         * Remove a goal
+         * @description Any signed-in person, no membership needed (REQ-0030, ADR 0029 section 5). Removes the caller's goal. Idempotent: an item that is not a goal also gives 204. No drop-list check, so a goal whose item left the drop list can be removed. The client asks for no confirmation.
+         *     Rules in this order: a `gameId` in invalid form (404 `game_not_found`), `itemId` not a whole number from 1 to 2147483647 (400 `invalid_item`), unknown `gameId` (404 `game_not_found`).
+         */
+        delete: operations["removeGoal"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -793,6 +841,8 @@ export interface components {
             gameRoleId?: string | null;
             /** @description The player's preferred game roles for the lobby's game, all its modes. Empty for a lobby with no game and for a player who is no longer a member of the group (ADR 0022). Not in `required` so that existing fixtures stay valid, but the server always sends it. */
             preferredGameRoles?: components["schemas"]["PreferredGameRole"][];
+            /** @description The player's goals for the lobby's game whose item is on the drop list of the lobby's Named activity, ordered by `itemId`, with names resolved within the 3 second budget of the read. Empty for a lobby with no game or no Named activity, and for a player who is no longer a member of the group (REQ-0030, ADR 0029 section 5). Not in `required` so that existing fixtures stay valid, but the server always sends it. */
+            goals?: components["schemas"]["Item"][];
         };
         SetLobbyGameRequest: {
             /**
@@ -1014,6 +1064,17 @@ export interface components {
             items: components["schemas"]["GameItem"][];
             /** @description `false` when an item of the answer is `unavailable`, so the name search could not match it. */
             nameSearchComplete: boolean;
+        };
+        GameGoals: {
+            gameId: components["schemas"]["GameId"];
+            gameName: components["schemas"]["GameName"];
+            /** @description Version of the game's logo, as `logoVersion` on `Game` (ADR 0026). `null` when the game has no logo. */
+            gameLogoVersion: string | null;
+            /** @description The caller's goals for the game, ordered by `itemId`. */
+            goals: components["schemas"]["GameItem"][];
+        };
+        GoalList: {
+            games: components["schemas"]["GameGoals"][];
         };
     };
     responses: {
@@ -2782,6 +2843,126 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthenticated"];
+            500: components["responses"]["InternalError"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    getGoals: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Correlation ID (ADR 0001). A valid value is kept and passed on. A missing or invalid value is replaced by a new one. The response always contains `X-Request-Id`. */
+                "X-Request-Id"?: components["parameters"]["RequestIdHeader"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The caller's goals by game. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoalList"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            500: components["responses"]["InternalError"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    addGoal: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Correlation ID (ADR 0001). A valid value is kept and passed on. A missing or invalid value is replaced by a new one. The response always contains `X-Request-Id`. */
+                "X-Request-Id"?: components["parameters"]["RequestIdHeader"];
+            };
+            path: {
+                /** @description The game's ID (uuid). An invalid form gives `game_not_found`. */
+                gameId: components["parameters"]["GameIdPath"];
+                /** @description A Blizzard item ID, a whole number from 1 to 2147483647 in decimal digits. Anything else gives `invalid_item`. */
+                itemId: components["parameters"]["ItemIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The item is a goal of the caller for the game. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `invalid_item` (see the rules above). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            /** @description `game_not_found`: the game does not exist, or the ID in the path has an invalid form. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            500: components["responses"]["InternalError"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    removeGoal: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Correlation ID (ADR 0001). A valid value is kept and passed on. A missing or invalid value is replaced by a new one. The response always contains `X-Request-Id`. */
+                "X-Request-Id"?: components["parameters"]["RequestIdHeader"];
+            };
+            path: {
+                /** @description The game's ID (uuid). An invalid form gives `game_not_found`. */
+                gameId: components["parameters"]["GameIdPath"];
+                /** @description A Blizzard item ID, a whole number from 1 to 2147483647 in decimal digits. Anything else gives `invalid_item`. */
+                itemId: components["parameters"]["ItemIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The item is not a goal of the caller for the game. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `invalid_item`: `itemId` is not a whole number from 1 to 2147483647. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            /** @description `game_not_found`: the game does not exist, or the ID in the path has an invalid form. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
             500: components["responses"]["InternalError"];
             503: components["responses"]["ServiceUnavailable"];
         };

@@ -212,10 +212,11 @@ func serve(logger *slog.Logger) error {
 	groups := application.NewGroups(repo, repo, repo, repo, directory, clock)
 	invites := application.NewInviteLinks(repo, repo, store.InviteLinks(), cryptotoken.Generator{}, clock)
 	games := application.NewGames(repo, store.Games(), store.Games(), logger)
-	lobbies := application.NewLobbies(store.Lobbies(), store.Lobbies(), store.Games(), directory, clock)
-	gameImages := application.NewGameImages(store.GameImages(), logger)
 	items := application.NewItems(store.DropLists(), catalog, logger)
-	handler := transport.NewRouter(groups, invites, games, gameImages, lobbies, application.NewMemberships(store.Memberships(), clock), application.NewPreferredGameRoles(store.PreferredGameRoles(), store.Games()), items, store.Ping, logger)
+	lobbies := application.NewLobbies(store.Lobbies(), store.Lobbies(), store.Games(), directory, items, clock)
+	gameImages := application.NewGameImages(store.GameImages(), logger)
+	goals := application.NewGoals(store.Goals(), items)
+	handler := transport.NewRouter(groups, invites, games, gameImages, lobbies, application.NewMemberships(store.Memberships(), clock), application.NewPreferredGameRoles(store.PreferredGameRoles(), store.Games()), items, goals, store.Ping, logger)
 	return listen(ctx, logger, cfg.httpAddr, handler)
 }
 

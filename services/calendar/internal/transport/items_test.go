@@ -65,7 +65,8 @@ func (m memoryDrops) RemoveDrop(_ context.Context, gameID, activityID string, it
 
 func (m memoryDrops) IsReferenced(_ context.Context, itemID domain.ItemID) (bool, error) {
 	onList := slices.ContainsFunc(m.store.drops, func(drop domain.Drop) bool { return drop.ItemID == itemID })
-	return onList || slices.Contains(m.store.goalItems, itemID), m.store.err
+	inGoal := slices.ContainsFunc(m.store.goals, func(goal memoryGoal) bool { return goal.itemID == itemID })
+	return onList || inGoal, m.store.err
 }
 
 // memoryCatalog knows the items of itemNames, each with a PNG icon.
@@ -223,7 +224,7 @@ func TestGetItemIcon(t *testing.T) {
 	store := itemStore()
 	store.drops = []domain.Drop{{ItemID: thunderfuryID, Activity: moltenCore}}
 	store.itemNames[42] = "Goal only"
-	store.goalItems = []domain.ItemID{42}
+	store.goals = []memoryGoal{{userID: alexID, gameID: counterStrikeID, itemID: 42}}
 	router := gameRouter(store)
 
 	for _, id := range []string{"19019", "42"} {

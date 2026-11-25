@@ -169,6 +169,9 @@ var routes = []route{
 	{method: http.MethodPut, path: "/api/groups/{groupId}/lobbies/{lobbyId}/game", upstream: calendarUpstream, session: true},
 	{method: http.MethodGet, path: "/api/users/me/preferred-game-roles", upstream: calendarUpstream, session: true},
 	{method: http.MethodPut, path: "/api/users/me/preferred-game-roles", upstream: calendarUpstream, session: true},
+	{method: http.MethodGet, path: "/api/users/me/goals", upstream: calendarUpstream, session: true},
+	{method: http.MethodPut, path: "/api/users/me/games/{gameId}/goals/{itemId}", upstream: calendarUpstream, session: true},
+	{method: http.MethodDelete, path: "/api/users/me/games/{gameId}/goals/{itemId}", upstream: calendarUpstream, session: true},
 	// Every other path is the frontend, for any method (static files).
 	{path: "/", upstream: frontendUpstream},
 }

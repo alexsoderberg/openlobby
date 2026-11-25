@@ -179,7 +179,8 @@ func (r lobbyRepo) Lobby(ctx context.Context, groupID, lobbyID, callerID string,
 	return lobby, players, nil
 }
 
-// loadPlayers reads the lobby's players with the preferred game roles that the group may see (ADR 0022 point 6).
+// loadPlayers reads the lobby's players with the preferred game roles and goals that the group may see (ADR 0022 point
+// 6, ADR 0029 section 5).
 func loadPlayers(ctx context.Context, q queryer, lobbyID string) ([]domain.Player, error) {
 	var players []domain.Player
 	err := eachRow(ctx, q, func(rows *sql.Rows) error {
@@ -195,8 +196,13 @@ func loadPlayers(ctx context.Context, q queryer, lobbyID string) ([]domain.Playe
 	if err != nil {
 		return nil, err
 	}
+	goals, err := goalsOfLobbyPlayers(ctx, q, lobbyID)
+	if err != nil {
+		return nil, err
+	}
 	for i := range players {
 		players[i].PreferredGameRoles = choices[players[i].UserID]
+		players[i].Goals = goals[players[i].UserID]
 	}
 	return players, nil
 }

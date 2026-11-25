@@ -35,6 +35,8 @@ tags:
     description: Drop lists of Named activities and the Blizzard item catalog (REQ-0030, ADR 0029).
   - name: Preferred game roles
     description: The game roles a person usually plays, one choice for all groups (REQ-0021, ADR 0022).
+  - name: Goals
+    description: The items a person wants from a game, one set for all groups (REQ-0030, ADR 0029).
 security:
   - sessionCookie: []
 paths:
@@ -1457,6 +1459,97 @@ paths:
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
 
+  /api/users/me/goals:
+    get:
+      operationId: getGoals
+      tags: [Goals]
+      summary: Get the caller's goals
+      description: |
+        Any signed-in person, no membership needed (REQ-0030, ADR 0029 section 5). Only the caller's own goals.
+        `games` are the games with at least one goal of the caller or at least one drop-list item, sorted by name ignoring case, then `id` (the order of `GET /api/games`). Each game's `goals` are ordered by `itemId`. A goal whose item left every drop list is still listed, with an empty `dropsIn`.
+        Names are resolved within a budget of 3 seconds; an item not answered in that time is `unavailable` for this request.
+      parameters:
+        - $ref: '#/components/parameters/RequestIdHeader'
+      responses:
+        '200':
+          description: The caller's goals by game.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GoalList'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+  /api/users/me/games/{gameId}/goals/{itemId}:
+    put:
+      operationId: addGoal
+      tags: [Goals]
+      summary: Add a goal
+      description: |
+        Any signed-in person, no membership needed (REQ-0030, ADR 0029 section 5). Adds the item as the caller's goal for the game. The caller is always the owner; no user ID is taken from the path. Idempotent: an existing goal gives 204 and no second goal.
+        Rules in this order: a `gameId` in invalid form (404 `game_not_found`), `itemId` not a whole number from 1 to 2147483647 (400 `invalid_item`), unknown `gameId` (404 `game_not_found`), for a new goal only, the item on no drop list of the game's Named activities (400 `invalid_item`). An existing goal gives 204 whatever the drop lists hold now.
+      parameters:
+        - $ref: '#/components/parameters/RequestIdHeader'
+        - $ref: '#/components/parameters/GameIdPath'
+        - $ref: '#/components/parameters/ItemIdPath'
+      responses:
+        '204':
+          description: The item is a goal of the caller for the game.
+        '400':
+          description: "`invalid_item` (see the rules above)."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          description: "`game_not_found`: the game does not exist, or the ID in the path has an invalid form."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+    delete:
+      operationId: removeGoal
+      tags: [Goals]
+      summary: Remove a goal
+      description: |
+        Any signed-in person, no membership needed (REQ-0030, ADR 0029 section 5). Removes the caller's goal. Idempotent: an item that is not a goal also gives 204. No drop-list check, so a goal whose item left the drop list can be removed. The client asks for no confirmation.
+        Rules in this order: a `gameId` in invalid form (404 `game_not_found`), `itemId` not a whole number from 1 to 2147483647 (400 `invalid_item`), unknown `gameId` (404 `game_not_found`).
+      parameters:
+        - $ref: '#/components/parameters/RequestIdHeader'
+        - $ref: '#/components/parameters/GameIdPath'
+        - $ref: '#/components/parameters/ItemIdPath'
+      responses:
+        '204':
+          description: The item is not a goal of the caller for the game.
+        '400':
+          description: "`invalid_item`: `itemId` is not a whole number from 1 to 2147483647."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          description: "`game_not_found`: the game does not exist, or the ID in the path has an invalid form."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
 components:
   securitySchemes:
     sessionCookie:
@@ -1987,6 +2080,12 @@ components:
                 $ref: '#/components/schemas/PreferredGameRole'
               x-omitempty: false
               description: The player's preferred game roles for the lobby's game, all its modes. Empty for a lobby with no game and for a player who is no longer a member of the group (ADR 0022). Not in `required` so that existing fixtures stay valid, but the server always sends it.
+            goals:
+              type: array
+              items:
+                $ref: '#/components/schemas/Item'
+              x-omitempty: false
+              description: The player's goals for the lobby's game whose item is on the drop list of the lobby's Named activity, ordered by `itemId`, with names resolved within the 3 second budget of the read. Empty for a lobby with no game or no Named activity, and for a player who is no longer a member of the group (REQ-0030, ADR 0029 section 5). Not in `required` so that existing fixtures stay valid, but the server always sends it.
 
     SetLobbyGameRequest:
       type: object
@@ -2424,3 +2523,31 @@ components:
         nameSearchComplete:
           type: boolean
           description: "`false` when an item of the answer is `unavailable`, so the name search could not match it."
+
+    GameGoals:
+      type: object
+      required: [gameId, gameName, gameLogoVersion, goals]
+      properties:
+        gameId:
+          $ref: '#/components/schemas/GameId'
+        gameName:
+          $ref: '#/components/schemas/GameName'
+        gameLogoVersion:
+          type: string
+          nullable: true
+          pattern: '^[0-9a-f]{64}$'
+          description: Version of the game's logo, as `logoVersion` on `Game` (ADR 0026). `null` when the game has no logo.
+        goals:
+          type: array
+          items:
+            $ref: '#/components/schemas/GameItem'
+          description: The caller's goals for the game, ordered by `itemId`.
+
+    GoalList:
+      type: object
+      required: [games]
+      properties:
+        games:
+          type: array
+          items:
+            $ref: '#/components/schemas/GameGoals'
