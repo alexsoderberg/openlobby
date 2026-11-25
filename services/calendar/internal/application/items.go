@@ -48,11 +48,11 @@ func (i *Items) ListGameItems(ctx context.Context, gameID, activityID, rawQuery 
 		return nil, false, fmt.Errorf("list game items: %w", err)
 	}
 	items := domain.GameItemsOf(drops, activityID)
-	budget, cancel := context.WithTimeout(ctx, itemNameBudget)
-	defer cancel()
+	names := make([]*domain.Item, len(items))
 	for k := range items {
-		items[k].Item = i.itemOf(budget, items[k].ID)
+		names[k] = &items[k].Item
 	}
+	i.resolveNames(ctx, names)
 	items = slices.DeleteFunc(items, func(item domain.GameItem) bool { return !item.MatchesSearch(query) })
 	complete := !slices.ContainsFunc(items, func(item domain.GameItem) bool { return item.Status == domain.ItemUnavailable })
 	return items, complete, nil
@@ -109,6 +109,19 @@ func (i *Items) ItemIcon(ctx context.Context, rawItemID string) (domain.ItemIcon
 		return domain.ItemIcon{}, fmt.Errorf("item icon: %w: %w", domain.ErrUnavailable, err)
 	}
 	return icon, nil
+}
+
+// resolveNames sets the name status of each item within itemNameBudget, asking the catalog once per item ID.
+func (i *Items) resolveNames(ctx context.Context, items []*domain.Item) {
+	budget, cancel := context.WithTimeout(ctx, itemNameBudget)
+	defer cancel()
+	resolved := map[domain.ItemID]domain.Item{}
+	for _, item := range items {
+		if _, done := resolved[item.ID]; !done {
+			resolved[item.ID] = i.itemOf(budget, item.ID)
+		}
+		*item = resolved[item.ID]
+	}
 }
 
 // checkDropWrite is the order of the drop-list writes: the admin check, then the item ID.

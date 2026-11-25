@@ -42,13 +42,15 @@ type memoryGroups struct {
 	choices map[string][]string // preferred game role IDs by user
 	// visible are the preferred game roles by user that the group and lobby reads give, as the adapter filters them.
 	visible map[string][]domain.PreferredGameRole
-	images  map[string]domain.GameImage // the logo by game ID
+	// lobbyGoals are the goals by user that the lobby read gives, as the adapter filters them, with item IDs only.
+	lobbyGoals map[string][]domain.Item
+	images     map[string]domain.GameImage // the logo by game ID
 	// overviews are the Group overviews the overview reader answers to any caller.
 	overviews []domain.GroupOverview
-	// drops are the drop-list entries, goalItems the items in a goal, and itemNames the catalog's names; an item
+	// drops are the drop-list entries, goals the goals of all people, and itemNames the catalog's names; an item
 	// without a name is unknown to the catalog, and catalogDown makes it unavailable (ADR 0029).
 	drops       []domain.Drop
-	goalItems   []domain.ItemID
+	goals       []memoryGoal
 	itemNames   map[domain.ItemID]string
 	catalogDown bool
 	err         error
@@ -162,9 +164,10 @@ func newRouter(store *memoryGroups, directory *fakeDirectory) http.Handler {
 	groups := application.NewGroups(store, store, store, store, directory, fixedClock{})
 	games := application.NewGames(store, store, memoryEditor{store}, logger)
 	invites := application.NewInviteLinks(store, store, store, fixedTokens{}, fixedClock{})
-	lobbies := application.NewLobbies(memoryLobbyRepo{store}, store, store, directory, fixedClock{})
+	items := application.NewItems(memoryDrops{store}, memoryCatalog{store}, logger)
+	lobbies := application.NewLobbies(memoryLobbyRepo{store}, store, store, directory, items, fixedClock{})
 	gameImages := application.NewGameImages(memoryImages{store}, logger)
-	return transport.NewRouter(groups, invites, games, gameImages, lobbies, application.NewMemberships(memoryMemberships{store}, fixedClock{}), application.NewPreferredGameRoles(memoryChoices{store}, store), application.NewItems(memoryDrops{store}, memoryCatalog{store}, logger), ready, logger)
+	return transport.NewRouter(groups, invites, games, gameImages, lobbies, application.NewMemberships(memoryMemberships{store}, fixedClock{}), application.NewPreferredGameRoles(memoryChoices{store}, store), items, application.NewGoals(memoryGoals{store}, items), ready, logger)
 }
 
 func call(router http.Handler, method, target string, headers map[string]string, body string) *httptest.ResponseRecorder {

@@ -14,12 +14,13 @@ type Lobbies struct {
 	reader  LobbyReader
 	catalog GameCatalog
 	names   UserDirectory
+	items   *Items
 	clock   Clock
 }
 
 // NewLobbies returns the lobby use cases with their ports.
-func NewLobbies(repo LobbyRepository, reader LobbyReader, catalog GameCatalog, names UserDirectory, clock Clock) *Lobbies {
-	return &Lobbies{repo: repo, reader: reader, catalog: catalog, names: names, clock: clock}
+func NewLobbies(repo LobbyRepository, reader LobbyReader, catalog GameCatalog, names UserDirectory, items *Items, clock Clock) *Lobbies {
+	return &Lobbies{repo: repo, reader: reader, catalog: catalog, names: names, items: items, clock: clock}
 }
 
 // Upcoming returns the group's lobbies that have not ended, for a member (ADR 0004 rules 2 and 8).
@@ -34,8 +35,8 @@ func (l *Lobbies) Upcoming(ctx context.Context, groupID, callerID string) ([]dom
 	return lobbies, nil
 }
 
-// Get returns an upcoming lobby of the group with its players' names, for a member. A non-member gets
-// domain.ErrGroupNotFound before auth is asked; an ended or unknown lobby is domain.ErrLobbyNotFound.
+// Get returns an upcoming lobby of the group with its players' names and the names of their goals, for a member. A
+// non-member gets domain.ErrGroupNotFound before auth is asked; an ended or unknown lobby is domain.ErrLobbyNotFound.
 func (l *Lobbies) Get(ctx context.Context, groupID, lobbyID, callerID string) (domain.Lobby, []domain.Player, error) {
 	if _, err := requireMember(ctx, l.reader, groupID, callerID); err != nil {
 		return domain.Lobby{}, nil, fmt.Errorf("get lobby: %w", err)
@@ -52,9 +53,14 @@ func (l *Lobbies) Get(ctx context.Context, groupID, lobbyID, callerID string) (d
 	if err != nil {
 		return domain.Lobby{}, nil, fmt.Errorf("look up display names: %w", err)
 	}
+	var goals []*domain.Item
 	for i := range players {
 		players[i].DisplayName = names[players[i].UserID]
+		for k := range players[i].Goals {
+			goals = append(goals, &players[i].Goals[k])
+		}
 	}
+	l.items.resolveNames(ctx, goals)
 	return lobby, players, nil
 }
 

@@ -150,7 +150,11 @@ func playerBodies(players []domain.Player) ([]publicapi.LobbyPlayer, error) {
 		if err != nil {
 			return nil, err
 		}
-		refs = append(refs, publicapi.LobbyPlayer{UserId: userID, DisplayName: player.DisplayName, GameRoleId: roleID, PreferredGameRoles: choices})
+		goals := make([]publicapi.Item, 0, len(player.Goals))
+		for _, goal := range player.Goals {
+			goals = append(goals, itemBody(goal))
+		}
+		refs = append(refs, publicapi.LobbyPlayer{UserId: userID, DisplayName: player.DisplayName, GameRoleId: roleID, PreferredGameRoles: choices, Goals: &goals})
 	}
 	return refs, nil
 }

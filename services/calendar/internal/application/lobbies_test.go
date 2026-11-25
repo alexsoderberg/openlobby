@@ -35,6 +35,8 @@ type lobbyStore struct {
 	players map[string][]string
 	// seats holds the game role of a player by "lobbyID/userID"; a missing key or a nil value is flex.
 	seats map[string]*string
+	// goals holds the goals that the lobby read shows for a player, by user ID, with item IDs only.
+	goals map[string][]domain.Item
 	// tree is the game list that the settings reads look in, as the adapter's tables would.
 	tree []domain.Game
 	// reads counts the reads of the tree, to show that nothing is read before the lock or after a refusal.
@@ -61,7 +63,7 @@ func (s *lobbyStore) Lobby(_ context.Context, groupID, id, callerID string, at t
 	}
 	var players []domain.Player
 	for _, userID := range s.players[id] {
-		players = append(players, domain.Player{UserID: userID, GameRoleID: s.seats[id+"/"+userID]})
+		players = append(players, domain.Player{UserID: userID, GameRoleID: s.seats[id+"/"+userID], Goals: s.goals[userID]})
 	}
 	return lobby, players, s.err
 }
@@ -254,7 +256,7 @@ func newLobbies(store *lobbyStore, catalog *fakeCatalog) *application.Lobbies {
 }
 
 func newLobbiesWithNames(store *lobbyStore, catalog *fakeCatalog, names *fakeDirectory) *application.Lobbies {
-	return application.NewLobbies(store, store, catalog, names, fixedClock{at: now})
+	return application.NewLobbies(store, store, catalog, names, application.NewItems(nil, dropCatalog(), discardLog()), fixedClock{at: now})
 }
 
 func chessCatalog() *fakeCatalog {
@@ -490,6 +492,20 @@ func TestGetReturnsLobbyWithPlayersInStoredOrderAndOneNameLookup(t *testing.T) {
 	want := []domain.Player{{UserID: bobID, DisplayName: "Bob"}, {UserID: aliceID, DisplayName: "Alice"}}
 	if lobby.ID != "started" || !reflect.DeepEqual(players, want) || names.calls != 1 {
 		t.Fatalf("lobby %q, players %v, name lookups %d; want started, %v and 1 lookup", lobby.ID, players, names.calls, want)
+	}
+}
+
+// The players' goals get their names in the same read, each item ID asked once (ADR 0029 section 5).
+func TestGetResolvesThePlayersGoals(t *testing.T) {
+	store := upcomingStore()
+	store.goals = map[string][]domain.Item{bobID: {{ID: 1}, {ID: 2}}, aliceID: {{ID: 1}}}
+
+	_, players, err := newLobbies(store, chessCatalog()).Get(context.Background(), fridayID, "started", aliceID)
+
+	thunderfury := domain.Item{ID: 1, Name: "Thunderfury", Status: domain.ItemKnown}
+	want := [][]domain.Item{{thunderfury, {ID: 2, Status: domain.ItemUnknown}}, {thunderfury}}
+	if err != nil || len(players) != 2 || !reflect.DeepEqual([][]domain.Item{players[0].Goals, players[1].Goals}, want) {
+		t.Fatalf("players %+v, error %v; want goals %+v", players, err, want)
 	}
 }
 

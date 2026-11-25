@@ -16,10 +16,13 @@ const (
 	shareGameSQL      = gameExistsSQL + ` FOR SHARE`
 	activityOfGameSQL = `SELECT EXISTS (SELECT 1 FROM activities a JOIN game_modes m ON m.id = a.game_mode_id
 		WHERE m.game_id = $1 AND a.id = $2)`
-	// The game's order is the order of the game read: modes, then their activities, then each drop list.
-	listDropsSQL = `SELECT d.item_id, a.id, a.name, m.name FROM drop_items d
-		JOIN activities a ON a.id = d.activity_id JOIN game_modes m ON m.id = a.game_mode_id
-		WHERE m.game_id = $1 ORDER BY m.sort_order, m.id, a.sort_order, a.id, d.sort_order, d.item_id`
+	// dropsOfGameSQL joins a drop_items row d to its activity a and mode m.
+	dropsOfGameSQL = `drop_items d JOIN activities a ON a.id = d.activity_id JOIN game_modes m ON m.id = a.game_mode_id`
+	// activityOrderSQL is the order of the game read: modes, then their activities.
+	activityOrderSQL = `m.sort_order, m.id, a.sort_order, a.id`
+	// The game's order, then each drop list in the order added.
+	listDropsSQL = `SELECT d.item_id, a.id, a.name, m.name FROM ` + dropsOfGameSQL + `
+		WHERE m.game_id = $1 ORDER BY ` + activityOrderSQL + `, d.sort_order, d.item_id`
 	// A new entry goes after the last one of its activity, computed in the same statement (ADR 0029 section 5).
 	insertDropSQL = `INSERT INTO drop_items (activity_id, item_id, sort_order)
 		SELECT $1, $2, COALESCE(max(sort_order) + 1, 0) FROM drop_items WHERE activity_id = $1`

@@ -19,7 +19,7 @@ const (
 )
 
 func seatLobbies(store *Store) *application.Lobbies {
-	return application.NewLobbies(store.Lobbies(), store.Lobbies(), store.Games(), nil, fixedNow{joinedAt})
+	return application.NewLobbies(store.Lobbies(), store.Lobbies(), store.Games(), nil, nil, fixedNow{joinedAt})
 }
 
 func joinSeatAt(store *Store, lobbyID, userID string, seat domain.Seat) error {

@@ -221,7 +221,7 @@ func TestSetActivityRefusesALobbyWithoutAModeAndTheCheckOrderHolds(t *testing.T)
 	game, lobby := squadLobby(t, store, 0)
 	arena := game.Modes[0].Activities[0]
 	noMode := insertLobby(t, store, newLobby(fridayID, alexID, &game.ID, "Squad Game"))
-	ended := application.NewLobbies(store.Lobbies(), store.Lobbies(), store.Games(), nil, fixedNow{joinedAt.Add(4 * time.Hour)})
+	ended := application.NewLobbies(store.Lobbies(), store.Lobbies(), store.Games(), nil, nil, fixedNow{joinedAt.Add(4 * time.Hour)})
 
 	_, noModeErr := seatLobbies(store).SetActivity(context.Background(), fridayID, noMode.ID, alexID, arena.ID)
 	_, endedSet := ended.SetActivity(context.Background(), fridayID, lobby.ID, otherID, arena.ID)
@@ -547,7 +547,7 @@ func TestSetGameRefusals(t *testing.T) {
 	lobby := openLobby(t, store)
 	custom := insertLobby(t, store, newLobby(fridayID, alexID, nil, "Go"))
 	lobbies := seatLobbies(store)
-	ended := application.NewLobbies(store.Lobbies(), store.Lobbies(), store.Games(), nil, fixedNow{joinedAt.Add(4 * time.Hour)})
+	ended := application.NewLobbies(store.Lobbies(), store.Lobbies(), store.Games(), nil, nil, fixedNow{joinedAt.Add(4 * time.Hour)})
 	ctx := context.Background()
 
 	for name, tc := range map[string]struct {

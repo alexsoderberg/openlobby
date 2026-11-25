@@ -81,6 +81,9 @@ type Player struct {
 	GameRoleID  *string
 	// PreferredGameRoles are for the lobby's game only, and empty for a player who is no longer a member (ADR 0022).
 	PreferredGameRoles []PreferredGameRole
+	// Goals are the player's goals of the lobby's game on the drop list of its Named activity, and empty for a player
+	// who is no longer a member (ADR 0029 section 5).
+	Goals []Item
 }
 
 // Seat is the choice of a player: one game role, or flex (ADR 0017 section 8). Flex false counts as not given.
