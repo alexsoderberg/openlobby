@@ -68,9 +68,7 @@ export function InviteLinks({
       />
       <p role="status" className="status">
         {copy?.outcome === "failed" && (
-          <span key={copy.attempt} className="status-flash">
-            {m.inviteLinkCopyFailed}
-          </span>
+          <span key={copy.attempt}>{m.inviteLinkCopyFailed}</span>
         )}
       </p>
       <Button type="button" variant="secondary" onClick={onClose}>

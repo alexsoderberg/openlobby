@@ -31,7 +31,7 @@ Object.defineProperty(HTMLImageElement.prototype, "src", {
   },
 });
 
-// jsdom has no layout, so nothing ever resizes; the week grid only needs ResizeObserver to exist.
+// jsdom has no layout, so nothing ever resizes; the Radix panels in ui/ only need ResizeObserver to exist.
 if (!window.ResizeObserver) {
   window.ResizeObserver = class {
     observe() {}

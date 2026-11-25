@@ -5,6 +5,7 @@ import {
   waitFor,
   within,
 } from "@testing-library/react";
+import type { ComponentProps } from "react";
 import { describe, expect, it, vi } from "vitest";
 import {
   ApiError,
@@ -12,6 +13,7 @@ import {
   type ApiClient,
   type LobbyDetail,
 } from "../../api";
+import { formatTime, formatWeekday } from "../../i18n";
 import { en } from "../../i18n/messages/en";
 import { chooseOption } from "../../test/chooseOption";
 import { fakeApiClient, testUser } from "../../test/fakeApiClient";
@@ -40,6 +42,7 @@ const lobby: LobbyDetail = {
 function renderDetail(
   overrides: Partial<ApiClient> = {},
   userId = testUser.userId,
+  group?: ComponentProps<typeof LobbyDetailPage>["group"],
 ) {
   const client = fakeApiClient({
     getLobby: vi.fn(() => Promise.resolve(lobby)),
@@ -51,6 +54,7 @@ function renderDetail(
       <LobbyDetailPage
         groupId="g1"
         lobbyId="l1"
+        group={group}
         userId={userId}
         backHref="/groups/g1"
         onDeleted={onDeleted}
@@ -112,7 +116,7 @@ describe("lobby label, role slots and seats", () => {
     await screen.findByRole("heading", { level: 1 });
     expect(
       screen.getAllByRole("heading", { level: 3 }).map((h) => h.textContent),
-    ).toEqual(["Tank", "Flex"]);
+    ).toEqual([`Tank 1/1${en.lobbyRoleSlotFullSuffix}`, "Flex 1"]);
     expect(
       within(screen.getByRole("region", { name: "Tank" })).getByText(
         "Maja Lind",
@@ -139,7 +143,10 @@ describe("lobby label, role slots and seats", () => {
       level: 3,
     });
     expect(tankHeading.querySelector('[data-icon="shield"]')).not.toBeNull();
-    expect(tankHeading.textContent).toBe("Tank");
+    expect(visibleText(tankHeading)).toBe("Tank 1/1");
+    // A full role's heading has the check icon of a full role slot; Flex never does.
+    expect(tankHeading.querySelector(".role-slot-check")).not.toBeNull();
+    expect(flexHeading.querySelector(".role-slot-check")).toBeNull();
     expect(flexHeading.querySelector("svg")).toBeNull();
   });
 
@@ -333,7 +340,7 @@ describe("page order", () => {
     );
     const side = settings.closest(".side-column");
     expect(side).not.toBeNull();
-    expect(side!.parentElement).toBe(remove.closest(".panel"));
+    expect(side!.parentElement).toBe(remove.closest(".side-layout"));
   });
 
   // The side column is placed by CSS only, so the DOM order (and focus order) is the same at every width.
@@ -377,7 +384,7 @@ describe("page order", () => {
     });
     const remove = screen.getByRole("button", { name: en.lobbyDelete });
     expectInOrder(slots, leave, players, screen.getByText("Kim"), remove);
-    expect(lastFocusableIn(remove.closest(".panel")!)).toBe(remove);
+    expect(lastFocusableIn(remove.closest(".side-layout")!)).toBe(remove);
   });
 
   it("puts Join lobby right after the spot count when the lobby has no role slots (REQ-0028 item 5)", async () => {
@@ -451,27 +458,22 @@ describe("an open lobby on the page", () => {
   });
 });
 
-describe("lobby theme", () => {
-  it("shows the genre name beside the game name", async () => {
+describe("no genre theme (REQ-0029 item 10)", () => {
+  it("does not show the genre name", async () => {
     renderDetail({
-      getLobby: () => Promise.resolve({ ...lobby, gameGenre: "survival" }),
+      getLobby: () =>
+        Promise.resolve({
+          ...lobby,
+          gameId: "game1",
+          gameGenre: "survival",
+        }),
     });
 
-    expect(await screen.findByText(en.genre.survival)).toBeTruthy();
-    expect(
-      screen
-        .getByRole("heading", { name: "Catan" })
-        .closest("header")
-        ?.getAttribute("data-genre"),
-    ).toBe("survival");
-  });
-
-  it("shows no genre name for a neutral lobby", async () => {
-    renderDetail();
-
-    await screen.findByRole("heading", { name: "Catan" });
-    for (const name of Object.values(en.genre))
-      if (name !== en.genre.none) expect(screen.queryByText(name)).toBeNull();
+    const header = (
+      await screen.findByRole("heading", { name: "Catan" })
+    ).closest("header")!;
+    expect(screen.queryByText(en.genre.survival)).toBeNull();
+    expect(header.hasAttribute("data-genre")).toBe(false);
   });
 });
 
@@ -517,43 +519,123 @@ describe("game logo", () => {
   });
 });
 
-describe("game cover", () => {
-  const VERSION = "c".repeat(64);
-  const withCover = { ...lobby, gameId: "game1", gameCoverVersion: VERSION };
-  const header = async () =>
-    (await screen.findByRole("heading", { name: "Catan" })).closest("header")!;
-  const coverOf = (element: HTMLElement) =>
-    element.querySelector(".genre-frame__cover");
+describe("page header and facts (REQ-0029 item 6)", () => {
+  const group = {
+    name: "Friday crew",
+    members: [
+      {
+        userId: testUser.userId,
+        displayName: "Maja Lind",
+        role: "admin" as const,
+      },
+      { userId: "u2", displayName: "Kim Berg", role: "member" as const },
+    ],
+  };
 
-  it("fills the lobby header behind its content", async () => {
-    renderDetail({ getLobby: () => Promise.resolve(withCover) });
+  it("shows the day, the start and end time, the label and the spots in the header", async () => {
+    renderDetail();
 
-    const head = await header();
-    expect(coverOf(head)?.getAttribute("src")).toBe(
-      `/api/games/game1/images/cover?v=${VERSION}`,
-    );
-    expect(coverOf(head)?.getAttribute("alt")).toBe("");
-    expect(document.querySelectorAll(".genre-frame__cover")).toHaveLength(1);
+    const header = (
+      await screen.findByRole("heading", { name: "Catan" })
+    ).closest("header")!;
+    expect(
+      within(header).getByText(
+        en.runningOrder.times(
+          formatTime(lobby.startsAt),
+          formatTime(lobby.endsAt),
+        ),
+      ),
+    ).toBeTruthy();
+    expect(within(header).getByText("2/4 players")).toBeTruthy();
+    expect(header.textContent).toContain(formatWeekday(lobby.startsAt));
   });
 
-  it("shows the genre theme for a game without a cover", async () => {
+  it("names both days when the lobby ends on another day", async () => {
+    const startsAt = new Date(Date.now() + HOUR_MS);
+    const endsAt = new Date(startsAt);
+    endsAt.setDate(endsAt.getDate() + 1);
     renderDetail({
       getLobby: () =>
-        Promise.resolve({ ...lobby, gameId: "game1", gameGenre: "survival" }),
+        Promise.resolve({
+          ...lobby,
+          startsAt: startsAt.toISOString(),
+          endsAt: endsAt.toISOString(),
+        }),
     });
 
-    const head = await header();
-    expect(coverOf(head)).toBeNull();
-    expect(head.dataset.genre).toBe("survival");
+    expect(
+      await screen.findByText(
+        en.lobbyDays(formatWeekday(startsAt), formatWeekday(endsAt)),
+      ),
+    ).toBeTruthy();
   });
 
-  it("shows the genre theme after the cover fails to load", async () => {
-    renderDetail({ getLobby: () => Promise.resolve(withCover) });
+  it("links the group's name back to the Group view", async () => {
+    renderDetail({}, testUser.userId, group);
 
-    const head = await header();
-    fireEvent.error(coverOf(head)!);
-    expect(coverOf(head)).toBeNull();
-    expect(head.hasAttribute("data-cover")).toBe(false);
+    await screen.findByRole("heading", { name: "Catan" });
+    expect(
+      screen.getByRole("link", { name: "Friday crew" }).getAttribute("href"),
+    ).toBe("/groups/g1");
+  });
+
+  it("lists the facts of the lobby, with the creator once the group is known", async () => {
+    renderDetail(
+      {
+        getLobby: () =>
+          Promise.resolve({
+            ...lobby,
+            createdByUserId: "u2",
+            modeName: "Competitive",
+          }),
+      },
+      testUser.userId,
+      group,
+    );
+
+    const facts = (
+      await screen.findByRole("heading", { name: en.lobbyFactsHeading })
+    ).closest("section")!;
+    expect(visibleText(facts.querySelector("dl")!)).toBe(
+      [
+        en.lobbyGameLabel,
+        "Catan",
+        en.lobbyModeLabel,
+        "Competitive",
+        en.lobbyMaxPlayersLabel,
+        "4",
+        en.lobbyCreatorLabel,
+        "Kim Berg",
+      ].join(""),
+    );
+    expect(facts.closest(".side-column")).not.toBeNull();
+  });
+
+  it("leaves the creator out while the group is not known, and names an open lobby Open", async () => {
+    renderDetail({
+      getLobby: () =>
+        Promise.resolve({ ...lobby, gameName: null, maxPlayers: null }),
+    });
+
+    const facts = (
+      await screen.findByRole("heading", { name: en.lobbyFactsHeading })
+    ).closest("section")!;
+    expect(visibleText(facts.querySelector("dl")!)).toBe(
+      en.lobbyGameLabel + en.lobbyOpen,
+    );
+  });
+
+  it("marks my own row with the You tag and the row class that gives my avatar the signal fill", async () => {
+    renderDetail();
+
+    const me = (await screen.findByText("Maja Lind")).closest("li")!;
+    expect(within(me).getByText(en.lobbyPlayerYou)).toBeTruthy();
+    // global.css fills `.player-row--me > .initials-icon` with signal (orangeRule.test.ts checks the rule).
+    expect(me.className).toContain("player-row--me");
+    expect(me.querySelector(":scope > .initials-icon")).not.toBeNull();
+    const other = screen.getByText("Kim Berg").closest("li")!;
+    expect(within(other).queryByText(en.lobbyPlayerYou)).toBeNull();
+    expect(other.className).not.toContain("player-row--me");
   });
 });
 

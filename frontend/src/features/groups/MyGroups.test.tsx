@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { ApiError, type GroupOverview, type NextLobby } from "../../api";
+import { groupColorIndex } from "../../groupColor";
 import type { LoadView } from "../../hooks";
 import { formatDateTime } from "../../i18n";
 import { en } from "../../i18n/messages/en";
@@ -193,21 +194,24 @@ describe("Group card", () => {
     );
   });
 
-  it("themes the lobby line by the lobby's genre, neutral without one", () => {
-    loaded(
-      overview({ id: "g1", name: "Friday crew" }),
-      overview({
-        id: "g2",
-        name: "Chess club",
-        nextLobby: nextLobby({ gameGenre: null }),
-      }),
-    );
+  it("shows no genre theme on the lobby line (REQ-0029 item 10)", () => {
+    loaded(overview());
 
-    const genreOf = (name: string) =>
-      card(name)
-        .querySelector(".group-card__lobby")
-        ?.getAttribute("data-genre");
-    expect(genreOf("Friday crew")).toBe("shooter");
-    expect(genreOf("Chess club")).toBe("neutral");
+    expect(card("Friday crew").querySelector("[data-genre]")).toBeNull();
+    expect(card("Friday crew").textContent).not.toContain(en.genre.shooter);
+  });
+
+  it("shows the group colour as a square hidden from screen readers (REQ-0029 item 7)", () => {
+    loaded(overview({ id: "g1" }), overview({ id: "g2", name: "Chess club" }));
+
+    const swatchOf = (name: string) =>
+      card(name).querySelector("[data-group-color]");
+    expect(swatchOf("Friday crew")?.getAttribute("data-group-color")).toBe(
+      String(groupColorIndex("g1")),
+    );
+    expect(swatchOf("Chess club")?.getAttribute("data-group-color")).toBe(
+      String(groupColorIndex("g2")),
+    );
+    expect(swatchOf("Friday crew")?.getAttribute("aria-hidden")).toBe("true");
   });
 });

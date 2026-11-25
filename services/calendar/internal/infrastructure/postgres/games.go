@@ -11,23 +11,22 @@ import (
 	"openlobby/services/calendar/internal/domain"
 )
 
-// joinImagesSQL gives the versions of the logo and cover of games g as logo.version and cover.version, NULL without one.
+// joinImagesSQL gives the version of the logo of games g as logo.version, NULL without one.
 // It reads game_images by its primary key and never selects the bytes (ADR 0026 point 5).
-const joinImagesSQL = ` LEFT JOIN game_images logo ON logo.game_id = g.id AND logo.kind = 'logo'` +
-	` LEFT JOIN game_images cover ON cover.game_id = g.id AND cover.kind = 'cover'`
+const joinImagesSQL = ` LEFT JOIN game_images logo ON logo.game_id = g.id AND logo.kind = 'logo'`
 
 // The order is the system admin's list order (ADR 0010); the group order is decided in application.
-const listGamesSQL = `SELECT g.id, g.name, g.default_max_players, g.genre, logo.version, cover.version FROM games g` + joinImagesSQL + ` ORDER BY lower(g.name), g.id`
+const listGamesSQL = `SELECT g.id, g.name, g.default_max_players, g.genre, logo.version FROM games g` + joinImagesSQL + ` ORDER BY lower(g.name), g.id`
 
-const selectGameSQL = `SELECT g.id, g.name, g.default_max_players, g.genre, logo.version, cover.version FROM games g` + joinImagesSQL + ` WHERE g.id = $1`
+const selectGameSQL = `SELECT g.id, g.name, g.default_max_players, g.genre, logo.version FROM games g` + joinImagesSQL + ` WHERE g.id = $1`
 
 // lockGameSQL serializes admin writes to the same game (ADR 0017 section 6). Only the game row is locked.
 const lockGameSQL = selectGameSQL + ` FOR UPDATE OF g`
 
 // Lobbies of other groups and lobbies with a custom name (game_id NULL) or a removed game do not join, so they do not count.
-const listGroupGamesSQL = `SELECT g.id, g.name, g.default_max_players, g.genre, logo.version, cover.version, count(l.id)
+const listGroupGamesSQL = `SELECT g.id, g.name, g.default_max_players, g.genre, logo.version, count(l.id)
 	FROM games g LEFT JOIN lobbies l ON l.game_id = g.id AND l.group_id = $1` + joinImagesSQL + `
-	GROUP BY g.id, logo.version, cover.version ORDER BY lower(g.name), g.id`
+	GROUP BY g.id, logo.version ORDER BY lower(g.name), g.id`
 
 // One query per table for the whole game list, not one per game (ADR 0017 Consequences). The owner of a role is its mode
 // or, for a role of the game itself, the game.
@@ -96,7 +95,7 @@ func (r gameRepo) List(ctx context.Context) ([]domain.Game, error) {
 	var games []domain.Game
 	err := eachRow(ctx, r.s.db, func(rows *sql.Rows) error {
 		var game domain.Game
-		err := rows.Scan(&game.ID, &game.Name, &game.DefaultMaxPlayers, &game.Genre, &game.LogoVersion, &game.CoverVersion)
+		err := rows.Scan(&game.ID, &game.Name, &game.DefaultMaxPlayers, &game.Genre, &game.LogoVersion)
 		games = append(games, game)
 		return err
 	}, listGamesSQL)
@@ -116,7 +115,7 @@ func (r gameRepo) ListForGroup(ctx context.Context, groupID string) ([]applicati
 	err := eachRow(ctx, r.s.db, func(rows *sql.Rows) error {
 		var usage application.GameUsage
 		game := &usage.Game
-		err := rows.Scan(&game.ID, &game.Name, &game.DefaultMaxPlayers, &game.Genre, &game.LogoVersion, &game.CoverVersion, &usage.LobbyCount)
+		err := rows.Scan(&game.ID, &game.Name, &game.DefaultMaxPlayers, &game.Genre, &game.LogoVersion, &usage.LobbyCount)
 		usages = append(usages, usage)
 		return err
 	}, listGroupGamesSQL, groupID)
@@ -219,7 +218,7 @@ func (r gameRepo) Delete(ctx context.Context, id string) error {
 // loadGame reads one game with its game roles and modes, or ErrGameNotFound.
 func loadGame(ctx context.Context, q queryer, query, id string) (domain.Game, error) {
 	var game domain.Game
-	err := q.QueryRowContext(ctx, query, id).Scan(&game.ID, &game.Name, &game.DefaultMaxPlayers, &game.Genre, &game.LogoVersion, &game.CoverVersion)
+	err := q.QueryRowContext(ctx, query, id).Scan(&game.ID, &game.Name, &game.DefaultMaxPlayers, &game.Genre, &game.LogoVersion)
 	if errors.Is(err, sql.ErrNoRows) {
 		return domain.Game{}, application.ErrGameNotFound
 	}

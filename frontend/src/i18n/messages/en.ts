@@ -15,6 +15,7 @@ export const en = {
   brandAccent: "Lobby",
   logInWithDiscord: "Log in with Discord",
   logOut: "Log out",
+  skipToContent: "Skip to content",
   tryAgain: "Try again",
   cancel: "Cancel",
   backToGroups: "Back to your groups",
@@ -63,6 +64,10 @@ export const en = {
     count === 1 ? "1 member" : `${count} members`,
   groupMoreMembers: (count: number) => `+${count}`,
   groupNoUpcomingLobbies: "No upcoming lobbies",
+  // The line under the Group view's name: "6 members, 4 upcoming lobbies" (REQ-0029 item 5).
+  groupUpcomingLobbyCount: (count: number) =>
+    count === 1 ? "1 upcoming lobby" : `${count} upcoming lobbies`,
+  groupSummary: (members: string, lobbies: string) => `${members}, ${lobbies}`,
   createGroupHeading: "Create a group",
   groupNameLabel: "Group name",
   groupNameHint: `1 to ${GROUP_NAME_MAX_LENGTH} characters.`,
@@ -71,9 +76,9 @@ export const en = {
 
   groupLoading: "Loading the group.",
   membersHeading: "Members",
-  groupAdminMarker: "Group admin",
+  // A neutral label in a member's row of the Member list (REQ-0029 item 5).
+  groupAdminMarker: "Admin",
   makeAdmin: "Make group admin",
-  makeAdminLabel: (member: string) => `Make ${member} a group admin`,
   makeAdminHeading: (member: string) => `Make ${member} a group admin?`,
   makeAdminConfirm:
     "A group admin can revoke the group's invite links and make members group admins. This cannot be undone.",
@@ -225,15 +230,10 @@ export const en = {
   gameRemoveSubmit: "Yes, remove game",
   gameRemoveKeep: "Keep game",
   gameAdded:
-    "Game added. Its form is open in the list, where you can add a logo and a cover.",
-  gameImage: { logo: "Logo", cover: "Cover" } satisfies Record<
-    GameImageKind,
-    string
-  >,
+    "Game added. Its form is open in the list, where you can add a logo.",
+  gameImage: { logo: "Logo" } satisfies Record<GameImageKind, string>,
   gameImageHint: {
     logo: "PNG, JPEG or WebP. The image is saved as soon as you choose it.",
-    cover:
-      "PNG, JPEG or WebP. Shown darkened and cropped to fit behind the Next up card, the lobby page header and each lobby row of the group page. The image is saved as soon as you choose it.",
   } satisfies Record<GameImageKind, string>,
   gameImageChoose: "Choose image",
   gameImageRemove: "Remove image",
@@ -242,12 +242,9 @@ export const en = {
   gameImageRemoved: "Image removed.",
   gameImageRemoveHeading: {
     logo: (game: string) => `Remove the logo of ${game}?`,
-    cover: (game: string) => `Remove the cover of ${game}?`,
   } satisfies Record<GameImageKind, (game: string) => string>,
   gameImageRemoveConfirm: {
     logo: "Its lobbies show the game's initials instead. You can choose a new image at any time.",
-    cover:
-      "The Next up card, the lobby page header and the lobby rows of the group page show the genre pattern instead. You can choose a new image at any time.",
   } satisfies Record<GameImageKind, string>,
   gameImageRemoveSubmit: "Yes, remove image",
   gameImageRemoveKeep: "Keep image",
@@ -256,7 +253,6 @@ export const en = {
 
   lobbiesHeading: "Upcoming lobbies",
   lobbiesLoading: "Loading the lobbies.",
-  lobbiesEmpty: "No lobbies have been created yet.",
   lobbyViewLabel: "View",
   lobbyViewList: "List",
   lobbyViewCalendar: "Calendar",
@@ -281,16 +277,55 @@ export const en = {
   lobbyFlex: (count?: number) =>
     count === undefined ? "Flex" : `Flex ${count}`,
   lobbyCreatedBy: (name: string) => `Created by ${name}`,
+  // The Line-up (REQ-0029 item 5): "to 14:35" under the large start time.
+  lineUpEnds: (time: string) => `to ${time}`,
+  // The spots at the right of a Line-up row, as a large figure and a word: "3/5 players", "3/3 Full", "1 player".
+  lineUpSpotsFigure: (count: number, max: number | null) =>
+    max === null ? `${count}` : `${count}/${max}`,
+  lineUpSpotsWord: (count: number, max: number | null) => {
+    if (max !== null && count >= max) return "Full";
+    if (max === null && count === 1) return "player";
+    return "players";
+  },
   lobbyUnknownCreator: "Unknown member",
   calendarWeekHeading: (range: string) => `Week ${range}`,
   calendarNextWeek: "Next week",
-  calendarNothingBooked: "Nothing booked",
-  calendarGridLabel: "Week schedule, scrolls vertically",
-  calendarDayPillsLabel: "Choose a day",
-  calendarDayHasLobbies: "has lobbies",
-  calendarContinuesBefore: "started the day before",
-  calendarContinuesAfter: "ends next day",
-  calendarCreateOnDay: (day: string) => `Create lobby on ${day}`,
+
+  runningOrder: {
+    scrollLabel: "Running order, scrolls sideways",
+    nothingBooked: "Nothing booked",
+    today: (date: string) => `${date}, today`,
+    you: "you",
+    // The name of a day's Create lobby button: its visible text first (WCAG 2.5.3), then the day.
+    createOn: (day: string) => `Create lobby on ${day}`,
+    // The short spots on a block, "4/5"; its name says "4/5 players". A lobby without a max shows lobbyPlayers.
+    spots: (count: number, max: number) => `${count}/${max}`,
+    // A block's start and end clock times, "22:00–02:00".
+    times: (start: string, end: string) => `${start}–${end}`,
+    // The short time of a block that continues from the day before: its end only, "–01:00".
+    until: (end: string) => `–${end}`,
+    // The name a screen reader reads for a block: the same facts as its visible text, with the midnight markers.
+    blockName: (parts: {
+      label: string;
+      time: string;
+      players: string;
+      group: string;
+      continuesBefore: boolean;
+      continuesAfter: boolean;
+      you: boolean;
+    }) =>
+      [
+        parts.label,
+        parts.time,
+        parts.continuesBefore && "started the day before",
+        parts.continuesAfter && "ends next day",
+        parts.players,
+        parts.group,
+        parts.you && "you",
+      ]
+        .filter(Boolean)
+        .join(", "),
+  },
 
   lobbyCreateHeading: "Create a lobby",
   lobbyCreateButton: "Create lobby",
@@ -340,6 +375,12 @@ export const en = {
   lobbyBackToGroup: "Back to the group",
   lobbyLoading: "Loading the lobby.",
   lobbyPlayersHeading: "Players",
+  // The viewer's own row in the player list.
+  lobbyPlayerYou: "You",
+  // The day line of a lobby that ends on another day than it starts.
+  lobbyDays: (start: string, end: string) => `${start} to ${end}`,
+  lobbyFactsHeading: "Lobby",
+  lobbyCreatorLabel: "Created by",
   lobbyNoPlayers: "Nobody has joined this lobby yet.",
   lobbyNotFoundHeading: "Lobby not found",
   lobbyNotFoundText: "This lobby does not exist, or it has already ended.",
@@ -376,13 +417,10 @@ export const en = {
 
   shell: {
     mainNav: "Main",
-    groupsNav: "Groups",
     home: "Home",
     groups: "Groups",
     you: "You",
     createGroupButton: "Create a group",
-    groupMenu: (group: string) => `${group} menu`,
-    invitePeople: "Invite people",
     openProfile: (name: string) => `${name}, your profile`,
   },
 
@@ -411,21 +449,19 @@ export const en = {
 
   dashboard: {
     loading: "Loading your lobbies.",
-    groupStripLabel: "Your groups",
     noGroups: "You are not in a group yet",
     noGroupsHint:
       "Create one on the Group list, or open an invite link from a friend.",
     noGroupsLink: "Go to Groups",
     nextUpHeading: "Next up",
+    // The band's eyebrow: one phrase with the countdown, "Running" or "Ended".
+    nextUpEyebrow: (timing: string) => `Next up, ${timing}`,
     thisWeekHeading: "This week",
-    viewLabel: "This week view",
-    viewCalendar: "Week calendar",
-    viewDays: "Day list",
-    nothingBookedWeek: "Nothing booked this week",
+    legendLabel: "Groups this week",
+    legendYou: "You are in",
     nothingBooked: "Nothing booked",
     running: "Running",
     ended: "Ended",
-    playersMeter: "Players",
     countdownDays: (days: number, hours: number) => `in ${days} d ${hours} h`,
     countdownHours: (hours: number, minutes: number) =>
       `in ${hours} h ${minutes} min`,

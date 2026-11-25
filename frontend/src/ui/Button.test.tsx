@@ -39,39 +39,48 @@ describe("Button", () => {
     render(<Button className="group-form__submit">Save</Button>);
     const { classList } = screen.getByRole("button", { name: "Save" });
     expect(classList).toContain("group-form__submit");
-    expect(classList).toContain("bg-(--color-accent)");
+    expect(classList).toContain("bg-(--color-signal)");
   });
 
-  // The light span is decoration: hidden from assistive tech and without text, so the name stays the label.
-  it("renders its light span hidden from assistive tech and without text", () => {
-    render(<Button>Save</Button>);
-    const light = screen
-      .getByRole("button", { name: "Save" })
-      .querySelector('[data-slot="button-light"]');
-
-    expect(light?.getAttribute("aria-hidden")).toBe("true");
-    expect(light?.textContent).toBe("");
+  // ADR 0028 section 16.3: signal only on the primary, a control-line edge on the secondary, no fill on danger.
+  it.each([
+    [
+      "primary",
+      "border-(--color-signal) bg-(--color-signal) text-(--color-on-signal)",
+    ],
+    [
+      "secondary",
+      "border-(--color-control-line) bg-(--color-surface) text-(--color-text)",
+    ],
+    ["ghost", "border-transparent bg-transparent text-(--color-text)"],
+    ["danger", "border-(--color-danger) bg-transparent text-(--color-danger)"],
+  ] as const)("draws the %s variant with %s", (variant, look) => {
+    render(<Button variant={variant}>Go</Button>);
+    const { classList } = screen.getByRole("button", { name: "Go" });
+    for (const name of look.split(" ")) expect(classList).toContain(name);
+    expect(classList).toContain("rounded-(--radius)");
   });
 
-  // The follow light reads the pointer from two CSS variables; a caller's own handler must still run.
-  it("puts the pointer position in --pointer-x and --pointer-y and calls the caller's onPointerMove", () => {
-    const onPointerMove = vi.fn();
-    render(<Button onPointerMove={onPointerMove}>Save</Button>);
-    const button = screen.getByRole("button", { name: "Save" });
-    vi.spyOn(button, "getBoundingClientRect").mockReturnValue(
-      new DOMRect(10, 20, 100, 32),
+  // The primary keeps its fill on hover; the others take the raised fill (section 16.3).
+  it("lights every variant but the primary on hover", () => {
+    const hover = cssRules.filter(({ selector }) =>
+      selector.startsWith('[data-slot="button"]'),
     );
-
-    fireEvent.pointerMove(button, { clientX: 40, clientY: 30 });
-
-    expect(button.style.getPropertyValue("--pointer-x")).toBe("30px");
-    expect(button.style.getPropertyValue("--pointer-y")).toBe("10px");
-    expect(onPointerMove).toHaveBeenCalledOnce();
+    expect(
+      hover.find(({ selector }) => selector.endsWith(":hover::after"))
+        ?.selector,
+    ).toBe(
+      '[data-slot="button"]:not(:disabled, [data-variant="primary"]):hover::after',
+    );
+    expect(
+      hover.find(({ selector }) => selector === '[data-slot="button"]::after')
+        ?.body,
+    ).toMatch(/background:\s*var\(--color-raised\)/);
   });
 });
 
 describe("ButtonLink", () => {
-  it("is a link named by its text, marked like a Button, with its light span hidden", () => {
+  it("is a link named by its text, marked like a Button", () => {
     render(
       <ButtonLink variant="ghost" href="/api/auth/login">
         Log in
@@ -81,11 +90,6 @@ describe("ButtonLink", () => {
     const link = screen.getByRole("link", { name: "Log in" });
     expect(link.getAttribute("href")).toBe("/api/auth/login");
     expect(link.dataset).toMatchObject({ slot: "button", variant: "ghost" });
-    expect(
-      link
-        .querySelector('[data-slot="button-light"]')
-        ?.getAttribute("aria-hidden"),
-    ).toBe("true");
   });
 
   // Unlayered link rules would beat the colour utilities, which sit in a layer, so none may match a ButtonLink.
@@ -124,37 +128,19 @@ describe("button hover rules in global.css", () => {
   });
 });
 
-// REQ-0028 items 4 and 8, ADR 0023 Amendment 2026-11-18, ADR 0021 A10.
-describe("button glow and touch height in global.css", () => {
-  // The last ::after rule that names the button outside a :not(), as the cascade sees it.
-  const glowRule = (button: string) =>
-    cssRules
-      .filter(
-        ({ selector }) =>
-          selector.endsWith("::after") &&
-          selector.replace(/:not\([^)]*\)/g, "").includes(button),
-      )
-      .at(-1)?.body ?? "";
-  const variant = (name: string) => `[data-variant="${name}"]`;
-
-  it("gives primary and danger their glow", () => {
-    expect(glowRule(variant("primary"))).toMatch(
-      /box-shadow: var\(--shadow-button-glow-primary\)/,
+// ADR 0028 section 2: no glow, no shadow; ADR 0021 A10: one touch height.
+describe("button look and touch height in global.css", () => {
+  it("has no glow or shadow on any button rule", () => {
+    const buttonRules = cssRules.filter(({ selector }) =>
+      selector.includes('[data-slot="button"]'),
     );
-    expect(glowRule(variant("danger"))).toMatch(
-      /box-shadow: var\(--shadow-button-glow-danger\)/,
-    );
-  });
-
-  it("gives secondary and ghost no glow", () => {
-    for (const name of ["secondary", "ghost"])
-      expect(glowRule(variant(name))).toMatch(/content: none/);
+    expect(buttonRules.length).toBeGreaterThan(0);
+    for (const { selector, body } of buttonRules)
+      expect(body, selector).not.toMatch(/shadow|gradient|filter/);
   });
 
   it("has no separate touch button size: coarse pointers use --size-tap", () => {
-    expect(stylesheet).not.toMatch(
-      /--size-button-touch|--shadow-button-glow-accent/,
-    );
+    expect(stylesheet).not.toMatch(/--size-button-touch|--shadow-button/);
     const coarseHeights = cssRules
       .filter(({ scopes }) => scopes.includes("@media (pointer: coarse)"))
       .flatMap(({ body }) =>

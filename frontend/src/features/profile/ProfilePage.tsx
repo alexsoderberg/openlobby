@@ -1,6 +1,6 @@
 import type { AuthUser } from "../../api";
 import { useMessages } from "../../i18n";
-import { Avatar, Button, ErrorAlert, Icon, Panel } from "../../ui";
+import { Avatar, Button, ErrorAlert, Icon } from "../../ui";
 import { GAMES_PATH } from "../games";
 import { PreferredGameRoles } from "./PreferredGameRoles";
 
@@ -23,9 +23,9 @@ export function ProfilePage({
   const m = useMessages();
   return (
     <>
-      <h1>{m.profileHeading}</h1>
-      <div className="panel-group">
-        <Panel>
+      <h1 className="page-head">{m.profileHeading}</h1>
+      <div className="page-sections">
+        <section>
           <h2>{m.profileAccountHeading}</h2>
           <div className="profile">
             <Avatar name={user.displayName} />
@@ -34,25 +34,25 @@ export function ProfilePage({
               <p className="profile__name">{user.displayName}</p>
             </div>
           </div>
-        </Panel>
+        </section>
         <PreferredGameRoles onUnauthenticated={onUnauthenticated} />
         {user.isSystemAdmin && (
-          <Panel>
+          <section>
             <h2>{m.profileSystemAdminHeading}</h2>
             <a className="list-row nav-row" href={GAMES_PATH}>
               <Icon name="gameList" />
               {m.gameListLink}
               <Icon name="chevronRight" className="nav-row__chevron" />
             </a>
-          </Panel>
+          </section>
         )}
-        <Panel>
+        <section>
           {logoutError && <ErrorAlert code={logoutError} onRetry={onLogout} />}
           <Button variant="secondary" type="button" onClick={onLogout}>
             <Icon name="logOut" />
             {m.logOut}
           </Button>
-        </Panel>
+        </section>
       </div>
     </>
   );

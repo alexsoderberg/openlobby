@@ -1,7 +1,7 @@
 import { useMessages } from "../../i18n";
 import { Icon } from "../../ui";
 
-/** The "+" in the Group rail and the floating one on phones (`className` marks that one). It turns into "×" while the Create group form is open. */
+/** The "+" in the Group list heading and the floating one on phones (`className` says which). It turns into "×" while the Create group form is open. */
 export function CreateGroupButton({
   open,
   onPress,

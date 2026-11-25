@@ -58,9 +58,9 @@ const FORBIDDEN = [
   "leading-",
   "tracking-",
 ];
-/** Colour and radius utilities, after their variants (`hover:`, `pointer-coarse:`). */
-const COLOUR_OR_RADIUS =
-  /^(bg|text|border|outline|decoration|accent|caret|fill|stroke|divide|from|via|to)-|^rounded(-|$)/;
+/** Colour utilities, after their variants (`hover:`, `pointer-coarse:`). Radius is in styles/flat.test.ts. */
+const COLOUR =
+  /^(bg|text|border|outline|decoration|accent|caret|fill|stroke|divide|from|via|to)-/;
 // The only exception to the token rule (ADR 0023, B2 amendment c): these name the absence of a colour.
 const NO_COLOUR = /^(bg|border)-transparent$/;
 /** A class without its variants; a typed value such as `(length:--x)` keeps its colon. */
@@ -78,7 +78,7 @@ const excludedWords = (
 
 describe("ui/ class lists (ADR 0023 point 2)", () => {
   it("finds the class lists", () => {
-    expect(classes).toContain("bg-(--color-accent)");
+    expect(classes).toContain("bg-(--color-signal)");
   });
 
   it("uses no arbitrary value, dark variant, ring, shadow, motion or typography class", () => {
@@ -101,11 +101,11 @@ describe("ui/ class lists (ADR 0023 point 2)", () => {
     expect(classes.filter(isTextButNoColour)).toEqual([]);
   });
 
-  it("names a token in every colour and radius class", () => {
+  it("names a token in every colour class", () => {
     expect(
       classes.filter(
         (name) =>
-          COLOUR_OR_RADIUS.test(utility(name)) &&
+          COLOUR.test(utility(name)) &&
           !/\((?:[\w-]+:)?--/.test(name) &&
           !NO_COLOUR.test(utility(name)),
       ),
@@ -119,6 +119,19 @@ describe("ui/ class lists (ADR 0023 point 2)", () => {
     // Radix sets its --radix-* sizes on the element at run time (the trigger width, the room in the window).
     expect(
       tokens.filter(
+        (token) => !declarations.has(token) && !token.startsWith("--radix-"),
+      ),
+    ).toEqual([]);
+  });
+
+  // Any (--token) read in ui/, also outside the class lists found above (such as GameLogo's size map).
+  it("reads only tokens defined in :root anywhere in ui/", () => {
+    const read = sources.flatMap((source) =>
+      Array.from(source.matchAll(TOKEN), ([, token]) => token),
+    );
+    expect(read.length).toBeGreaterThan(0);
+    expect(
+      read.filter(
         (token) => !declarations.has(token) && !token.startsWith("--radix-"),
       ),
     ).toEqual([]);

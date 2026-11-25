@@ -1,7 +1,6 @@
 import { useId, useRef, useState } from "react";
-import { gameImageUrl, type Game, type GameImageKind } from "../../api";
+import { type Game, type GameImageKind } from "../../api";
 import { toUserMessage, useMessages } from "../../i18n";
-import { GenreFrame } from "../../genres";
 import { Button, ConfirmDialog, GameLogo, Icon } from "../../ui";
 import { useGameImage } from "./useGameImage";
 
@@ -35,21 +34,7 @@ export function GameImageField({
     <fieldset className="structure" aria-describedby={hintId}>
       <legend>{m.gameImage[kind]}</legend>
       <div className="image-field__row">
-        {kind === "logo" ? (
-          <GameLogo gameId={game.id} name={game.name} version={image.version} />
-        ) : (
-          // The cover as Next up shows it: under the scrim, or the genre theme without one.
-          <GenreFrame
-            genre={game.genre}
-            className="cover-preview"
-            aria-hidden="true"
-            coverUrl={
-              image.version
-                ? gameImageUrl(game.id, "cover", image.version)
-                : undefined
-            }
-          />
-        )}
+        <GameLogo gameId={game.id} name={game.name} version={image.version} />
         <Button
           type="button"
           variant="secondary"

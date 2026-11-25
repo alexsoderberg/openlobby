@@ -59,7 +59,7 @@ describe("LandingHero", () => {
     expect(front.style.transform).not.toBe(behind.style.transform);
   });
 
-  it("paints a static frame whose two visible cards differ in name, time, count and genre", async () => {
+  it("paints a static frame whose two visible cards differ in name, time and count", async () => {
     const painted = stubBrowser({ reducedMotion: true });
     const { container } = render(<LandingHero />);
     const [front, behind] = Array.from(container.querySelectorAll("canvas"));
@@ -71,7 +71,6 @@ describe("LandingHero", () => {
     expect(otherName).toBe("Sample racing");
     expect(time).not.toBe(otherTime);
     expect(count).not.toBe(otherCount);
-    expect(painted.get(front)!.images).not.toEqual(painted.get(behind)!.images);
   });
 
   it("shows the static frame again and frees the scene when WebGL is lost", async () => {
@@ -89,17 +88,15 @@ describe("LandingHero", () => {
     expect(container.querySelectorAll("canvas")).toHaveLength(3);
   });
 
-  it("hands the scene one card per genre with its 3D motif from the theme", async () => {
+  it("hands the scene one card per canvas", async () => {
     stubBrowser();
-    render(<LandingHero />);
+    const { container } = render(<LandingHero />);
     await waitFor(() => expect(createHeroScene).toHaveBeenCalledTimes(1));
 
     const cards = vi.mocked(createHeroScene).mock.calls[0][1];
-    expect(cards.map((card) => card.motif.kind)).toEqual([
-      "reticle",
-      "chevrons",
-      "confetti",
-    ]);
+    expect(cards.map((card) => card.canvas)).toEqual(
+      Array.from(container.querySelectorAll("canvas")),
+    );
   });
 
   it("never creates the scene or a WebGL context for reduced motion, and starts no timer or frame", async () => {

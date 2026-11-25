@@ -482,4 +482,88 @@ describe("lobby page", () => {
     expect(await screen.findByRole("heading", { name: "Catan" })).toBeTruthy();
     expect(screen.getByRole("button", { name: en.lobbyDelete })).toBeTruthy();
   });
+
+  it("links back with the group's name and names the creator from the group's members", async () => {
+    const lobby = {
+      id: "l1",
+      gameName: "Catan",
+      gameGenre: null,
+      maxPlayers: 4,
+      startsAt: "2026-11-05T18:00:00Z",
+      endsAt: "2026-11-05T20:00:00Z",
+      createdByUserId: "u2",
+      playerCount: 0,
+      joinedByMe: false,
+      players: [],
+    };
+    renderAt(
+      loggedInClient({
+        getLobby: () => Promise.resolve(lobby),
+        getGroup: () =>
+          Promise.resolve({
+            id: "g1",
+            name: "Friday crew",
+            members: [
+              { userId: "u2", displayName: "Erik Berg", role: "admin" },
+            ],
+          }),
+      }),
+      "/groups/g1/lobbies/l1",
+    );
+
+    expect(
+      (await screen.findByRole("link", { name: "Friday crew" })).getAttribute(
+        "href",
+      ),
+    ).toBe("/groups/g1");
+    expect(await screen.findByText("Erik Berg")).toBeTruthy();
+  });
+
+  it("still shows the lobby when its group fails to load, with the error and a retry", async () => {
+    const getGroup = vi
+      .fn<ApiClient["getGroup"]>()
+      .mockRejectedValueOnce(new ApiError(503, "service_unavailable"))
+      .mockResolvedValue({
+        id: "g1",
+        name: "Friday crew",
+        members: [{ userId: "u2", displayName: "Erik Berg", role: "admin" }],
+      });
+    renderAt(
+      loggedInClient({
+        getLobby: () =>
+          Promise.resolve({
+            id: "l1",
+            gameName: "Catan",
+            gameGenre: null,
+            maxPlayers: 4,
+            startsAt: "2026-11-05T18:00:00Z",
+            endsAt: "2026-11-05T20:00:00Z",
+            createdByUserId: "u2",
+            playerCount: 0,
+            joinedByMe: false,
+            players: [],
+          }),
+        getGroup,
+      }),
+      "/groups/g1/lobbies/l1",
+    );
+
+    expect(await screen.findByRole("heading", { name: "Catan" })).toBeTruthy();
+    expect(screen.getByRole("alert").textContent).toBe(
+      en.errors.service_unavailable,
+    );
+    expect(
+      screen
+        .getByRole("link", { name: en.lobbyBackToGroup })
+        .getAttribute("href"),
+    ).toBe("/groups/g1");
+    expect(screen.queryByText(en.lobbyCreatorLabel)).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: en.tryAgain }));
+    expect(
+      await screen.findByRole("link", { name: "Friday crew" }),
+    ).toBeTruthy();
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(screen.getByText("Erik Berg")).toBeTruthy();
+  });
 });

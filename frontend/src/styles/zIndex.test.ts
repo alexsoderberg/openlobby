@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { declarations, stylesheet } from "../test/cssTokens";
+import { cssRules, declarations, stylesheet } from "../test/cssTokens";
 // Imported for its side effect: sonner puts its stylesheet, with the toaster's z-index, into the document head.
 import "../ui/Toast";
 
@@ -35,6 +35,27 @@ describe("z-index layers", () => {
     ])
       expect(dialog).toBeGreaterThan(below);
     expect(dialog).toBeLessThan(TOASTER_FLOOR);
+  });
+
+  // ADR 0028 section 16.12 item 2: a sticky layered header would cap the Tab bar inside it, so only the wide
+  // Top bar is sticky, at its token below the scrim; on phones it has neither and the Tab bar keeps its layer.
+  it("makes the Top bar sticky and layered from 760px only, below the scrim and the tab bar", () => {
+    const topBar = cssRules.filter((rule) => rule.selector === ".top-bar");
+    const phone = topBar.filter((rule) => rule.scopes.length === 0);
+    const wide = topBar.filter((rule) =>
+      rule.scopes.includes("@media (min-width: 47.5rem)"),
+    );
+    expect(phone.length).toBeGreaterThan(0);
+    for (const { body } of phone) expect(body).not.toMatch(/position|z-index/);
+    const wideBody = wide.map((rule) => rule.body).join(" ");
+    expect(wideBody).toContain("position: sticky");
+    expect(wideBody).toContain("z-index: var(--z-top-bar)");
+    const topBarLayer = Number(declarations.get("--z-top-bar"));
+    const scrim = cssRules.find((rule) => rule.selector === ".scrim")?.body;
+    expect(topBarLayer).toBeLessThan(
+      Number(/z-index:\s*(\d+)/.exec(scrim ?? "")?.[1]),
+    );
+    expect(topBarLayer).toBeLessThan(TAB_BAR);
   });
 
   // ADR 0023 point 4: the toaster's layer comes from sonner's own stylesheet, so it is checked there.

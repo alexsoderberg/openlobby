@@ -1,6 +1,7 @@
 # 0026. Game logo and game cover: stored in calendar, uploaded per image, served behind the gateway
 Status: Accepted (2026-11-15); amended 2026-11-15, 2026-11-16, 2026-11-17 and 2026-11-18 (see the amendment sections at the end)
 Amended 2026-11-21 by ADR 0028 (REQ-0029, running order redesign): see the Amendment 2026-11-21 section at the end of this file.
+Amended 2026-11-25 (REQ-0026 Amendment 2026-11-25, the game cover is removed): see the Amendment 2026-11-25 section at the end of this file. Where it conflicts with an earlier point of this file, the amendment wins.
 Requirement: REQ-0026 (F-030).
 Amends: ADR 0001 (the 16 KiB body rule gets one exception, the game image upload, which reads at most 524288 bytes; the constant `httpapi.MaxBodyBytes` in `pkg/httpapi/httpapi.go` line 16 stays 16 KiB; the exemption is in the calendar transport, `services/calendar/internal/transport/router.go` line 32, and the info text of `api/calendar/openapi.yaml` line 17 names it). ADR 0016 section 7 (`GenreFrame`: on the Next up card a game cover replaces the genre background pattern; the genre icon stays; the accent border was removed by Amendment 2026-11-18). ADR 0010 and ADR 0017 get two more optional game fields and two more lobby fields, with no change to their rules.
 
@@ -295,3 +296,73 @@ DECISION, user, 2026-11-18 (REQ-0028; REQ-0026 Amendment 2026-11-18). Where it d
 - Logos are not in running order blocks (point 10 of Amendment 2026-11-16 for week blocks is removed). The logo sizes stay for the remaining places. `--size-game-logo-small` is removed with the old grid in PR3a.
 - `GameLogo` and the Monogram are squares (no rounded corners). The Monogram keeps its letter-size rules.
 - The genre cover layer of point 8 goes with `GenreFrame` in PR5a (ADR 0028 section 7).
+
+## Amendment 2026-11-25 (game cover removed, REQ-0026 Amendment 2026-11-25)
+Status: Accepted (2026-11-25). DECISION, user, 2026-11-25: "ta bort omslagsbilden helt" (remove the cover image completely). Requirement: REQ-0026 Amendment 2026-11-25.
+
+Context: covers are shown nowhere since ADR 0028 section 7 and Amendment 2026-11-21 of this ADR. What is left is an upload that shows nothing, a storage kind and a version field. No requirement needs them (YAGNI). The user accepted that stored covers are deleted and cannot be restored.
+
+This amendment supersedes the cover parts of points 1, 2, 3, 4, 5, 8 and 9 and of Amendments 2026-11-16 (cover places), 2026-11-17 (cover gradient) and 2026-11-18 (cover genre border). The logo parts of those points stay as they are.
+
+### 1. What is removed
+- **Table `game_images`:** the CHECK on `kind` allows `logo` only. The rows of kind `cover` are deleted by migration 0012. No copy is kept.
+- **Contract `api/calendar/openapi.yaml`:** schema `GameImageKind` is `enum: [logo]`. `Game.coverVersion` and `Lobby.gameCoverVersion` are removed. The descriptions that name them (the `v` parameter of `getGameImage`, `GameImageKindPath`, the `Game` and `Lobby` schemas) name the logo fields only. The generated files `services/calendar/internal/transport/gen/publicapi/gen.go` and `frontend/src/api/gen/calendar.ts` are regenerated, never edited by hand.
+- **Calendar backend:** `domain.gameImageKinds` is `["logo"]`. `Game.CoverVersion` and `Lobby.GameCoverVersion` are removed. The cover join (`game_images` alias `cover`) and its columns are removed from `joinImagesSQL`, `listGamesSQL`, `selectGameSQL` and `listGroupGamesSQL` (its GROUP BY too) in `infrastructure/postgres/games.go`, and from `selectLobbiesSQL` and its scan in `infrastructure/postgres/lobbies.go`. `transport/games.go` and `transport/lobbies.go` stop mapping the field. `preferred_game_roles.go` joins the logo only already and stays.
+- **Frontend:** the cover `GameImageField` in the game form and in `features/games/GameList.tsx`; the `cover` entry of `VERSION_FIELD` in `features/games/useGameImage.ts`; the `cover` keys of the messages `gameImage`, `gameImageHint`, `gameImageRemoveHeading` and `gameImageRemoveConfirm` in every catalog under `frontend/src/i18n/messages/`; the cover part of the "Game added" toast text (REQ-0022 item 6); the rules `.cover-preview` and its tokens `--ratio-cover-preview` and `--width-cover-preview` in `frontend/src/styles/global.css`; every fixture and test that uses `coverVersion`, `gameCoverVersion` or the kind `cover`.
+
+### 2. What stays
+- **Logo, unchanged:** the rows of kind `logo`, the size limit (512 KiB), the type rules by bytes (point 6), the version as the hex SHA-256 (point 4), the URL with `v`, `logoVersion` and `gameLogoVersion`, the Monogram and `GameLogo`.
+- **The path `/api/games/{gameId}/images/{kind}` with its three methods stays, with `kind` as an enum of one value, `logo`.** This is the minimal contract. A route `/api/games/{gameId}/logo` would change the gateway routes (`services/gateway/internal/transport/router.go` lines 152 to 154), their tests, the URL builder `gameImageUrl` and the contract, for no gain now. It also keeps the one handler and one rule set of point 3. A later picture kind is an additive enum value, as point 3 already planned.
+- **The column `kind` of `game_images` stays** as part of the primary key `(game_id, kind)`. Dropping it would change the key and every query, for no gain.
+- **Removing the response fields is safe for the API:** the only consumer is the frontend, shipped in the same PR, and both fields were optional in the contract.
+
+### 3. The answer to a request with the kind `cover`
+A request with `kind` `cover` gets the answer that any unknown kind gets today, from `domain.CheckGameImageKind`. No new code path is added, the value `cover` is not special-cased, and nothing is stored.
+- `GET /api/games/{gameId}/images/cover?v=...`: 404 `game_image_not_found`.
+- `PUT`: 404 `game_image_not_found`, before the body is read and before the admin check (403).
+- `DELETE`: 404 `game_image_not_found`, before the admin check (403).
+
+The order of the other checks is the order of the contract. No 400 is used: the 404 is what the code returns for `banner` today, and a change would also change that answer.
+
+### 4. Migration 0012 (`services/calendar/migrations/0012_remove_game_cover.sql`)
+```sql
+-- +goose Up
+-- Removes the game cover (REQ-0026 Amendment 2026-11-25, ADR 0026 Amendment 2026-11-25). The cover rows are deleted and cannot be restored.
+DELETE FROM game_images WHERE kind = 'cover';
+ALTER TABLE game_images DROP CONSTRAINT game_images_kind_check;
+ALTER TABLE game_images ADD CONSTRAINT game_images_kind_check CHECK (kind = 'logo');
+
+-- +goose Down
+-- Restores the constraint only. The cover rows deleted by Up are not restored (ADR 0026 Amendment 2026-11-25).
+ALTER TABLE game_images DROP CONSTRAINT game_images_kind_check;
+ALTER TABLE game_images ADD CONSTRAINT game_images_kind_check CHECK (kind IN ('logo', 'cover'));
+```
+
+- The number is the next free one after 0011. If another migration takes 0012 first, the next free number is used (point 2 rule).
+- The CHECK constraint `game_images_kind_check` from migration 0010 is replaced. Nothing else depends on it.
+- goose runs the migration in one transaction. The table holds at most one logo per game, so the lock of the `ALTER` is short.
+- **Rollback plan:** `Down` restores the schema, so the database accepts `cover` again. It does not restore data: the covers deleted by `Up` are lost, as the user accepted. After a `Down` the old code reads no cover rows, so every game shows its logo or its Monogram, and the absent `coverVersion` is valid for the old clients (the fields were optional).
+- **Old binary without `Down`** (the old code runs on the migrated schema): an upload of a cover gives 500, because the CHECK refuses the row. Logo writes are unaffected. This is the only failure mode, and it needs an upload attempt of a cover.
+- **Optional for operations:** a `pg_dump` of the `calendar` database before the deploy keeps the covers. The decision does not require it; the DevOps expert may take one as a precaution.
+
+### 5. PR split
+One PR (branch `remove-cover`) with the contract, the regenerated types, migration 0012, the calendar backend, the frontend, the tests and the docs. Reason: the generated types of both sides change together, and removing the fields breaks the frontend build if the frontend is left out. One review for the whole requirement (CLAUDE.md, step 5). Work order inside the PR: contract and migration first (backend expert), then the regenerated TypeScript types and the frontend (UI/UX expert).
+
+### 6. Tests
+- **Domain:** `NewGameImage("cover", ...)` gives `ErrGameImageNotFound`, before the bytes are checked. The kind test names `cover` as the removed kind.
+- **Application and transport:** GET, PUT and DELETE with the kind `cover` give 404 `game_image_not_found` and store nothing. The `banner` cases stay.
+- **JSON:** a `Game` and a `Lobby` response has no `coverVersion` and no `gameCoverVersion` key.
+- **Integration (PostgreSQL, `game_images_integration_test.go`):** a row of kind `cover` is gone after `Up`, and the logo row of the same game is unchanged; an insert of kind `cover` fails after `Up`; after `Down` such an insert is accepted again and no cover row comes back.
+- **Frontend:** the game form and the game list show one image field (logo); the "Game added" toast text has no cover part; `gameImageUrl` is only called for the logo. The cover cases of `GameImage.test.tsx`, and the cover fixtures and assertions of `Lobbies.test.tsx`, `LobbyDetailPage.test.tsx` and `Dashboard.test.tsx`, are removed; their other assertions stay.
+- **Gateway:** no change. Its tests use the logo.
+
+### Consequences
+- Upload, storage and the version field of covers are gone. A game has at most one image, the logo.
+- The stored covers are lost. The user accepted this.
+- A later game picture needs its own requirement and its own kind: an additive enum value and a migration that widens the CHECK.
+
+### Alternatives considered
+- **Keep the cover rows and the field, hidden in the UI.** Rejected: data with no use, and the upload would still accept files that nothing shows.
+- **Rename the route to `/api/games/{gameId}/logo`.** Rejected for now: churn in the gateway, its tests, the URL builder and the contract, with no gain (section 2).
+- **Drop the `kind` column.** Rejected: it changes the primary key and every query, for no gain (section 2).
+- **Answer `cover` with 400 `invalid_request`.** Rejected: the code gives 404 `game_image_not_found` for every unknown kind, and the contract says so. Two answers for unknown kinds would be harder to explain.

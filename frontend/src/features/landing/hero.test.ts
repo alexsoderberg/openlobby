@@ -1,5 +1,4 @@
 import { describe, expect, it, vi } from "vitest";
-import { themeForGenre } from "../../genres";
 import { formatTime } from "../../i18n";
 import { en } from "../../i18n/messages/en";
 import {
@@ -45,21 +44,12 @@ describe("the sample cards", () => {
     expect(contents[0].timeText).toBe(formatTime("2030-01-05T19:00:00"));
   });
 
-  it("differ in game name, time, size and genre", () => {
+  it("differ in game name, time and size", () => {
     for (const field of ["timeText", "gameName", "spotsText"] as const)
       expect(new Set(contents.map((card) => card[field])).size).toBe(3);
     expect(new Set(HERO_SAMPLE_CARDS.map((card) => card.maxCount)).size).toBe(
       3,
     );
-    expect(new Set(HERO_SAMPLE_CARDS.map((card) => card.genre)).size).toBe(3);
-  });
-
-  it("have a different 3D motif each, taken from the genre themes", () => {
-    const kinds = HERO_SAMPLE_CARDS.map(
-      (card) => themeForGenre(card.genre).motif.kind,
-    );
-
-    expect(new Set(kinds).size).toBe(3);
   });
 
   it("show the players text and the meter step by step with a fake clock", () => {

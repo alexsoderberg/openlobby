@@ -19,10 +19,16 @@ describe("Panel", () => {
   });
 
   it("leaves the reveal on the landing step cards", () => {
-    render(<StepCard title="Create a group" text="Invite your friends." />);
+    render(
+      <StepCard
+        number={2}
+        title="Create a group"
+        text="Invite your friends."
+      />,
+    );
 
     const card = screen.getByRole("heading", {
-      name: "Create a group",
+      name: "2. Create a group",
     }).parentElement!;
     expect(card.hasAttribute("data-reveal")).toBe(true);
   });

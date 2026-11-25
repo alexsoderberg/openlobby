@@ -12,7 +12,6 @@ import {
   GameLogo,
   GameRoleName,
   Icon,
-  Panel,
 } from "../../ui";
 import {
   usePreferredGameRoles,
@@ -44,7 +43,7 @@ export function PreferredGameRoles({
   const { choices, reload, ...saving } =
     usePreferredGameRoles(onUnauthenticated);
   return (
-    <Panel>
+    <section>
       <h2 id={headingId}>{m.heading}</h2>
       <p id={hintId} className="form-hint">
         {m.hint}
@@ -64,7 +63,7 @@ export function PreferredGameRoles({
             {...saving}
           />
         ))}
-    </Panel>
+    </section>
   );
 }
 

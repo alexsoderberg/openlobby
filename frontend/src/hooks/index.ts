@@ -7,4 +7,3 @@ export { loadViewOf, type LoadView } from "./loadView";
 export { usePopover } from "./usePopover";
 export { beginPageLoads, pageLoadsSettled } from "./pageLoads";
 export { useChangeAction } from "./useChangeAction";
-export { useStoredChoice } from "./useStoredChoice";

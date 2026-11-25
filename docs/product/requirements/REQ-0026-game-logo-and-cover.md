@@ -200,3 +200,35 @@ Not changed (the game name stays beside the logo):
 
 ## Amendment 2026-11-18 (REQ-0028, item 2: genre border)
 DECISION, user, 2026-11-18. On the cover places (Next up, the lobby page header, each lobby row of the Group view), the genre accent border is no longer shown; the genre icon stays (every mention of the genre accent border in this document is amended so that it reads "the genre icon"). The cover, its side gradient and its fallback are unchanged. See REQ-0028. Implemented 2026-11-18 (PR #145).
+
+## Amendment 2026-11-25 (game cover removed)
+Status stays Decided. Feature F-030 (EXTEND, not a new feature): its cover part is Removed, its logo part is unchanged. DECISION, user, 2026-11-25: "ta bort omslagsbilden helt" (remove the cover image completely). This overrides every cover rule of this requirement and of its amendments of 2026-11-16, 2026-11-17 and 2026-11-18, and the cover wording of REQ-0029 item 10. The cover rules of REQ-0009 (Amendment 2026-11-15), REQ-0010 (Amendment 2026-11-15) and REQ-0014 (Amendment 2026-11-15) are overridden the same way. The glossary terms "Game cover" and the cover kind of "Game image" are removed by the architect (CLAUDE.md glossary).
+
+Reasons, as discussed with the user: the flat Stage design leaves no room for the dark gradient that cover text needs; no place that showed covers is left (REQ-0029 item 10); group colour and the Game logo carry the identity of a game; an upload that shows nothing confuses the system admin; no need for it now (YAGNI).
+
+Consequence accepted by the user (DECISION, user, 2026-11-25): covers already uploaded are deleted and cannot be restored.
+
+Acceptance criteria:
+- Given that I am a system admin, when I open the game form of a game, then it has the Game logo field only, with its file choice and "Remove image". No cover field, no cover hint and no cover removal text is shown, and the form does not say that covers are not shown.
+- Given that I am a system admin, when I save a Game logo, remove it, or see a limit error (PNG, JPEG or WebP, at most 512 KiB), then the logo works as in REQ-0026: the file is saved when chosen, "Remove image" asks for confirmation, and the type and size rules are unchanged.
+- Given that a client calls the API with the cover kind (upload, read or remove under `/api/games/{gameId}/images/cover`), then the request is refused the way any unknown image kind is refused, and nothing is stored.
+- Given that I read a game or a lobby through the API, then the response has no cover version field (`coverVersion` on `Game`, `gameCoverVersion` on `Lobby`), and the API contract has no cover kind.
+- Given that the migration that removes covers has run, when I look in the database, then no stored image of the cover kind is left, and the logo rows are unchanged.
+- Given that a game had a cover before the migration, when I view it after the migration, then it shows its Game logo, or the Monogram when it has none, as before; its name, genre, modes, activities and lobbies are unchanged.
+- Given that a game has a Game logo, when I view it in each place where it is shown today (the game list, the game form, the game choice, the game headings of the You page, the lobby page, the Next up band, the lobby lists of the Group view, the Game chips of the member list), then the logo is shown as before, at the sizes of REQ-0026 Amendment 2026-11-16, and the name stays text where it is shown today.
+- Given that I view a lobby on the Next up band, on its lobby page or in a lobby row of the Group view, then no cover image and no cover gradient is drawn, and no genre theme is changed by this amendment (REQ-0029 item 10).
+- Given that a game is added in the game list, when its toast is shown (REQ-0022, item 6), then the text names the logo only: "Game added. Its form is open in the list, where you can add a logo." The cover part of the toast text is removed.
+
+Out of scope:
+- Restoring a deleted cover, or keeping a copy of covers before the migration (accepted by the user, see above).
+- Any new game picture (cover, banner, background or other) later. That needs its own requirement.
+- Changes to the Game logo, the Monogram, the genre, the group colour or the lobby labels.
+- The glossary, ADR 0026 and the migration's rollback plan, which the architect writes. The migration cannot restore deleted covers; its rollback plan must say so (CLAUDE.md, Definition of Done).
+
+Related features:
+- F-030 (game presentation: logo and accent colour): this amendment removes its cover part. Not a new feature; the logo part and the accent colour part stay as they are.
+- F-025 and REQ-0010 (game form): the form loses the cover field. Its other fields do not change.
+- REQ-0029 item 10: already stopped showing covers in the redesign; this removes the upload and the storage too, so REQ-0029 item 10 is pointed here.
+
+Open questions (for the architect, not the user):
+- The exact error for an unknown image kind, and whether the migration removes the cover files from storage, if storage is not the database.

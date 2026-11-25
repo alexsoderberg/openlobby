@@ -152,6 +152,21 @@ describe("Toast style (ADR 0023 point 4)", () => {
   });
   afterEach(() => style.remove());
 
+  // ADR 0028 section 16.3: a raised panel with text-colour text, a rule-strong edge and the large radius, no shadow.
+  it("is a raised panel with a strong edge and text-colour text", () => {
+    show("Saved.");
+    const { classList, className } = toastOf("Saved.")!;
+
+    for (const name of [
+      "bg-(--color-raised)",
+      "text-(--color-text)",
+      "border-(--color-rule-strong)",
+      "rounded-(--radius)",
+    ])
+      expect(classList).toContain(name);
+    expect(className).not.toMatch(/shadow/);
+  });
+
   it("moves only transform and opacity, and its exit is a fade", () => {
     show("Saved.");
     const toast = toastOf("Saved.")!;

@@ -9,47 +9,38 @@ import { describe, expect, it, vi } from "vitest";
 import { ApiProvider } from "../../api";
 import { en } from "../../i18n/messages/en";
 import { fakeApiClient, testUser } from "../../test/fakeApiClient";
-import type { GroupsState } from "../groups";
 import type { ActiveNav } from "./activeNav";
 import { AppShell } from "./AppShell";
 
-const groups: GroupsState = {
-  status: "loaded",
-  groups: [
-    { id: "g1", name: "Friday crew" },
-    { id: "g2", name: "Ranked grind" },
-  ],
-};
-
 function renderShell(active: ActiveNav = { section: "groups" }) {
   const onGroupCreated = vi.fn();
-  const client = fakeApiClient({
-    getGroup: () =>
-      Promise.resolve({ id: "g1", name: "Friday crew", members: [] }),
-  });
+  const client = fakeApiClient();
   render(
     <ApiProvider client={client}>
       <AppShell
         user={testUser}
-        groups={groups}
         active={active}
         onGroupCreated={onGroupCreated}
         onUnauthenticated={vi.fn()}
       >
-        <h1>Page</h1>
+        {(createGroupButton) => (
+          <>
+            <h1>Page</h1>
+            {createGroupButton}
+          </>
+        )}
       </AppShell>
     </ApiProvider>,
   );
   return { onGroupCreated, client };
 }
 
-const rail = () =>
-  within(screen.getByRole("navigation", { name: en.shell.groupsNav }));
-const tabBar = () =>
-  within(screen.getByRole("navigation", { name: en.shell.mainNav }));
-const plusIn = (nav: ReturnType<typeof rail>) =>
-  nav.getByRole("button", { name: en.shell.createGroupButton });
-// The floating plus of phones; the rail has its own. Both exist in jsdom, which has no media queries.
+// The header plus the page puts in its heading (wide screens) and the floating plus of phones. Both exist in
+// jsdom, which has no media queries.
+const header = () =>
+  within(screen.getByRole("main")).getByRole("button", {
+    name: en.shell.createGroupButton,
+  });
 const fab = () => document.querySelector<HTMLElement>(".plus-button--fab");
 const dialog = () =>
   screen.queryByRole("dialog", { name: en.createGroupHeading });
@@ -57,10 +48,13 @@ const nameField = () =>
   screen.getByRole("textbox", { name: en.groupNameLabel });
 
 describe("landmarks and top bar", () => {
-  it("has a banner with the wordmark and the user, two navigations and a main area", () => {
+  it("has a banner with the wordmark, the one navigation and the user, and a main area", () => {
     renderShell();
 
     const banner = within(screen.getByRole("banner"));
+    expect(banner.getByRole("navigation", { name: en.shell.mainNav })).toBe(
+      screen.getByRole("navigation"),
+    );
     expect(banner.getByRole("link", { name: /Open\s*Lobby/ })).toBeTruthy();
     expect(
       banner
@@ -68,120 +62,23 @@ describe("landmarks and top bar", () => {
         .getAttribute("href"),
     ).toBe("/profile");
     expect(banner.getByText(testUser.displayName)).toBeTruthy();
-    expect(screen.getAllByRole("navigation")).toHaveLength(2);
     expect(within(screen.getByRole("main")).getByText("Page")).toBeTruthy();
   });
 });
 
-describe("tab bar", () => {
-  it("lists Home, Groups and You in that order, with the plus outside the bar", () => {
+describe("skip link", () => {
+  it("is the first keyboard stop and moves focus to the main area", () => {
     renderShell();
 
-    const nav = screen.getByRole("navigation", { name: en.shell.mainNav });
-    expect(Array.from(nav.children).map((item) => item.textContent)).toEqual([
-      en.shell.home,
-      en.shell.groups,
-      en.shell.you,
-    ]);
-    expect(within(nav).queryByRole("button")).toBeNull();
-    expect(fab()).toBeTruthy();
-  });
-
-  it.each([
-    [{ section: "home" }, en.shell.home],
-    [{ section: "groups", groupId: "g1" }, en.shell.groups],
-    [{ section: "profile" }, en.shell.you],
-  ] as [ActiveNav, string][])(
-    "marks the active tab for %j",
-    (active, label) => {
-      renderShell(active);
-
-      const current = tabBar()
-        .getAllByRole("link")
-        .filter((link) => link.getAttribute("aria-current") === "page");
-      expect(current.map((link) => link.textContent)).toEqual([label]);
-    },
-  );
-});
-
-describe("group rail", () => {
-  it("has Home, one named link per group, with the active group marked", () => {
-    renderShell({ section: "groups", groupId: "g2" });
-
-    expect(
-      rail().getByRole("link", { name: en.shell.home }).getAttribute("href"),
-    ).toBe("/");
-    const crew = rail().getByRole("link", { name: "Friday crew" });
-    expect(crew.getAttribute("href")).toBe("/groups/g1");
-    expect(crew.getAttribute("aria-current")).toBeNull();
-    expect(
-      rail()
-        .getByRole("link", { name: "Ranked grind" })
-        .getAttribute("aria-current"),
-    ).toBe("page");
-  });
-
-  it("marks Home on the dashboard", () => {
-    renderShell({ section: "home" });
-    expect(
-      rail()
-        .getByRole("link", { name: en.shell.home })
-        .getAttribute("aria-current"),
-    ).toBe("page");
-  });
-});
-
-describe("group icon context menu", () => {
-  const icon = () => rail().getByRole("link", { name: "Friday crew" });
-  const menu = () => screen.queryByRole("menu");
-
-  it("opens on right-click at the pointer, cancels the native menu, and Invite people opens that group's invite popover", async () => {
-    const { client } = renderShell({ section: "groups", groupId: "g1" });
-
-    const notCancelled = fireEvent.contextMenu(icon(), {
-      clientX: 40,
-      clientY: 90,
-    });
-    expect(notCancelled).toBe(false);
-    expect(document.activeElement).toBe(
-      screen.getByRole("menuitem", { name: en.shell.invitePeople }),
+    // jsdom has no Tab key: the first element in DOM order that Tab reaches is the first stop.
+    const first = document.querySelector<HTMLElement>(
+      "a[href], button, input, select, textarea, [tabindex]:not([tabindex='-1'])",
     );
-    expect((menu() as HTMLElement).style.left).toBe("40px");
+    expect(first).toBe(screen.getByRole("link", { name: en.skipToContent }));
 
-    fireEvent.click(
-      screen.getByRole("menuitem", { name: en.shell.invitePeople }),
-    );
+    fireEvent.click(first!);
 
-    expect(menu()).toBeNull();
-    expect(
-      await screen.findByRole("dialog", {
-        name: en.inviteHeading("Friday crew"),
-      }),
-    ).toBeTruthy();
-    await waitFor(() =>
-      expect(client.listInviteLinks).toHaveBeenCalledWith("g1"),
-    );
-  });
-
-  it("opens from Shift+F10 on the focused icon, and Esc closes it and returns focus", () => {
-    renderShell();
-    icon().focus();
-
-    fireEvent.keyDown(icon(), { key: "F10", shiftKey: true });
-    expect(menu()).toBeTruthy();
-
-    fireEvent.keyDown(screen.getByRole("menuitem"), { key: "Escape" });
-    expect(menu()).toBeNull();
-    expect(document.activeElement).toBe(icon());
-  });
-
-  it("closes on a press outside and leaves the page's own context menu alone", () => {
-    renderShell();
-    fireEvent.contextMenu(icon());
-
-    fireEvent.pointerDown(document.body);
-    expect(menu()).toBeNull();
-    expect(fireEvent.contextMenu(screen.getByText("Page"))).toBe(true);
+    expect(document.activeElement).toBe(screen.getByRole("main"));
   });
 });
 
@@ -195,15 +92,15 @@ describe("where the plus shows", () => {
     renderShell(active);
 
     expect(fab()).toBeNull();
-    expect(
-      screen.queryByRole("button", { name: en.shell.createGroupButton }),
-    ).toBeNull();
   });
 
-  it("is in the rail and floating on the Group list", () => {
+  it("is in the page heading and floating on the Group list, both outside the nav", () => {
     renderShell({ section: "groups" });
 
-    expect(plusIn(rail())).toBeTruthy();
+    expect(
+      within(screen.getByRole("navigation")).queryByRole("button"),
+    ).toBeNull();
+    expect(header()).toBeTruthy();
     expect(fab()).toBeTruthy();
   });
 });
@@ -212,7 +109,7 @@ describe("Create group form behind the plus", () => {
   it("is closed at first, opens from the pressed plus with the name field focused", () => {
     renderShell();
     expect(dialog()).toBeNull();
-    const plus = plusIn(rail());
+    const plus = header();
     expect(plus.getAttribute("aria-expanded")).toBe("false");
 
     fireEvent.click(plus);
@@ -236,7 +133,7 @@ describe("Create group form behind the plus", () => {
 
   it("closes on Cancel, on a second press of the plus and on a tap outside, each time returning focus", () => {
     renderShell();
-    const plus = plusIn(rail());
+    const plus = header();
 
     fireEvent.click(plus);
     fireEvent.click(screen.getByRole("button", { name: en.cancel }));
@@ -255,7 +152,7 @@ describe("Create group form behind the plus", () => {
 
   it("opens with an empty field each time", () => {
     renderShell();
-    const plus = plusIn(rail());
+    const plus = header();
     fireEvent.click(plus);
     fireEvent.change(nameField(), { target: { value: "Half typed" } });
     fireEvent.keyDown(document, { key: "Escape" });
@@ -267,7 +164,7 @@ describe("Create group form behind the plus", () => {
 
   it("creates the group with the typed name and hands it over", async () => {
     const { client, onGroupCreated } = renderShell();
-    fireEvent.click(plusIn(rail()));
+    fireEvent.click(header());
 
     fireEvent.change(nameField(), { target: { value: "Friday crew" } });
     fireEvent.click(screen.getByRole("button", { name: en.createGroupSubmit }));
@@ -283,7 +180,7 @@ describe("Create group form behind the plus", () => {
 
   it("shows the name error and keeps the form open", async () => {
     renderShell();
-    fireEvent.click(plusIn(rail()));
+    fireEvent.click(header());
 
     fireEvent.click(screen.getByRole("button", { name: en.createGroupSubmit }));
 
@@ -293,7 +190,7 @@ describe("Create group form behind the plus", () => {
 
   it("keeps Tab and Shift+Tab inside the form", () => {
     renderShell();
-    fireEvent.click(plusIn(rail()));
+    fireEvent.click(header());
     const cancel = screen.getByRole("button", { name: en.cancel });
     const field = nameField();
 

@@ -1,6 +1,6 @@
 import { useRef } from "react";
 import { toUserMessage, useMessages } from "../../i18n";
-import { Alert, Panel, showToast } from "../../ui";
+import { Alert, showToast } from "../../ui";
 import { GROUPS_PATH } from "../groups";
 import { DeleteGameDialog } from "./DeleteGameDialog";
 import { GameForm } from "./GameForm";
@@ -30,10 +30,10 @@ export function GamesPage({
 function GamesDenied() {
   const m = useMessages();
   return (
-    <Panel>
+    <section>
       <p>{m.gameListDenied}</p>
       <a href={GROUPS_PATH}>{m.backToGroups}</a>
-    </Panel>
+    </section>
   );
 }
 
@@ -58,12 +58,12 @@ function GameAdmin({ onUnauthenticated }: { onUnauthenticated: () => void }) {
 
   return (
     <>
-      <h1 ref={headingRef} tabIndex={-1}>
+      <h1 ref={headingRef} tabIndex={-1} className="page-head">
         {m.gameListHeading}
       </h1>
-      <div className="panel-group">
-        <GameListPanel admin={admin} onUnauthenticated={onUnauthenticated} />
-        <Panel>
+      <div className="page-sections">
+        <GameListSection admin={admin} onUnauthenticated={onUnauthenticated} />
+        <section>
           <h2>{m.gameAddHeading}</h2>
           <GameForm
             submitLabel={m.gameAddSubmit}
@@ -71,7 +71,7 @@ function GameAdmin({ onUnauthenticated }: { onUnauthenticated: () => void }) {
             busy={admin.busy}
             onSubmit={admin.add}
           />
-        </Panel>
+        </section>
         <RemoveGame admin={admin} />
       </div>
     </>
@@ -93,7 +93,7 @@ function RemoveGame({ admin }: { admin: Admin }) {
 }
 
 /** The list, then a notice for a vanished game. */
-function GameListPanel({
+function GameListSection({
   admin,
   onUnauthenticated,
 }: {
@@ -103,7 +103,7 @@ function GameListPanel({
   const { change } = admin;
 
   return (
-    <Panel>
+    <div>
       <GameList
         state={admin.games}
         editingId={admin.editingId}
@@ -117,6 +117,6 @@ function GameListPanel({
         onUnauthenticated={onUnauthenticated}
       />
       {change.status === "gone" && <Alert>{toUserMessage(change.code)}</Alert>}
-    </Panel>
+    </div>
   );
 }

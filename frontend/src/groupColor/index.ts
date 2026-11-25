@@ -1,0 +1,1 @@
+export { groupColorIndex } from "./groupColor";

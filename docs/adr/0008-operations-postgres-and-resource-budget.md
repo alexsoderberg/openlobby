@@ -41,7 +41,8 @@ Images for own services are built for `linux/arm64` (and `amd64` for development
 | Component | Target RAM |
 |---|---|
 | PostgreSQL (shared_buffers 128 MB) | about 250 MB |
-| Each Go service (gateway, auth, calendar) | about 30 MB each |
+| Each Go service (gateway, auth) | about 30 MB each |
+| calendar | about 30 MB, plus at most about 9 MB for the item cache (ADR 0029, amendment 2026-11-25) |
 | Frontend container | about 20 MB |
 | Edge (Nginx) | about 10 MB |
 | Certbot (sleeps between renewals) | about 40 MB |

@@ -58,3 +58,5 @@ Known limits, each a shortcut in the ADRs:
 ## Rollback
 
 Set `OPENLOBBY_VERSION` in `infra/.env` to the previous tag, and run `docker compose -f infra/compose.yaml up -d --wait`. The previous images must still exist. Schema changes are rolled back by hand, only when needed: `docker compose -f infra/compose.yaml run --rm auth-migrate migrate down` (or `calendar-migrate`), after reading the comment at the top of that migration for lost data.
+
+Run the schema rollback before changing the tag, while `OPENLOBBY_VERSION` is still the new tag, because the previous image does not have the newer migration file. Migration 0012 of calendar (game cover removed) restores the constraint only; the covers it deleted are not restored.

@@ -2,7 +2,7 @@ import { useRef } from "react";
 import { loginUrl } from "../../api";
 import { useFocusAfterLogout, useScrolledPast } from "../../hooks";
 import { useMessages } from "../../i18n";
-import { Alert, Brand, ButtonLink, Icon } from "../../ui";
+import { Alert, Brand, ButtonLink, Icon, MAIN_ID, SkipLink } from "../../ui";
 import { loggedOutNotice, type LoggedOutPageProps } from "../session";
 import { LandingHero } from "./LandingHero";
 import { StepCard } from "./StepCard";
@@ -26,6 +26,7 @@ export function LandingPage({
 
   return (
     <>
+      <SkipLink />
       <header
         className={`topbar landing-topbar${scrolled ? " is-scrolled" : ""}`}
       >
@@ -35,20 +36,20 @@ export function LandingPage({
           {t.topBarLogIn}
         </ButtonLink>
       </header>
-      <main className="landing">
+      <main id={MAIN_ID} className="landing" tabIndex={-1}>
         {notice && <Alert>{notice}</Alert>}
         <section className="hero">
-          <h1 ref={headingRef} tabIndex={-1} className="hero__title">
-            <span className="hero__line">
-              <span className="hero__line-inner">{t.headline}</span>
-            </span>
-          </h1>
-          <p className="hero__lead">{t.lead}</p>
-          <div className="hero__actions">
-            <ButtonLink href={href}>
-              <Icon name="logIn" />
-              {m.logInWithDiscord}
-            </ButtonLink>
+          <div className="hero__text">
+            <h1 ref={headingRef} tabIndex={-1} className="hero__title">
+              {t.headline}
+            </h1>
+            <p className="hero__lead">{t.lead}</p>
+            <div className="hero__actions">
+              <ButtonLink href={href}>
+                <Icon name="logIn" />
+                {m.logInWithDiscord}
+              </ButtonLink>
+            </div>
           </div>
           <LandingHero />
         </section>
@@ -63,7 +64,8 @@ export function LandingPage({
             {t.steps.map((step, index) => (
               <StepCard
                 key={step.title}
-                title={`${index + 1}. ${step.title}`}
+                number={index + 1}
+                title={step.title}
                 text={step.text}
               />
             ))}

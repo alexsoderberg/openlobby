@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMessages } from "../../i18n";
-import { Button, Icon } from "../../ui";
+import { IconButton } from "../../ui";
 import { MakeGroupAdminDialog } from "./MakeGroupAdminDialog";
 import { useMakeGroupAdmin } from "./useMakeGroupAdmin";
 
@@ -26,15 +26,12 @@ export function MakeGroupAdminAction({
 
   return (
     <>
-      <Button
-        type="button"
-        variant="secondary"
-        aria-label={m.makeAdminLabel(member.displayName)}
+      <IconButton
+        icon="makeAdmin"
+        label={m.makeAdmin}
+        subject={member.displayName}
         onClick={() => setConfirming(true)}
-      >
-        <Icon name="makeAdmin" />
-        {m.makeAdmin}
-      </Button>
+      />
       {confirming && (
         <MakeGroupAdminDialog
           memberName={member.displayName}

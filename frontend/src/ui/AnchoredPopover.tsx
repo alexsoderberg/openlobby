@@ -1,4 +1,4 @@
-// On Radix Popover (ADR 0023 Amendment 2026-11-17). Class lists read our tokens; type, shadow and motion live in
+// On Radix Popover (ADR 0023 Amendment 2026-11-17). Class lists read our tokens; type and motion live in
 // global.css under [data-slot="anchored-popover"].
 import * as RadixPopover from "@radix-ui/react-popover";
 import type { ReactNode } from "react";
@@ -14,7 +14,7 @@ const popoverVariants = {
   trigger:
     "inline-flex items-center p-(--space-0) border-(length:--space-0) bg-transparent text-(--color-text) cursor-pointer",
   content:
-    "z-(--z-popover) w-max max-w-(--width-popover) phone:max-w-(--radix-popover-content-available-width) py-(--space-2) px-(--space-3) border border-(--color-border) rounded-(--radius-popover) bg-(--color-bg-raised) text-(--color-text) wrap-break-word",
+    "z-(--z-popover) w-max max-w-(--width-popover) phone:max-w-(--radix-popover-content-available-width) py-(--space-2) px-(--space-3) border border-(--color-rule-strong) rounded-(--radius) bg-(--color-surface) text-(--color-text) wrap-break-word",
 };
 
 /**

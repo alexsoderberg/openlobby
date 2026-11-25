@@ -9,86 +9,90 @@
   }
 }
 
-/* Self-hosted fonts (OFL, Latin subset). font-display: swap keeps text visible in the fallback stack while a file loads. */
+/* Self-hosted fonts (OFL, Latin subset; ADR 0028). font-display: optional: a file not ready in time leaves the
+   fallback in place, so nothing shifts when it arrives. */
 @font-face {
-  font-family: "Space Grotesk";
-  src: url("/fonts/space-grotesk-latin-500-normal.woff2") format("woff2");
-  font-weight: 500;
+  font-family: "Big Shoulders Display";
+  src: url("/fonts/big-shoulders-display-latin-800-normal.woff2")
+    format("woff2");
+  font-weight: 800;
   font-style: normal;
-  font-display: swap;
+  font-display: optional;
 }
 
 @font-face {
-  font-family: "Space Grotesk";
-  src: url("/fonts/space-grotesk-latin-600-normal.woff2") format("woff2");
-  font-weight: 600;
+  font-family: "Big Shoulders Display";
+  src: url("/fonts/big-shoulders-display-latin-900-normal.woff2")
+    format("woff2");
+  font-weight: 900;
   font-style: normal;
-  font-display: swap;
+  font-display: optional;
 }
 
 @font-face {
-  font-family: "Space Grotesk";
-  src: url("/fonts/space-grotesk-latin-700-normal.woff2") format("woff2");
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Inter";
-  src: url("/fonts/inter-latin-400-normal.woff2") format("woff2");
+  font-family: "Archivo";
+  src: url("/fonts/archivo-latin-400-normal.woff2") format("woff2");
   font-weight: 400;
   font-style: normal;
-  font-display: swap;
+  font-display: optional;
 }
 
 @font-face {
-  font-family: "Inter";
-  src: url("/fonts/inter-latin-500-normal.woff2") format("woff2");
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Inter";
-  src: url("/fonts/inter-latin-600-normal.woff2") format("woff2");
+  font-family: "Archivo";
+  src: url("/fonts/archivo-latin-600-normal.woff2") format("woff2");
   font-weight: 600;
   font-style: normal;
-  font-display: swap;
+  font-display: optional;
 }
 
-/* Design tokens: the only place with colour, radius, font, spacing and motion values.
-   Text contrast is pinned by styles/tokens.test.ts. */
+@font-face {
+  font-family: "Archivo";
+  src: url("/fonts/archivo-latin-700-normal.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: optional;
+}
+
+/* Design tokens: the only place with colour, font, spacing, radius and motion values. One dark theme, "Stage"
+   (ADR 0028 section 16). Text contrast is pinned by styles/tokens.test.ts; where signal may go by
+   styles/orangeRule.test.ts. A light theme later is a second set of values for these names. */
 :root {
   color-scheme: dark;
 
-  --color-bg: #0a0a0d;
-  --color-bg-raised: #111116;
-  --color-surface: rgba(255, 255, 255, 0.03);
-  --color-border: rgba(255, 255, 255, 0.08);
-  --color-text: #e9e9ee;
-  --color-muted: #8c8d96;
-  --color-accent: #f0c75e;
-  --color-on-accent: #14110a;
-  --color-accent-tint: rgba(240, 199, 94, 0.12);
-  /* A faint cool grey glow at the top of the page, for depth without gold (REQ-0028 item 1). */
-  --color-page-wash: rgba(150, 165, 190, 0.06);
-  --color-focus: var(--color-accent);
-  --color-online: #3ddc84;
-  --color-danger: #ff7b72;
-  --color-danger-bg: #2a1214;
-  --color-frost: rgba(10, 10, 13, 0.72);
-  --color-highlight: rgba(255, 255, 255, 0.35);
-  --color-shade: rgba(0, 0, 0, 0.18);
-  --color-sheen: rgba(255, 255, 255, 0.45);
-  --color-row-hover: rgba(255, 255, 255, 0.04);
-  /* The lit top edge of a raised card, so it reads as a plate above the page. */
-  --color-card-edge: rgba(255, 255, 255, 0.06);
+  --color-ground: #161412;
+  /* Panels, the Next up band, floating panels and text fields. */
+  --color-surface: #201d1a;
+  /* Hover, the highlighted option, avatars, monograms and toasts. */
+  --color-raised: #2b2723;
+  /* Dividers only. */
+  --color-rule: #332f2a;
+  /* The 1px edge of floating panels; decorative, never a control. */
+  --color-rule-strong: #4b453f;
+  /* The 1px edge of a control: 3:1 or more on ground, surface and raised (WCAG 1.4.11). */
+  --color-control-line: #7a7268;
+  --color-text: #f2ede5;
+  --color-muted: #aaa298;
+  /* The one accent: the closed list of the Orange rule (ADR 0028 section 16.4). Text only on the Next up band. */
+  --color-signal: #ff6a2b;
+  --color-on-signal: #161412;
+  --color-danger: #ff7a85;
+  --color-scrim: rgb(0 0 0 / 0.6);
+  /* Group colours (ADR 0028 sections 5 and 16.7): one dark text colour on every fill. */
+  --color-group-1: #6f97f7;
+  --color-group-2: #4fbf7f;
+  --color-group-3: #e0b83a;
+  --color-group-4: #ec7aa6;
+  --color-group-5: #3dbab5;
+  --color-group-6: #a98be8;
+  --color-on-group: #161412;
 
-  --font-heading: "Space Grotesk", system-ui, sans-serif;
-  --font-sans:
-    "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  /* Two radii only (ADR 0028 section 16.5): containers and controls, and small marks. */
+  --radius: 8px;
+  --radius-sm: 4px;
+
+  --font-heading: "Big Shoulders Display", system-ui, sans-serif;
+  --font-text:
+    "Archivo", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 
   --space-0: 0;
   --space-1: 0.25rem;
@@ -97,44 +101,31 @@
   --space-4: 1.5rem;
   --space-6: 3rem;
 
-  --radius-panel: 12px;
-  --radius-control: 8px;
-  --radius-badge: 4px;
   --content-width: 40rem;
 
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --duration-fast: 0.1s;
   --duration-base: 0.45s;
   --duration-slow: 1s;
-  --tracking-tight: -0.03em;
-  --tracking-snug: -0.02em;
   --tracking-wide: 0.14em;
   --press-scale: 0.97;
   --reveal-offset: 40px;
-  --blur-glass: 8px;
 
   --font-size-hero: clamp(2.75rem, 8vw, 5.5rem);
-  --font-size-title: clamp(1.75rem, 4vw, 2.25rem);
+  --font-size-title: clamp(2.25rem, 5vw, 3.25rem);
   --font-size-small: 0.875rem;
   --font-size-caption: 0.6875rem;
-  --font-size-heading: 1.25rem;
+  --font-size-heading: 1.625rem;
   --font-size-figure: 2.5rem;
   --line-hero: 0.98;
-  --width-landing: 64rem;
+  --width-landing: 72rem;
   --stage-height: clamp(17rem, 60vw, 24rem);
-  --radius-chip: 999px;
-  --rise-offset: 110%;
   --stagger-fade: 0.15s;
   --stagger-step: 0.1s;
   /* Group cards fade up one after another; from the limit on they start together, so a long list is not slow. */
   --stagger-card: 0.04s;
   --stagger-card-limit: 8;
   --reveal-delay: 0s;
-  --duration-meter: 1.6s;
-  --duration-flash: 1.8s;
-  --flash-offset: 0.5rem;
-  --duration-rise: 1.1s;
 
   /* App shell. The wide layout starts at 760px (47.5rem); media queries cannot read tokens, so it is written out there.
      The main area box is at most 100rem including its padding (REQ-0025). */
@@ -146,67 +137,59 @@
   --size-heading-row: calc(var(--size-tap) + 2 * var(--space-1) + 2 * 1px);
   /* Buttons (ADR 0021): compact under a mouse; on touch every target is --size-tap (A10). */
   --size-button: 2rem;
-  /* Button hover: light from above lights the top edge, a glow in the button's own colour breathes in, a soft
-     light follows the pointer, and press sinks the button into an inner shadow. */
-  --color-button-edge: rgba(255, 255, 255, 0.18);
-  --color-button-edge-danger: rgba(255, 123, 114, 0.5);
-  --color-button-top-light: rgba(255, 255, 255, 0.07);
-  --color-button-top-light-primary: rgba(255, 251, 240, 0.24);
-  --color-button-top-light-danger: rgba(255, 123, 114, 0.12);
-  --color-button-glow-accent: rgba(240, 199, 94, 0.34);
-  --color-button-glow-danger: rgba(255, 123, 114, 0.3);
-  --color-button-light: rgba(255, 255, 255, 0.12);
-  --color-button-light-primary: rgba(255, 250, 235, 0.6);
-  --color-button-light-danger: rgba(255, 123, 114, 0.22);
-  --color-button-press-shade: rgba(0, 0, 0, 0.42);
-  --shadow-button-glow-primary: 0 6px 24px -6px var(--color-button-glow-accent);
-  --shadow-button-glow-danger: 0 0 20px -6px var(--color-button-glow-danger);
-  --shadow-button-press: inset 0 2px 6px var(--color-button-press-shade);
-  --size-button-light: 7rem;
-  --duration-button-hover: 0.28s;
-  --duration-button-glow: 0.4s;
-  /* The light trails the pointer a little, which reads as liquid rather than stuck to the cursor. */
-  --duration-button-follow: 0.22s;
-  --scale-button-glow-rest: 0.9;
-  --scale-button-light-pressed: 0.55;
-  --opacity-button-glow-pressed: 0.45;
   --offset-button-sink: 1px;
-  /* Where the lit edge's light from above has faded out; the primary's stops earlier so its gold stays full. */
-  --stop-button-top-light: 60%;
-  --stop-button-top-light-primary: 55%;
-  /* A lobby row is a card: one and a half taps tall keeps it roomy yet calm. */
-  --size-lobby-row: calc(var(--size-tap) * 1.5);
-  --font-size-lobby-name: 1.125rem; /* a step above body text so the game leads the row */
+  /* A step above body text, so a name leads its row: a block label, a member of the Member list. */
+  --font-size-lobby-name: 1.125rem;
+  /* The Group view (REQ-0029 item 5): its name at display size, and the Line-up's start times, the largest text of
+     each row (REQ-0029 item 2: 3.5rem on desktop). */
+  --font-size-display: clamp(2.75rem, 3vw + 1.5rem, 4rem);
+  --font-size-line-up-time: clamp(2rem, 4vw + 1rem, 3.5rem);
+  /* The lobby page's start and end time: the largest text of the page (REQ-0029 item 2: up to 6rem on desktop). */
+  --font-size-lobby-time: clamp(3rem, 5vw + 1rem, 6rem);
+  /* The group colour square: on a Group card, and large beside the Group view's name. */
+  --size-group-swatch: 2.5rem;
+  --size-group-swatch-large: 4rem;
   --size-top-bar: 4rem;
   /* The top bar grows by the notch / status bar inset when viewport-fit=cover applies. */
   --size-top-bar-total: calc(var(--size-top-bar) + env(safe-area-inset-top));
-  --size-rail: 5.25rem;
   /* The side column. It starts at a 98rem window, written out in its media query (REQ-0025). */
   --width-aside: 19rem;
   --size-tab-bar: 5.5rem;
-  --size-group-icon: 3.25rem;
   --line-time-block: 1.3; /* unitless, so a block label can also be limited to one line in em */
   --size-plus: 3.25rem;
   --size-plus-tab: 3.5rem;
   --size-avatar: 2.25rem;
+  /* The Avatar beside a name in the Member list. */
+  --size-avatar-compact: 1.75rem;
   --size-avatar-large: 3.5rem;
   /* A game logo or its monogram: one fixed box per place, so a loading image moves nothing (REQ-0026). */
   --size-game-logo: 2.5rem;
   /* Where the game is central: Next up and the lobby page (REQ-0026). */
   --size-game-logo-large: 4rem;
   --width-popover: 22rem;
-  --radius-popover: 16px;
-  --color-chrome: #0c0c10;
-  --color-scrim: rgba(0, 0, 0, 0.45);
-  --color-accent-line: rgba(240, 199, 94, 0.45);
-  --color-popover-top: #18181e;
-  --shadow-popover: 0 30px 80px rgba(0, 0, 0, 0.55);
+  /* Top bar, sticky from 760px: below the scrim (40), so it dims with the page. */
+  --z-top-bar: 10;
+  /* The active tab's weight; the hidden copy in every tab label reserves its width (ADR 0028 section 16.12). */
+  --font-weight-tab-active: 700;
+  /* Weights and line heights of Home: the Next up band, the running order and its legend (ADR 0028). */
+  --font-weight-strong: 600;
+  --font-weight-bold: 700;
+  --font-weight-heavy: 800;
+  --font-weight-black: 900;
+  --line-height-snug: 1.3;
+  --line-height-tight: 1.1;
+  --line-height-solid: 1;
+  --line-height-title: 0.95;
+  /* The Next up start time: the figures sit tight on their own line. */
+  --line-height-figure: 0.85;
   /* Dropdown list (ADR 0027 point 4): above the tab bar (60) and the floating "+" (55), below the toaster. */
   --z-dropdown-list: 70;
   /* Popover (ADR 0023 Amendment 2026-11-17): above the tab bar (60), below the dropdown list and the toaster. */
   --z-popover: 65;
   /* Confirm dialog (ADR 0023 point 5): above every other layer, as the native modal dialog was, below the toaster. */
   --z-dialog: 80;
+  /* The focused skip link: the first keyboard stop, above every bar and layer. */
+  --z-skip-link: 90;
   /* Toast region (ADR 0023 point 4, REQ-0022): on phones above the floating "+", which sits above the tab bar.
      The wide layout has neither and resets it to the 16px window margin. */
   --toast-bottom: calc(
@@ -217,8 +200,7 @@
   --width-toast: 22.25rem;
   --width-dialog: min(var(--content-width), calc(100vw - var(--space-4)));
   --height-dialog: calc(100dvh - var(--space-4));
-  --width-accent-edge: 2px;
-  --size-scrim-spread: 100vmax; /* a shadow this wide covers any window */
+  --width-edge: 2px;
   --size-sheet-max: 70dvh;
   --sheet-safe-bottom: calc(var(--space-2) + env(safe-area-inset-bottom));
   --ease-overshoot: cubic-bezier(0.3, 1.35, 0.5, 1);
@@ -231,46 +213,40 @@
   --duration-pop-fade-out: 0.2s;
   --delay-pop-fade-out: 0.18s;
   --duration-scrim: 0.35s;
-  --duration-icon: 0.5s;
   --duration-page: 0.24s;
   --duration-page-out: 0.12s;
   --page-shift: 12px;
-  --size-hour: 4rem;
-  --size-grid-height: 32rem;
-  --size-grid-title: 3rem;
-  --size-grid-gutter: 3.25rem;
+  /* Running order (ADR 0028 section 4, amended by the user 2026-11-22): about this many hours show at once beside the
+     day names on wide screens, the rest scrolls sideways; an hour is never narrower than the hour minimum, so a
+     1-hour block keeps its label, start and spots. */
+  --running-order-wide-hours: 16;
+  --size-running-order-hour-min: 4.5rem;
+  --size-running-order-label: 8rem;
+  /* One lane of a day row: a block of three lines and its gap. On phones a lane is one thin bar. */
+  --size-lane: 4.5rem;
+  --size-lane-phone: 1rem;
+  /* About this many hours of the axis show at once on a phone (DECISION, user, 2026-11-21). */
+  --running-order-phone-hours: 6;
+  /* The narrowest block, so a short lobby is still a target (WCAG 2.5.8). */
+  --size-block-min: 1.5rem;
+  /* The time and spots lines of a block. */
+  --font-size-block: 0.75rem;
+  /* The start time of a phone row, beside its label. */
+  --font-size-block-start: 1.375rem;
+  --size-block-start: 3.5rem;
+  /* A hovered block rises this much (fine pointers only). */
+  --offset-block-lift: -2px;
+  /* The 1em icon dropped onto the text baseline. */
+  --offset-icon-baseline: -0.125em;
+  /* The today marker under the day name, and the ground bar the 2px Now line sits on (ADR 0028 section 16.6). */
+  --size-today-marker: 1.75rem;
+  --width-marker: 4px;
+  --size-swatch: 0.875rem;
+  --font-size-eyebrow: 1rem;
+  /* The Next up start time, the largest text of the page (REQ-0029 item 2: 3.5rem to 6rem). */
+  --font-size-next-up-time: 6rem;
+  --font-size-next-up-time-phone: 4.5rem;
 
-  /* Genre themes (ADR 0016): one accent per genre. Each reads at 4.5:1 or more on the page and panels,
-     pinned by genres/genreContrast.test.ts. The art in public/genre-art uses the same values. */
-  --color-genre-shooter: #ff5f6d;
-  --color-genre-moba: #4da3ff;
-  --color-genre-racing: #ff8a3d;
-  --color-genre-strategy: #a78bfa;
-  --color-genre-survival: #7bd36b;
-  --color-genre-party: #ff6ad5;
-  --color-genre-rpg: #e9d172;
-  --color-genre-sports: #3fd6c4;
-  --color-genre-neutral: #9a9ba6;
-  /* Set per view by GenreFrame; outside a frame the app accent shows. */
-  --genre-accent: var(--color-accent);
-  --genre-pattern: none;
-  --genre-tint: 4%;
-  --genre-wash: 5%;
-  /* Muted text inside a genre frame: lighter, because the pattern, tint and motif lift the plate behind it. */
-  --color-muted-themed: #a8a9b2;
-  --genre-motif-opacity: 0.12;
-  --size-genre-icon: 1.5rem;
-  --size-genre-motif: 6rem;
-  /* Over a game cover: dark enough that every text passes AA over a pure white image, the brightest any cover
-     can be. The gold Next up timing binds at about 0.69; 0.83 is kept for the look, with muted text, the genre
-     name and field errors in the text colour (ADR 0026 Amendment 2026-11-18 item 3, pinned by
-     genres/genreContrast.test.ts). */
-  --color-cover-scrim: rgba(10, 10, 13, 0.83);
-  --ratio-cover-preview: 16 / 9;
-  --width-cover-preview: 16rem;
-
-  /* Scrollbars: a dim thumb that still stands out at 3:1 on the page, panels and the popover card. */
-  --color-scrollbar-thumb: #63646d;
   --size-scrollbar: 0.5rem;
 }
 
@@ -287,7 +263,7 @@
 @media (pointer: fine) {
   @supports (scrollbar-color: auto) {
     :root {
-      scrollbar-color: var(--color-scrollbar-thumb) transparent;
+      scrollbar-color: var(--color-muted) transparent;
     }
 
     * {
@@ -308,48 +284,40 @@
     }
 
     ::-webkit-scrollbar-thumb {
-      border-radius: var(--radius-chip);
-      background: var(--color-scrollbar-thumb);
+      background: var(--color-muted);
     }
   }
 }
 
 body {
   margin: 0;
-  font-family: var(--font-sans);
+  font-family: var(--font-text);
   font-size: 1rem;
   line-height: 1.5;
   color: var(--color-text);
-  background-color: var(--color-bg);
-  background-image:
-    radial-gradient(
-      60rem 40rem at 85% 0%,
-      var(--color-page-wash),
-      transparent 70%
-    ),
-    linear-gradient(180deg, var(--color-bg-raised), var(--color-bg) 30rem);
-  background-repeat: no-repeat;
+  background-color: var(--color-ground);
 }
 
+/* Headings are uppercase by CSS, not by the text (ADR 0028 section 2). */
 h1 {
   font-family: var(--font-heading);
   font-size: var(--font-size-title);
-  font-weight: 700;
-  letter-spacing: var(--tracking-tight);
-  line-height: 1.2;
+  font-weight: 900;
+  line-height: 1;
+  text-transform: uppercase;
   margin: 0 0 var(--space-3);
 }
 
 h2 {
   font-family: var(--font-heading);
   font-size: var(--font-size-heading);
-  font-weight: 600;
-  letter-spacing: var(--tracking-snug);
-  line-height: 1.3;
+  font-weight: 800;
+  line-height: 1;
+  text-transform: uppercase;
   margin: var(--space-4) 0 var(--space-2);
 }
 
-/* Links stay text-coloured and underlined; gold appears only on hover or focus. A ButtonLink is left out: these
+/* Links stay in the text colour and underlined; hover thickens the line at once, with no colour. A ButtonLink is left out: these
    unlayered rules would beat its Tailwind colour utilities, which sit in a layer. :where keeps the specificity of a
    plain a, so a class such as .brand still wins. */
 a:where(:not([data-slot="button"])) {
@@ -359,11 +327,11 @@ a:where(:not([data-slot="button"])) {
 }
 
 :where(a:not([data-slot="button"])):hover {
-  color: var(--color-accent);
+  text-decoration-thickness: var(--width-edge);
 }
 
 :focus-visible {
-  outline: 3px solid var(--color-focus);
+  outline: var(--width-edge) solid var(--color-text);
   outline-offset: 2px;
 }
 
@@ -375,19 +343,18 @@ a:where(:not([data-slot="button"])) {
   gap: var(--space-2) var(--space-3);
   padding: var(--space-3) var(--space-4);
   padding-top: calc(var(--space-3) + env(safe-area-inset-top));
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-rule);
 }
 
 .brand {
   font-family: var(--font-heading);
   font-size: 1.125rem;
-  font-weight: 700;
-  letter-spacing: var(--tracking-snug);
+  font-weight: 800;
   color: var(--color-text);
   text-decoration: none;
 }
 
-/* Frosted bar that stays at the top; the scroll state is set by the page that uses it. */
+/* A bar that stays at the top; the scroll state is set by the page that uses it. */
 .topbar {
   position: sticky;
   top: 0;
@@ -395,16 +362,15 @@ a:where(:not([data-slot="button"])) {
   border-bottom: 1px solid transparent;
 }
 
-/* The frost is a layer that fades by opacity, so the scroll state change repaints nothing. It also covers the
-   bar's transparent bottom border. */
+/* The ground behind the bar is a layer that fades by opacity, so the scroll state change repaints nothing. It also
+   covers the bar's transparent bottom border. */
 .topbar::before {
   content: "";
   position: absolute;
   inset: 0 0 -1px;
   z-index: -1;
-  background: var(--color-frost);
-  backdrop-filter: blur(var(--blur-glass));
-  border-bottom: 1px solid var(--color-border);
+  background: var(--color-ground);
+  border-bottom: 1px solid var(--color-rule);
   opacity: 0;
   pointer-events: none;
   transition: opacity var(--duration-base) var(--ease-out);
@@ -437,9 +403,9 @@ a:where(:not([data-slot="button"])) {
   margin: 0;
   overflow: visible;
   padding: var(--space-1) var(--space-2);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-badge);
-  background: var(--color-bg-raised);
+  border: 1px solid var(--color-rule-strong);
+  border-radius: var(--radius);
+  background: var(--color-surface);
   color: var(--color-text);
   font-size: var(--font-size-small);
   white-space: nowrap;
@@ -471,167 +437,33 @@ a:where(:not([data-slot="button"])) {
   }
 }
 
-/* Button (ADR 0023 1b): colour, radius and box are utilities in ui/Button.tsx; type, shadow, hover and press
-   motion are here. */
+/* Button (ADR 0023 1b, ADR 0028 section 16.3): colour, edge and box are utilities in ui/Button.tsx; type, hover and
+   press are here. Hover lays the raised fill over the button at once, except on the primary, which keeps its signal
+   fill; press sinks the button by transform. */
 [data-slot="button"] {
   /* border utility's style is a registered variable; some browsers lack it (ADR 0023 B2 amendment d) */
   border-style: solid;
   text-decoration: none;
   font: inherit;
-  font-weight: 600;
-}
-
-[data-slot="button"][data-variant="primary"] {
-  box-shadow:
-    inset 0 1px 0 var(--color-highlight),
-    inset 0 -1px 0 var(--color-shade);
-}
-
-/* Button hover: light from above lights the top edge (::before), a glow in the button's own colour breathes in
-   (::after), and in a Button a soft light follows the pointer (--pointer-x/y from ui/Button.tsx). Press sinks the
-   button into an inner shadow. Every layer only fades by opacity or moves by transform. */
-[data-slot="button"] {
+  font-weight: 700;
   transition: transform var(--duration-fast) var(--ease-out);
 }
 
-[data-slot="button"]::before,
-[data-slot="button"]::after,
-[data-slot="button-light"],
-[data-slot="button-light"]::after {
+[data-slot="button"]::after {
   content: "";
   position: absolute;
-  inset: -1px;
+  inset: 0;
   z-index: -1;
   border-radius: inherit;
+  background: var(--color-raised);
+  opacity: 0;
   pointer-events: none;
-}
-
-/* The lit edge. It fades out halfway down, so the primary's lower half stays full gold. */
-[data-slot="button"]::before {
-  opacity: 0;
-  background: linear-gradient(
-    var(--color-button-top-light),
-    transparent var(--stop-button-top-light)
-  );
-  box-shadow:
-    inset 0 1px 0 var(--color-button-edge),
-    inset 0 0 0 1px var(--color-button-top-light);
-  transition: opacity var(--duration-button-hover) var(--ease-out);
-}
-
-[data-slot="button"][data-variant="ghost"]::before {
-  background:
-    linear-gradient(
-      var(--color-button-top-light),
-      transparent var(--stop-button-top-light)
-    ),
-    var(--color-row-hover);
-}
-
-[data-slot="button"][data-variant="primary"]::before {
-  background: linear-gradient(
-    var(--color-button-top-light-primary),
-    transparent var(--stop-button-top-light-primary)
-  );
-  box-shadow: inset 0 1px 0 var(--color-sheen);
-}
-
-[data-slot="button"][data-variant="danger"]::before {
-  background: linear-gradient(
-    var(--color-button-top-light-danger),
-    transparent var(--stop-button-top-light)
-  );
-  box-shadow: inset 0 1px 0 var(--color-button-edge-danger);
-}
-
-/* The glow. Ghosts and secondaries have none, so only the main and destructive actions call out (REQ-0028 item 4). */
-[data-slot="button"]::after {
-  opacity: 0;
-  transform: scale(var(--scale-button-glow-rest));
-  transition:
-    opacity var(--duration-button-glow) var(--ease-out),
-    transform var(--duration-button-glow) var(--ease-out);
-}
-
-[data-slot="button"][data-variant="primary"]::after {
-  box-shadow: var(--shadow-button-glow-primary);
-}
-
-[data-slot="button"][data-variant="danger"]::after {
-  box-shadow: var(--shadow-button-glow-danger);
-}
-
-[data-slot="button"]:is(
-    [data-variant="ghost"],
-    [data-variant="secondary"]
-  )::after {
-  content: none;
-}
-
-/* The light span clips the follow light to the button's shape. */
-[data-slot="button-light"] {
-  overflow: hidden;
-}
-
-[data-slot="button-light"]::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: var(--size-button-light);
-  aspect-ratio: 1;
-  margin: calc(var(--size-button-light) / -2) 0 0
-    calc(var(--size-button-light) / -2);
-  border-radius: 50%;
-  background: radial-gradient(
-    closest-side,
-    var(--color-button-light),
-    transparent
-  );
-  opacity: 0;
-  transform: translate(var(--pointer-x, 0px), var(--pointer-y, 0px));
-  transition:
-    opacity var(--duration-button-hover) var(--ease-out),
-    transform var(--duration-button-follow) var(--ease-out);
-}
-
-[data-slot="button"][data-variant="primary"]
-  > [data-slot="button-light"]::before {
-  background: radial-gradient(
-    closest-side,
-    var(--color-button-light-primary),
-    transparent
-  );
-}
-
-[data-slot="button"][data-variant="danger"]
-  > [data-slot="button-light"]::before {
-  background: radial-gradient(
-    closest-side,
-    var(--color-button-light-danger),
-    transparent
-  );
-}
-
-/* The press shade. */
-[data-slot="button-light"]::after {
-  inset: 0;
-  opacity: 0;
-  box-shadow: var(--shadow-button-press);
-  transition: opacity var(--duration-fast) var(--ease-out);
 }
 
 /* Hover only where a pointer can hover, so a tap on a phone leaves nothing lit. */
 @media (hover: hover) and (pointer: fine) {
-  [data-slot="button"]:not(:disabled):hover::before,
-  [data-slot="button"]:not(:disabled):hover
-    > [data-slot="button-light"]::before {
+  [data-slot="button"]:not(:disabled, [data-variant="primary"]):hover::after {
     opacity: 1;
-  }
-
-  [data-slot="button"]:not(:disabled):hover::after {
-    opacity: 1;
-    transform: none;
   }
 }
 
@@ -639,27 +471,7 @@ a:where(:not([data-slot="button"])) {
   transform: translateY(var(--offset-button-sink));
 }
 
-[data-slot="button"]:not(:disabled):active::before {
-  opacity: 0;
-}
-
-[data-slot="button"]:not(:disabled):active::after {
-  opacity: var(--opacity-button-glow-pressed);
-  transform: none;
-}
-
-/* On press the light gathers under the pointer. */
-[data-slot="button"]:not(:disabled):active
-  > [data-slot="button-light"]::before {
-  transform: translate(var(--pointer-x, 0px), var(--pointer-y, 0px))
-    scale(var(--scale-button-light-pressed));
-}
-
-[data-slot="button"]:not(:disabled):active > [data-slot="button-light"]::after {
-  opacity: 1;
-}
-
-/* Dropdown list (ADR 0027): colour, radius and box are utilities in ui/Select.tsx; type, shadow and motion are
+/* Dropdown list (ADR 0027): colour, edge and box are utilities in ui/Select.tsx; type and motion are
    here. The panel grows from the field; on phones it is a sheet that rises from the bottom edge. */
 [data-slot="select-trigger"],
 [data-slot="select-content"] {
@@ -673,7 +485,6 @@ a:where(:not([data-slot="button"])) {
 }
 
 [data-slot="select-content"] {
-  box-shadow: var(--shadow-popover);
   transform-origin: var(--radix-select-content-transform-origin);
 }
 
@@ -685,8 +496,8 @@ a:where(:not([data-slot="button"])) {
   animation: dropdown-out var(--duration-page-out) var(--ease-in) forwards;
 }
 
-/* Popover (ADR 0023 Amendment 2026-11-17): colour, radius and box are utilities in ui/AnchoredPopover.tsx; type,
-   shadow and motion are here. The panel grows from its trigger, like the dropdown list. */
+/* Popover (ADR 0023 Amendment 2026-11-17): colour, edge and box are utilities in ui/AnchoredPopover.tsx; type
+   and motion are here. The panel grows from its trigger, like the dropdown list. */
 [data-slot="anchored-popover-trigger"] {
   font: inherit;
 }
@@ -695,7 +506,6 @@ a:where(:not([data-slot="button"])) {
   /* border utility's style is a registered variable; some browsers lack it (ADR 0023 B2 amendment d) */
   border-style: solid;
   font-size: var(--font-size-small);
-  box-shadow: var(--shadow-popover);
   transform-origin: var(--radix-popover-content-transform-origin);
 }
 
@@ -707,7 +517,7 @@ a:where(:not([data-slot="button"])) {
   animation: dropdown-out var(--duration-page-out) var(--ease-in) forwards;
 }
 
-/* Confirm dialog (ADR 0023 point 5): colour, radius and box are utilities in ui/Dialog.tsx; motion is here. The
+/* Confirm dialog (ADR 0023 point 5): colour, edge and box are utilities in ui/Dialog.tsx; motion is here. The
    overlay fades and the panel grows from its centre; Radix waits for the exit before it unmounts them. */
 [data-slot="alert-dialog-content"] {
   /* border utility's style is a registered variable; some browsers lack it (ADR 0023 B2 amendment d) */
@@ -734,10 +544,10 @@ a:where(:not([data-slot="button"])) {
   animation: dropdown-out var(--duration-page-out) var(--ease-in) forwards;
 }
 
-/* Toast (ADR 0023 point 4): colour, radius and box are utilities in ui/Toast.tsx. sonner's own style tag comes
+/* Toast (ADR 0023 point 4): colour, edge and box are utilities in ui/Toast.tsx. sonner's own style tag comes
    after this file, so each rule here has two attributes to win over its one. */
 [data-sonner-toaster][data-y-position] {
-  font-family: var(--font-sans);
+  font-family: var(--font-text);
 }
 
 [data-sonner-toaster] [data-sonner-toast] {
@@ -764,7 +574,7 @@ a:where(:not([data-slot="button"])) {
 
 /* sonner drops the outline of a toast, which Tab reaches, so it gets the app's focus ring back. */
 [data-sonner-toaster] [data-sonner-toast]:focus-visible {
-  outline: 3px solid var(--color-focus);
+  outline: var(--width-edge) solid var(--color-text);
   outline-offset: 2px;
 }
 
@@ -775,14 +585,31 @@ a:where(:not([data-slot="button"])) {
   transition-timing-function: var(--ease-in);
 }
 
-/* The highlighted row is the keyboard focus: the wash and an accent edge mark it in place of the outline. */
-/* Gold here is focus under the Gold rule (REQ-0028 item 1, DECISION, user, 2026-11-18). */
+/* The highlighted row has the raised fill (a utility). Where a keyboard is likely, it is also the keyboard focus, so it
+   gets the focus ring, drawn inside the row so the panel edge does not clip it; a touched sheet shows the fill alone.
+   The selected row has its check mark and a text-colour edge; no signal (ADR 0028 section 16.4). */
+[data-slot="select-item"] {
+  position: relative;
+}
+
 [data-slot="select-item"]:focus-visible {
   outline: none;
 }
 
-[data-slot="select-item"][data-highlighted] {
-  box-shadow: inset var(--width-accent-edge) 0 0 var(--color-accent);
+@media (pointer: fine) {
+  [data-slot="select-item"][data-highlighted] {
+    outline: var(--width-edge) solid var(--color-text);
+    outline-offset: calc(-1 * var(--width-edge));
+  }
+}
+
+[data-slot="select-item"][data-state="checked"]::before {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: var(--width-edge);
+  background: var(--color-text);
 }
 
 @keyframes dropdown-in {
@@ -802,23 +629,35 @@ a:where(:not([data-slot="button"])) {
 @keyframes sheet-in {
   from {
     opacity: 0;
-    transform: translateY(var(--rise-offset));
+    transform: translateY(100%);
   }
 }
 
 @keyframes sheet-out {
   to {
     opacity: 0;
-    transform: translateY(var(--rise-offset));
+    transform: translateY(100%);
   }
 }
 
 @media (width < 47.5rem), (pointer: coarse) {
-  /* The spread shadow dims the page behind the sheet, so a tap outside reads as "close". */
-  [data-slot="select-content"] {
-    box-shadow:
-      var(--shadow-popover),
-      0 0 0 var(--size-scrim-spread) var(--color-scrim);
+  /* A scrim behind the sheet dims the page, so a tap outside reads as "close". It sits on Radix's wrapper, below the
+     sheet in the wrapper's own layer, because Radix sets the sheet's outline inline. It fades with the sheet. */
+  [data-radix-popper-content-wrapper]:has(
+      > [data-slot="select-content"]
+    )::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background: var(--color-scrim);
+    animation: fade-in var(--duration-page) var(--ease-out);
+  }
+
+  [data-radix-popper-content-wrapper]:has(
+      > [data-slot="select-content"][data-state="closed"]
+    )::before {
+    animation: fade-out var(--duration-page-out) var(--ease-in) forwards;
   }
 
   [data-slot="select-content"][data-state="open"] {
@@ -837,13 +676,14 @@ a:where(:not([data-slot="button"])) {
   }
 }
 
+/* A surface with a danger edge and danger text: the text, not the colour, carries the meaning. */
 .alert {
   margin: 0 0 var(--space-3);
   padding: var(--space-3);
-  border-radius: var(--radius-control);
-  background: var(--color-danger-bg);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius);
+  background: var(--color-surface);
   color: var(--color-danger);
-  box-shadow: inset 2px 0 0 var(--color-danger);
 }
 
 .login-panel p {
@@ -876,45 +716,39 @@ a:where(:not([data-slot="button"])) {
 .login-panel {
   padding: var(--space-4);
   background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-panel);
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius);
 }
 
 .panel > :first-child,
-.panel > .heading-row:first-child > h2:first-child,
-.lobby-summary > :first-child {
+.panel > .heading-row:first-child > h2:first-child {
   margin-top: 0;
 }
 
-/* A panel heading with its action beside it. */
-.panel__head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
+/* The heading of a page with no header of its own (the You page, the Game list): the display size and the rule of
+   the Group view's header (REQ-0029). */
+.page-head {
+  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-4);
+  border-bottom: var(--width-edge) solid var(--color-text);
+  font-size: var(--font-size-display);
+  line-height: var(--line-height-title);
+  overflow-wrap: anywhere;
 }
 
-.panel__head h2 {
-  margin: 0;
-}
-
-/* A heading with its view toggle. Below 98rem it is a plain block, so the toggle sits on its own line under the
-   Lobbies heading and its button, which have no margin; beside a side column it is one row (see the side layout below). */
-.heading-row > .panel__head + .view-switch {
-  margin-top: var(--space-3);
-}
-
-/* Panels of one screen stack with a gap. */
-.panel-group {
+/* The sections of such a page, on the ground with no panel, parted by space. */
+.page-sections {
   display: grid;
-  gap: var(--space-3);
-  margin-top: var(--space-3);
+  gap: var(--space-6);
+}
+
+.page-sections h2 {
+  margin-top: 0;
 }
 
 /* Wide windows: the side column sits on the right of the main column, which is the first track (REQ-0025).
-   DOM order is kept, so focus and reading order are those of the one-column layout. From 98rem the main column
-   is never narrower than the 66rem week grid of before. A side column with nothing in it takes no room. */
+   DOM order is kept, so focus and reading order are those of the one-column layout. A side column with nothing
+   in it takes no room. */
 @media (min-width: 98rem) {
   .side-layout:has(> .side-column:not(:empty)) {
     display: grid;
@@ -948,15 +782,11 @@ a:where(:not([data-slot="button"])) {
     margin: 0 auto 0 0;
   }
 
-  .side-layout .heading-row > .panel__head {
-    flex: 1;
-  }
-
   .side-layout .heading-row > .view-switch {
     margin: 0;
   }
 
-  /* The lobby page: settings beside both the players and the actions, inside the one panel. */
+  /* The lobby page: facts and settings beside both the players and Delete lobby. */
   .side-layout--lobby:has(> .side-column:not(:empty)) {
     row-gap: 0;
   }
@@ -964,16 +794,6 @@ a:where(:not([data-slot="button"])) {
   .side-layout--lobby > .side-column {
     grid-row: 1 / span 2;
     padding-inline-start: var(--space-4);
-    border-inline-start: 1px solid var(--color-border);
-  }
-
-  /* Next up is stacked in the narrow side column. */
-  .side-column .next-up {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .side-column .next-up__spots {
-    text-align: start;
   }
 }
 
@@ -1014,11 +834,9 @@ a:where(:not([data-slot="button"])) {
   gap: var(--space-3);
   min-height: var(--size-tap);
   padding: var(--space-2);
-  border-radius: var(--radius-control);
 }
 
-/* Scoped to real lists. The tint is a layer behind the content that fades by opacity, under a genre
-   pattern (::before, z-index -1) as the row's own background was. */
+/* Scoped to real lists. The tint is a layer behind the content that fades by opacity. */
 .row-list > .list-row {
   position: relative;
   isolation: isolate;
@@ -1030,10 +848,9 @@ a:where(:not([data-slot="button"])) {
   inset: 0;
   z-index: -2;
   border-radius: inherit;
-  background: var(--color-row-hover);
+  background: var(--color-raised);
   opacity: 0;
   pointer-events: none;
-  transition: opacity var(--duration-base) var(--ease-out);
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -1042,10 +859,9 @@ a:where(:not([data-slot="button"])) {
   }
 }
 
-/* IconButton sits in its tooltip wrapper, so the wrapper stands for the button in these sibling rules. */
-/* A game image field in a game being changed keeps its buttons by the image. */
-.list-row :is([data-slot="button"], .tooltip):not(.image-field__row > *),
-.list-row .badge {
+/* IconButton sits in its tooltip wrapper, so the wrapper stands for the button in these sibling rules. Only the
+   row's own buttons: those of a form in a row being changed stay in their place. */
+.list-row > :is([data-slot="button"], .tooltip) {
   margin-left: auto;
 }
 
@@ -1066,10 +882,6 @@ a:where(:not([data-slot="button"])) {
   gap: var(--space-2) var(--space-3);
 }
 
-.game-chips > [data-slot="anchored-popover-trigger"] {
-  border-radius: var(--radius-control);
-}
-
 .game-chip {
   display: inline-flex;
   align-items: center;
@@ -1078,7 +890,7 @@ a:where(:not([data-slot="button"])) {
   min-width: var(--size-tap);
   min-height: var(--size-tap);
   padding-inline: var(--space-0);
-  border-radius: var(--radius-control);
+  border-radius: var(--radius-sm);
   background: var(--color-surface);
   color: var(--color-muted);
   font-size: var(--font-size-small);
@@ -1093,10 +905,9 @@ a:where(:not([data-slot="button"])) {
   inset: 0;
   z-index: -1;
   border-radius: inherit;
-  background: var(--color-row-hover);
+  background: var(--color-raised);
   opacity: 0;
   pointer-events: none;
-  transition: opacity var(--duration-base) var(--ease-out);
 }
 
 /* Room after the last icon or name, so the tint does not end at the glyph. */
@@ -1137,7 +948,8 @@ a:where(:not([data-slot="button"])) {
 .badge {
   display: inline-block;
   padding: 0 var(--space-2);
-  border-radius: var(--radius-badge);
+  border: 1px solid var(--color-rule-strong);
+  border-radius: var(--radius-sm);
   background: var(--color-surface);
   color: var(--color-text);
   font-size: var(--font-size-small);
@@ -1146,16 +958,20 @@ a:where(:not([data-slot="button"])) {
   font-variant-numeric: tabular-nums;
 }
 
-/* A full role slot: filled instead of tinted, with a check mark, so full never rests on colour alone. */
-.badge--full {
-  background: var(--color-accent);
-  color: var(--color-on-accent);
+/* A full role slot (ADR 0028 section 16.4 item 6): the count stays in the text colour and a check icon in signal
+   marks it, so full never rests on colour alone. */
+.badge--full > .role-slot-check {
+  color: var(--color-signal);
+}
+
+/* The same check on a full role's heading in the lobby page's player list. */
+.player-group h3 > .role-slot-check {
+  color: var(--color-signal);
 }
 
 .role-slot-check {
   margin-left: var(--space-1);
-  /* Literal, used once: drops the 1em icon onto the text baseline. */
-  vertical-align: -0.125em;
+  vertical-align: var(--offset-icon-baseline);
 }
 
 .eyebrow {
@@ -1185,9 +1001,8 @@ a:where(:not([data-slot="button"])) {
   font: inherit;
   color: var(--color-text);
   background-color: var(--color-surface);
-  border: 1px solid var(--color-muted);
-  border-radius: var(--radius-control);
-  transition: border-color var(--duration-fast) var(--ease-out);
+  border: 1px solid var(--color-control-line);
+  border-radius: var(--radius);
 }
 
 @media (pointer: coarse) {
@@ -1195,11 +1010,6 @@ a:where(:not([data-slot="button"])) {
   .invite-link__url {
     min-height: var(--size-tap);
   }
-}
-
-.group-form input:where(:not([type="radio"], [type="checkbox"])):enabled:hover,
-.invite-link__url:hover {
-  border-color: var(--color-text);
 }
 
 .group-form input:where(:not([type="radio"], [type="checkbox"])):disabled {
@@ -1228,25 +1038,43 @@ a:where(:not([data-slot="button"])) {
   gap: var(--space-2);
 }
 
-/* The modes, game roles and activities of the game form: groups with a legend, no hover or motion. */
+/* The groups of a form (game roles, modes, activities, images, the seat choice): on the ground under a ruled
+   heading, no box, no hover or motion. */
 .group-form fieldset.structure {
   display: grid;
   gap: var(--space-2);
   min-width: 0;
-  margin: 0;
-  padding: var(--space-3);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-control);
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  border: 0;
 }
 
+/* Floated, so it is no rendered legend but a plain grid item: its rule then spans the whole group. */
 .group-form .structure > legend {
-  padding: 0 var(--space-1);
-  font-weight: 600;
+  float: left;
+  width: 100%;
+  padding: 0 0 var(--space-2);
+  border-bottom: 1px solid var(--color-rule);
+  font-family: var(--font-heading);
+  font-size: var(--font-size-lobby-name);
+  font-weight: var(--font-weight-heavy);
+  line-height: var(--line-height-solid);
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
 }
 
-/* Room above the first game's legend, whose logo rises above the fieldset border (REQ-0026). */
-.game-roles-form {
-  margin-top: var(--space-3);
+/* A choice (the You page's game roles, the seat choice): each option is a ruled row, as a member of the Member list. */
+.group-form .structure:has(> .choice-option) {
+  gap: 0;
+}
+
+.group-form .structure > .choice-option {
+  border-bottom: 1px solid var(--color-rule);
+}
+
+/* The You page's rows carry the 2px text-colour rule (REQ-0029, You page). The seat choice keeps the light rule. */
+.game-roles-form .structure > .choice-option {
+  border-bottom: var(--width-edge) solid var(--color-text);
 }
 
 /* A game's legend on the You page: its logo or monogram before the name (REQ-0026). */
@@ -1264,14 +1092,6 @@ a:where(:not([data-slot="button"])) {
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2);
-}
-
-/* A game cover's preview: the Next up look in a fixed wide box, so a loading image moves nothing. */
-.cover-preview {
-  width: min(100%, var(--width-cover-preview));
-  aspect-ratio: var(--ratio-cover-preview);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-control);
 }
 
 .structure-list {
@@ -1347,20 +1167,20 @@ a:where(:not([data-slot="button"])) {
   }
 }
 
-/* A mode in the game view: the whole row is the way in. No hover change, only a press. */
+/* A mode in the game view: a ruled row, and the whole row is the way in. No hover change, only a press. */
 .mode-row {
   display: flex;
   align-items: center;
   gap: var(--space-3);
   width: 100%;
   min-height: var(--size-tap);
-  padding: var(--space-2) var(--space-3);
+  padding: var(--space-2) 0;
   font: inherit;
   text-align: start;
   color: var(--color-text);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-control);
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--color-rule);
   cursor: pointer;
   transition: transform var(--duration-fast) var(--ease-out);
 }
@@ -1377,7 +1197,7 @@ a:where(:not([data-slot="button"])) {
 }
 
 .mode-row__name {
-  font-weight: 600;
+  font-weight: var(--font-weight-strong);
   overflow-wrap: anywhere;
 }
 
@@ -1391,19 +1211,56 @@ a:where(:not([data-slot="button"])) {
   flex: 1 1 100%;
 }
 
+/* A game of the Game list: a ruled row as a member of the Member list, the name in the heading face, the edit and
+   remove buttons at the right. A game being changed holds its form in place of the row. */
+/* The 2px text-colour row rule of the You page and the Group cards (REQ-0029, Game list). */
+.row-list > .game-row {
+  padding-inline: 0;
+  border-bottom: var(--width-edge) solid var(--color-text);
+}
+
+.row-list > .game-row.list-row--editing {
+  padding-block: var(--space-4);
+}
+
+.game-row__name {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-lobby-name);
+  font-weight: var(--font-weight-heavy);
+  line-height: var(--line-height-solid);
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+/* The name over its facts, so the buttons keep the row's line on a phone. */
+.game-row__text {
+  display: grid;
+  flex: 1 1 0;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.game-row__facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-2);
+  color: var(--color-muted);
+  font-size: var(--font-size-small);
+  font-variant-numeric: tabular-nums;
+}
+
 .invite-link + .invite-link {
   margin-top: var(--space-3);
   padding-top: var(--space-3);
-  border-top: 1px solid var(--color-border);
+  border-top: 1px solid var(--color-rule);
 }
 
 .invite-link__uses {
   margin: 0;
   font-family: var(--font-heading);
   font-size: var(--font-size-figure);
-  font-weight: 700;
+  font-weight: 800;
   line-height: 1;
-  letter-spacing: var(--tracking-tight);
   color: var(--color-text);
   font-variant-numeric: tabular-nums;
 }
@@ -1457,13 +1314,6 @@ a:where(:not([data-slot="button"])) {
   margin: 0;
 }
 
-/* Confirmations fade in beside the list and fade out on their own. The live region keeps the text. */
-.status-flash {
-  display: inline-block;
-  pointer-events: none;
-  animation: status-flash var(--duration-flash) var(--ease-out) both;
-}
-
 /* Text for screen readers only, e.g. the unit after a count. */
 .visually-hidden {
   position: absolute;
@@ -1472,6 +1322,21 @@ a:where(:not([data-slot="button"])) {
   overflow: hidden;
   clip: rect(0 0 0 0);
   white-space: nowrap;
+}
+
+/* The skip link shows only while focused, over the bar, on the ground so the default ink focus ring holds. */
+.skip-link:focus {
+  top: var(--space-2);
+  left: var(--space-2);
+  z-index: var(--z-skip-link);
+  width: auto;
+  height: auto;
+  padding: var(--space-2) var(--space-3);
+  overflow: visible;
+  clip: auto;
+  color: var(--color-text);
+  background: var(--color-ground);
+  border-radius: var(--radius);
 }
 
 .form-hint {
@@ -1491,15 +1356,15 @@ a:where(:not([data-slot="button"])) {
   margin-bottom: var(--space-3);
 }
 
-/* A pill track; the thumb slides by transform to the selected option, so nothing reflows. */
+/* A track; the thumb slides by transform to the selected option, so nothing reflows. */
 .view-toggle {
   position: relative;
   display: inline-grid;
   grid-auto-flow: column;
   grid-auto-columns: var(--size-tap);
   padding: var(--space-1);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-chip);
+  border: 1px solid var(--color-control-line);
+  border-radius: var(--radius);
   background: var(--color-surface);
 }
 
@@ -1508,8 +1373,8 @@ a:where(:not([data-slot="button"])) {
   inset-block: var(--space-1);
   inset-inline-start: var(--space-1);
   width: var(--size-tap);
-  border-radius: var(--radius-chip);
-  background: var(--color-accent);
+  border-radius: var(--radius-sm);
+  background: var(--color-text);
   transition: transform var(--duration-base) var(--ease-out);
 }
 
@@ -1527,15 +1392,14 @@ a:where(:not([data-slot="button"])) {
   height: var(--size-tap);
   padding: 0;
   border: 0;
-  border-radius: var(--radius-chip);
   background: none;
   color: var(--color-muted);
   cursor: pointer;
 }
 
-/* Dark icon on the accent thumb for contrast; the thumb position says the same without colour. */
+/* A dark icon on the light thumb for contrast; the thumb position says the same without colour. */
 .view-toggle__option[aria-pressed="true"] {
-  color: var(--color-bg);
+  color: var(--color-ground);
 }
 
 .view-toggle__icon {
@@ -1543,25 +1407,107 @@ a:where(:not([data-slot="button"])) {
   height: 1.4rem;
 }
 
-/* A lobby row is a small card. The accent stripe is for week grid blocks only (REQ-0028 item 2). */
-.lobby-row {
-  min-height: var(--size-lobby-row);
-  padding: var(--space-3);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-panel);
+/* The Line-up (REQ-0029 item 5): day headings and rows on the ground, divided by rules, with no radius. Every row of
+   every day shares the parent's three columns (subgrid), so the start times and the spots line up down the page. */
+.line-up {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr) max-content;
+  column-gap: var(--space-3);
 }
 
-.lobby-row + .lobby-row {
-  margin-top: var(--space-2);
+.line-up__day {
+  grid-column: 1 / -1;
+  margin: var(--space-4) 0 0;
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--color-rule);
+  font-family: var(--font-heading);
+  font-size: var(--font-size-heading);
+  font-weight: var(--font-weight-heavy);
+  line-height: var(--line-height-solid);
+  text-transform: uppercase;
+}
+
+.line-up__day:first-child {
+  margin-top: 0;
+}
+
+/* subgrid: Chrome 117, Safari 16, Firefox 71; the app's baseline is already newer, as it needs :has(). */
+.line-up__lobbies {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: subgrid;
+}
+
+.lobby-row {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: subgrid;
+  position: relative;
+  isolation: isolate;
+  align-items: center;
+  min-height: var(--size-tap);
+  padding: var(--space-3) var(--space-2);
+  border-bottom: 1px solid var(--color-rule);
+}
+
+.lobby-row__time,
+.lobby-row__spots {
+  display: grid;
+  margin: 0;
+}
+
+.lobby-row__start {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-line-up-time);
+  font-weight: var(--font-weight-black);
+  line-height: var(--line-height-figure);
+  font-variant-numeric: tabular-nums;
+  text-transform: uppercase;
+}
+
+.lobby-row__end,
+.lobby-row__word {
+  color: var(--color-muted);
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-strong);
+}
+
+/* The start time alone sets the column's width; an end on another day wraps under it instead of widening it. */
+.lobby-row__end {
+  margin-top: var(--space-1);
+  contain: inline-size;
+}
+
+.lobby-row__main {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-2);
+  min-width: 0;
 }
 
 .lobby-row__game {
+  font-family: var(--font-heading);
   font-size: var(--font-size-lobby-name);
-  font-weight: 600;
+  font-weight: var(--font-weight-heavy);
+  line-height: var(--line-height-tight);
+  text-transform: uppercase;
+  text-decoration: none;
 }
 
-/* The link covers the whole row (position: relative via .genre-frame), so the tap target is the row.
+.lobby-row__spots {
+  justify-items: end;
+  text-align: end;
+}
+
+.lobby-row__figure {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-heading);
+  font-weight: var(--font-weight-heavy);
+  line-height: var(--line-height-solid);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The link covers the whole row, so the tap target is the row.
    The row shows the focus ring, since the link's own box is only one line. */
 .lobby-row__game::after {
   content: "";
@@ -1574,7 +1520,7 @@ a:where(:not([data-slot="button"])) {
 }
 
 .lobby-row:has(.lobby-row__game:focus-visible) {
-  outline: 3px solid var(--color-focus);
+  outline: var(--width-edge) solid var(--color-text);
   outline-offset: 2px;
 }
 
@@ -1586,6 +1532,163 @@ a:where(:not([data-slot="button"])) {
 .lobby-row__game,
 .lobby-row__meta {
   overflow-wrap: anywhere;
+}
+
+/* The group colour square (ADR 0028 section 5): decorative, always beside the group's name. */
+.group-swatch {
+  flex: none;
+  width: var(--size-group-swatch);
+  height: var(--size-group-swatch);
+  border-radius: var(--radius-sm);
+  background: var(--group-color, var(--color-raised));
+}
+
+.group-swatch--large {
+  width: var(--size-group-swatch-large);
+  height: var(--size-group-swatch-large);
+}
+
+/* The Group view (REQ-0029 item 5): the header across the page, then the lobbies, then the members. From 98rem the
+   members sit in the side column beside the lobbies (see the side layout), and the header spans both. */
+/* minmax(0, 1fr): the column never grows to its content's min-content width, so a phone does not scroll sideways. */
+.group-view {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+}
+
+.group-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: end;
+  gap: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-3);
+  padding-bottom: var(--space-4);
+  border-bottom: var(--width-edge) solid var(--color-text);
+}
+
+.group-head h1 {
+  margin: 0;
+  font-size: var(--font-size-display);
+  line-height: var(--line-height-title);
+  overflow-wrap: anywhere;
+}
+
+.group-head__summary {
+  margin: var(--space-2) 0 0;
+  color: var(--color-muted);
+  font-weight: var(--font-weight-strong);
+}
+
+/* Phones: the actions share a row under the name, each half of it. */
+.group-head__actions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.group-head__actions > [data-slot="button"] {
+  flex: 1;
+}
+
+@media (min-width: 47.5rem) {
+  .line-up {
+    column-gap: var(--space-4);
+  }
+
+  .lobby-row__game {
+    font-size: var(--font-size-heading);
+  }
+
+  .group-head {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .group-head__actions {
+    grid-column: auto;
+  }
+
+  .group-head__actions > [data-slot="button"] {
+    flex: none;
+  }
+}
+
+@media (min-width: 98rem) {
+  .group-view > .group-head {
+    grid-column: 1 / -1;
+  }
+
+  .group-view > .side-column {
+    grid-row: 2;
+    padding-inline-start: var(--space-4);
+  }
+}
+
+/* A heading with its view toggle at the right, on one row at every width. */
+.group-view .heading-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-3);
+}
+
+.group-view .heading-row > h2,
+.group-view .heading-row > .view-switch {
+  margin: 0;
+}
+
+/* The Member list, then Leave group last (REQ-0028 item 7). */
+.group-view > .side-column {
+  display: grid;
+  align-content: start;
+  gap: var(--space-4);
+}
+
+.group-view > .side-column > [data-slot="button"] {
+  justify-self: start;
+}
+
+/* A member of the Member list: the name, the admin marker, and the Game chips at the right, wrapping under the name
+   when the row is narrow. A player of the lobby page's player list has the same row. */
+.member-row,
+.player-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--size-tap);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--color-rule);
+}
+
+.member-row__name,
+.player-row__name {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-lobby-name);
+  font-weight: var(--font-weight-heavy);
+  line-height: var(--line-height-solid);
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+/* The chips fill the rest of their line, at its right end, and the Make group admin button follows them; a row
+   without chips pushes the button to the right. When the chips wrap, the button stays at the right with them. */
+.member-row > .game-chips {
+  flex: 1 1 auto;
+  justify-content: flex-end;
+}
+
+.member-row > :is(.tooltip, [data-slot="button"]) {
+  margin-left: auto;
+}
+
+/* A compact Avatar, so the row stays one tap tall. */
+.member-row > .initials-icon {
+  width: var(--size-avatar-compact);
+  height: var(--size-avatar-compact);
 }
 
 /* The Group list (REQ-0024, REQ-0025): one column on phones, two from 760px, three on wide main areas. */
@@ -1621,39 +1724,41 @@ a:where(:not([data-slot="button"])) {
   );
 }
 
-/* A Group card is one link. The global focus ring draws around the whole card. */
+/* A Group card is one link (REQ-0029 item 7): the group colour square beside the name and count, the initials, and
+   the lobby line at the foot. A 2px bottom rule in the text colour; no shadow. The global focus ring draws around it. */
 .group-card {
   position: relative;
   isolation: isolate;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-rows: auto auto 1fr;
+  align-items: center;
   gap: var(--space-3);
   min-height: var(--size-tap);
   padding: var(--space-4);
   color: var(--color-text);
   text-decoration: none;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-panel);
+  border-bottom: var(--width-edge) solid var(--color-text);
+  border-radius: var(--radius);
   background: var(--color-surface);
-  box-shadow: inset 0 1px 0 var(--color-card-edge);
 }
 
-/* Hover: an accent edge and a faint tint fade in on a layer, so only opacity moves. */
+/* Hover: the raised fill shows at once on a layer (ADR 0028: colour changes are instant). */
 .group-card::after {
   content: "";
   position: absolute;
-  inset: -1px;
+  inset: 0;
   z-index: -1;
-  border: 1px solid var(--color-accent-line);
   border-radius: inherit;
-  background: var(--color-row-hover);
+  background: var(--color-raised);
   opacity: 0;
   pointer-events: none;
-  transition: opacity var(--duration-base) var(--ease-out);
 }
 
-.group-card:hover::after {
-  opacity: 1;
+@media (hover: hover) and (pointer: fine) {
+  .group-card:hover::after {
+    opacity: 1;
+  }
 }
 
 .group-card__head {
@@ -1664,8 +1769,7 @@ a:where(:not([data-slot="button"])) {
 .group-card__name {
   font-family: var(--font-heading);
   font-size: var(--font-size-heading);
-  font-weight: 600;
-  letter-spacing: var(--tracking-snug);
+  font-weight: 800;
   overflow-wrap: anywhere;
 }
 
@@ -1674,17 +1778,15 @@ a:where(:not([data-slot="button"])) {
   font-size: var(--font-size-small);
 }
 
-/* Overlapping initials. Each sits on a solid plate with a ring in the card's colour, so the overlap stays crisp. */
+/* Overlapping initials. Each has a ring in the card's colour, so the overlap stays crisp. */
 .group-card__people {
+  grid-column: 1 / -1;
   display: flex;
   align-items: center;
 }
 
 .group-card__people > .initials-icon {
-  background:
-    linear-gradient(var(--color-surface), var(--color-surface)),
-    var(--color-bg-raised);
-  box-shadow: 0 0 0 2px var(--color-bg-raised);
+  outline: var(--width-edge) solid var(--color-surface);
 }
 
 .group-card__people > .initials-icon + .initials-icon {
@@ -1696,30 +1798,21 @@ a:where(:not([data-slot="button"])) {
   color: var(--color-muted);
   font-family: var(--font-heading);
   font-size: var(--font-size-small);
-  font-weight: 600;
+  font-weight: 800;
 }
 
-/* The lobby line sits at the bottom of the card, with its genre's wash and icon (ADR 0016). */
+/* The lobby line sits at the foot of the card, below a rule, so the lines of one row of cards line up. */
 .group-card__lobby {
+  grid-column: 1 / -1;
+  align-self: end;
   display: grid;
   gap: var(--space-1);
-  margin-top: auto;
-  padding: var(--space-2) var(--space-3);
-  padding-right: calc(var(--size-genre-icon) + var(--space-3));
-  border-radius: var(--radius-control);
-  background: var(--color-surface);
-  @supports (color: color-mix(in lab, red, red)) {
-    background: color-mix(
-      in srgb,
-      var(--genre-accent) var(--genre-wash),
-      transparent
-    );
-  }
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-rule);
 }
 
 .group-card__lobby--none {
   color: var(--color-muted);
-  background: none;
 }
 
 .group-card__label {
@@ -1751,265 +1844,6 @@ a:where(:not([data-slot="button"])) {
   text-align: center;
 }
 
-.calendar__bar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
-}
-
-.calendar__bar h3 {
-  margin: 0;
-  font-family: var(--font-heading);
-  font-size: 1rem;
-}
-
-/* The week time grid, shared by the group calendar and the dashboard. Each block's top and height come from its
-   start and span in minutes (--start, --span), and its share of the width from --column of --columns. */
-.time-grid {
-  display: flex;
-  height: var(--size-grid-height);
-  overflow-y: auto;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-control);
-  background: var(--color-surface);
-}
-
-.time-grid__hours {
-  flex: none;
-  width: var(--size-grid-gutter);
-  margin: var(--size-grid-title) 0 0;
-  padding: 0;
-  list-style: none;
-  color: var(--color-muted);
-  font-size: 0.75rem;
-  text-align: right;
-}
-
-.time-grid__hours li {
-  height: var(--size-hour);
-  padding-right: var(--space-1);
-}
-
-.time-grid__days {
-  display: grid;
-  flex: 1;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.time-grid__day {
-  min-width: 0;
-  border-left: 1px solid var(--color-border);
-}
-
-.time-grid__title {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  display: grid;
-  place-content: center;
-  height: var(--size-grid-title);
-  background: var(--color-bg-raised);
-  border-bottom: 1px solid var(--color-border);
-  color: var(--color-muted);
-  font-size: 0.75rem;
-  text-align: center;
-  font-family: inherit;
-  font-weight: 400;
-  margin: 0;
-}
-
-.time-grid__title b {
-  color: var(--color-text);
-}
-
-.time-grid__title[aria-current="date"] b {
-  text-decoration: underline;
-  text-underline-offset: 0.2em;
-}
-
-.time-grid__track {
-  position: relative;
-  height: calc(var(--size-hour) * 24);
-  background: repeating-linear-gradient(
-    to bottom,
-    var(--color-border) 0 1px,
-    transparent 1px var(--size-hour)
-  );
-}
-
-/* The part of the day that can start a lobby: from --from minutes to midnight. Only this part has a hover and a
-   pointer. The blocks sit above it and take the clicks that land on them. */
-.time-grid__create {
-  position: absolute;
-  inset: calc(var(--size-hour) * var(--from, 0) / 60) 0 0;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  cursor: pointer;
-}
-
-/* The wash fades by opacity on a layer, so the button's own focus ring is never faded with it. */
-.time-grid__create::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: var(--color-row-hover);
-  opacity: 0;
-  transition: opacity var(--duration-fast) var(--ease-out);
-}
-
-.time-grid__create:hover::before {
-  opacity: 1;
-}
-
-.time-grid__blocks {
-  position: absolute;
-  inset: 0;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  pointer-events: none;
-}
-
-/* The Now line at --now minutes. It sits above the blocks but lets the pointer through to them. */
-.time-grid__now {
-  position: absolute;
-  top: calc(var(--size-hour) * var(--now, 0) / 60);
-  inset-inline: 0;
-  height: 2px;
-  margin-top: -1px;
-  background: var(--color-accent);
-  pointer-events: none;
-}
-
-.time-grid__now::before {
-  content: "";
-  position: absolute;
-  top: -3px;
-  left: -4px;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--color-accent);
-}
-
-.time-block {
-  position: absolute;
-  top: calc(var(--size-hour) * var(--start, 0) / 60);
-  height: max(calc(var(--size-hour) * var(--span, 60) / 60), var(--size-tap));
-  left: calc(100% * var(--column, 0) / var(--columns, 1));
-  width: calc(100% / var(--columns, 1));
-  padding: 1px;
-  pointer-events: auto;
-}
-
-/* Lines that do not fit wrap into a second column, which the gap pushes outside the block, so a short block
-   leaves out whole lines from the end (TimeBlock orders them by priority) instead of squeezing every line. */
-.time-block__body {
-  display: flex;
-  flex-flow: column wrap;
-  column-gap: 100%;
-  height: 100%;
-  padding: var(--space-1);
-  overflow: hidden;
-  padding-right: calc(var(--size-genre-icon) - var(--space-1));
-  /* Every color-mix() sits in @supports, so Tailwind writes no full-accent fallback for older browsers (ADR 0023,
-     amendment b). */
-  @supports (color: color-mix(in lab, red, red)) {
-    background: color-mix(
-      in srgb,
-      var(--genre-accent) var(--genre-tint),
-      transparent
-    );
-    border: 1px solid color-mix(in srgb, var(--genre-accent) 45%, transparent);
-  }
-  border-radius: var(--radius-control);
-  font-size: 0.75rem;
-  line-height: var(--line-time-block);
-}
-
-/* The accent stripe: only week grid blocks draw it, and only for a game with a genre (REQ-0028 item 2). */
-.time-block:not([data-genre="neutral"]) > .time-block__body {
-  border-left: 3px solid var(--genre-accent);
-}
-
-.time-block[data-continues-before] .time-block__body {
-  border-top-style: dashed;
-  border-top-left-radius: 0;
-  border-top-right-radius: 0;
-}
-
-.time-block[data-continues-after] .time-block__body {
-  border-bottom-style: dashed;
-  border-bottom-left-radius: 0;
-  border-bottom-right-radius: 0;
-}
-
-.time-block__body > * {
-  flex: none;
-  width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.time-block__body:focus-within {
-  outline: 3px solid var(--color-focus);
-}
-
-/* The label is never taller than the block body and is cut at a whole line, so no part of a line shows at any
-   block height: max-height rounds the body height (100%) down to whole lines (1lh), and overflow clips the
-   lines below that cap (without it they would spill out and the body would clip them mid-line). round() and lh
-   need Chrome 125, Firefox 120 or Safari 16.4; an older browser drops that line and keeps the first, one whole
-   line (the line height in em, which needs neither), which always fits the smallest block. The clip does not
-   reach the link's ::after (positioned against .time-block) or the focus ring (drawn by the body). Limit: a
-   game name cut this way has no ellipsis. */
-.time-block__game {
-  display: flex;
-  max-height: calc(var(--line-time-block) * 1em);
-  max-height: round(down, 100%, 1lh);
-  overflow: hidden;
-  font-weight: 600;
-}
-
-/* The game name wraps, so it shows in full where the block holds it, and is cut at a whole line only where it
-   does not (see .time-block__game; REQ-0004, REQ-0015). The mode and activity are shortened with an ellipsis. */
-.time-block__game > :first-child {
-  flex: none;
-  max-width: 100%;
-  overflow-wrap: anywhere;
-  white-space: normal;
-}
-
-.time-block__detail {
-  margin-inline-start: 0.25em;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* The link covers the whole .time-block (its containing block, at least --size-tap tall), not the smaller
-   body inside its padding, so the click target is never under 44px. The body's overflow does not clip it. */
-.time-block__game::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-}
-
-.time-block__game:focus-visible {
-  outline: none;
-}
-
-.time-block__marker {
-  color: var(--color-muted);
-  font-style: italic;
-}
-
 /* Landing page. Start states live in the keyframes, so with animations off the final layout shows at once. */
 .landing-topbar {
   display: flex;
@@ -2033,32 +1867,33 @@ a:where(:not([data-slot="button"])) {
   padding-top: var(--space-6);
 }
 
+/* From a wide window the text and the cards sit side by side, so the cards are in the first view. */
+@media (min-width: 60rem) {
+  .hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+    align-items: center;
+    gap: var(--space-6);
+  }
+
+  .hero .hero-stage {
+    margin-top: 0;
+  }
+}
+
 .hero__title {
   margin: 0 0 var(--space-3);
-  font-family: var(--font-heading);
   font-size: var(--font-size-hero);
-  font-weight: 700;
+  font-weight: 800;
   line-height: var(--line-hero);
-  letter-spacing: var(--tracking-tight);
-}
-
-/* Descender room: the mask clips the line, so it needs space below the glyphs. */
-.hero__line {
-  display: block;
-  overflow: hidden;
-  padding-bottom: 0.12em;
-  margin-bottom: -0.12em;
-}
-
-.hero__line-inner {
-  display: block;
-  animation: rise var(--duration-rise) var(--ease-out) both;
+  text-wrap: balance;
 }
 
 .hero__lead {
   max-width: 32rem;
   margin: 0 0 var(--space-4);
-  font-size: 1.125rem;
+  /* The one step above body text, the same 1.125rem the lead had before the redesign. */
+  font-size: var(--font-size-lobby-name);
   color: var(--color-muted);
   animation: fade-up var(--duration-slow) var(--ease-out)
     calc(var(--stagger-fade) * 2) both;
@@ -2077,9 +1912,10 @@ a:where(:not([data-slot="button"])) {
 .hero-stage {
   position: relative;
   height: var(--stage-height);
-  /* The static cards' width fit. Without container units: the .landing content box. */
+  /* The static cards' width fit. Without container units: the .landing content box, a little too wide beside the
+     text, which only browsers older than container units see. */
   --stage-width: calc(min(100vw, var(--width-landing)) - 2 * var(--space-4));
-  margin-top: var(--space-4);
+  margin-top: var(--space-6);
   pointer-events: none;
   animation: fade-up var(--duration-slow) var(--ease-out)
     calc(var(--stagger-fade) * 4) both;
@@ -2123,23 +1959,57 @@ a:where(:not([data-slot="button"])) {
   }
 }
 
+/* How it works: four steps along one rule, as the hours of a running order. */
 .steps {
   display: grid;
-  max-width: 40rem;
-  margin-inline: auto;
-  gap: var(--space-3);
+  gap: var(--space-4);
+}
+
+@media (min-width: 47.5rem) {
+  .steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 60rem) {
+  .steps {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 .steps > :nth-child(2) {
   --reveal-delay: var(--stagger-step);
 }
 
+.steps > :nth-child(3) {
+  --reveal-delay: calc(var(--stagger-step) * 2);
+}
+
+.steps > :nth-child(4) {
+  --reveal-delay: calc(var(--stagger-step) * 3);
+}
+
+.step-card {
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-rule);
+}
+
 .step-card__title {
   margin: 0 0 var(--space-2);
   font-family: var(--font-heading);
-  font-size: 1.25rem;
-  font-weight: 600;
-  letter-spacing: var(--tracking-snug);
+  font-size: var(--font-size-heading);
+  font-weight: 800;
+  line-height: var(--line-height-tight);
+  text-transform: uppercase;
+}
+
+.step-card__number {
+  display: block;
+  margin-bottom: var(--space-2);
+  font-size: var(--font-size-figure);
+  font-weight: 900;
+  line-height: var(--line-height-solid);
+  font-variant-numeric: tabular-nums;
 }
 
 .step-card__text {
@@ -2152,51 +2022,20 @@ a:where(:not([data-slot="button"])) {
 .meter {
   margin-top: var(--space-3);
   height: 0.25rem;
-  border-radius: var(--radius-chip);
-  background: var(--color-border);
+  background: var(--color-raised);
   overflow: hidden;
 }
 
 .meter > span {
   display: block;
   height: 100%;
-  background: var(--genre-accent);
+  background: var(--color-text);
   transform: scaleX(var(--meter-value, 0));
   transform-origin: left;
-  transition: transform var(--duration-meter) var(--ease-out);
-}
-
-/* An invite link has no genre, so its uses meter is neutral (REQ-0028 item 1). */
-.invite-link .meter > span {
-  background: var(--color-muted);
 }
 
 [data-reveal="pending"] .meter > span {
   transform: scaleX(0);
-}
-
-@keyframes rise {
-  from {
-    transform: translateY(var(--rise-offset));
-  }
-}
-
-@keyframes status-flash {
-  0% {
-    opacity: 0;
-    transform: translateY(var(--flash-offset));
-  }
-
-  12%,
-  80% {
-    opacity: 1;
-    transform: none;
-  }
-
-  100% {
-    opacity: 0;
-    transform: none;
-  }
 }
 
 @keyframes fade-up {
@@ -2206,7 +2045,8 @@ a:where(:not([data-slot="button"])) {
   }
 }
 
-/* App shell. Phones first; the Group rail replaces the Tab bar from 760px (47.5rem). */
+/* App shell. Phones first: the Top bar's nav is the Tab bar at the bottom; from 760px (47.5rem) it is the row
+   of text tabs in the Top bar (ADR 0028 section 3). */
 .shell {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -2217,19 +2057,43 @@ a:where(:not([data-slot="button"])) {
   min-height: 100dvh;
 }
 
+/* Phones: not sticky and no z-index, so the bar makes no stacking context and its nav, the fixed Tab bar, keeps
+   its own layer above the scrim. The bar scrolls away with the page (ADR 0028 section 16.12 item 2). */
 .top-bar {
   grid-area: top;
-  position: sticky;
-  top: 0;
-  z-index: 10;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
   min-height: var(--size-top-bar-total);
   padding: env(safe-area-inset-top) var(--space-3) 0;
-  background: var(--color-bg);
-  border-bottom: 1px solid var(--color-border);
+  background: var(--color-signal);
+  color: var(--color-on-signal);
+}
+
+/* The Top bar is signal at every width (ADR 0028 section 16.4 item 1), so what sits on it takes the on-signal
+   colour. Its focus ring too: the text colour would be under 3:1 on signal. */
+.top-bar .brand,
+.top-bar__user {
+  color: var(--color-on-signal);
+}
+
+.top-bar :focus-visible {
+  outline-color: var(--color-on-signal);
+}
+
+/* The Wordmark: uppercase by CSS, not by the text (ADR 0028 section 2). */
+.top-bar .brand,
+.landing-topbar .brand {
+  font-size: var(--font-size-heading);
+  font-weight: 900;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
+/* My avatar on the Top bar: a ground square with text-colour initials (ADR 0028 section 16.8). */
+.top-bar__user > .initials-icon {
+  background: var(--color-ground);
 }
 
 .top-bar__user {
@@ -2237,12 +2101,13 @@ a:where(:not([data-slot="button"])) {
   align-items: center;
   gap: var(--space-2);
   min-height: var(--size-tap);
-  color: var(--color-text);
   font-size: var(--font-size-small);
   text-decoration: none;
 }
 
+/* Phones show only the avatar; the accessible name of the link still holds the display name. */
 .top-bar__name {
+  display: none;
   max-width: 9rem;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2268,7 +2133,8 @@ a:where(:not([data-slot="button"])) {
   );
 }
 
-.shell__main:focus {
+/* The skip link focuses main only to move the reading point; the page itself shows no ring. */
+main:focus {
   outline: none;
 }
 
@@ -2278,30 +2144,23 @@ a:where(:not([data-slot="button"])) {
   place-items: center;
   width: var(--size-avatar);
   height: var(--size-avatar);
-  border: 1px solid var(--color-border);
-  border-radius: 50%;
-  background: var(--color-surface);
+  border-radius: var(--radius-sm);
+  background: var(--color-raised);
   color: var(--color-text);
   font-family: var(--font-heading);
   font-size: var(--font-size-small);
-  font-weight: 600;
+  font-weight: 800;
 }
 
-/* GameLogo (ADR 0023 point 2): colour, radius and box are utilities in ui/GameLogo.tsx; the monogram's type is here. */
+/* GameLogo (ADR 0023 point 2): colour and box are utilities in ui/GameLogo.tsx; the monogram's type is here. */
 [data-slot="game-logo"] {
   font-family: var(--font-heading);
   font-size: var(--font-size-small);
-  font-weight: 600;
+  font-weight: 800;
 }
 
 [data-slot="game-logo"][data-size="large"] {
   font-size: var(--font-size-heading);
-}
-
-/* Only the monogram has a border: without its border utility, a solid style would draw the browser's medium width.
-   The border utility's style is a registered variable; some browsers lack it (ADR 0023 B2 amendment d). */
-[data-slot="game-logo"][data-shows="monogram"] {
-  border-style: solid;
 }
 
 /* A game name with its logo before it. The name stays the text that identifies the game. */
@@ -2312,47 +2171,13 @@ a:where(:not([data-slot="button"])) {
   min-width: 0;
 }
 
-/* A group icon is round; the open group, and the one under the pointer, becomes a rounded square, so the mark is not colour alone. */
-.group-icon {
-  display: grid;
-  place-items: center;
-  width: var(--size-group-icon);
-  height: var(--size-group-icon);
-  border: 1px solid var(--color-border);
-  border-radius: 50%;
-  background: var(--color-surface);
-  color: var(--color-text);
-  text-decoration: none;
-}
-
-.group-icon:hover,
-.group-icon[aria-current="page"] {
-  border-radius: var(--radius-panel);
-  border-color: var(--color-accent);
-}
-
-.group-icon[aria-current="page"] {
-  background: var(--color-accent-tint);
-}
-
-.group-icon > .initials-icon {
-  width: 100%;
-  height: 100%;
-  border: 0;
-  border-radius: inherit;
-  background: none;
-  font-size: 1rem;
-}
-
 .nav-icon {
   width: 1.4rem;
   height: 1.4rem;
 }
 
-.group-rail {
-  display: none;
-}
-
+/* Edge to edge, so only its items take --radius: a rounded bar on the window's own edges would show the page
+   through its corners. The approved mockup (option 1, ADR 0028 section 16) draws it the same way. */
 .tab-bar {
   position: fixed;
   z-index: 60;
@@ -2364,8 +2189,8 @@ a:where(:not([data-slot="button"])) {
   align-items: center;
   padding: var(--space-2) var(--space-2)
     calc(var(--space-2) + env(safe-area-inset-bottom));
-  background: var(--color-chrome);
-  border-top: 1px solid var(--color-border);
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-rule-strong);
 }
 
 .tab {
@@ -2374,17 +2199,37 @@ a:where(:not([data-slot="button"])) {
   align-content: center;
   gap: 2px;
   min-height: var(--size-tap);
+  border-radius: var(--radius);
   color: var(--color-muted);
   font-size: 0.75rem;
   font-weight: 500;
   text-decoration: none;
 }
 
-.tab[aria-current="page"] {
-  color: var(--color-accent);
+/* The label also holds an invisible bold copy with no height, so the bold active tab does not change its width
+   and the tabs never shift (ADR 0028 section 16.12 item 7). The copy has empty alt text for screen readers. */
+.tab__label {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-/* The "+": two bars from one centre, turned into a cross while the form is open. Only the icon rotates. */
+.tab__label::after {
+  content: attr(data-label) / "";
+  height: 0;
+  overflow: hidden;
+  font-weight: var(--font-weight-tab-active);
+  visibility: hidden;
+}
+
+/* The active tab: a signal fill with on-signal text (ADR 0028 section 16.4 item 5). */
+.tab[aria-current="page"] {
+  background: var(--color-signal);
+  color: var(--color-on-signal);
+}
+
+/* The "+" is a primary action (ADR 0028 section 16.4 item 2): two bars from one centre, turned into a cross while
+   the form is open. */
 .plus-button {
   position: relative;
   display: inline-grid;
@@ -2392,24 +2237,27 @@ a:where(:not([data-slot="button"])) {
   width: var(--size-plus);
   height: var(--size-plus);
   padding: 0;
-  border: 1px solid var(--color-accent-line);
-  border-radius: 50%;
-  background: var(--color-accent-tint);
-  color: var(--color-accent);
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--color-signal);
+  color: var(--color-on-signal);
   cursor: pointer;
 }
 
 .plus-button__icon {
   width: 1.5rem;
   height: 1.5rem;
-  transition: transform var(--duration-icon) var(--ease-spring);
 }
 
 .plus-button[aria-expanded="true"] .plus-button__icon {
   transform: rotate(135deg);
 }
 
-/* Phones: the "+" floats above the Tab bar at the bottom right. */
+/* Phones: the "+" floats above the Tab bar at the bottom right. The header "+" of the Group list is for wide screens. */
+.plus-button--header {
+  display: none;
+}
+
 .plus-button--fab {
   position: fixed;
   z-index: 55;
@@ -2419,9 +2267,6 @@ a:where(:not([data-slot="button"])) {
   );
   width: var(--size-plus-tab);
   height: var(--size-plus-tab);
-  border-color: var(--color-accent);
-  background: var(--color-accent);
-  color: var(--color-on-accent);
 }
 
 /* --origin-x and --origin-y are set inline to the centre of the pressed "+" (like --meter-value, so they have a fallback). The Create group form grows out of the pressed "+". The frame stays put; only the card scales, so the
@@ -2463,14 +2308,9 @@ a:where(:not([data-slot="button"])) {
 
 .create-popover__card {
   padding: var(--space-4);
-  background: linear-gradient(
-    180deg,
-    var(--color-popover-top),
-    var(--color-bg-raised)
-  );
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-popover);
-  box-shadow: var(--shadow-popover);
+  background: var(--color-surface);
+  border: 1px solid var(--color-rule-strong);
+  border-radius: var(--radius);
   opacity: 0;
   transform: scale(var(--scale-closed));
   transform-origin: var(--origin-x, 0) var(--origin-y, 0);
@@ -2502,8 +2342,11 @@ a:where(:not([data-slot="button"])) {
   overflow-y: auto;
 }
 
+/* The Create frame's heading carries the rule of a page header (REQ-0029). */
 .create-popover h2 {
   margin-top: 0;
+  padding-bottom: var(--space-3);
+  border-bottom: var(--width-edge) solid var(--color-text);
 }
 
 .profile {
@@ -2515,7 +2358,7 @@ a:where(:not([data-slot="button"])) {
 .profile .initials-icon {
   width: var(--size-avatar-large);
   height: var(--size-avatar-large);
-  font-size: 1.25rem;
+  font-size: var(--font-size-heading);
 }
 
 .profile p {
@@ -2531,14 +2374,19 @@ a:where(:not([data-slot="button"])) {
 
 .profile__name {
   font-family: var(--font-heading);
-  font-size: 1.25rem;
-  font-weight: 600;
+  font-size: var(--font-size-heading);
+  font-weight: var(--font-weight-heavy);
+  line-height: var(--line-height-solid);
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
 }
 
-/* A settings row that opens another page: the whole row is the link, so it drops the underline. The negative
-   inline margin lines the icon up with the section heading while the focus ring keeps its padding. */
+/* A settings row that opens another page: a You page row with its 2px rule, and the whole row is the link, so it
+   drops the underline. */
 .nav-row {
-  margin-inline: calc(-1 * var(--space-2));
+  padding-inline: 0;
+  border-bottom: var(--width-edge) solid var(--color-text);
+  font-weight: var(--font-weight-strong);
   text-decoration: none;
 }
 
@@ -2551,135 +2399,650 @@ a:where(:not([data-slot="button"])) {
 .empty-state__title {
   margin: 0 0 var(--space-1);
   font-family: var(--font-heading);
-  font-weight: 600;
+  font-weight: var(--font-weight-heavy);
 }
 
-.group-strip .row-list {
-  display: flex;
-  gap: var(--space-3);
-  overflow-x: auto;
-  padding: var(--space-2) var(--space-1);
-  scrollbar-width: none;
-}
-
-.group-strip li {
-  flex: none;
-}
-
-.next-up {
+/* Next up band (REQ-0029 item 4, ADR 0028 section 16.8): the first thing on Home. The eyebrow and the countdown are
+   the only signal text of the app (section 16.4 item 4). No hover: it is a section, not a control. */
+.next-up-band {
   display: grid;
   gap: var(--space-3);
-  padding: var(--space-4);
-  border: 1px solid var(--color-border);
-  /* In @supports so Tailwind writes no full-accent fallback (ADR 0023, amendment b). */
-  @supports (color: color-mix(in lab, red, red)) {
-    background:
-      radial-gradient(
-        26rem 14rem at 0 0,
-        color-mix(in srgb, var(--genre-accent) var(--genre-wash), transparent),
-        transparent 70%
-      ),
-      var(--color-surface);
-  }
-  border-radius: var(--radius-panel);
+  padding: var(--space-4) var(--space-3);
+  border-radius: var(--radius);
+  background: var(--color-surface);
 }
 
-.next-up p {
+.next-up-band p,
+.next-up-band h2,
+.next-up-band h3 {
   margin: 0;
 }
 
-.next-up__timing {
-  color: var(--color-accent);
-  font-family: var(--font-heading);
-  font-weight: 600;
+.next-up-band h2.next-up-band__eyebrow {
+  margin-bottom: var(--space-2);
+  color: var(--color-signal);
+  font-family: var(--font-text);
+  font-size: var(--font-size-eyebrow);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-snug);
+  text-transform: none;
+  font-variant-numeric: tabular-nums;
 }
 
-/* The card is narrow in the side column, so the logo sits above the game name and the name keeps the full width. */
-.next-up .game-heading {
-  flex-direction: column;
+/* The start time: the largest text of the page (REQ-0029 item 2). */
+.next-up-band__time {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-next-up-time-phone);
+  font-weight: var(--font-weight-black);
+  line-height: var(--line-height-figure);
+  font-variant-numeric: tabular-nums;
+}
+
+.next-up-band__empty {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-heading);
+  font-weight: var(--font-weight-heavy);
+  text-transform: uppercase;
+}
+
+.next-up-band__label {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-title);
+  font-weight: var(--font-weight-heavy);
+  line-height: var(--line-height-title);
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.next-up-band__label a {
+  text-decoration: none;
+}
+
+.next-up-band__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-3);
+  margin-top: var(--space-2);
+  color: var(--color-muted);
+  font-weight: var(--font-weight-strong);
+  font-variant-numeric: tabular-nums;
+}
+
+.next-up-band .role-slots {
+  margin-top: var(--space-3);
+}
+
+/* The join or leave button, the seat choice or an error. */
+.next-up-band__actions {
+  display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   gap: var(--space-2);
 }
 
-.next-up__game {
-  margin: var(--space-1) 0;
-  font-family: var(--font-heading);
-  font-size: var(--font-size-title);
-  letter-spacing: var(--tracking-tight);
+/* Running order (ADR 0028 section 4). Phones are the base: each day is a band with a strip of bars that shows about
+   --running-order-phone-hours at once, and the lobbies as text rows below it. The component is the scroll container,
+   so the axis scrolls sideways inside it and the page never does. cqi is the scroller's own width. */
+.running-order {
+  margin-top: var(--space-6);
 }
 
-.next-up__game a {
+/* The heading, and beside it an action such as the next week (Group view). */
+.running-order__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-2);
+}
+
+.running-order__head > * {
+  margin: 0;
+}
+
+.running-order__scroll {
+  container-type: inline-size;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  border-top: 1px solid var(--color-rule-strong);
+}
+
+/* 24: the hours of the axis. */
+.running-order__week {
+  width: calc(100cqi * 24 / var(--running-order-phone-hours));
+}
+
+.running-order__hours {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  padding: var(--space-2) 0;
+  color: var(--color-muted);
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-strong);
+  font-variant-numeric: tabular-nums;
+}
+
+.running-order__day {
+  padding: var(--space-2) 0 var(--space-3);
+  border-bottom: 1px solid var(--color-rule);
+}
+
+/* The day's heading and, in the Group view, its Create lobby button at the right. */
+.running-order__name {
+  position: sticky;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  width: 100cqi;
+}
+
+.running-order__heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--space-2);
+  margin: 0;
+}
+
+.running-order__weekday {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-heading);
+  font-weight: var(--font-weight-heavy);
+  line-height: var(--line-height-solid);
+  text-transform: uppercase;
+}
+
+.running-order__date {
+  color: var(--color-muted);
+  font-family: var(--font-text);
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-strong);
+  text-transform: none;
+}
+
+.running-order__day[data-past] .running-order__weekday {
+  color: var(--color-muted);
+}
+
+/* The marker of today: a signal bar under the day name (Orange rule item 3). */
+.running-order__heading[aria-current="date"] .running-order__weekday::after {
+  content: "";
+  display: block;
+  width: var(--size-today-marker);
+  height: var(--width-marker);
+  margin-top: var(--space-1);
+  border-radius: var(--radius-sm);
+  background: var(--color-signal);
+}
+
+/* A day with no lobby is one line, with no axis. */
+.running-order__day[data-empty] {
+  position: sticky;
+  left: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0 var(--space-3);
+  width: 100cqi;
+}
+
+.running-order__day[data-empty] .running-order__name {
+  position: static;
+  width: auto;
+}
+
+.running-order__empty {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: var(--font-size-small);
+}
+
+/* Today with no lobby: the line under its axis, at the left of the view while the axis scrolls. A click on it
+   reaches the empty time under it. */
+.running-order__track > .running-order__empty {
+  position: sticky;
+  left: 0;
+  width: max-content;
+  pointer-events: none;
+}
+
+.running-order__track {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+/* The future time of a day in the Group view: a click there opens Create lobby at that time. On phones it lies over
+   the strip of bars; the bars take their own clicks, so a booked time opens nothing. */
+.running-order__create {
+  position: absolute;
+  top: var(--space-2);
+  right: 0;
+  left: calc(var(--from, 0) * 100%);
+  height: calc(var(--lanes, 1) * var(--size-lane-phone));
+  cursor: pointer;
+}
+
+/* The ruled hour lines, every two hours, as hard stops (ADR 0028 section 16.6). */
+.running-order__bars {
+  order: -1;
+  position: relative;
+  height: calc(var(--lanes, 1) * var(--size-lane-phone));
+  margin: var(--space-2) 0;
+  background: repeating-linear-gradient(
+    to right,
+    var(--color-rule) 0 1px,
+    transparent 1px calc(100% / 12)
+  );
+  pointer-events: none;
+}
+
+.running-order__bar {
+  position: absolute;
+  top: calc(var(--lane, 0) * var(--size-lane-phone) + var(--space-1) / 2);
+  left: calc(var(--from, 0) * 100%);
+  width: calc(var(--length, 0) * 100%);
+  height: calc(var(--size-lane-phone) - var(--space-1));
+  border-radius: var(--radius-sm);
+  background: var(--group-color, var(--color-raised));
+  pointer-events: auto;
+}
+
+.running-order__bar[data-mine] {
+  outline: var(--width-edge) solid var(--color-text);
+  outline-offset: calc(-1 * var(--width-edge));
+}
+
+/* The Now line: 2px signal over a 4px ground bar, so it reads over a block too (ADR 0028 section 16.6). */
+.running-order__now {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--now, 0) * 100%);
+  width: var(--width-marker);
+  margin-left: calc(var(--width-marker) / -2);
+  background: var(--color-ground);
+}
+
+.running-order__now::before {
+  content: "";
+  position: absolute;
+  inset: 0 calc((var(--width-marker) - var(--width-edge)) / 2);
+  background: var(--color-signal);
+}
+
+.running-order__lobbies {
+  position: sticky;
+  left: 0;
+  display: grid;
+  width: 100cqi;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.running-order__block > a {
+  display: grid;
+  grid-template-columns: var(--size-block-start) minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: var(--space-2);
+  min-height: var(--size-tap);
   color: var(--color-text);
   text-decoration: none;
 }
 
-.next-up__meta {
-  color: var(--color-muted);
+.running-order__block > a > * {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.next-up__figure {
-  color: var(--color-text);
-  font-variant-numeric: tabular-nums;
+.running-order__start {
+  grid-row: span 2;
   font-family: var(--font-heading);
-  font-size: 1.5rem;
-  font-weight: 700;
+  font-size: var(--font-size-block-start);
+  font-weight: var(--font-weight-heavy);
+  font-variant-numeric: tabular-nums;
 }
 
-/* Phones: one day at a time. From 760px the pills go and all seven days show. */
-@media (max-width: 47.499rem) {
-  .time-grid__days {
-    grid-template-columns: minmax(0, 1fr);
+.running-order__label {
+  font-weight: var(--font-weight-strong);
+}
+
+.running-order__label > svg {
+  vertical-align: var(--offset-icon-baseline);
+}
+
+.running-order__group {
+  grid-column: 2;
+  color: var(--color-muted);
+  font-size: var(--font-size-small);
+}
+
+.running-order__time {
+  display: none;
+}
+
+/* The spots on the group colour. Text on every group fill is on-group (ADR 0028 section 16.7). */
+.running-order__spots {
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  display: inline-flex;
+  gap: var(--space-1);
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--group-color, var(--color-raised));
+  color: var(--color-on-group);
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-bold);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Group colour (ADR 0028 section 5): groupColorIndex sets the number, the token gives the fill. */
+[data-group-color="1"] {
+  --group-color: var(--color-group-1);
+}
+
+[data-group-color="2"] {
+  --group-color: var(--color-group-2);
+}
+
+[data-group-color="3"] {
+  --group-color: var(--color-group-3);
+}
+
+[data-group-color="4"] {
+  --group-color: var(--color-group-4);
+}
+
+[data-group-color="5"] {
+  --group-color: var(--color-group-5);
+}
+
+[data-group-color="6"] {
+  --group-color: var(--color-group-6);
+}
+
+/* The key below the running order: a swatch per group, and the outline of a lobby I am in (16.7). */
+.group-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+  color: var(--color-muted);
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-strong);
+}
+
+.group-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.group-legend__swatch {
+  width: var(--size-swatch);
+  height: var(--size-swatch);
+  border-radius: var(--radius-sm);
+  background: var(--group-color, var(--color-raised));
+}
+
+.group-legend__swatch[data-mine] {
+  outline: var(--width-edge) solid var(--color-text);
+  outline-offset: calc(-1 * var(--width-edge));
+  background: none;
+}
+
+/* Wide screens: the band is one row, and each day is a row of the week with its name in a column that stays at the
+   left while the axis scrolls. About --running-order-wide-hours of the axis show beside the names, never less than
+   the hour minimum per hour, and the rest scrolls sideways inside the component, as on phones. 24: the hours. */
+@media (min-width: 47.5rem) {
+  .next-up-band {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: end;
+    column-gap: var(--space-6);
+    padding: var(--space-4) var(--space-6);
   }
 
-  .time-grid__day:not([data-selected]) {
+  .next-up-band__time {
+    font-size: var(--font-size-next-up-time);
+  }
+
+  .next-up-band__actions {
+    max-width: var(--width-popover);
+  }
+
+  .running-order__week {
+    width: calc(
+      var(--size-running-order-label) +
+        (100cqi - var(--size-running-order-label)) * 24 /
+        var(--running-order-wide-hours)
+    );
+    min-width: calc(
+      var(--size-running-order-label) + 24 * var(--size-running-order-hour-min)
+    );
+  }
+
+  .running-order__scale,
+  .running-order__day,
+  .running-order__day[data-empty] {
+    position: static;
+    display: flex;
+    width: auto;
+    padding: 0;
+  }
+
+  .running-order__scale::before {
+    content: "";
+    flex: 0 0 var(--size-running-order-label);
+  }
+
+  .running-order__hours,
+  .running-order__track {
+    flex: 1 1 0;
+  }
+
+  /* Today's row with no lobby keeps its axis; its line stays beside the day name. */
+  .running-order__track > .running-order__empty {
+    left: var(--size-running-order-label);
+    line-height: var(--size-lane);
+  }
+
+  .running-order__name {
+    flex: 0 0 var(--size-running-order-label);
+    z-index: 1;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: var(--space-1);
+    width: auto;
+    padding: var(--space-2) 0;
+    background: var(--color-ground);
+  }
+
+  .running-order__heading {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .running-order__day[data-empty] .running-order__name {
+    position: sticky;
+  }
+
+  .running-order__day[data-empty] {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    gap: 0;
+  }
+
+  /* Sticks beside the day name, so the line stays readable while the axis scrolls. */
+  .running-order__empty {
+    position: sticky;
+    left: var(--size-running-order-label);
+    align-self: center;
+    padding-left: var(--space-2);
+  }
+
+  /* At least its lanes; a row whose name column holds a Create lobby button grows to it. */
+  .running-order__track {
+    display: block;
+    min-height: calc(var(--lanes, 1) * var(--size-lane));
+    background: repeating-linear-gradient(
+      to right,
+      var(--color-rule) 0 1px,
+      transparent 1px calc(100% / 12)
+    );
+  }
+
+  .running-order__bars {
+    position: absolute;
+    inset: 0;
+    height: auto;
+    margin: 0;
+    background: none;
+  }
+
+  .running-order__bar {
     display: none;
   }
+
+  .running-order__create {
+    top: 0;
+    bottom: 0;
+    height: auto;
+  }
+
+  .running-order__lobbies {
+    position: static;
+    display: block;
+    width: auto;
+  }
+
+  /* A block: its real start and length, in its lane. Short lobbies keep a size a pointer can hit (WCAG 2.5.8). */
+  .running-order__block {
+    position: absolute;
+    top: calc(var(--lane, 0) * var(--size-lane) + var(--space-1));
+    left: calc(var(--from, 0) * 100%);
+    width: max(calc(var(--length, 0) * 100%), var(--size-block-min));
+    height: calc(var(--size-lane) - var(--space-2));
+    container-type: inline-size;
+  }
+
+  /* Three lines: the label, the time range, then the group and the spots. */
+  .running-order__block > a {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-content: center;
+    align-items: baseline;
+    column-gap: var(--space-1);
+    height: 100%;
+    min-height: 0;
+    padding: 0 var(--space-2);
+    border-radius: var(--radius-sm);
+    background: var(--group-color, var(--color-raised));
+    color: var(--color-on-group);
+    font-size: var(--font-size-block);
+    font-weight: var(--font-weight-strong);
+    line-height: var(--line-time-block);
+  }
+
+  .running-order__label,
+  .running-order__time {
+    grid-column: 1 / -1;
+  }
+
+  .running-order__block[data-mine] > a:not(:focus-visible) {
+    outline: var(--width-edge) solid var(--color-text);
+    outline-offset: calc(-1 * var(--width-edge));
+  }
+
+  .running-order__start {
+    display: none;
+  }
+
+  .running-order__label {
+    font-family: var(--font-heading);
+    font-size: var(--font-size-lobby-name);
+    font-weight: var(--font-weight-heavy);
+    line-height: var(--line-height-tight);
+    text-transform: uppercase;
+  }
+
+  .running-order__time {
+    display: block;
+  }
+
+  .running-order__group {
+    grid-column: 1;
+    color: inherit;
+    font-size: inherit;
+  }
+
+  .running-order__spots {
+    grid-column: 2;
+    grid-row: auto;
+    padding: 0;
+    background: none;
+    color: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+  }
 }
 
-.day-pills {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: var(--space-1);
-  margin-bottom: var(--space-3);
+/* A block under 6rem (about 1 hour at 1440px) keeps its label, shows the start in place of the range and leaves
+   the group name to its accessible name. */
+@container (width < 6rem) {
+  .running-order__block > a {
+    padding: 0 var(--space-1);
+  }
+
+  .running-order__time,
+  .running-order__group {
+    display: none;
+  }
+
+  /* After the label, as the range would be. */
+  .running-order__start {
+    display: block;
+    order: 1;
+    grid-row: auto;
+    grid-column: 1 / -1;
+    font: inherit;
+  }
+
+  .running-order__spots {
+    order: 2;
+    grid-column: 1 / -1;
+  }
 }
 
-.day-pill {
-  display: grid;
-  justify-items: center;
-  align-content: center;
-  gap: 2px;
-  min-height: var(--size-tap);
-  padding: var(--space-2) 0;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-control);
-  background: var(--color-surface);
-  color: var(--color-muted);
-  font: inherit;
-  font-size: 0.75rem;
-  cursor: pointer;
-}
+@media (hover: hover) and (pointer: fine) {
+  /* The raised fill of a control on the empty future time, faded by opacity on a layer. */
+  .running-order__create::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: var(--color-raised);
+    opacity: 0;
+    transition: opacity var(--duration-fast) var(--ease-out);
+  }
 
-.day-pill b {
-  color: var(--color-text);
-  font-family: var(--font-heading);
-  font-size: 1rem;
-}
+  .running-order__create:hover::before {
+    opacity: 1;
+  }
 
-.day-pill[aria-current="date"] b {
-  text-decoration: underline;
-  text-underline-offset: 0.2em;
-}
+  .running-order__block > a {
+    transition: transform var(--duration-fast) var(--ease-out);
+  }
 
-.day-pill[aria-pressed="true"] {
-  border-color: var(--color-accent);
-  background: var(--color-accent-tint);
-}
-
-.day-pill__dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--color-muted);
+  .running-order__block > a:hover {
+    transform: translateY(var(--offset-block-lift));
+  }
 }
 
 @media (min-width: 47.5rem) {
@@ -2687,86 +3050,98 @@ a:where(:not([data-slot="button"])) {
     --toast-bottom: var(--space-3);
   }
 
-  .shell {
-    grid-template-columns: var(--size-rail) minmax(0, 1fr);
-    grid-template-areas:
-      "top top"
-      "rail main";
+  /* The bar's items stretch to its height, so the active tab's underline sits on the bar's bottom edge. */
+  .top-bar {
+    position: sticky;
+    top: 0;
+    z-index: var(--z-top-bar);
+    justify-content: flex-start;
+    align-items: stretch;
+    gap: var(--space-6);
+    padding: env(safe-area-inset-top) var(--space-6) 0;
   }
 
-  .top-bar {
-    padding: env(safe-area-inset-top) var(--space-4) 0;
+  .top-bar .brand,
+  .top-bar__user {
+    align-self: center;
+  }
+
+  .top-bar .brand {
+    font-size: var(--font-size-figure);
+  }
+
+  .top-bar__user {
+    margin-left: auto;
+  }
+
+  .top-bar__name {
+    display: block;
+  }
+
+  /* The nav of the Tab bar, back in the Top bar as text tabs. */
+  .tab-bar {
+    position: static;
+    inset: auto;
+    z-index: auto;
+    display: flex;
+    gap: var(--space-4);
+    padding: 0;
+    background: none;
+    border: 0;
+  }
+
+  .tab {
+    position: relative;
+    display: flex;
+    align-items: center;
+    color: var(--color-on-signal);
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  /* The active tab: an on-signal underline and a bold weight, not a fill (ADR 0028 section 16.4 item 5). */
+  .tab[aria-current="page"] {
+    background: none;
+    font-weight: var(--font-weight-tab-active);
+  }
+
+  .tab[aria-current="page"]::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    background: var(--color-on-signal);
+  }
+
+  .top-bar .nav-icon {
+    display: none;
+  }
+
+  .plus-button--header {
+    display: inline-grid;
   }
 
   .shell__main {
     padding: var(--space-4) var(--space-6) var(--space-6);
   }
 
-  .tab-bar,
-  .plus-button--fab,
-  .group-strip {
+  .plus-button--fab {
     display: none;
   }
 
-  .group-rail {
-    grid-area: rail;
-    position: sticky;
-    top: var(--size-top-bar-total);
-    z-index: 60;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--space-3);
-    height: calc(100dvh - var(--size-top-bar-total));
-    padding: var(--space-3) 0;
-    border-right: 1px solid var(--color-border);
-  }
-
-  .group-rail__separator {
-    width: 1.75rem;
-    height: 1px;
-    background: var(--color-border);
-  }
-
-  .group-rail__groups {
-    display: grid;
-    flex: 1;
-    align-content: start;
-    gap: var(--space-3);
-    min-height: 0;
-    padding: var(--space-1);
-    overflow-y: auto;
-    scrollbar-width: none;
-  }
-
+  /* Below the header "+" of the Group list, at the main area's right edge (heading row = --size-plus tall). The
+     percentages are of the window without its scrollbar, as the main area is. */
   .create-popover {
-    right: auto;
-    bottom: var(--space-3);
-    left: calc(var(--size-rail) + var(--space-3));
-    width: var(--width-popover);
-  }
-
-  .next-up {
-    grid-template-columns: 1fr auto;
-    align-items: center;
-  }
-
-  .next-up__spots {
-    text-align: right;
-  }
-
-  .day-pills {
-    display: none;
-  }
-
-  /* The week grid reaches the bottom of the window from where it starts on the page (--grid-top, set by
-     useGridTop), but never gets shorter than it is on phones. The margin is the main area's bottom padding, so
-     a page that ends with the grid fits the window and does not scroll. */
-  .time-grid {
-    height: max(
-      var(--size-grid-height),
-      calc(100dvh - var(--grid-top, 0px) - var(--space-6))
+    top: calc(
+      var(--size-top-bar-total) + var(--space-4) + var(--size-plus) +
+        var(--space-2)
     );
+    right: calc((100% - min(100%, var(--width-app))) / 2 + var(--space-6));
+    bottom: auto;
+    left: auto;
+    width: var(--width-popover);
   }
 }
 
@@ -2809,12 +3184,7 @@ a:where(:not([data-slot="button"])) {
     scroll-behavior: auto !important;
   }
 
-  /* The plain lit edge and glow: no follow light, no glow scale, no sink. */
-  [data-slot="button-light"]::before {
-    display: none;
-  }
-
-  [data-slot="button"]::after,
+  /* No sink on press. */
   [data-slot="button"]:not(:disabled):active {
     transform: none;
   }
@@ -2839,55 +3209,15 @@ a:where(:not([data-slot="button"])) {
   margin: 0;
 }
 
-/* The right-click menu of a group icon: placed at the pointer, no motion. */
-.context-menu {
-  position: fixed;
-  z-index: 60;
-  min-width: 10rem;
-  padding: var(--space-1);
-  background: var(--color-bg-raised);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-panel);
-  box-shadow: var(--shadow-popover);
-}
-
-.context-menu__item {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  width: 100%;
-  padding: var(--space-2) var(--space-3);
-  border: 0;
-  border-radius: var(--radius-panel);
-  background: none;
-  color: var(--color-text);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.context-menu__item:hover,
-.context-menu__item:focus-visible {
-  background: var(--color-row-hover);
-}
-
 /* Spacing rule: a button or action row that follows other content in a panel, the lobby summary, a dialog or popover
    sits one space-3 below it, and in a Create frame the blocks after a form or a status line do the same.
    Headings, .status, .row-list and .step-card__text keep their own spacing, so this is not a
    blanket rule. Specificity (0,2,0) beats the .alert reset whatever the source order.
-   .login-panel has its own button margin and is left alone. The Next up card is no panel, so what
-   follows its players figure or meter (the join or leave button, the Ended line or an error) is spaced the same way. */
-:is(
-    .panel,
-    [data-slot="alert-dialog-content"],
-    .create-popover__card,
-    .lobby-summary
-  )
+   .login-panel has its own button margin and is left alone. */
+:is(.panel, [data-slot="alert-dialog-content"], .create-popover__card)
   > *
   + :is([data-slot="button"], .tooltip, .form-actions, .view-switch),
-.create-popover__card > :is(.status, .group-form) + *,
-.next-up__spots > .next-up__figure + *,
-.next-up__spots > .meter + * {
+.create-popover__card > :is(.status, .group-form) + * {
   margin-top: var(--space-3);
 }
 
@@ -2902,118 +3232,106 @@ a:where(:not([data-slot="button"])) {
 
 /* Only the first button of a row pushes right; the rest follow at the row gap. */
 .list-row
-  :is([data-slot="button"], .tooltip)
+  > :is([data-slot="button"], .tooltip)
   + :is([data-slot="button"], .tooltip) {
   margin-left: 0;
 }
 
-/* Genre themes (ADR 0016). The theme is static: no transition or animation in these rules. The pattern is
-   a layer behind the content; the icon and the motif are decorative images. */
-:where(.genre-frame) {
-  position: relative;
-}
-
-.genre-frame {
-  --color-muted: var(--color-muted-themed);
-  isolation: isolate;
-}
-
-.genre-frame::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  border-radius: inherit;
-  background-image: var(--genre-pattern);
-  pointer-events: none;
-}
-
-/* A game cover fills the frame under the scrim, which takes the place of the pattern (ADR 0026 point 8). Muted
-   text, the genre name and field errors turn to the text colour, the one the scrim is measured against. */
-.genre-frame__cover {
-  position: absolute;
-  inset: 0;
-  z-index: -2;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: inherit;
-  pointer-events: none;
-}
-
-.genre-frame[data-cover] {
-  --color-muted: var(--color-text);
-}
-
-.genre-frame[data-cover]::before {
-  background: var(--color-cover-scrim);
-}
-
-.genre-frame[data-cover] :is(.genre-name, .field-error) {
-  color: var(--color-text);
-}
-
-/* Under the scrim the hover tint of a covered row would not show, so it is drawn over the scrim. */
-.row-list > .genre-frame[data-cover]::after {
-  z-index: -1;
-}
-
-.genre-frame__icon {
-  position: absolute;
-  top: var(--space-2);
-  right: var(--space-2);
-  width: var(--size-genre-icon);
-  height: var(--size-genre-icon);
-  pointer-events: none;
-}
-
-.genre-frame__motif {
-  position: absolute;
-  right: var(--space-3);
-  bottom: var(--space-3);
-  z-index: -1;
-  width: var(--size-genre-motif);
-  height: var(--size-genre-motif);
-  opacity: var(--genre-motif-opacity);
-  pointer-events: none;
-}
-
+/* The genre as plain muted text: the genre has no colour of its own (ADR 0028 section 7). */
 .genre-name {
-  color: var(--genre-accent);
+  color: var(--color-muted);
   font-size: var(--font-size-small);
-  font-weight: 600;
+  font-weight: var(--font-weight-strong);
 }
 
-.lobby-row > .genre-frame__icon {
-  position: static;
-  flex: none;
-}
-
-.time-block > .genre-frame__icon {
-  top: var(--space-1);
-  right: var(--space-1);
-  width: calc(var(--size-genre-icon) - var(--space-2));
-  height: calc(var(--size-genre-icon) - var(--space-2));
-}
-
-.time-block.genre-frame::before {
-  inset: 1px;
-  border-radius: var(--radius-control);
-}
-
+/* The lobby page (REQ-0029 item 6): the day, the time at the page's largest size, the label, the spots, the role
+   slots and Join or Leave, on the ground with a rule under it, as the Group view's header. */
 .lobby-head {
   display: grid;
-  gap: var(--space-1);
+  justify-items: start;
+  gap: var(--space-2);
   margin-bottom: var(--space-3);
-  padding: var(--space-4);
-  padding-right: calc(var(--size-genre-icon) + var(--space-4));
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-panel);
+  padding-bottom: var(--space-4);
+  border-bottom: var(--width-edge) solid var(--color-text);
+}
+
+.lobby-head > p {
+  margin: 0;
+}
+
+.lobby-head__day {
+  color: var(--color-muted);
+  font-weight: var(--font-weight-strong);
+}
+
+.lobby-head__time {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-lobby-time);
+  font-weight: var(--font-weight-black);
+  line-height: var(--line-height-figure);
+  font-variant-numeric: tabular-nums;
+  text-transform: uppercase;
 }
 
 .lobby-head h1 {
   margin: 0;
+  line-height: var(--line-height-title);
+  overflow-wrap: anywhere;
+}
+
+.lobby-head__spots {
+  font-weight: var(--font-weight-strong);
+  font-variant-numeric: tabular-nums;
+}
+
+.lobby-head > .form-actions {
+  margin-top: var(--space-2);
+}
+
+/* Delete lobby, last in the main column. */
+.side-layout--lobby > .form-actions {
+  margin-top: var(--space-4);
+}
+
+/* A role's players under its heading: the role icon, name and count, in the text colour. */
+.player-group h3 {
+  margin: var(--space-4) 0 0;
+  font-family: var(--font-heading);
+  font-size: var(--font-size-lobby-name);
+  font-weight: var(--font-weight-heavy);
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+}
+
+.player-row > .person-roles {
+  margin-left: auto;
+}
+
+/* My own avatar in a player list (ADR 0028 section 16.4 item 7); the "You" tag says the same in text. */
+.player-row--me > .initials-icon {
+  background: var(--color-signal);
+  color: var(--color-on-signal);
+}
+
+/* The facts of the lobby: a term over its value, one per ruled line. */
+.lobby-facts {
+  margin: 0;
+}
+
+.lobby-facts > div {
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--color-rule);
+}
+
+.lobby-facts dt {
+  color: var(--color-muted);
+  font-size: var(--font-size-small);
+}
+
+.lobby-facts dd {
+  margin: 0;
+  font-weight: var(--font-weight-strong);
+  overflow-wrap: anywhere;
 }
 
 /* The seat choice and the preferred game roles: radio buttons or check boxes with the full label as text. No hover or motion. */
@@ -3034,7 +3352,7 @@ a:where(:not([data-slot="button"])) {
   width: auto;
   min-height: 0;
   margin: 0;
-  accent-color: var(--color-accent);
+  accent-color: var(--color-text);
 }
 
 .group-form .choice-option:has(input:disabled) {
