@@ -1,5 +1,5 @@
 # REQ-0022. Toasts for confirmations
-Status: Decided
+Status: Implemented (#153; recorded 2026-11-25; decision #103)
 Feature: F-041
 Priority: Should
 

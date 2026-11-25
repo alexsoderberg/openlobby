@@ -2,7 +2,7 @@
 Status: Decided
 Feature: F-044 (new). Extends F-017, F-028, F-036 (placement), F-043, F-003 and F-005 (lobby page layout, presentation only). Amends the width rules of REQ-0019 and REQ-0012 and the group view rules of REQ-0019.
 Priority: Should
-Build (2026-11-15): built, except the Group list card grid (waits for REQ-0024 Group cards) and the Group feed in the Group view side column (not built, waits for F-036 Group feed).
+Build (2026-11-15): built, except the Group feed in the Group view side column (not built, waits for F-036 Group feed). Build status (2026-11-25, checked against main): built in #110 and #113; the Group list card grid in #123 (with F-043); the side columns of the Group view (members) and the lobby page (facts and settings) and the 100rem box are on main, the redesign via #168. Superseded by REQ-0029 item 4: the Dashboard side column (Next up band full width). Status stays Decided until the Group feed is in the Group view side column (F-036), the only open criterion (Group view, "the Group feed in the side column").
 
 Decided by the user on 2026-11-14 (DECISION, user, 2026-11-14):
 - the main area is wider on desktop, with the extra width used on the Dashboard, the lobby page, the Group list and the Group view, not only stretched;

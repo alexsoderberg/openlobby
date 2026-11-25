@@ -208,7 +208,7 @@ Status stays Implemented. Decided by the user on 2026-11-12, specified in REQ-00
 Status stays Implemented. DECISION, user, 2026-11-13. Implemented 2026-11-14. The This week blocks use the same block component as REQ-0004, so the block text rule of REQ-0015 (Amendment 2026-11-13, week block fit) applies: the game name may be shortened (with an ellipsis, or cut at a whole line) where the block is too short, shown in full where it has room, and no part of a line is shown cut in half.
 
 ## Amendment 2026-11-14 (REQ-0025, wider desktop layout)
-Status stays Implemented. Decided by the user on 2026-11-14, specified in REQ-0025 (F-044, Should). Pending implementation. Binding for the UI expert.
+Status stays Implemented. Decided by the user on 2026-11-14, specified in REQ-0025 (F-044, Should). Built on main: 100rem box and side columns (#110, #113), Group list grid (#123); the Dashboard side column is superseded by REQ-0029 item 4 (#168). The Group feed side column waits for F-036 (REQ-0025).
 - Desktop: the main area box is up to 100rem wide including its padding, centred, on every logged-in page, not 72rem (REQ-0025; DECISION, user, 2026-11-14, the app's max width; DECISION, product owner, 2026-11-14, the scope: every logged-in page). Old wording: "up to 72rem".
 - From 98rem (DECISION, user, 2026-11-14), Next up is in a side column on the right and This week is in the main column. Below 98rem the layout is one column, as today. Content, rules and buttons of Next up and This week are unchanged.
 - Dashboard with no upcoming lobby in any group, but at least one group: Next up keeps its side column and shows "Nothing booked" (ASSUMPTION, REQ-0025). With no group, no side column is shown.
