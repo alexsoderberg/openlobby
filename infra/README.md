@@ -9,9 +9,13 @@ The stack runs with Docker Compose on one Raspberry Pi 5 (ADR 0008, ADR 0009). I
 3. Copy `infra/.env.example` to `infra/.env` and fill in the values.
 4. Run `make dev`, or `make dev SERVICE=calendar` for one service with its dependencies. Open https://localhost and accept the warning for the self-signed certificate.
 
-Only `edge` publishes ports (80 and 443). `auth` (Discord) and `certbot` (Let's Encrypt) also have an egress network; every other container sits on an internal network (ADR 0008 review 5).
+Only `edge` publishes ports (80 and 443). `auth` (Discord), `calendar` (Blizzard) and `certbot` (Let's Encrypt) also have an egress network; every other container sits on an internal network (ADR 0008 review 5).
 
 Database role passwords are set only when the `pgdata` volume is first initialised, by `infra/postgres/init`. Changing a value in `infra/.env` later does not change the role. To change a password, run `ALTER ROLE <role> PASSWORD '<value>';` in the postgres container, then update `infra/.env` and recreate the service that uses it.
+
+## Blizzard client (ADR 0029)
+
+`calendar` reads item names and icons from the Blizzard Game Data API. Create a client at https://develop.battle.net (client credentials, one client per environment), then put its ID and secret in `BLIZZARD_CLIENT_ID` and `BLIZZARD_CLIENT_SECRET` in `infra/.env`. The secret is never committed. The client ID and secret are required in production; in development they are optional, and without them calendar starts with a warning and every item shows "Name not available". `BLIZZARD_REGION` (default `eu`) selects the API region. `BLIZZARD_NAMESPACE` defaults to `static-forever-<region>` and is overridden only when a verified namespace is needed.
 
 ## Discord redirect URIs
 
