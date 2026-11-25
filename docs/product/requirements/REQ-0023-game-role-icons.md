@@ -1,5 +1,5 @@
 # REQ-0023. Icons for game roles
-Status: Decided
+Status: Implemented (#129, #130, #132, #133; recorded 2026-11-25; design #106)
 Feature: F-042
 Priority: Should
 

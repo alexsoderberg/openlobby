@@ -143,6 +143,6 @@ Changes:
 
 ASSUMPTION (product owner, user may change): the timing of Amendment 2026-11-07 stays, so the full state still holds for 1.5 seconds, marked only by the text-colour edge.
 
-Status of this amendment: built in PR 5b on `redesign-preview` (2026-11-24). It reaches `main` with the redesign (REQ-0029, the user's yes).
+Status of this amendment: built in PR 5b (2026-11-24) and on `main` since 2026-11-25 (PR #168, REQ-0029).
 
 Out of scope (addition): genre motifs, a glow or a pointer light on the hero, in any form.

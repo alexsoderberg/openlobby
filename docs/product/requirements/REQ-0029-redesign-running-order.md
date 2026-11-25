@@ -1,5 +1,5 @@
 # REQ-0029. Redesign: running order
-Status: Decided
+Status: Implemented (2026-11-25, merged to `main` in PR #168)
 Feature: F-001, F-002, F-003, F-004, F-010, F-017, F-025, F-028, F-029, F-030, F-032, F-038, F-039, F-041, F-043, F-044, F-045 (all EXTEND, presentation only; no new feature, see Related features)
 Priority: Should
 
@@ -266,7 +266,7 @@ DECISION (user, 2026-11-21, Amendment 2026-11-21): the redesign is built on the 
 - PR #163 (bug fix, merged into `redesign-preview` on 2026-11-24): a lobby that crosses midnight no longer shows its start time on the next day's row; it shows the end time with the marker (for example "–01:00"), as item 4 already requires. No criterion changes.
 - PR #165 (cover removal, REQ-0026 Amendment 2026-11-25) is delivered on `redesign-preview` (2026-11-25).
 - The final fixes PR (a skip link to the main content, WCAG 2.4.1) is delivered on `redesign-preview` (2026-11-25). The final cross-PR review found the skip link missing. Its criterion is item 12, Amendment 2026-11-25 (the Given/When/Then "Skip to content" criterion).
-- Status stays `Decided` until the redesign is on `main`. The user's yes for `main` is pending. Then the status moves to `Implemented`.
+- **Merged to `main` on 2026-11-25** on the user's yes: PR #168 (merge commit e238086) brings the whole redesign (PR 1 to PR 5b, the fixes #163, #164, #167 and the cover removal #165) to `main`. The goals docs of REQ-0030 (#166) came with it; they are docs only and not built. Status is `Implemented`.
 
 Each PR goes through the review of CLAUDE.md step 5 and the Definition of Done. ADR 0028 (Accepted 2026-11-21, section 16 Amendment 2026-11-21) records the design (the dark tokens, the radii, the Orange rule, the running order component, the Top bar, the group colour rule) and amends ADR 0014, 0015, 0016, 0018, 0021, 0023, 0026 and 0027 where this requirement supersedes them.
 

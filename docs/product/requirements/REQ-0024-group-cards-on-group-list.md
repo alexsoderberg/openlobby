@@ -1,5 +1,5 @@
 # REQ-0024. Group cards on the group list
-Status: Decided
+Status: Implemented (#123, merged 2026-11-17; redesigned card on `main` via #168, recorded 2026-11-25)
 Feature: F-043
 Priority: Should
 
