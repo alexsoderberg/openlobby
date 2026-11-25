@@ -12,7 +12,7 @@ A shared, clear overview of when the group can play and who is in. Less coordina
 ## What the product is NOT
 - No matchmaking or search for unknown players.
 - No chat, voice or notifications in the MVP. Conversation stays in Discord.
-- No integration with the games (no API coupling, no automatic sync of game state).
+- No integration with the games (no API coupling, no automatic sync of game state). Exception (DECISION, user, 2026-11-25; REQ-0030): item names and icons may be read from a publisher's public game data API for display only. Never game state (characters, progress), no sync, no login to a game.
 - No public calendar. Groups are private and are reached only via invite link.
 - No calendar sync with Google, Outlook or Discord events in the MVP.
 - No native mobile app in the MVP. A web browser is enough.
