@@ -45,9 +45,15 @@ type memoryGroups struct {
 	images  map[string]domain.GameImage // the logo by game ID
 	// overviews are the Group overviews the overview reader answers to any caller.
 	overviews []domain.GroupOverview
-	err       error
-	calls     int
-	created   int
+	// drops are the drop-list entries, goalItems the items in a goal, and itemNames the catalog's names; an item
+	// without a name is unknown to the catalog, and catalogDown makes it unavailable (ADR 0029).
+	drops       []domain.Drop
+	goalItems   []domain.ItemID
+	itemNames   map[domain.ItemID]string
+	catalogDown bool
+	err         error
+	calls       int
+	created     int
 }
 
 func (m *memoryGroups) ListForUser(_ context.Context, userID string) ([]domain.Group, error) {
@@ -158,7 +164,7 @@ func newRouter(store *memoryGroups, directory *fakeDirectory) http.Handler {
 	invites := application.NewInviteLinks(store, store, store, fixedTokens{}, fixedClock{})
 	lobbies := application.NewLobbies(memoryLobbyRepo{store}, store, store, directory, fixedClock{})
 	gameImages := application.NewGameImages(memoryImages{store}, logger)
-	return transport.NewRouter(groups, invites, games, gameImages, lobbies, application.NewMemberships(memoryMemberships{store}, fixedClock{}), application.NewPreferredGameRoles(memoryChoices{store}, store), ready, logger)
+	return transport.NewRouter(groups, invites, games, gameImages, lobbies, application.NewMemberships(memoryMemberships{store}, fixedClock{}), application.NewPreferredGameRoles(memoryChoices{store}, store), application.NewItems(memoryDrops{store}, memoryCatalog{store}, logger), ready, logger)
 }
 
 func call(router http.Handler, method, target string, headers map[string]string, body string) *httptest.ResponseRecorder {

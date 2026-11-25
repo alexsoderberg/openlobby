@@ -226,3 +226,25 @@ type PreferredGameRoleRepository interface {
 	// game role of an existing game.
 	Replace(ctx context.Context, userID string, gameRoleIDs []string) error
 }
+
+// ItemCatalog gives the English name and the icon of an item (ADR 0029 section 4). Errors: ErrItemNotFound,
+// ErrCatalogUnavailable.
+type ItemCatalog interface {
+	Item(ctx context.Context, itemID domain.ItemID) (domain.CatalogItem, error)
+	ItemIcon(ctx context.Context, itemID domain.ItemID) (domain.ItemIcon, error)
+}
+
+// DropListRepository stores the drop lists of the Named activities: item IDs and our own links only (ADR 0029 C1).
+// Each method gives ErrGameNotFound when no game has the ID, and domain.ErrInvalidActivity when the activity is not one
+// of the game.
+type DropListRepository interface {
+	// Drops returns every drop-list entry of the game's activities: activities in the game's order, each one's items in
+	// the order they were added. The activity ID is only checked, and an empty one is not; domain.GameItemsOf filters.
+	Drops(ctx context.Context, gameID, activityID string) ([]domain.Drop, error)
+	// AddDrop puts the item at the end of the activity's drop list, or gives ErrDropItemTaken and changes nothing.
+	AddDrop(ctx context.Context, gameID, activityID string, itemID domain.ItemID) error
+	// RemoveDrop takes the item off the activity's drop list. An item that is not on it is no error.
+	RemoveDrop(ctx context.Context, gameID, activityID string, itemID domain.ItemID) error
+	// IsReferenced tells whether the item is on a drop list or in a goal (ADR 0029 section 8).
+	IsReferenced(ctx context.Context, itemID domain.ItemID) (bool, error)
+}

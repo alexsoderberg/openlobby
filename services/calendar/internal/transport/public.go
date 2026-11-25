@@ -23,6 +23,8 @@ type publicHandler struct {
 	memberships *application.Memberships
 	// preferredGameRoles are the caller's own preferred game roles (ADR 0022).
 	preferredGameRoles *application.PreferredGameRoles
+	// items are the drop lists and the item catalog (ADR 0029).
+	items *application.Items
 }
 
 var _ publicapi.StrictServerInterface = publicHandler{}

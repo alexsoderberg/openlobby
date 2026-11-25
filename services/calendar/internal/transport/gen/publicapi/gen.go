@@ -22,6 +22,7 @@ import (
 // Defines values for ErrorBodyCode.
 const (
 	ErrorBodyCodeActivityTaken           ErrorBodyCode = "activity_taken"
+	ErrorBodyCodeDropItemTaken           ErrorBodyCode = "drop_item_taken"
 	ErrorBodyCodeGameImageNotFound       ErrorBodyCode = "game_image_not_found"
 	ErrorBodyCodeGameNotFound            ErrorBodyCode = "game_not_found"
 	ErrorBodyCodeGameRoleFull            ErrorBodyCode = "game_role_full"
@@ -37,11 +38,13 @@ const (
 	ErrorBodyCodeInvalidGenre            ErrorBodyCode = "invalid_genre"
 	ErrorBodyCodeInvalidGroupName        ErrorBodyCode = "invalid_group_name"
 	ErrorBodyCodeInvalidImageType        ErrorBodyCode = "invalid_image_type"
+	ErrorBodyCodeInvalidItem             ErrorBodyCode = "invalid_item"
 	ErrorBodyCodeInvalidMaxUses          ErrorBodyCode = "invalid_max_uses"
 	ErrorBodyCodeInvalidMode             ErrorBodyCode = "invalid_mode"
 	ErrorBodyCodeInvalidRequest          ErrorBodyCode = "invalid_request"
 	ErrorBodyCodeInvalidRoleIcon         ErrorBodyCode = "invalid_role_icon"
 	ErrorBodyCodeInviteInvalid           ErrorBodyCode = "invite_invalid"
+	ErrorBodyCodeItemNotFound            ErrorBodyCode = "item_not_found"
 	ErrorBodyCodeLobbyChanged            ErrorBodyCode = "lobby_changed"
 	ErrorBodyCodeLobbyEndNotAfterStart   ErrorBodyCode = "lobby_end_not_after_start"
 	ErrorBodyCodeLobbyFull               ErrorBodyCode = "lobby_full"
@@ -65,6 +68,8 @@ const (
 func (e ErrorBodyCode) Valid() bool {
 	switch e {
 	case ErrorBodyCodeActivityTaken:
+		return true
+	case ErrorBodyCodeDropItemTaken:
 		return true
 	case ErrorBodyCodeGameImageNotFound:
 		return true
@@ -96,6 +101,8 @@ func (e ErrorBodyCode) Valid() bool {
 		return true
 	case ErrorBodyCodeInvalidImageType:
 		return true
+	case ErrorBodyCodeInvalidItem:
+		return true
 	case ErrorBodyCodeInvalidMaxUses:
 		return true
 	case ErrorBodyCodeInvalidMode:
@@ -105,6 +112,8 @@ func (e ErrorBodyCode) Valid() bool {
 	case ErrorBodyCodeInvalidRoleIcon:
 		return true
 	case ErrorBodyCodeInviteInvalid:
+		return true
+	case ErrorBodyCodeItemNotFound:
 		return true
 	case ErrorBodyCodeLobbyChanged:
 		return true
@@ -190,6 +199,27 @@ func (e Genre) Valid() bool {
 	case Strategy:
 		return true
 	case Survival:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ItemStatus.
+const (
+	Known       ItemStatus = "known"
+	Unavailable ItemStatus = "unavailable"
+	Unknown     ItemStatus = "unknown"
+)
+
+// Valid indicates whether the value is a known member of the ItemStatus enum.
+func (e ItemStatus) Valid() bool {
+	switch e {
+	case Known:
+		return true
+	case Unavailable:
+		return true
+	case Unknown:
 		return true
 	default:
 		return false
@@ -330,6 +360,13 @@ type CreateLobbyRequest struct {
 // DefaultMaxPlayers Default max players of a game in the game list, an integer from 1 to 2147483647. `null` or omitted means unlimited. Changed by the system admin. Lobbies keep the value they were created with.
 type DefaultMaxPlayers = int
 
+// DropActivity defines model for DropActivity.
+type DropActivity struct {
+	ActivityId   openapi_types.UUID `json:"activityId"`
+	ActivityName string             `json:"activityName"`
+	ModeName     string             `json:"modeName"`
+}
+
 // ErrorBody defines model for ErrorBody.
 type ErrorBody struct {
 	// Code Machine-readable error code. The text for the user belongs to the frontend. not_found and method_not_allowed are returned by the gateway only.
@@ -376,6 +413,29 @@ type GameId = openapi_types.UUID
 
 // GameImageKind The kind of a game image (REQ-0026, ADR 0026).
 type GameImageKind string
+
+// GameItem defines model for GameItem.
+type GameItem struct {
+	// DropsIn The Named activities of the game whose drop list has the item, in the game's order.
+	DropsIn []DropActivity `json:"dropsIn"`
+
+	// ItemId The Blizzard item ID.
+	ItemId int `json:"itemId"`
+
+	// Name The English name from Blizzard when `status` is `known`, otherwise `null`. Never stored by the app (ADR 0029 C1, C2).
+	Name *string `json:"name"`
+
+	// Status `known`: Blizzard gave the name. `unknown`: Blizzard does not know the item. `unavailable`: Blizzard did not answer in time or is not configured (ADR 0029 section 4).
+	Status ItemStatus `json:"status"`
+}
+
+// GameItemList defines model for GameItemList.
+type GameItemList struct {
+	Items []GameItem `json:"items"`
+
+	// NameSearchComplete `false` when an item of the answer is `unavailable`, so the name search could not match it.
+	NameSearchComplete bool `json:"nameSearchComplete"`
+}
 
 // GameMode defines model for GameMode.
 type GameMode struct {
@@ -513,6 +573,21 @@ type InviteLink struct {
 
 // InviteMaxUses Max uses for a link. Set at creation and not changed.
 type InviteMaxUses = int
+
+// Item defines model for Item.
+type Item struct {
+	// ItemId The Blizzard item ID.
+	ItemId int `json:"itemId"`
+
+	// Name The English name from Blizzard when `status` is `known`, otherwise `null`. Never stored by the app (ADR 0029 C1, C2).
+	Name *string `json:"name"`
+
+	// Status `known`: Blizzard gave the name. `unknown`: Blizzard does not know the item. `unavailable`: Blizzard did not answer in time or is not configured (ADR 0029 section 4).
+	Status ItemStatus `json:"status"`
+}
+
+// ItemStatus `known`: Blizzard gave the name. `unknown`: Blizzard does not know the item. `unavailable`: Blizzard did not answer in time or is not configured (ADR 0029 section 4).
+type ItemStatus string
 
 // JoinLobbyRequest defines model for JoinLobbyRequest.
 type JoinLobbyRequest struct {
@@ -786,6 +861,9 @@ type UserRef struct {
 	UserId      openapi_types.UUID `json:"userId"`
 }
 
+// ActivityIdPath defines model for ActivityIdPath.
+type ActivityIdPath = string
+
 // GameIdPath defines model for GameIdPath.
 type GameIdPath = string
 
@@ -797,6 +875,9 @@ type GroupId = string
 
 // InviteToken defines model for InviteToken.
 type InviteToken = string
+
+// ItemIdPath defines model for ItemIdPath.
+type ItemIdPath = string
 
 // LinkId defines model for LinkId.
 type LinkId = string
@@ -843,6 +924,18 @@ type ReplaceGameParams struct {
 	XRequestId *RequestIdHeader `json:"X-Request-Id,omitempty"`
 }
 
+// RemoveDropItemParams defines parameters for RemoveDropItem.
+type RemoveDropItemParams struct {
+	// XRequestId Correlation ID (ADR 0001). A valid value is kept and passed on. A missing or invalid value is replaced by a new one. The response always contains `X-Request-Id`.
+	XRequestId *RequestIdHeader `json:"X-Request-Id,omitempty"`
+}
+
+// AddDropItemParams defines parameters for AddDropItem.
+type AddDropItemParams struct {
+	// XRequestId Correlation ID (ADR 0001). A valid value is kept and passed on. A missing or invalid value is replaced by a new one. The response always contains `X-Request-Id`.
+	XRequestId *RequestIdHeader `json:"X-Request-Id,omitempty"`
+}
+
 // RemoveGameImageParams defines parameters for RemoveGameImage.
 type RemoveGameImageParams struct {
 	// XRequestId Correlation ID (ADR 0001). A valid value is kept and passed on. A missing or invalid value is replaced by a new one. The response always contains `X-Request-Id`.
@@ -860,6 +953,18 @@ type GetGameImageParams struct {
 
 // SetGameImageParams defines parameters for SetGameImage.
 type SetGameImageParams struct {
+	// XRequestId Correlation ID (ADR 0001). A valid value is kept and passed on. A missing or invalid value is replaced by a new one. The response always contains `X-Request-Id`.
+	XRequestId *RequestIdHeader `json:"X-Request-Id,omitempty"`
+}
+
+// ListGameItemsParams defines parameters for ListGameItems.
+type ListGameItemsParams struct {
+	// ActivityId Only the drop list of this Named activity of the game. A value that is not a uuid gives `invalid_request`, checked after identity and the `gameId` form.
+	ActivityId *string `form:"activityId,omitempty" json:"activityId,omitempty"`
+
+	// Q Name search, trimmed, at most 50 characters. Empty means no filter.
+	Q *string `form:"q,omitempty" json:"q,omitempty"`
+
 	// XRequestId Correlation ID (ADR 0001). A valid value is kept and passed on. A missing or invalid value is replaced by a new one. The response always contains `X-Request-Id`.
 	XRequestId *RequestIdHeader `json:"X-Request-Id,omitempty"`
 }
@@ -996,6 +1101,12 @@ type JoinInviteParams struct {
 	XRequestId *RequestIdHeader `json:"X-Request-Id,omitempty"`
 }
 
+// GetItemIconParams defines parameters for GetItemIcon.
+type GetItemIconParams struct {
+	// XRequestId Correlation ID (ADR 0001). A valid value is kept and passed on. A missing or invalid value is replaced by a new one. The response always contains `X-Request-Id`.
+	XRequestId *RequestIdHeader `json:"X-Request-Id,omitempty"`
+}
+
 // GetPreferredGameRolesParams defines parameters for GetPreferredGameRoles.
 type GetPreferredGameRolesParams struct {
 	// XRequestId Correlation ID (ADR 0001). A valid value is kept and passed on. A missing or invalid value is replaced by a new one. The response always contains `X-Request-Id`.
@@ -1052,6 +1163,12 @@ type ServerInterface interface {
 	// ReplaceGame Replace game (system admin)
 	// (PUT /api/games/{gameId})
 	ReplaceGame(w http.ResponseWriter, r *http.Request, gameId GameIdPath, params ReplaceGameParams)
+	// RemoveDropItem Remove an item from a drop list (system admin)
+	// (DELETE /api/games/{gameId}/activities/{activityId}/items/{itemId})
+	RemoveDropItem(w http.ResponseWriter, r *http.Request, gameId GameIdPath, activityId ActivityIdPath, itemId ItemIdPath, params RemoveDropItemParams)
+	// AddDropItem Add an item to a drop list (system admin)
+	// (PUT /api/games/{gameId}/activities/{activityId}/items/{itemId})
+	AddDropItem(w http.ResponseWriter, r *http.Request, gameId GameIdPath, activityId ActivityIdPath, itemId ItemIdPath, params AddDropItemParams)
 	// RemoveGameImage Remove a game image (system admin)
 	// (DELETE /api/games/{gameId}/images/{kind})
 	RemoveGameImage(w http.ResponseWriter, r *http.Request, gameId GameIdPath, kind GameImageKindPath, params RemoveGameImageParams)
@@ -1061,6 +1178,9 @@ type ServerInterface interface {
 	// SetGameImage Upload a game image (system admin)
 	// (PUT /api/games/{gameId}/images/{kind})
 	SetGameImage(w http.ResponseWriter, r *http.Request, gameId GameIdPath, kind GameImageKindPath, params SetGameImageParams)
+	// ListGameItems List the drop-list items of a game
+	// (GET /api/games/{gameId}/items)
+	ListGameItems(w http.ResponseWriter, r *http.Request, gameId GameIdPath, params ListGameItemsParams)
 	// ListGroupOverviews List my group overviews
 	// (GET /api/group-overviews)
 	ListGroupOverviews(w http.ResponseWriter, r *http.Request, params ListGroupOverviewsParams)
@@ -1127,6 +1247,9 @@ type ServerInterface interface {
 	// JoinInvite Join group via invite link
 	// (POST /api/invites/{token}/join)
 	JoinInvite(w http.ResponseWriter, r *http.Request, token InviteToken, params JoinInviteParams)
+	// GetItemIcon Get the icon of an item
+	// (GET /api/items/{itemId}/icon)
+	GetItemIcon(w http.ResponseWriter, r *http.Request, itemId ItemIdPath, params GetItemIconParams)
 	// GetPreferredGameRoles Get the caller's preferred game roles
 	// (GET /api/users/me/preferred-game-roles)
 	GetPreferredGameRoles(w http.ResponseWriter, r *http.Request, params GetPreferredGameRolesParams)
@@ -1326,6 +1449,142 @@ func (siw *ServerInterfaceWrapper) ReplaceGame(w http.ResponseWriter, r *http.Re
 	handler.ServeHTTP(w, r)
 }
 
+// RemoveDropItem operation middleware
+func (siw *ServerInterfaceWrapper) RemoveDropItem(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "gameId" -------------
+	var gameId GameIdPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "gameId", r.PathValue("gameId"), &gameId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "gameId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "activityId" -------------
+	var activityId ActivityIdPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "activityId", r.PathValue("activityId"), &activityId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "activityId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "itemId" -------------
+	var itemId ItemIdPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "itemId", r.PathValue("itemId"), &itemId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "itemId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RemoveDropItemParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "X-Request-Id" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-Request-Id")]; found {
+		var XRequestId RequestIdHeader
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Request-Id", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-Request-Id", valueList[0], &XRequestId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Request-Id", Err: err})
+			return
+		}
+
+		params.XRequestId = &XRequestId
+
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RemoveDropItem(w, r, gameId, activityId, itemId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AddDropItem operation middleware
+func (siw *ServerInterfaceWrapper) AddDropItem(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "gameId" -------------
+	var gameId GameIdPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "gameId", r.PathValue("gameId"), &gameId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "gameId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "activityId" -------------
+	var activityId ActivityIdPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "activityId", r.PathValue("activityId"), &activityId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "activityId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "itemId" -------------
+	var itemId ItemIdPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "itemId", r.PathValue("itemId"), &itemId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "itemId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AddDropItemParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "X-Request-Id" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-Request-Id")]; found {
+		var XRequestId RequestIdHeader
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Request-Id", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-Request-Id", valueList[0], &XRequestId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Request-Id", Err: err})
+			return
+		}
+
+		params.XRequestId = &XRequestId
+
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AddDropItem(w, r, gameId, activityId, itemId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // RemoveGameImage operation middleware
 func (siw *ServerInterfaceWrapper) RemoveGameImage(w http.ResponseWriter, r *http.Request) {
 
@@ -1507,6 +1766,82 @@ func (siw *ServerInterfaceWrapper) SetGameImage(w http.ResponseWriter, r *http.R
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.SetGameImage(w, r, gameId, kind, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListGameItems operation middleware
+func (siw *ServerInterfaceWrapper) ListGameItems(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "gameId" -------------
+	var gameId GameIdPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "gameId", r.PathValue("gameId"), &gameId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "gameId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListGameItemsParams
+
+	// ------------- Optional query parameter "activityId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "activityId", r.URL.Query(), &params.ActivityId, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "activityId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "activityId", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "q" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "q", r.URL.Query(), &params.Q, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "q"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "q", Err: err})
+		}
+		return
+	}
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "X-Request-Id" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-Request-Id")]; found {
+		var XRequestId RequestIdHeader
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Request-Id", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-Request-Id", valueList[0], &XRequestId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Request-Id", Err: err})
+			return
+		}
+
+		params.XRequestId = &XRequestId
+
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListGameItems(w, r, gameId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2679,6 +3014,56 @@ func (siw *ServerInterfaceWrapper) JoinInvite(w http.ResponseWriter, r *http.Req
 	handler.ServeHTTP(w, r)
 }
 
+// GetItemIcon operation middleware
+func (siw *ServerInterfaceWrapper) GetItemIcon(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "itemId" -------------
+	var itemId ItemIdPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "itemId", r.PathValue("itemId"), &itemId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "itemId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetItemIconParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "X-Request-Id" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-Request-Id")]; found {
+		var XRequestId RequestIdHeader
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Request-Id", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-Request-Id", valueList[0], &XRequestId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Request-Id", Err: err})
+			return
+		}
+
+		params.XRequestId = &XRequestId
+
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetItemIcon(w, r, itemId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetPreferredGameRoles operation middleware
 func (siw *ServerInterfaceWrapper) GetPreferredGameRoles(w http.ResponseWriter, r *http.Request) {
 
@@ -2910,6 +3295,10 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/games/{gameId}/images/{kind}", wrapper.RemoveGameImage)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/games/{gameId}/images/{kind}", wrapper.GetGameImage)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/api/games/{gameId}/images/{kind}", wrapper.SetGameImage)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/games/{gameId}/items", wrapper.ListGameItems)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/games/{gameId}/activities/{activityId}/items/{itemId}", wrapper.RemoveDropItem)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/api/games/{gameId}/activities/{activityId}/items/{itemId}", wrapper.AddDropItem)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/items/{itemId}/icon", wrapper.GetItemIcon)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/users/me/preferred-game-roles", wrapper.GetPreferredGameRoles)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/api/users/me/preferred-game-roles", wrapper.ReplacePreferredGameRoles)
 
@@ -3316,6 +3705,232 @@ func (response ReplaceGame503JSONResponse) VisitReplaceGameResponse(w http.Respo
 	return err
 }
 
+type RemoveDropItemRequestObject struct {
+	GameId     GameIdPath     `json:"gameId"`
+	ActivityId ActivityIdPath `json:"activityId"`
+	ItemId     ItemIdPath     `json:"itemId"`
+	Params     RemoveDropItemParams
+}
+
+type RemoveDropItemResponseObject interface {
+	VisitRemoveDropItemResponse(w http.ResponseWriter) error
+}
+
+type RemoveDropItem204Response struct {
+}
+
+func (response RemoveDropItem204Response) VisitRemoveDropItemResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type RemoveDropItem400JSONResponse ErrorResponse
+
+func (response RemoveDropItem400JSONResponse) VisitRemoveDropItemResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveDropItem401JSONResponse struct{ UnauthenticatedJSONResponse }
+
+func (response RemoveDropItem401JSONResponse) VisitRemoveDropItemResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveDropItem403JSONResponse ErrorResponse
+
+func (response RemoveDropItem403JSONResponse) VisitRemoveDropItemResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveDropItem404JSONResponse ErrorResponse
+
+func (response RemoveDropItem404JSONResponse) VisitRemoveDropItemResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveDropItem500JSONResponse struct{ InternalErrorJSONResponse }
+
+func (response RemoveDropItem500JSONResponse) VisitRemoveDropItemResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveDropItem503JSONResponse struct{ ServiceUnavailableJSONResponse }
+
+func (response RemoveDropItem503JSONResponse) VisitRemoveDropItemResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddDropItemRequestObject struct {
+	GameId     GameIdPath     `json:"gameId"`
+	ActivityId ActivityIdPath `json:"activityId"`
+	ItemId     ItemIdPath     `json:"itemId"`
+	Params     AddDropItemParams
+}
+
+type AddDropItemResponseObject interface {
+	VisitAddDropItemResponse(w http.ResponseWriter) error
+}
+
+type AddDropItem201JSONResponse Item
+
+func (response AddDropItem201JSONResponse) VisitAddDropItemResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddDropItem400JSONResponse ErrorResponse
+
+func (response AddDropItem400JSONResponse) VisitAddDropItemResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddDropItem401JSONResponse struct{ UnauthenticatedJSONResponse }
+
+func (response AddDropItem401JSONResponse) VisitAddDropItemResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddDropItem403JSONResponse ErrorResponse
+
+func (response AddDropItem403JSONResponse) VisitAddDropItemResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddDropItem404JSONResponse ErrorResponse
+
+func (response AddDropItem404JSONResponse) VisitAddDropItemResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddDropItem409JSONResponse ErrorResponse
+
+func (response AddDropItem409JSONResponse) VisitAddDropItemResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddDropItem500JSONResponse struct{ InternalErrorJSONResponse }
+
+func (response AddDropItem500JSONResponse) VisitAddDropItemResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddDropItem503JSONResponse struct{ ServiceUnavailableJSONResponse }
+
+func (response AddDropItem503JSONResponse) VisitAddDropItemResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type RemoveGameImageRequestObject struct {
 	GameId GameIdPath        `json:"gameId"`
 	Kind   GameImageKindPath `json:"kind"`
@@ -3616,6 +4231,99 @@ func (response SetGameImage500JSONResponse) VisitSetGameImageResponse(w http.Res
 type SetGameImage503JSONResponse struct{ ServiceUnavailableJSONResponse }
 
 func (response SetGameImage503JSONResponse) VisitSetGameImageResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListGameItemsRequestObject struct {
+	GameId GameIdPath `json:"gameId"`
+	Params ListGameItemsParams
+}
+
+type ListGameItemsResponseObject interface {
+	VisitListGameItemsResponse(w http.ResponseWriter) error
+}
+
+type ListGameItems200JSONResponse GameItemList
+
+func (response ListGameItems200JSONResponse) VisitListGameItemsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListGameItems400JSONResponse ErrorResponse
+
+func (response ListGameItems400JSONResponse) VisitListGameItemsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListGameItems401JSONResponse struct{ UnauthenticatedJSONResponse }
+
+func (response ListGameItems401JSONResponse) VisitListGameItemsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListGameItems404JSONResponse ErrorResponse
+
+func (response ListGameItems404JSONResponse) VisitListGameItemsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListGameItems500JSONResponse struct{ InternalErrorJSONResponse }
+
+func (response ListGameItems500JSONResponse) VisitListGameItemsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListGameItems503JSONResponse struct{ ServiceUnavailableJSONResponse }
+
+func (response ListGameItems503JSONResponse) VisitListGameItemsResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -5611,6 +6319,118 @@ func (response JoinInvite503JSONResponse) VisitJoinInviteResponse(w http.Respons
 	return err
 }
 
+type GetItemIconRequestObject struct {
+	ItemId ItemIdPath `json:"itemId"`
+	Params GetItemIconParams
+}
+
+type GetItemIconResponseObject interface {
+	VisitGetItemIconResponse(w http.ResponseWriter) error
+}
+
+type GetItemIcon200ResponseHeaders struct {
+	CacheControl        *string
+	XContentTypeOptions *string
+}
+
+type GetItemIcon200ImageResponse struct {
+	Body          io.Reader
+	Headers       GetItemIcon200ResponseHeaders
+	ContentType   string
+	ContentLength int64
+}
+
+func (response GetItemIcon200ImageResponse) VisitGetItemIconResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", response.ContentType)
+	if response.ContentLength != 0 {
+		w.Header().Set("Content-Length", fmt.Sprint(response.ContentLength))
+	}
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.XContentTypeOptions != nil {
+		w.Header().Set("X-Content-Type-Options", fmt.Sprint(*response.Headers.XContentTypeOptions))
+	}
+	w.WriteHeader(200)
+
+	if closer, ok := response.Body.(io.ReadCloser); ok {
+		defer closer.Close()
+	}
+	_, err := io.Copy(w, response.Body)
+	return err
+}
+
+type GetItemIcon400JSONResponse ErrorResponse
+
+func (response GetItemIcon400JSONResponse) VisitGetItemIconResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetItemIcon401JSONResponse struct{ UnauthenticatedJSONResponse }
+
+func (response GetItemIcon401JSONResponse) VisitGetItemIconResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetItemIcon404JSONResponse ErrorResponse
+
+func (response GetItemIcon404JSONResponse) VisitGetItemIconResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetItemIcon500JSONResponse struct{ InternalErrorJSONResponse }
+
+func (response GetItemIcon500JSONResponse) VisitGetItemIconResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetItemIcon503JSONResponse struct{ ServiceUnavailableJSONResponse }
+
+func (response GetItemIcon503JSONResponse) VisitGetItemIconResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type GetPreferredGameRolesRequestObject struct {
 	Params GetPreferredGameRolesParams
 }
@@ -5768,6 +6588,12 @@ type StrictServerInterface interface {
 	// ReplaceGame Replace game (system admin)
 	// (PUT /api/games/{gameId})
 	ReplaceGame(ctx context.Context, request ReplaceGameRequestObject) (ReplaceGameResponseObject, error)
+	// RemoveDropItem Remove an item from a drop list (system admin)
+	// (DELETE /api/games/{gameId}/activities/{activityId}/items/{itemId})
+	RemoveDropItem(ctx context.Context, request RemoveDropItemRequestObject) (RemoveDropItemResponseObject, error)
+	// AddDropItem Add an item to a drop list (system admin)
+	// (PUT /api/games/{gameId}/activities/{activityId}/items/{itemId})
+	AddDropItem(ctx context.Context, request AddDropItemRequestObject) (AddDropItemResponseObject, error)
 	// RemoveGameImage Remove a game image (system admin)
 	// (DELETE /api/games/{gameId}/images/{kind})
 	RemoveGameImage(ctx context.Context, request RemoveGameImageRequestObject) (RemoveGameImageResponseObject, error)
@@ -5777,6 +6603,9 @@ type StrictServerInterface interface {
 	// SetGameImage Upload a game image (system admin)
 	// (PUT /api/games/{gameId}/images/{kind})
 	SetGameImage(ctx context.Context, request SetGameImageRequestObject) (SetGameImageResponseObject, error)
+	// ListGameItems List the drop-list items of a game
+	// (GET /api/games/{gameId}/items)
+	ListGameItems(ctx context.Context, request ListGameItemsRequestObject) (ListGameItemsResponseObject, error)
 	// ListGroupOverviews List my group overviews
 	// (GET /api/group-overviews)
 	ListGroupOverviews(ctx context.Context, request ListGroupOverviewsRequestObject) (ListGroupOverviewsResponseObject, error)
@@ -5843,6 +6672,9 @@ type StrictServerInterface interface {
 	// JoinInvite Join group via invite link
 	// (POST /api/invites/{token}/join)
 	JoinInvite(ctx context.Context, request JoinInviteRequestObject) (JoinInviteResponseObject, error)
+	// GetItemIcon Get the icon of an item
+	// (GET /api/items/{itemId}/icon)
+	GetItemIcon(ctx context.Context, request GetItemIconRequestObject) (GetItemIconResponseObject, error)
 	// GetPreferredGameRoles Get the caller's preferred game roles
 	// (GET /api/users/me/preferred-game-roles)
 	GetPreferredGameRoles(ctx context.Context, request GetPreferredGameRolesRequestObject) (GetPreferredGameRolesResponseObject, error)
@@ -6010,6 +6842,64 @@ func (sh *strictHandler) ReplaceGame(w http.ResponseWriter, r *http.Request, gam
 	}
 }
 
+// RemoveDropItem operation middleware
+func (sh *strictHandler) RemoveDropItem(w http.ResponseWriter, r *http.Request, gameId GameIdPath, activityId ActivityIdPath, itemId ItemIdPath, params RemoveDropItemParams) {
+	var request RemoveDropItemRequestObject
+
+	request.GameId = gameId
+	request.ActivityId = activityId
+	request.ItemId = itemId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RemoveDropItem(ctx, request.(RemoveDropItemRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RemoveDropItem")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RemoveDropItemResponseObject); ok {
+		if err := validResponse.VisitRemoveDropItemResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AddDropItem operation middleware
+func (sh *strictHandler) AddDropItem(w http.ResponseWriter, r *http.Request, gameId GameIdPath, activityId ActivityIdPath, itemId ItemIdPath, params AddDropItemParams) {
+	var request AddDropItemRequestObject
+
+	request.GameId = gameId
+	request.ActivityId = activityId
+	request.ItemId = itemId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AddDropItem(ctx, request.(AddDropItemRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AddDropItem")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AddDropItemResponseObject); ok {
+		if err := validResponse.VisitAddDropItemResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // RemoveGameImage operation middleware
 func (sh *strictHandler) RemoveGameImage(w http.ResponseWriter, r *http.Request, gameId GameIdPath, kind GameImageKindPath, params RemoveGameImageParams) {
 	var request RemoveGameImageRequestObject
@@ -6090,6 +6980,33 @@ func (sh *strictHandler) SetGameImage(w http.ResponseWriter, r *http.Request, ga
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(SetGameImageResponseObject); ok {
 		if err := validResponse.VisitSetGameImageResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListGameItems operation middleware
+func (sh *strictHandler) ListGameItems(w http.ResponseWriter, r *http.Request, gameId GameIdPath, params ListGameItemsParams) {
+	var request ListGameItemsRequestObject
+
+	request.GameId = gameId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListGameItems(ctx, request.(ListGameItemsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListGameItems")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListGameItemsResponseObject); ok {
+		if err := validResponse.VisitListGameItemsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -6746,6 +7663,33 @@ func (sh *strictHandler) JoinInvite(w http.ResponseWriter, r *http.Request, toke
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(JoinInviteResponseObject); ok {
 		if err := validResponse.VisitJoinInviteResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetItemIcon operation middleware
+func (sh *strictHandler) GetItemIcon(w http.ResponseWriter, r *http.Request, itemId ItemIdPath, params GetItemIconParams) {
+	var request GetItemIconRequestObject
+
+	request.ItemId = itemId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetItemIcon(ctx, request.(GetItemIconRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetItemIcon")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetItemIconResponseObject); ok {
+		if err := validResponse.VisitGetItemIconResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

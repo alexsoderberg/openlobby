@@ -197,7 +197,7 @@ The architect's part (this ADR, the glossary in `CLAUDE.md`, `docs/services.md`)
 
 ## Consequences
 - Calendar has one more network (`calendar-egress`) and an outbound path to Blizzard. The egress is a new external dependency, and its monitoring (rate, 429 and warnings) is devops' work in the existing logs.
-- The item catalog gives calls at most 3 per second (a cold icon costs three calls). The first view of a large drop list after a restart can show "Name not available" for some items (cache shortcut). Forever's 404 rate (about 43 percent on 2026-11-07) means many real items will show "Unknown item" until Blizzard fills the data. The UI copy says what "Unknown item" means and the admin can save the ID anyway (REQ-0030).
+- The item catalog gives calls at most 3 per second (a cold icon costs two calls, Amendment 2026-11-25 item 5). The first view of a large drop list after a restart can show "Name not available" for some items (cache shortcut). Forever's 404 rate (about 43 percent on 2026-11-07) means many real items will show "Unknown item" until Blizzard fills the data. The UI copy says what "Unknown item" means and the admin can save the ID anyway (REQ-0030).
 - The data model is two tables and one cleanup statement; no table holds Blizzard data.
 - A later Journal-based drop list (REQ-0030, "later") replaces the hand-entered rows of `drop_items`, not the goals.
 - The migration is reversible (section 3).
@@ -210,6 +210,23 @@ The architect's part (this ADR, the glossary in `CLAUDE.md`, `docs/services.md`)
 - **A foreign key from `drop_items` to `activities` with cascade.** Rejected (section 3): the game write deletes and re-inserts activities, so the cascade would delete all drop lists on each save.
 - **An OAuth library.** Rejected: the client credentials flow is one POST, and the standard library is enough (no new dependency).
 - **Blizzard's Forever Journal for the drop lists.** Not possible yet: the journal is empty (REQ-0030, DECISION 2026-11-25). It remains the later source.
+
+## Amendment 2026-11-25 (readings made while building PR2)
+The backend made the readings below where sections 4 and 5 were silent or said something else. The architect confirmed or corrected each one. This amendment overrides the text it names (the ADR's convention, as in ADR 0028). Where a point is not listed, the text above stands.
+
+1. **Malformed `activityId` in a path (confirmed).** On `addDropItem` and `removeDropItem`, an `activityId` that is not a UUID gives 400 `invalid_activity` before the 403 `not_allowed` of a non-admin. The shape check comes before permission, in the order of section 5. A well-formed `activityId` that is not an activity of the game gives 403 for a non-admin and 400 `invalid_activity` for a system admin.
+2. **Malformed IDs (confirmed, already in section 5).** A malformed `itemId` in a path gives 400 `invalid_item` on all routes. A query `activityId` of `listGameItems` that is not a UUID gives 400 `invalid_request`. No change.
+3. **`q` too long (added).** A `q` longer than 50 characters after trimming gives 400 `invalid_request`. Section 5 states the limit and not the error.
+4. **`dropsIn` is not filtered (confirmed).** With `activityId`, only the item list is filtered to that activity. Each `GameItem.dropsIn` still lists every Named activity of the game whose drop list has the item, because `dropsIn` is defined as "of this game" (section 5). A player sees where else the item drops.
+5. **Cold icon calls media directly (confirmed, corrects section 4).** On a cache miss, `GET /api/items/{itemId}/icon` calls `GET .../data/wow/media/item/{itemId}?namespace=...` first and then the asset URL. It does not call the item endpoint first, because the media endpoint is keyed by item ID and the icon needs no name. The sentence "the item answer gives the media link" of section 4 is replaced by this. A cold icon therefore costs two calls, not three (the Consequences section is corrected). A 404 from the media call is `ErrItemNotFound`, so the route answers 404 `item_not_found`.
+6. **Icon route checks goals (confirmed).** From PR2, `getItemIcon` answers for an item on a drop list or in a goal. The `goals` table is created by migration 0013 in PR2, so the check needs no PR3.
+7. **Streak guard (corrected).** Only the 404 answers of the item call and the media call count toward `maxConsecutiveNotFound`, because both carry the namespace. A 404 from the token call does not count (it is a token failure, item 8). A 404 from the asset host does not count (the icon is missing, not the namespace). An item answer with status 200 and an empty name gives status `unavailable`. It is a 200 answer, so it resets the streak.
+8. **Token answer (confirmed, made explicit).** Any answer from the token endpoint that is not 200 (for example 401 with wrong credentials) gives `ErrCatalogUnavailable` and starts the 60 second pause of all calls (the 429 and 5xx rule of section 4). A transport error or a timeout of the token call does not start the pause; the request fails as `unavailable`, and the rate limit of section 4 keeps the retries bounded.
+9. **Cache sweep (decided: a sweep is required).**
+   - Why: the terms limit retention to 30 days (section 1, the quoted clause of item 18). Section 4 removes expired entries only when a miss happens. A process that gets no item traffic keeps expired entries in memory for as long as it runs. Its own data would then be kept past 30 days, and the TTL alone does not hold the rule.
+   - What the backend adds (in `blizzardcache`, before PR2 is merged): a sweep that removes every entry whose expiry has passed. It runs in a goroutine that `main.go` starts with the process context, every `catalogSweepInterval` = 1 hour (a named constant), and stops when the context ends. The time comes from the injected clock, not from `time.Now()`, so that a test can advance it.
+   - Bound after the change: an entry lives in memory at most 7 days (found) or 1 day (not found) plus 1 hour.
+   - Test: after the clock passes the TTL, one sweep removes the entry, and an entry that has not expired stays. The miss-time removal of section 4 stays as it is.
 
 ## Open points (not blocking)
 - Pinned build namespace: to be verified with one GET (section 4); the amendment follows then. Until then the streak guard and the alias apply.
