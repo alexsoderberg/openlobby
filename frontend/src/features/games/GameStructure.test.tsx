@@ -419,8 +419,11 @@ describe("remove a mode or an activity", () => {
     await waitFor(() =>
       expect(within(mode).queryByDisplayValue("Crypt")).toBeNull(),
     );
-    expect(document.activeElement).toBe(
-      within(mode).getByRole("button", { name: en.gameActivityAdd }),
+    // Focus moves in an effect after the render that removed the row.
+    await waitFor(() =>
+      expect(document.activeElement).toBe(
+        within(mode).getByRole("button", { name: en.gameActivityAdd }),
+      ),
     );
   });
 });

@@ -9,7 +9,14 @@ import {
 } from "react";
 import type { RoleIcon } from "../../api";
 import { useMessages } from "../../i18n";
-import { Button, ConfirmDialog, Icon, IconButton, Select } from "../../ui";
+import {
+  Attribution,
+  Button,
+  ConfirmDialog,
+  Icon,
+  IconButton,
+  Select,
+} from "../../ui";
 import { ROLE_ICONS } from "./roleIcons";
 import {
   emptyActivity,
@@ -31,6 +38,12 @@ import {
 const FieldErrorContext = createContext<{ fieldId?: string; errorId?: string }>(
   {},
 );
+
+/** Draws the drop list of a saved activity (ADR 0029). Only the edit form of a saved game has drop lists. */
+export type RenderDropList = (
+  activityId: string,
+  activityName: string,
+) => ReactNode;
 
 type SetDraft = Dispatch<SetStateAction<StructureDraft>>;
 type RequestFocus = (elementId: string) => void;
@@ -211,6 +224,7 @@ export function ModeView({
   setDraft,
   requestFocus,
   error,
+  renderDropList,
   onBack,
 }: {
   id: string;
@@ -219,6 +233,7 @@ export function ModeView({
   setDraft: SetDraft;
   requestFocus: RequestFocus;
   error: StructureError;
+  renderDropList?: RenderDropList;
   onBack: () => void;
 }) {
   const m = useMessages();
@@ -264,6 +279,7 @@ export function ModeView({
           patch={patch}
           requestFocus={requestFocus}
           askRemoval={setRemoval}
+          renderDropList={renderDropList}
         />
         <Button
           variant="danger"
@@ -316,15 +332,22 @@ function ActivityFieldset({
   patch,
   requestFocus,
   askRemoval,
+  renderDropList,
 }: {
   id: string;
   mode: ModeDraft;
   patch: (change: Partial<ModeDraft>) => void;
   requestFocus: RequestFocus;
   askRemoval: (removal: Removal) => void;
+  renderDropList?: RenderDropList;
 }) {
   const m = useMessages();
   const addId = `${id}-${mode.key}-add-activity`;
+  // A new activity has no ID until the game is saved, so its drop list comes after the save (ADR 0029 section 6).
+  const hasDropLists =
+    renderDropList && mode.activities.some((activity) => activity.id);
+  const hasUnsaved =
+    renderDropList && mode.activities.some((activity) => !activity.id);
   return (
     <fieldset className="structure">
       <legend>{m.gameActivitiesLegend}</legend>
@@ -363,11 +386,16 @@ function ActivityFieldset({
                     }
                   />
                 </StructureRow>
+                {renderDropList &&
+                  activity.id &&
+                  renderDropList(activity.id, activityLabel)}
               </li>
             );
           })}
         </ul>
       )}
+      {hasUnsaved && <p className="form-hint">{m.dropListAfterSave}</p>}
+      {hasDropLists && <Attribution />}
       <Button
         variant="secondary"
         type="button"

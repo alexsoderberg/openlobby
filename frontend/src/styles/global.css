@@ -166,6 +166,8 @@
   --size-game-logo: 2.5rem;
   /* Where the game is central: Next up and the lobby page (REQ-0026). */
   --size-game-logo-large: 4rem;
+  /* An item icon (ADR 0029): Blizzard draws them at 56 px, so this stays under that and sharp. */
+  --size-item-icon: 2.5rem;
   --width-popover: 22rem;
   /* Top bar, sticky from 760px: below the scrim (40), so it dims with the page. */
   --z-top-bar: 10;
@@ -1116,6 +1118,92 @@ a:where(:not([data-slot="button"])) {
   display: grid;
   flex: 1 1 10rem;
   gap: var(--space-1);
+}
+
+/* A Named activity's drop list (ADR 0029): under the activity, set in from a rule, so it reads as part of it. */
+.drop-list {
+  display: grid;
+  gap: var(--space-2);
+  margin: var(--space-2) 0 var(--space-3);
+  padding-left: var(--space-3);
+  border-left: 1px solid var(--color-rule);
+}
+
+.drop-list__title {
+  margin: 0;
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.drop-list__items {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* The item, then its remove button, which keeps its place on a narrow screen while the item's text wraps. */
+.drop-list__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-1) 0;
+  border-bottom: 1px solid var(--color-rule);
+}
+
+.drop-list__add {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--space-2);
+}
+
+/* An item: icon box, then the name over its ID. The box stays without an icon, so the names line up. */
+[data-slot="item-label"] {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.item-label__icon {
+  flex: none;
+  width: var(--size-item-icon);
+  height: var(--size-item-icon);
+}
+
+[data-slot="item-icon"] {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: var(--radius-sm);
+}
+
+.item-label__text {
+  display: grid;
+  min-width: 0;
+}
+
+.item-label__name {
+  font-weight: var(--font-weight-strong);
+  overflow-wrap: anywhere;
+}
+
+.item-label__meta {
+  font-size: var(--font-size-small);
+  color: var(--color-muted);
+}
+
+/* The credit Blizzard's terms ask for, once per page with item data. */
+.attribution {
+  margin: 0;
+  font-size: var(--font-size-small);
+  color: var(--color-muted);
 }
 
 /* The game form shows one level at a time: the game view, or one mode's view. A mode slides in from the right

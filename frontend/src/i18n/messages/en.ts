@@ -250,6 +250,31 @@ export const en = {
   gameImageRemoveKeep: "Keep image",
   gameChanged: "Game changed.",
   gameRemoved: "Game removed.",
+  dropListTitle: "Drop list",
+  dropListHeading: (activity: string) => `Drop list of ${activity}`,
+  dropListLoading: "Loading the drop list.",
+  dropListEmpty: "No items yet.",
+  dropListItemIdLabel: "Item ID",
+  dropListItemIdHint:
+    "The Blizzard item ID, a whole number. The item is added as soon as you choose Add item.",
+  dropListAdd: "Add item",
+  dropListAdded: "Item added.",
+  dropListAddedUnknown:
+    "Item added. Blizzard does not know this ID, so it is shown as Unknown item.",
+  dropListRemove: "Remove item",
+  dropListRemoveHeading: (item: string) => `Remove ${item} from the drop list?`,
+  dropListRemoveConfirm:
+    "The item leaves this drop list. Members who have it as a goal keep it.",
+  dropListRemoveSubmit: "Yes, remove item",
+  dropListRemoveKeep: "Keep item",
+  dropListRemoved: "Item removed.",
+  dropListAfterSave:
+    "A new activity gets its drop list after you save the game.",
+  itemId: (itemId: number) => `ID ${itemId}`,
+  itemUnknown: "Unknown item",
+  itemFallbackName: "Item",
+  itemNameUnavailable: "Name not available",
+  attribution: "Data from Blizzard",
 
   lobbiesHeading: "Upcoming lobbies",
   lobbiesLoading: "Loading the lobbies.",
