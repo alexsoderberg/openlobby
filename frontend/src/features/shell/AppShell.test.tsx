@@ -66,6 +66,22 @@ describe("landmarks and top bar", () => {
   });
 });
 
+describe("skip link", () => {
+  it("is the first keyboard stop and moves focus to the main area", () => {
+    renderShell();
+
+    // jsdom has no Tab key: the first element in DOM order that Tab reaches is the first stop.
+    const first = document.querySelector<HTMLElement>(
+      "a[href], button, input, select, textarea, [tabindex]:not([tabindex='-1'])",
+    );
+    expect(first).toBe(screen.getByRole("link", { name: en.skipToContent }));
+
+    fireEvent.click(first!);
+
+    expect(document.activeElement).toBe(screen.getByRole("main"));
+  });
+});
+
 describe("where the plus shows", () => {
   it.each([
     [{ section: "home" }],

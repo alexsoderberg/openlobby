@@ -15,6 +15,7 @@ export const en = {
   brandAccent: "Lobby",
   logInWithDiscord: "Log in with Discord",
   logOut: "Log out",
+  skipToContent: "Skip to content",
   tryAgain: "Try again",
   cancel: "Cancel",
   backToGroups: "Back to your groups",

@@ -2,7 +2,7 @@ import { useRef } from "react";
 import { loginUrl } from "../../api";
 import { useFocusAfterLogout, useScrolledPast } from "../../hooks";
 import { useMessages } from "../../i18n";
-import { Alert, Brand, ButtonLink, Icon } from "../../ui";
+import { Alert, Brand, ButtonLink, Icon, MAIN_ID, SkipLink } from "../../ui";
 import { loggedOutNotice, type LoggedOutPageProps } from "../session";
 import { LandingHero } from "./LandingHero";
 import { StepCard } from "./StepCard";
@@ -26,6 +26,7 @@ export function LandingPage({
 
   return (
     <>
+      <SkipLink />
       <header
         className={`topbar landing-topbar${scrolled ? " is-scrolled" : ""}`}
       >
@@ -35,7 +36,7 @@ export function LandingPage({
           {t.topBarLogIn}
         </ButtonLink>
       </header>
-      <main className="landing">
+      <main id={MAIN_ID} className="landing" tabIndex={-1}>
         {notice && <Alert>{notice}</Alert>}
         <section className="hero">
           <div className="hero__text">

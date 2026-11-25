@@ -58,9 +58,10 @@ export function RunningOrder({
   useLayoutEffect(() => {
     const view = scroller.current;
     const hours = axis.current;
-    if (!view || !hours || hours.offsetWidth === 0) return;
+    const row = hours?.parentElement;
+    if (!view || !hours || !row || hours.offsetWidth === 0) return;
     // The day names take the part of the view left of the axis on wide screens; on phones nothing does.
-    const nameColumn = hours.parentElement!.offsetWidth - hours.offsetWidth;
+    const nameColumn = row.offsetWidth - hours.offsetWidth;
     const visibleMinutes =
       ((view.clientWidth - nameColumn) / hours.offsetWidth) * DAY_MINUTES;
     const { lobbies, from, now: openedAt } = atOpening;

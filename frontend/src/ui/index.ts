@@ -13,5 +13,6 @@ export { IconButton } from "./IconButton";
 export { Meter } from "./Meter";
 export { Panel } from "./Panel";
 export { Select, type DropdownOption } from "./Select";
+export { MAIN_ID, SkipLink } from "./SkipLink";
 export { showToast, Toaster } from "./Toast";
 export { ViewToggle } from "./ViewToggle";
