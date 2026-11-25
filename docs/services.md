@@ -15,14 +15,14 @@ gateway ──────────────► frontend      (/ and all n
    │  validates session, sets X-User-*
    ├──────────────► auth              (/api/auth/*)
    │                 ▲
-   └──────────────► calendar          (/api/groups*, /api/group-overviews, /api/invites*, /api/games*, /api/users*)
+   └──────────────► calendar          (/api/groups*, /api/group-overviews, /api/invites*, /api/games*, /api/items*, /api/users*)
                      │  name lookup (internal HTTP)
                      └────────────► auth
 
 certbot (sidecar)  renews certificates into a volume that edge reads (ADR 0009)
 ```
 
-Each arrow is a shared Compose network; no other pair of containers shares one (ADR 0008 review 5). `auth` also has an egress network for Discord (login, and the picture taken at login, ADR 0018), and `postgres` is reached only by `auth`, `calendar` and their migration jobs.
+Each arrow is a shared Compose network; no other pair of containers shares one (ADR 0008 review 5). `auth` also has an egress network for Discord (login, and the picture taken at login, ADR 0018), and `calendar` has one for the Blizzard Game Data API (ADR 0029). `postgres` is reached only by `auth`, `calendar` and their migration jobs.
 
 All services use synchronous HTTP/JSON. The exceptions to JSON responses are the live updates stream, a server-sent events connection from `calendar` through `gateway` to the browser that carries only a change signal (ADR 0019), the picture of a member (ADR 0018), and the game logo (ADR 0026). No service reads another service's database. No service is exposed publicly except `edge`, which only forwards to `gateway`.
 
@@ -58,7 +58,10 @@ All services use synchronous HTTP/JSON. The exceptions to JSON responses are the
 - **Realizes:** F-002 (REQ-0002), F-003 (REQ-0003, REQ-0009), F-004 and F-017 (REQ-0004), F-005 (REQ-0005), F-018 (REQ-0005, REQ-0009), F-024 (REQ-0009, management by system admin), F-010 (REQ-0006), F-013 (REQ-0007), F-028 (REQ-0012, data only: the group list, each group's upcoming lobbies and `joinedByMe` on each lobby, ADR 0014), F-032 (REQ-0014, data only: `games.genre` and `gameGenre` on lobbies, read live through a join on `games`, ADR 0016). Realized by ADR 0017 (PR1 to PR6): F-027 (REQ-0011), F-033 and F-034 (REQ-0015), game modes, game roles, named activities and open lobbies.
 - **Dependencies (proposed):** `auth` also for the picture of a member, read internally (`GET /internal/users/{userId}/avatar`). Calendar serves the picture only after a shared-group check on its own `group_members` (ADR 0018).
 - **Realizes (proposed):** F-029 (`hasAvatar` and `GET /api/users/{userId}/avatar` with the shared-group check, ADR 0018), F-035 (live updates signal, ADR 0019), F-036 (group feed, ADR 0020).
-- **Decisions:** ADR 0004, 0006, 0007, 0010, 0011, 0016, 0017, 0018, 0019, 0020, 0022, 0024, 0025, 0026.
+- **Owns data, added by ADR 0029 (migration 0013):** `drop_items` (the item IDs of a Named activity's drop list; no foreign key to `activities`, because the game write re-creates activities, so orphans are removed in the game write and the game delete), `goals` (a person's item IDs per game, removed with the game). No name, icon or other Blizzard data is stored.
+- **Dependencies, added by ADR 0029:** the Blizzard Game Data API (external, behind the port `ItemCatalog`; adapter `blizzard` with an in-memory cache `blizzardcache` of at most 7 days; egress network `calendar-egress`).
+- **Realizes (ADR 0029):** F-031 (REQ-0030): goals, drop lists, item names and icons.
+- **Decisions:** ADR 0004, 0006, 0007, 0010, 0011, 0016, 0017, 0018, 0019, 0020, 0022, 0024, 0025, 0026, 0029.
 - **Realizes:** F-042 (REQ-0023, ADR 0024: the icon of a game role, stored on game roles and role slots).
 - **Realizes (proposed):** F-039 (REQ-0021, ADR 0022: a person's preferred game roles, preselected seat on join, shown to members of shared groups), F-043 (REQ-0024, ADR 0025: `GET /api/group-overviews` for the Group list), F-030 (REQ-0026, ADR 0026: the game logo, stored and served by calendar; the game cover is removed by ADR 0026 Amendment 2026-11-25).
 
@@ -67,7 +70,7 @@ All services use synchronous HTTP/JSON. The exceptions to JSON responses are the
 - **Owns data:** nothing. Runs in its own container with static files (Nginx). No access log, error log level `emerg` (ADR 0008 and ADR 0009 review 5).
 - **Dependencies:** `gateway` (all API calls).
 - **Realizes:** the user interface for F-001–F-005, F-010, F-013, F-017, F-018, F-024, F-028, F-029, F-035 and F-036.
-- **Decisions:** ADR 0008 (static web server), 0001, 0011, 0013 (texts and formatting), 0014 (dashboard), 0018 (avatar picture, not built yet), 0019 (live updates), 0020 (group feed), 0026 (game logo; cover removed by Amendment 2026-11-25).
+- **Decisions:** ADR 0008 (static web server), 0001, 0011, 0013 (texts and formatting), 0014 (dashboard), 0018 (avatar picture, not built yet), 0019 (live updates), 0020 (group feed), 0026 (game logo; cover removed by Amendment 2026-11-25), 0029 (goals, drop lists, item icons, Attribution).
 
 ### Shared
 - **Databases:** one PostgreSQL 17 instance (ADR 0008), one database per service (`auth`, `calendar`), with two roles each: `<service>` (DML) and `<service>_migrate` (DDL, only the migration job). ADR 0006, 0008, 0012.
