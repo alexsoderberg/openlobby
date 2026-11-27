@@ -235,14 +235,11 @@ describe("one level at a time", () => {
     expect(document.activeElement).toBe(
       within(mode).getByRole("heading", { name: "Raid" }),
     );
-    // The game's own fields, the other modes and the save button are out of sight while a mode is open.
+    // The game's own fields and the other modes are out of sight while a mode is open.
     expect(
       within(form).queryByRole("textbox", { name: en.gameNameLabel }),
     ).toBeNull();
     expect(within(form).queryByRole("button", { name: "Duel" })).toBeNull();
-    expect(
-      within(form).queryByRole("button", { name: en.gameEditSubmit }),
-    ).toBeNull();
 
     back(form);
 
@@ -288,6 +285,33 @@ describe("one level at a time", () => {
 
     expect(client.replaceGame).not.toHaveBeenCalled();
     expect(within(openMode(form, "Duo")).getByDisplayValue("Duo")).toBeTruthy();
+  });
+
+  it("saves the game from the mode view, with the activity added there", async () => {
+    const client = renderPage();
+    const form = await editForm("Dungeons");
+    const mode = openMode(form, "Duel");
+    expect(
+      within(mode).getByText(en.gameModeSavedWithGame(en.gameEditSubmit)),
+    ).toBeTruthy();
+    click(mode, en.gameActivityAdd);
+    type(within(mode).getByLabelText(en.gameActivityNameLabel), "Arena");
+
+    click(form, en.gameEditSubmit);
+
+    await waitFor(() =>
+      expect(client.replaceGame).toHaveBeenCalledWith(
+        "g1",
+        expect.objectContaining({
+          modes: expect.arrayContaining([
+            expect.objectContaining({
+              id: "m2",
+              activities: [{ name: "Arena" }],
+            }),
+          ]),
+        }),
+      ),
+    );
   });
 });
 

@@ -750,6 +750,41 @@ a:where(:not([data-slot="button"])) {
   margin-top: 0;
 }
 
+/* The You page: one panel per settings section, so each reads as a bounded unit, kept to the text measure so an
+   action stays near what it acts on. Log out follows the panels. */
+.settings-page {
+  max-width: var(--width-measure);
+  gap: var(--space-4);
+}
+
+/* A ruled list ends on the panel's own edge or footer rule, not on a rule of its own. */
+.settings-page .structure > .choice-option:last-child,
+.settings-page :is(.goal-row, .nav-row):last-child {
+  border-bottom: 0;
+}
+
+/* A phone keeps the panel's edge close, so the rows keep their width. */
+@media (width < 47.5rem) {
+  .settings-page > .panel {
+    padding: var(--space-3);
+  }
+
+  /* The item takes the full row; its action goes under it, set in as the drops line. */
+  .goal-row > .goal-row__action {
+    grid-area: 3 / 1;
+    justify-self: start;
+    margin-left: calc(var(--size-item-icon) + var(--space-2));
+  }
+}
+
+/* The end of a form or section: its actions on a rule, apart from the fields they apply to. */
+.actions-footer {
+  align-items: center;
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-rule);
+}
+
 /* Wide windows: the side column sits on the right of the main column, which is the first track (REQ-0025).
    DOM order is kept, so focus and reading order are those of the one-column layout. A side column with nothing
    in it takes no room. */
@@ -1358,6 +1393,20 @@ a:where(:not([data-slot="button"])) {
   justify-self: start;
 }
 
+/* The mode's name with Remove mode at its right end, since the button acts on the mode. */
+.mode-view__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+/* Its icon lines up with the fields' left edge. */
+.group-form .mode-view__back {
+  margin-inline-start: calc(-1 * var(--space-2));
+}
+
 .group-form .mode-view__heading {
   margin: 0;
   font-family: var(--font-heading);
@@ -1413,8 +1462,7 @@ a:where(:not([data-slot="button"])) {
 }
 
 .mode-row__chevron {
-  font-size: var(--font-size-heading);
-  line-height: 1;
+  flex: none;
   color: var(--color-muted);
 }
 

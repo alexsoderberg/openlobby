@@ -196,7 +196,9 @@ export const en = {
       .filter(Boolean)
       .join(" · "),
   gameModeHasError: "This mode has an error. Open it to fix it.",
-  gameModeBack: "Back",
+  gameModeBack: "Back to the game",
+  gameModeSavedWithGame: (save: string) =>
+    `Changes to this mode are saved with the game when you choose ${save}.`,
   gameModeAdd: "Add mode",
   gameModeRemove: "Remove mode",
   gameModeRemoveHeading: (name: string) => `Remove mode ${name}?`,
@@ -268,8 +270,8 @@ export const en = {
   dropListRemoveSubmit: "Yes, remove item",
   dropListRemoveKeep: "Keep item",
   dropListRemoved: "Item removed.",
-  dropListAfterSave:
-    "A new activity gets its drop list after you save the game.",
+  dropListAfterSave: (save: string, edit: string) =>
+    `Its drop list can be filled once the game is saved: choose ${save}, then ${edit} on the game, and open this mode again.`,
   itemId: (itemId: number) => `ID ${itemId}`,
   itemUnknown: "Unknown item",
   itemFallbackName: "Item",

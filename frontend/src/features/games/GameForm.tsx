@@ -139,6 +139,7 @@ export function GameForm({
           id={id}
           mode={openMode}
           position={openIndex + 1}
+          saveLabel={submitLabel}
           setDraft={setDraft}
           requestFocus={requestFocus}
           error={structureError}
@@ -152,15 +153,13 @@ export function GameForm({
       {failure && (
         <GameFormError id={errorId} code={failure.code} section={section} />
       )}
-      {/* Saving is done from the game view. Without a submit button, Enter in a mode does not submit. */}
-      {!openMode && (
-        <GameFormActions
-          submitLabel={submitLabel}
-          submitIcon={submitIcon}
-          busy={busy}
-          onCancel={onCancel}
-        />
-      )}
+      {/* Shown in the mode view too: a mode's edits are saved with the game, so saving must be reachable from there. */}
+      <GameFormActions
+        submitLabel={submitLabel}
+        submitIcon={submitIcon}
+        busy={busy}
+        onCancel={onCancel}
+      />
     </form>
   );
 }
@@ -255,7 +254,7 @@ function GameFormActions({
 }) {
   const m = useMessages();
   return (
-    <div className="form-actions">
+    <div className="form-actions actions-footer">
       <Button type="submit" disabled={busy}>
         <Icon name={submitIcon} />
         {submitLabel}

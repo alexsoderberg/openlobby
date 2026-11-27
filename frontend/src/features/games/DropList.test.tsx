@@ -315,7 +315,11 @@ describe("drop list", () => {
       within(addForm).getByRole("button", { name: en.gameActivityAdd }),
     );
 
-    expect(within(addForm).queryByText(en.dropListAfterSave)).toBeNull();
+    expect(
+      within(addForm).queryByText(
+        en.dropListAfterSave(en.gameEditSubmit, en.gameEdit),
+      ),
+    ).toBeNull();
     expect(
       within(addForm).queryByRole("group", { name: /Drop list/ }),
     ).toBeNull();
@@ -326,6 +330,12 @@ describe("drop list", () => {
     fireEvent.click(screen.getByRole("button", { name: en.gameActivityAdd }));
 
     expect(screen.getAllByRole("group", { name: /Drop list/ })).toHaveLength(2);
-    expect(screen.getByText(en.dropListAfterSave)).toBeTruthy();
+    // The reason sits with the new activity, where its drop list will be.
+    const reason = screen.getByText(
+      en.dropListAfterSave(en.gameEditSubmit, en.gameEdit),
+    );
+    expect(
+      within(reason.closest("li")!).getByLabelText(en.gameActivityNameLabel),
+    ).toHaveProperty("value", "");
   });
 });

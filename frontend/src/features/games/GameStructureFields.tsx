@@ -9,14 +9,7 @@ import {
 } from "react";
 import type { RoleIcon } from "../../api";
 import { useMessages } from "../../i18n";
-import {
-  Attribution,
-  Button,
-  ConfirmDialog,
-  Icon,
-  IconButton,
-  Select,
-} from "../../ui";
+import { Attribution, Button, ConfirmDialog, Icon, Select } from "../../ui";
 import { ROLE_ICONS } from "./roleIcons";
 import {
   emptyActivity,
@@ -196,9 +189,7 @@ function ModeRow({
           </span>
         )}
       </span>
-      <span className="mode-row__chevron" aria-hidden="true">
-        ›
-      </span>
+      <Icon name="chevronRight" className="mode-row__chevron" />
     </button>
   );
 }
@@ -215,12 +206,14 @@ type Removal = {
 
 /**
  * One mode on its own: name, max players or game roles, and activities as flat lists, with the way back to the
- * game. Its edits stay in the form's draft until the game is saved. Removing the mode or an activity asks first.
+ * game. Its edits stay in the form's draft until the game is saved with `saveLabel`, which the form shows under the
+ * mode too. Removing the mode or an activity asks first.
  */
 export function ModeView({
   id,
   mode,
   position,
+  saveLabel,
   setDraft,
   requestFocus,
   error,
@@ -230,6 +223,7 @@ export function ModeView({
   id: string;
   mode: ModeDraft;
   position: number;
+  saveLabel: string;
   setDraft: SetDraft;
   requestFocus: RequestFocus;
   error: StructureError;
@@ -246,10 +240,35 @@ export function ModeView({
   return (
     <FieldErrorContext value={fieldError(id, error)}>
       <section className="mode-view" aria-labelledby={headingId}>
-        <IconButton icon="back" label={m.gameModeBack} onClick={onBack} />
-        <h3 id={headingId} tabIndex={-1} className="mode-view__heading">
-          {label}
-        </h3>
+        <Button
+          variant="ghost"
+          type="button"
+          className="mode-view__back"
+          onClick={onBack}
+        >
+          <Icon name="back" />
+          {m.gameModeBack}
+        </Button>
+        <div className="mode-view__head">
+          <h3 id={headingId} tabIndex={-1} className="mode-view__heading">
+            {label}
+          </h3>
+          <RemoveModeButton
+            label={label}
+            onClick={() =>
+              setRemoval({
+                heading: m.gameModeRemoveHeading(label),
+                body: m.gameModeRemoveConfirm,
+                submitLabel: m.gameModeRemoveSubmit,
+                keepLabel: m.gameModeRemoveKeep,
+                focusId: addModeId(id),
+                // The view of a removed mode closes by itself: the form finds no open mode any more.
+                apply: (d) => ({ ...d, modes: removeItem(d.modes, mode.key) }),
+              })
+            }
+          />
+        </div>
+        <p className="form-hint">{m.gameModeSavedWithGame(saveLabel)}</p>
         <StructureField
           id={`${id}-${mode.key}-name`}
           label={m.gameModeNameLabel}
@@ -281,25 +300,6 @@ export function ModeView({
           askRemoval={setRemoval}
           renderDropList={renderDropList}
         />
-        <Button
-          variant="danger"
-          type="button"
-          aria-label={`${m.gameModeRemove}, ${label}`}
-          onClick={() =>
-            setRemoval({
-              heading: m.gameModeRemoveHeading(label),
-              body: m.gameModeRemoveConfirm,
-              submitLabel: m.gameModeRemoveSubmit,
-              keepLabel: m.gameModeRemoveKeep,
-              focusId: addModeId(id),
-              // The view of a removed mode closes by itself: the form finds no open mode any more.
-              apply: (d) => ({ ...d, modes: removeItem(d.modes, mode.key) }),
-            })
-          }
-        >
-          <Icon name="remove" />
-          {m.gameModeRemove}
-        </Button>
         {removal && (
           <ConfirmDialog
             heading={removal.heading}
@@ -326,6 +326,27 @@ export function ModeView({
   );
 }
 
+function RemoveModeButton({
+  label,
+  onClick,
+}: {
+  label: string;
+  onClick: () => void;
+}) {
+  const m = useMessages();
+  return (
+    <Button
+      variant="danger"
+      type="button"
+      aria-label={`${m.gameModeRemove}, ${label}`}
+      onClick={onClick}
+    >
+      <Icon name="remove" />
+      {m.gameModeRemove}
+    </Button>
+  );
+}
+
 function ActivityFieldset({
   id,
   mode,
@@ -346,8 +367,6 @@ function ActivityFieldset({
   // A new activity has no ID until the game is saved, so its drop list comes after the save (ADR 0029 section 6).
   const hasDropLists =
     renderDropList && mode.activities.some((activity) => activity.id);
-  const hasUnsaved =
-    renderDropList && mode.activities.some((activity) => !activity.id);
   return (
     <fieldset className="structure">
       <legend>{m.gameActivitiesLegend}</legend>
@@ -387,14 +406,18 @@ function ActivityFieldset({
                   />
                 </StructureRow>
                 {renderDropList &&
-                  activity.id &&
-                  renderDropList(activity.id, activityLabel)}
+                  (activity.id ? (
+                    renderDropList(activity.id, activityLabel)
+                  ) : (
+                    <p className="form-hint">
+                      {m.dropListAfterSave(m.gameEditSubmit, m.gameEdit)}
+                    </p>
+                  ))}
               </li>
             );
           })}
         </ul>
       )}
-      {hasUnsaved && <p className="form-hint">{m.dropListAfterSave}</p>}
       {hasDropLists && <Attribution />}
       <Button
         variant="secondary"
