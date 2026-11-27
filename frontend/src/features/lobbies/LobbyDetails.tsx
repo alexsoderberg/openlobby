@@ -15,7 +15,7 @@ import {
   RoleSlotText,
   type RoleSlot,
 } from "../../lobby";
-import { Avatar, Button, Icon } from "../../ui";
+import { Attribution, Avatar, Button, Icon, ItemLabel } from "../../ui";
 import { creatorName } from "./creatorName";
 import { DeleteLobbyDialog } from "./DeleteLobbyDialog";
 import { LobbyMembership } from "./LobbyMembership";
@@ -91,6 +91,9 @@ export function LobbyDetails({
         <section>
           <h2>{m.lobbyPlayersHeading}</h2>
           <PlayerList lobby={lobby} userId={userId} />
+          {lobby.players.some((player) => player.goals?.length) && (
+            <Attribution />
+          )}
         </section>
         <div className="side-column">
           <LobbyFacts lobby={lobby} members={members} />
@@ -244,10 +247,35 @@ function PlayerRows({
             <span className="player-row__name">{player.displayName}</span>
             {me && <span className="badge">{m.lobbyPlayerYou}</span>}
             <PreferredGameRolesNote roles={player.preferredGameRoles} />
+            <PlayerGoals player={player} />
           </li>
         );
       })}
     </ul>
+  );
+}
+
+/** The player's goals that can drop in the lobby's dungeon or raid, as the server matched them (REQ-0030). */
+function PlayerGoals({
+  player: { displayName, goals = [] },
+}: {
+  player: Player;
+}) {
+  const m = useMessages().goals;
+  if (goals.length === 0) return null;
+  return (
+    <div className="player-goals">
+      <span className="player-goals__title" aria-hidden="true">
+        {m.playerGoals}
+      </span>
+      <ul aria-label={m.playerGoalsLabel(displayName)}>
+        {goals.map((item) => (
+          <li key={item.itemId}>
+            <ItemLabel item={item} />
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
