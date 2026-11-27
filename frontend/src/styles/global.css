@@ -1102,18 +1102,14 @@ a:where(:not([data-slot="button"])) {
   overflow-wrap: anywhere;
 }
 
-/* A choice (the You page's game roles, the seat choice): each option is a ruled row, as a member of the Member list. */
+/* A choice (the You page's game roles, the seat choice): each option is a ruled row, as a member of the Member list.
+   Inside the You page's panels the light rule is enough: the panel is the boundary. */
 .group-form .structure:has(> .choice-option) {
   gap: 0;
 }
 
 .group-form .structure > .choice-option {
   border-bottom: 1px solid var(--color-rule);
-}
-
-/* The You page's rows carry the 2px text-colour rule (REQ-0029, You page). The seat choice keeps the light rule. */
-.game-roles-form .structure > .choice-option {
-  border-bottom: var(--width-edge) solid var(--color-text);
 }
 
 /* A game's legend on the You page: its logo or monogram before the name (REQ-0026). */
@@ -1243,22 +1239,30 @@ a:where(:not([data-slot="button"])) {
   color: var(--color-muted);
 }
 
-/* The You page's Goals (REQ-0030): per game a ruled heading with its logo, as the Game roles legends, then the
-   goals on the page's 2px text-colour rules. */
+/* The You page's Goals (REQ-0030): per game a ruled heading with its logo, as the Game roles legends, and Add goal
+   at its right end, then the goals. */
 .goal-game {
   display: grid;
   gap: var(--space-2);
   margin-top: var(--space-3);
 }
 
-.goal-game > h3 {
+.goal-game__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: 0 0 var(--space-2);
+  border-bottom: 1px solid var(--color-rule);
+}
+
+.goal-game__head > h3 {
   display: flex;
   align-items: center;
   gap: var(--space-2);
   min-width: 0;
   margin: 0;
-  padding: 0 0 var(--space-2);
-  border-bottom: 1px solid var(--color-rule);
   font-family: var(--font-heading);
   font-size: var(--font-size-lobby-name);
   font-weight: var(--font-weight-heavy);
@@ -1283,10 +1287,6 @@ a:where(:not([data-slot="button"])) {
   gap: var(--space-1) var(--space-3);
   padding: var(--space-2) 0;
   border-bottom: 1px solid var(--color-rule);
-}
-
-.goal-list > .goal-row {
-  border-bottom: var(--width-edge) solid var(--color-text);
 }
 
 .goal-row > [data-slot="item-label"] {
@@ -1314,11 +1314,11 @@ a:where(:not([data-slot="button"])) {
   color: var(--color-muted);
 }
 
-/* The add panel: a surface under its game's goals, the name field and the dungeon or raid side by side when
-   there is room. */
+/* The add panel: a well sunk into the Goals panel under its game's heading, not a card on a card; the name field
+   and the dungeon or raid side by side when there is room. */
 .goal-panel {
   padding: var(--space-3);
-  background: var(--color-surface);
+  background: var(--color-ground);
   border: 1px solid var(--color-rule-strong);
   border-radius: var(--radius);
 }
@@ -2640,11 +2640,10 @@ main:focus {
   overflow-wrap: anywhere;
 }
 
-/* A settings row that opens another page: a You page row with its 2px rule, and the whole row is the link, so it
-   drops the underline. */
+/* A settings row that opens another page: a ruled row, and the whole row is the link, so it drops the underline. */
 .nav-row {
   padding-inline: 0;
-  border-bottom: var(--width-edge) solid var(--color-text);
+  border-bottom: 1px solid var(--color-rule);
   font-weight: var(--font-weight-strong);
   text-decoration: none;
 }

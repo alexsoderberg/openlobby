@@ -14,6 +14,7 @@ import {
   Icon,
   ItemLabel,
   itemText,
+  Panel,
   Select,
   showToast,
 } from "../../ui";
@@ -38,7 +39,7 @@ export function GoalsSection({
   const showsItems =
     openGameId !== undefined || games.some((game) => game.goals.length > 0);
   return (
-    <section>
+    <Panel>
       <h2>{m.heading}</h2>
       <p className="form-hint">{m.hint}</p>
       {view.status === "loading" && <p role="status">{m.loading}</p>}
@@ -56,12 +57,19 @@ export function GoalsSection({
           onUnauthenticated={onUnauthenticated}
         />
       ))}
-      {showsItems && <Attribution />}
-    </section>
+      {showsItems && (
+        <div className="actions-footer">
+          <Attribution />
+        </div>
+      )}
+    </Panel>
   );
 }
 
-/** A game's goals with their remove buttons, then the control that opens the add panel under them. */
+/**
+ * A game's heading with Add goal beside it, since the button acts on the game; the add panel opens right under the
+ * heading, then the goals follow with their remove buttons.
+ */
 function GameGoalsBlock({
   game,
   goals,
@@ -92,37 +100,15 @@ function GameGoalsBlock({
 
   return (
     <div className="goal-game">
-      <h3>
-        <GameLogo
-          gameId={game.gameId}
-          name={game.gameName}
-          version={game.gameLogoVersion}
-        />
-        {game.gameName}
-      </h3>
-      {game.goals.length === 0 ? (
-        <p className="form-hint">{m.goals.none}</p>
-      ) : (
-        <ul className="goal-list" aria-label={m.goals.listLabel(game.gameName)}>
-          {game.goals.map((item) => (
-            <li key={item.itemId} className="goal-row">
-              <GoalItem item={item} />
-              <Button
-                type="button"
-                variant="danger"
-                className="goal-row__action"
-                aria-label={`${m.goals.remove}, ${itemText(item, m)}`}
-                onClick={() => void remove(item)}
-              >
-                <Icon name="remove" />
-                {m.goals.remove}
-              </Button>
-            </li>
-          ))}
-        </ul>
-      )}
-      {errorCode && <Alert>{toUserMessage(errorCode)}</Alert>}
-      <div className="form-actions">
+      <div className="goal-game__head">
+        <h3>
+          <GameLogo
+            gameId={game.gameId}
+            name={game.gameName}
+            version={game.gameLogoVersion}
+          />
+          {game.gameName}
+        </h3>
         <Button
           ref={toggleRef}
           type="button"
@@ -148,6 +134,28 @@ function GameGoalsBlock({
           onUnauthenticated={onUnauthenticated}
         />
       )}
+      {game.goals.length === 0 ? (
+        <p className="form-hint">{m.goals.none}</p>
+      ) : (
+        <ul className="goal-list" aria-label={m.goals.listLabel(game.gameName)}>
+          {game.goals.map((item) => (
+            <li key={item.itemId} className="goal-row">
+              <GoalItem item={item} />
+              <Button
+                type="button"
+                variant="danger"
+                className="goal-row__action"
+                aria-label={`${m.goals.remove}, ${itemText(item, m)}`}
+                onClick={() => void remove(item)}
+              >
+                <Icon name="remove" />
+                {m.goals.remove}
+              </Button>
+            </li>
+          ))}
+        </ul>
+      )}
+      {errorCode && <Alert>{toUserMessage(errorCode)}</Alert>}
     </div>
   );
 }
