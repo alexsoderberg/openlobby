@@ -14,9 +14,9 @@ import {
   type GameItem,
 } from "../../api";
 import { en } from "../../i18n/messages/en";
-import { chooseOption } from "../../test/chooseOption";
+import { chooseOption, optionNames } from "../../test/chooseOption";
 import { fakeApiClient } from "../../test/fakeApiClient";
-import { findToast } from "../../test/toasts";
+import { expectNoToast, findToast } from "../../test/toasts";
 import { Toaster } from "../../ui";
 import { GoalsSection } from "./Goals";
 
@@ -140,11 +140,13 @@ describe("GoalsSection", () => {
   it("removes a goal at once, without a confirmation, and confirms it with a toast", async () => {
     const client = renderGoals();
 
-    fireEvent.click(
-      within(await wowGoals()).getByRole("button", {
-        name: `${en.goals.remove}, Assassin's Blade`,
-      }),
-    );
+    const button = within(await wowGoals()).getByRole("button", {
+      name: `${en.goals.remove}, Assassin's Blade`,
+    });
+    // A removal is a danger button with its text in view (ADR 0029 Amendment 2026-11-27 item 12).
+    expect(button.getAttribute("data-variant")).toBe("danger");
+    expect(button.textContent).toBe(en.goals.remove);
+    fireEvent.click(button);
 
     await findToast(en.goals.removed("Assassin's Blade"));
     expect(client.removeGoal).toHaveBeenCalledWith("g1", 1935);
@@ -232,6 +234,87 @@ describe("GoalsSection", () => {
     expect(
       await within(panel).findByText(en.goals.namesUnavailable),
     ).toBeTruthy();
+  });
+
+  it("shows a failed load and loads again on Try again", async () => {
+    const getGoals = vi
+      .fn()
+      .mockRejectedValueOnce(new ApiError(503, "service_unavailable"))
+      .mockResolvedValue([wow]);
+    renderGoals({ getGoals });
+
+    expect((await screen.findByRole("alert")).textContent).toBe(
+      en.errors.service_unavailable,
+    );
+    fireEvent.click(screen.getByRole("button", { name: en.tryAgain }));
+
+    expect(await wowGoals()).toBeTruthy();
+    expect(getGoals).toHaveBeenCalledTimes(2);
+  });
+
+  it("shows a refused add without a toast and keeps the goals as they were", async () => {
+    const client = renderGoals({
+      addGoal: vi.fn(() => Promise.reject(new ApiError(400, "invalid_item"))),
+    });
+
+    const panel = await openPanel();
+    await within(panel).findByText(en.goals.resultCount(3));
+    fireEvent.click(
+      within(panel).getByRole("button", {
+        name: `${en.goals.add}, Cruel Barb`,
+      }),
+    );
+
+    expect((await within(panel).findByRole("alert")).textContent).toBe(
+      en.errors.invalid_item,
+    );
+    expect(client.addGoal).toHaveBeenCalledWith("g1", 5191);
+    await expectNoToast();
+    expect(within(await wowGoals()).queryByText("Cruel Barb")).toBeNull();
+    expect(
+      within(panel).getByRole("button", {
+        name: `${en.goals.add}, Cruel Barb`,
+      }),
+    ).toBeTruthy();
+  });
+
+  it("shows a failed search and searches again on Try again", async () => {
+    const listGameItems = vi
+      .fn()
+      .mockRejectedValueOnce(new ApiError(503, "service_unavailable"))
+      .mockResolvedValue({ items: [cleaver], nameSearchComplete: true });
+    renderGoals({ listGameItems });
+
+    const panel = await openPanel();
+    expect((await within(panel).findByRole("alert")).textContent).toBe(
+      en.errors.service_unavailable,
+    );
+    fireEvent.click(within(panel).getByRole("button", { name: en.tryAgain }));
+
+    expect(await within(panel).findByText("Cruel Barb")).toBeTruthy();
+    expect(listGameItems).toHaveBeenCalledTimes(2);
+  });
+
+  it("offers the dungeons and raids after a failed first load once a name search succeeds", async () => {
+    const listGameItems = vi
+      .fn()
+      .mockRejectedValueOnce(new ApiError(503, "service_unavailable"))
+      .mockResolvedValue({ items: [blade], nameSearchComplete: true });
+    renderGoals({ listGameItems });
+
+    const panel = await openPanel();
+    await within(panel).findByRole("alert");
+    fireEvent.change(within(panel).getByLabelText(en.goals.searchLabel), {
+      target: { value: "blade" },
+    });
+    await within(panel).findByText(en.goals.resultCount(1));
+
+    expect(
+      await optionNames(
+        within(panel).getByRole("combobox", { name: en.goals.activityLabel }),
+      ),
+    ).toEqual([en.goals.allActivities, "Deadmines", "Stockade"]);
+    expect(listGameItems).toHaveBeenCalledWith("g1");
   });
 
   it("closes the panel and gives focus back to its button", async () => {
