@@ -63,6 +63,8 @@ export const DEFAULT_MAX_PLAYERS_MIN = 1;
 export const RESERVED_GAME_NAME = "Other";
 /** Contract rule: an item ID is a whole number from 1 to this value (a 32-bit signed integer, ADR 0029). */
 export const ITEM_ID_MAX = 2147483647;
+/** Contract rule: the item name search `q` is at most 50 characters after trim. */
+export const ITEM_SEARCH_MAX_LENGTH = 50;
 /** Contract rule: an invite link allows 1–10 uses (ADR 0007). */
 export const INVITE_MAX_USES_LIMIT = 10;
 /** The form preselects a single use: a quick invite is for one person. */

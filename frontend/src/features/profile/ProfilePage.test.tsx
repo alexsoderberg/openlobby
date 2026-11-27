@@ -26,6 +26,7 @@ describe("ProfilePage", () => {
     expect(headings()).toEqual([
       en.profileAccountHeading,
       en.preferredGameRoles.heading,
+      en.goals.heading,
     ]);
     expect(screen.getByText(testUser.displayName)).toBeTruthy();
     expect(screen.queryByRole("link", { name: en.gameListLink })).toBeNull();
@@ -43,6 +44,7 @@ describe("ProfilePage", () => {
     expect(headings()).toEqual([
       en.profileAccountHeading,
       en.preferredGameRoles.heading,
+      en.goals.heading,
       en.profileSystemAdminHeading,
     ]);
     const row = screen.getByRole("link", { name: en.gameListLink });

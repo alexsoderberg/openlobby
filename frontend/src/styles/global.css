@@ -204,6 +204,8 @@
   --height-dialog: calc(100dvh - var(--space-4));
   --width-edge: 2px;
   --size-sheet-max: 70dvh;
+  /* The add-goal results scroll inside the panel past this height, so a long drop list keeps Close in reach. */
+  --size-goal-results-max: 28rem;
   --sheet-safe-bottom: calc(var(--space-2) + env(safe-area-inset-bottom));
   --ease-overshoot: cubic-bezier(0.3, 1.35, 0.5, 1);
   --ease-in: cubic-bezier(0.55, 0, 0.75, 0);
@@ -1204,6 +1206,127 @@ a:where(:not([data-slot="button"])) {
   margin: 0;
   font-size: var(--font-size-small);
   color: var(--color-muted);
+}
+
+/* The You page's Goals (REQ-0030): per game a ruled heading with its logo, as the Game roles legends, then the
+   goals on the page's 2px text-colour rules. */
+.goal-game {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.goal-game > h3 {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  margin: 0;
+  padding: 0 0 var(--space-2);
+  border-bottom: 1px solid var(--color-rule);
+  font-family: var(--font-heading);
+  font-size: var(--font-size-lobby-name);
+  font-weight: var(--font-weight-heavy);
+  line-height: var(--line-height-solid);
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.goal-list,
+.goal-results {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* The item over the places it drops in, and the action at the right across both lines at every width. */
+.goal-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--color-rule);
+}
+
+.goal-list > .goal-row {
+  border-bottom: var(--width-edge) solid var(--color-text);
+}
+
+.goal-row > [data-slot="item-label"] {
+  grid-area: 1 / 1;
+}
+
+/* Set in by the icon box, so it reads as the item's own line. */
+.goal-row__drops {
+  grid-area: 2 / 1;
+  padding-left: calc(var(--size-item-icon) + var(--space-2));
+  font-size: var(--font-size-small);
+  color: var(--color-muted);
+  overflow-wrap: anywhere;
+}
+
+.goal-row > :nth-child(3) {
+  grid-area: 1 / 2 / span 2;
+}
+
+.goal-row__owned {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-size-small);
+  color: var(--color-muted);
+}
+
+/* The add panel: a surface under its game's goals, the name field and the dungeon or raid side by side when
+   there is room. */
+.goal-panel {
+  padding: var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-rule-strong);
+  border-radius: var(--radius);
+}
+
+.goal-panel__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+}
+
+.goal-results {
+  max-height: var(--size-goal-results-max);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* A lobby player's goals that can drop here (REQ-0030): a line of their own under the name. */
+.player-goals {
+  flex: 1 0 100%;
+  display: grid;
+  gap: var(--space-1);
+}
+
+.player-goals__title {
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.player-goals > ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.player-goals li {
+  display: flex;
+  min-width: 0;
 }
 
 /* The game form shows one level at a time: the game view, or one mode's view. A mode slides in from the right
