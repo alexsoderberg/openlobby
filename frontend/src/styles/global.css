@@ -720,7 +720,7 @@ a:where(:not([data-slot="button"])) {
 .login-panel {
   padding: var(--space-4);
   background: var(--color-surface);
-  border: 1px solid var(--color-rule);
+  border: 1px solid var(--color-rule-strong);
   border-radius: var(--radius);
 }
 
@@ -1471,8 +1471,8 @@ a:where(:not([data-slot="button"])) {
 }
 
 /* A game of the Game list: a ruled row as a member of the Member list, the name in the heading face, the edit and
-   remove buttons at the right. A game being changed holds its form in place of the row. */
-/* The 2px text-colour row rule of the You page and the Group cards (REQ-0029, Game list). */
+   remove buttons at the right, with the 2px text-colour row rule of the Group cards (REQ-0029, Game list). A game
+   being changed holds its form in place of the row. */
 .row-list > .game-row {
   padding-inline: 0;
   border-bottom: var(--width-edge) solid var(--color-text);
@@ -1483,7 +1483,7 @@ a:where(:not([data-slot="button"])) {
   margin-block: var(--space-3);
   padding: var(--space-4);
   background: var(--color-surface);
-  border: 1px solid var(--color-rule);
+  border: 1px solid var(--color-rule-strong);
   border-radius: var(--radius);
 }
 
