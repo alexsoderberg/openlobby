@@ -12,7 +12,6 @@ import {
   ErrorAlert,
   GameLogo,
   Icon,
-  IconButton,
   ItemLabel,
   itemText,
   Select,
@@ -108,12 +107,16 @@ function GameGoalsBlock({
           {game.goals.map((item) => (
             <li key={item.itemId} className="goal-row">
               <GoalItem item={item} />
-              <IconButton
-                icon="remove"
-                label={m.goals.remove}
-                subject={itemText(item, m)}
+              <Button
+                type="button"
+                variant="danger"
+                className="goal-row__action"
+                aria-label={`${m.goals.remove}, ${itemText(item, m)}`}
                 onClick={() => void remove(item)}
-              />
+              >
+                <Icon name="remove" />
+                {m.goals.remove}
+              </Button>
             </li>
           ))}
         </ul>
@@ -280,7 +283,7 @@ function SearchResults({
             <li key={item.itemId} className="goal-row">
               <GoalItem item={item} />
               {owned.has(item.itemId) ? (
-                <span className="goal-row__owned">
+                <span className="goal-row__action goal-row__owned">
                   <Icon name="selected" />
                   {m.goals.alreadyAdded}
                 </span>
@@ -288,6 +291,7 @@ function SearchResults({
                 <Button
                   type="button"
                   variant="secondary"
+                  className="goal-row__action"
                   aria-label={`${m.goals.add}, ${itemText(item, m)}`}
                   onClick={() => onAdd(item)}
                 >

@@ -1267,7 +1267,7 @@ a:where(:not([data-slot="button"])) {
   overflow-wrap: anywhere;
 }
 
-.goal-row > :nth-child(3) {
+.goal-row__action {
   grid-area: 1 / 2 / span 2;
 }
 
