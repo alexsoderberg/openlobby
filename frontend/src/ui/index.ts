@@ -1,4 +1,5 @@
 export { Alert } from "./Alert";
+export { Attribution } from "./Attribution";
 export { AnchoredPopover } from "./AnchoredPopover";
 export { Avatar } from "./Avatar";
 export { Brand } from "./Brand";
@@ -10,6 +11,7 @@ export { GameLogo } from "./GameLogo";
 export { GameRoleName } from "./GameRoleName";
 export { Icon, type IconName } from "./Icon";
 export { IconButton } from "./IconButton";
+export { ItemLabel, itemText } from "./ItemLabel";
 export { Meter } from "./Meter";
 export { Panel } from "./Panel";
 export { Select, type DropdownOption } from "./Select";

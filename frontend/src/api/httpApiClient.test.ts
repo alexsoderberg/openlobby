@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { ApiError, gameImageUrl, type ApiClient } from "./client";
+import { ApiError, gameImageUrl, itemIconUrl, type ApiClient } from "./client";
 import { createHttpApiClient } from "./httpApiClient";
 
 const BASE_URL = "http://gateway.test";
@@ -58,6 +58,9 @@ const failingCalls: Array<[string, (api: ApiClient) => Promise<unknown>]> = [
   ["makeGroupAdmin", (api) => api.makeGroupAdmin("g1", "u1")],
   ["getPreferredGameRoles", (api) => api.getPreferredGameRoles()],
   ["replacePreferredGameRoles", (api) => api.replacePreferredGameRoles(["r1"])],
+  ["listGameItems", (api) => api.listGameItems("g1")],
+  ["addDropItem", (api) => api.addDropItem("g1", "a1", 19019)],
+  ["removeDropItem", (api) => api.removeDropItem("g1", "a1", 19019)],
 ];
 
 describe("createHttpApiClient", () => {
@@ -156,6 +159,43 @@ describe("createHttpApiClient", () => {
     ).resolves.toBeUndefined();
     expect(sent[0]).toMatchObject({ method: "DELETE" });
     expect(new URL(sent[0].url).pathname).toBe("/api/games/g1/images/logo");
+  });
+
+  it("reads, adds to and removes from a drop list at their own addresses", async () => {
+    const sent: Request[] = [];
+    const item = { itemId: 19019, name: "Thunderfury", status: "known" };
+    const fetchImpl = vi.fn<typeof fetch>(async (input) => {
+      sent.push(new Request(input));
+      if (sent.length === 1)
+        return Response.json({ items: [], nameSearchComplete: true });
+      return sent.length === 2
+        ? Response.json(item, { status: 201 })
+        : new Response(null, { status: 204 });
+    });
+    const api = createHttpApiClient(fetchImpl, BASE_URL);
+
+    await expect(
+      api.listGameItems("g1", { activityId: "a1" }),
+    ).resolves.toEqual({ items: [], nameSearchComplete: true });
+    await expect(api.addDropItem("g1", "a1", 19019)).resolves.toEqual(item);
+    await expect(
+      api.removeDropItem("g1", "a1", 19019),
+    ).resolves.toBeUndefined();
+
+    const urls = sent.map((request) => new URL(request.url));
+    expect(urls[0].pathname + urls[0].search).toBe(
+      "/api/games/g1/items?activityId=a1",
+    );
+    expect(sent.slice(1).map((request) => request.method)).toEqual([
+      "PUT",
+      "DELETE",
+    ]);
+    expect(urls[1].pathname).toBe("/api/games/g1/activities/a1/items/19019");
+    expect(urls[2].pathname).toBe("/api/games/g1/activities/a1/items/19019");
+  });
+
+  it("builds the item icon URL on our own origin", () => {
+    expect(itemIconUrl(19019)).toBe("/api/items/19019/icon");
   });
 
   it("builds the game image URL with its version", () => {

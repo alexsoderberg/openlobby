@@ -24,6 +24,7 @@ import {
   GameStructureFields,
   ModeView,
   modeRowId,
+  type RenderDropList,
   type StructureError,
 } from "./GameStructureFields";
 import { parseGameInput } from "./gameInput";
@@ -46,6 +47,7 @@ type SubmitGame = (input: GameInput) => ChangeResult;
  * modes or game roles. A failure, local or from the server, is shown next to the field or section it is about and
  * focus moves there; a local failure in a mode opens that mode. `onSubmit` resolves to the error code of a failed save.
  * `imageFields` are shown in the game view after the genre; they save on their own, not with the form.
+ * `renderDropList` draws the drop list of a saved activity in the mode view; it saves on its own too.
  */
 export function GameForm({
   game,
@@ -55,9 +57,11 @@ export function GameForm({
   onSubmit,
   onCancel,
   imageFields,
+  renderDropList,
 }: {
   game?: Game;
   imageFields?: ReactNode;
+  renderDropList?: RenderDropList;
   submitLabel: string;
   submitIcon: IconName;
   busy: boolean;
@@ -138,6 +142,7 @@ export function GameForm({
           setDraft={setDraft}
           requestFocus={requestFocus}
           error={structureError}
+          renderDropList={renderDropList}
           onBack={() => {
             setOpenKey(undefined);
             requestFocus(modeRowId(id, openMode.key));

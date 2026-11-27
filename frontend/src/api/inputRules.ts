@@ -2,6 +2,7 @@ import {
   DEFAULT_MAX_PLAYERS_LIMIT,
   DEFAULT_MAX_PLAYERS_MIN,
   GAME_NAME_MAX_LENGTH,
+  ITEM_ID_MAX,
   type ApiErrorCode,
 } from "./client";
 
@@ -42,6 +43,15 @@ export function parseMaxPlayers(text: string): number | null | undefined {
   return WHOLE_NUMBER.test(trimmed) &&
     value >= DEFAULT_MAX_PLAYERS_MIN &&
     value <= DEFAULT_MAX_PLAYERS_LIMIT
+    ? value
+    : undefined;
+}
+
+/** An item ID text: the number when it is a whole number from 1 to ITEM_ID_MAX in decimal digits, else `undefined`. */
+export function parseItemId(text: string): number | undefined {
+  const trimmed = trimLikeServer(text);
+  const value = Number(trimmed);
+  return WHOLE_NUMBER.test(trimmed) && value >= 1 && value <= ITEM_ID_MAX
     ? value
     : undefined;
 }

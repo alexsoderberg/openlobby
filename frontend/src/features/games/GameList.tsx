@@ -2,6 +2,7 @@ import type { ChangeResult, Game, GameInput } from "../../api";
 import { GenreName } from "../../genres";
 import { useMessages } from "../../i18n";
 import { Button, ErrorAlert, GameLogo, Icon, IconButton } from "../../ui";
+import { DropList } from "./DropList";
 import { GameForm } from "./GameForm";
 import { GameImageField } from "./GameImageField";
 import type { GamesState } from "./useGames";
@@ -141,6 +142,14 @@ function GameEditRow({
             onUnauthenticated={onUnauthenticated}
           />
         }
+        renderDropList={(activityId, activityName) => (
+          <DropList
+            gameId={game.id}
+            activityId={activityId}
+            activityName={activityName}
+            onUnauthenticated={onUnauthenticated}
+          />
+        )}
       />
     </li>
   );

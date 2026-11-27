@@ -75,6 +75,13 @@ export function fakeApiClient(overrides: Partial<ApiClient> = {}): ApiClient {
     replacePreferredGameRoles: vi.fn((gameRoleIds: string[]) =>
       Promise.resolve({ gameRoleIds, games: [] }),
     ),
+    listGameItems: vi.fn(() =>
+      Promise.resolve({ items: [], nameSearchComplete: true }),
+    ),
+    addDropItem: vi.fn(() =>
+      Promise.reject(new ApiError(404, "game_not_found")),
+    ),
+    removeDropItem: vi.fn(() => Promise.resolve()),
     ...overrides,
   };
 }

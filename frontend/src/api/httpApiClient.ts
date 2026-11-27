@@ -210,6 +210,33 @@ export function createHttpApiClient(
           }),
         ),
       ),
+    listGameItems: async (gameId, filter) =>
+      bodyOf(
+        await receive(
+          http.GET("/api/games/{gameId}/items", {
+            params: { path: { gameId }, query: filter },
+          }),
+        ),
+      ),
+    addDropItem: async (gameId, activityId, itemId) =>
+      bodyOf(
+        await receive(
+          http.PUT(
+            "/api/games/{gameId}/activities/{activityId}/items/{itemId}",
+            {
+              params: { path: { gameId, activityId, itemId: String(itemId) } },
+            },
+          ),
+        ),
+      ),
+    removeDropItem: async (gameId, activityId, itemId) => {
+      await receive(
+        http.DELETE(
+          "/api/games/{gameId}/activities/{activityId}/items/{itemId}",
+          { params: { path: { gameId, activityId, itemId: String(itemId) } } },
+        ),
+      );
+    },
     makeGroupAdmin: async (groupId, userId) => {
       await receive(
         http.PUT("/api/groups/{groupId}/admins/{userId}", {

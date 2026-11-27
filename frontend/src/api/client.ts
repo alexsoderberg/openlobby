@@ -36,6 +36,9 @@ export type GameInput = Omit<Game, "id" | "gameRoles" | "modes"> &
     calendarComponents["schemas"]["ReplaceGameRequest"],
     "gameRoles" | "modes"
   >;
+/** A Blizzard item by its ID, with its name when Blizzard gave one (ADR 0029). */
+export type Item = calendarComponents["schemas"]["Item"];
+export type GameItemList = calendarComponents["schemas"]["GameItemList"];
 export type ApiErrorCode =
   | authComponents["schemas"]["ErrorBody"]["code"]
   | calendarComponents["schemas"]["ErrorBody"]["code"];
@@ -54,6 +57,8 @@ export const DEFAULT_MAX_PLAYERS_LIMIT = 2147483647;
 export const DEFAULT_MAX_PLAYERS_MIN = 1;
 /** Contract rule: this name is the free-text choice and cannot be a game (ADR 0010). */
 export const RESERVED_GAME_NAME = "Other";
+/** Contract rule: an item ID is a whole number from 1 to this value (a 32-bit signed integer, ADR 0029). */
+export const ITEM_ID_MAX = 2147483647;
 /** Contract rule: an invite link allows 1–10 uses (ADR 0007). */
 export const INVITE_MAX_USES_LIMIT = 10;
 /** The form preselects a single use: a quick invite is for one person. */
@@ -129,6 +134,23 @@ export interface ApiClient {
   replacePreferredGameRoles(
     gameRoleIds: string[],
   ): Promise<PreferredGameRoleChoices>;
+  /** The items of the game's drop lists, or of one Named activity's drop list, in the order they were added. */
+  listGameItems(
+    gameId: string,
+    filter?: { activityId?: string; q?: string },
+  ): Promise<GameItemList>;
+  /** Adds an item to the end of a drop list and answers it with its name status. Already there gives `drop_item_taken`. */
+  addDropItem(
+    gameId: string,
+    activityId: string,
+    itemId: number,
+  ): Promise<Item>;
+  /** Removes an item from a drop list. Not on it is a success. */
+  removeDropItem(
+    gameId: string,
+    activityId: string,
+    itemId: number,
+  ): Promise<void>;
   /** Makes a member a group admin. Already an admin is a success. There is no way back in the MVP. */
   makeGroupAdmin(groupId: string, userId: string): Promise<void>;
 }
@@ -170,6 +192,11 @@ export function gameImageUrl(
   version: string,
 ): string {
   return `/api/games/${gameId}/images/${kind}?${new URLSearchParams({ v: version })}`;
+}
+
+/** The one place that builds an item icon's URL. Our own origin serves it; the browser never calls Blizzard (ADR 0029). */
+export function itemIconUrl(itemId: number): string {
+  return `/api/items/${itemId}/icon`;
 }
 
 /** Full-page navigation target. The server handles Discord; the browser never sees Discord tokens. */
