@@ -18,6 +18,8 @@ export type {
   InviteLink,
   Item,
   GameItemList,
+  GameItem,
+  GameGoals,
   Lobby,
   LobbyDetail,
   NextLobby,
