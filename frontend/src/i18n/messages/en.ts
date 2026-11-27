@@ -270,8 +270,8 @@ export const en = {
   dropListRemoveSubmit: "Yes, remove item",
   dropListRemoveKeep: "Keep item",
   dropListRemoved: "Item removed.",
-  dropListAfterSave: (save: string, edit: string) =>
-    `Its drop list can be filled once the game is saved: choose ${save}, then ${edit} on the game, and open this mode again.`,
+  dropListAfterSave: (save: string) =>
+    `Its drop list can be filled once you choose ${save}.`,
   itemId: (itemId: number) => `ID ${itemId}`,
   itemUnknown: "Unknown item",
   itemFallbackName: "Item",

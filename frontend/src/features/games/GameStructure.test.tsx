@@ -768,7 +768,7 @@ describe("role icon", () => {
     expect(iconShown(roleRow(mode, 2))).toBe(en.roleIcon["medical-cross"]);
   });
 
-  it("shows the saved icon when the form opens again after save", async () => {
+  it("shows the saved icon in the form that stays open after save, and when it opens again", async () => {
     const stored: Game = {
       ...catan,
       defaultMaxPlayers: null,
@@ -795,12 +795,10 @@ describe("role icon", () => {
     const form = await editForm("Catan");
     await chooseOption(iconField(roleRow(form, 1)), en.roleIcon.wrench);
     click(form, en.gameEditSubmit);
-    await waitFor(() =>
-      expect(
-        screen.queryByRole("button", { name: en.gameEditSubmit }),
-      ).toBeNull(),
-    );
+    await waitFor(() => expect(games[0].gameRoles![0].roleIcon).toBe("wrench"));
+    expect(iconShown(roleRow(form, 1))).toBe(en.roleIcon.wrench);
 
+    click(form, en.gameEditCancel);
     expect(iconShown(roleRow(await editForm("Catan"), 1))).toBe(
       en.roleIcon.wrench,
     );

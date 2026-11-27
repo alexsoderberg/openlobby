@@ -38,7 +38,11 @@ import {
 } from "./gameStructure";
 import { useFocusRequest } from "./useFocusRequest";
 
-type SubmitGame = (input: GameInput) => ChangeResult;
+/** Saves the input. A save that answers with the stored game hands it to `onSaved`: the form then goes on editing it. */
+export type SubmitGame = (
+  input: GameInput,
+  onSaved: (game: Game) => void,
+) => ChangeResult;
 
 /**
  * Name, default max players, genre, and the game's modes, game roles and activities (the ID is made by the server).
@@ -46,6 +50,8 @@ type SubmitGame = (input: GameInput) => ChangeResult;
  * mounted while a mode is open, so what was typed is kept. The default max players is not shown while the game has
  * modes or game roles. A failure, local or from the server, is shown next to the field or section it is about and
  * focus moves there; a local failure in a mode opens that mode. `onSubmit` resolves to the error code of a failed save.
+ * After a save that hands back the stored game, the form keeps what was typed and takes the game's structure with its
+ * new IDs, and an open mode stays open; any other success empties the form.
  * `imageFields` are shown in the game view after the genre; they save on their own, not with the form.
  * `renderDropList` draws the drop list of a saved activity in the mode view; it saves on its own too.
  */
@@ -78,12 +84,23 @@ export function GameForm({
     setModeWasOpen(true);
   };
   const requestFocus = useFocusRequest();
+  const saveId = `${id}-save`;
+  // The stored modes keep the order they were sent in, so the open mode is found again by its place. Save was
+  // disabled while saving, which dropped its focus, so focus goes back to it.
+  const takeSaved = (saved: Game) => {
+    const next = draftFromGame(saved);
+    const index = draft.modes.findIndex((mode) => mode.key === openKey);
+    setDraft(next);
+    setOpenKey(next.modes[index]?.key);
+    requestFocus(saveId);
+  };
   const { failure, nameRef, maxRef, genreRef, submit } = useGameFormSubmit(
     id,
     onSubmit,
     draft,
     setDraft,
     openModeView,
+    takeSaved,
     game,
   );
   const errorId = `${id}-error`;
@@ -155,6 +172,7 @@ export function GameForm({
       )}
       {/* Shown in the mode view too: a mode's edits are saved with the game, so saving must be reachable from there. */}
       <GameFormActions
+        saveId={saveId}
         submitLabel={submitLabel}
         submitIcon={submitIcon}
         busy={busy}
@@ -242,11 +260,13 @@ function GameFormError({
 }
 
 function GameFormActions({
+  saveId,
   submitLabel,
   submitIcon,
   busy,
   onCancel,
 }: {
+  saveId: string;
   submitLabel: string;
   submitIcon: IconName;
   busy: boolean;
@@ -255,7 +275,7 @@ function GameFormActions({
   const m = useMessages();
   return (
     <div className="form-actions actions-footer">
-      <Button type="submit" disabled={busy}>
+      <Button id={saveId} type="submit" disabled={busy}>
         <Icon name={submitIcon} />
         {submitLabel}
       </Button>
@@ -319,6 +339,7 @@ function useGameFormSubmit(
   draft: StructureDraft,
   setDraft: Dispatch<SetStateAction<StructureDraft>>,
   openModeView: (modeKey: string) => void,
+  takeSaved: (saved: Game) => void,
   game?: Game,
 ) {
   const [failure, setFailure] = useState<FormFailure>();
@@ -332,9 +353,13 @@ function useGameFormSubmit(
       draft,
       game?.defaultMaxPlayers,
     );
-    const code = parsed.ok ? await onSubmit(parsed.input) : parsed.code;
+    let saved: Game | undefined;
+    const code = parsed.ok
+      ? await onSubmit(parsed.input, (game) => (saved = game))
+      : parsed.code;
     if (code === undefined) {
       setFailure(undefined);
+      if (saved) return takeSaved(saved);
       form.reset();
       setDraft(draftFromGame(game));
       return;

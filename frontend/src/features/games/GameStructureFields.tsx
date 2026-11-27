@@ -410,7 +410,7 @@ function ActivityFieldset({
                     renderDropList(activity.id, activityLabel)
                   ) : (
                     <p className="form-hint">
-                      {m.dropListAfterSave(m.gameEditSubmit, m.gameEdit)}
+                      {m.dropListAfterSave(m.gameEditSubmit)}
                     </p>
                   ))}
               </li>
