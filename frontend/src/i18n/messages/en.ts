@@ -225,7 +225,7 @@ export const en = {
   gameEditSubmit: "Save changes",
   gameEditHeading: (game: string) => `Change ${game}`,
   // The form stays open after a save, so this closes it; changes since the last save are not kept.
-  gameEditCancel: "Close",
+  gameEditClose: "Close",
   gameRemove: "Remove",
   gameNameInvalid: `The name must be 1 to ${GAME_NAME_MAX_LENGTH} characters, and "${RESERVED_GAME_NAME}" is reserved.`,
   gameRemoveHeading: (name: string) => `Remove ${name}?`,

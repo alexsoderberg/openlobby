@@ -5,12 +5,13 @@ import { useGameChanges, type GameChange } from "./useGameChanges";
 import { useGames } from "./useGames";
 
 /**
- * State of the game list page: the games, which one is being changed or removed, and the focus after a
- * change, which goes to `focusRef`. Each action resolves to the error code the form or dialog should show. A success closes
- * what held the change, moves focus to `focusRef` and is handed to `onDone`; a saved game's form stays open instead, with
- * the saved game, so that the drop list of a new activity can be filled at once (ADR 0029 section 6). A vanished game closes and moves focus
- * too: the page shows that message itself, so the form or dialog does not show it a second time. An added game
- * opens in its form, because its images can be added only once it has an ID (ADR 0026).
+ * State of the game list page: the games, which one is being changed or removed, and the focus after a change,
+ * which goes to `focusRef`. Each action resolves to the error code the form or dialog should show. A success closes
+ * what held the change, moves focus to `focusRef` and is handed to `onDone`. A saved game's form stays open instead,
+ * with the saved game, so that the drop list of a new activity can be filled at once (ADR 0029 section 6). A
+ * vanished game closes and moves focus too: the page shows that message itself, so the form or dialog does not show
+ * it a second time. An added game opens in its form, because its images can be added only once it has an ID
+ * (ADR 0026).
  */
 export function useGameAdmin(
   onUnauthenticated: () => void,

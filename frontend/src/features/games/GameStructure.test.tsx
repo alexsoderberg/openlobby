@@ -303,6 +303,42 @@ describe("one level at a time", () => {
     expect(client.replaceGame).not.toHaveBeenCalled();
   });
 
+  it("keeps the mode view open and focuses its heading for a server failure about an activity", async () => {
+    renderPage({
+      replaceGame: vi.fn(() =>
+        Promise.reject(new ApiError(400, "invalid_activity")),
+      ),
+    });
+    const form = await editForm("Dungeons");
+    const mode = openMode(form, "Raid");
+
+    click(form, en.gameEditSubmit);
+
+    expect(await within(form).findByRole("alert")).toBeTruthy();
+    expect(within(form).getByRole("region")).toBe(mode);
+    expect(document.activeElement).toBe(
+      within(mode).getByRole("heading", { name: "Raid" }),
+    );
+  });
+
+  it("makes the form inert while a save is pending, so nothing typed is lost", async () => {
+    let answer: (game: Game) => void = () => undefined;
+    renderPage({
+      replaceGame: vi.fn(
+        () => new Promise<Game>((resolve) => (answer = resolve)),
+      ),
+    });
+    const form = await editForm("Dungeons");
+    const mode = openMode(form, "Duel");
+
+    click(form, en.gameEditSubmit);
+
+    await waitFor(() => expect(mode.closest("[inert]")).not.toBeNull());
+    answer({ ...dungeons, name: "Dungeons" });
+    await waitFor(() => expect(mode.closest("[inert]")).toBeNull());
+    expect(within(form).getByRole("region")).toBe(mode);
+  });
+
   it("saves the game from the mode view, with the activity added there", async () => {
     const client = renderPage();
     const form = await editForm("Dungeons");
@@ -814,7 +850,7 @@ describe("role icon", () => {
     await waitFor(() => expect(games[0].gameRoles![0].roleIcon).toBe("wrench"));
     expect(iconShown(roleRow(form, 1))).toBe(en.roleIcon.wrench);
 
-    click(form, en.gameEditCancel);
+    click(form, en.gameEditClose);
     expect(iconShown(roleRow(await editForm("Catan"), 1))).toBe(
       en.roleIcon.wrench,
     );

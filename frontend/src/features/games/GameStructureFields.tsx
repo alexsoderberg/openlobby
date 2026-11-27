@@ -214,6 +214,7 @@ export function ModeView({
   mode,
   position,
   saveLabel,
+  inert,
   setDraft,
   requestFocus,
   error,
@@ -224,6 +225,7 @@ export function ModeView({
   mode: ModeDraft;
   position: number;
   saveLabel: string;
+  inert: boolean;
   setDraft: SetDraft;
   requestFocus: RequestFocus;
   error: StructureError;
@@ -239,7 +241,7 @@ export function ModeView({
 
   return (
     <FieldErrorContext value={fieldError(id, error)}>
-      <section className="mode-view" aria-labelledby={headingId}>
+      <section className="mode-view" aria-labelledby={headingId} inert={inert}>
         <Button
           variant="ghost"
           type="button"
@@ -253,8 +255,10 @@ export function ModeView({
           <h3 id={headingId} tabIndex={-1} className="mode-view__heading">
             {label}
           </h3>
-          <RemoveModeButton
-            label={label}
+          <Button
+            variant="danger"
+            type="button"
+            aria-label={`${m.gameModeRemove}, ${label}`}
             onClick={() =>
               setRemoval({
                 heading: m.gameModeRemoveHeading(label),
@@ -266,7 +270,10 @@ export function ModeView({
                 apply: (d) => ({ ...d, modes: removeItem(d.modes, mode.key) }),
               })
             }
-          />
+          >
+            <Icon name="remove" />
+            {m.gameModeRemove}
+          </Button>
         </div>
         <p className="form-hint">{m.gameModeSavedWithGame(saveLabel)}</p>
         <StructureField
@@ -323,27 +330,6 @@ export function ModeView({
         )}
       </section>
     </FieldErrorContext>
-  );
-}
-
-function RemoveModeButton({
-  label,
-  onClick,
-}: {
-  label: string;
-  onClick: () => void;
-}) {
-  const m = useMessages();
-  return (
-    <Button
-      variant="danger"
-      type="button"
-      aria-label={`${m.gameModeRemove}, ${label}`}
-      onClick={onClick}
-    >
-      <Icon name="remove" />
-      {m.gameModeRemove}
-    </Button>
   );
 }
 

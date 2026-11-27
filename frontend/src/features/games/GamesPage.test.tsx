@@ -444,7 +444,7 @@ describe("change", () => {
     const form = await startEdit();
 
     fireEvent.click(
-      within(form).getByRole("button", { name: en.gameEditCancel }),
+      within(form).getByRole("button", { name: en.gameEditClose }),
     );
 
     expect(
