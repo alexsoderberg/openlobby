@@ -49,7 +49,7 @@ export type SubmitGame = (
  * The form shows one level at a time: the game with its modes as rows, or one open mode. The game's fields stay
  * mounted while a mode is open, so what was typed is kept. The default max players is not shown while the game has
  * modes or game roles. A failure, local or from the server, is shown next to the field or section it is about and
- * focus moves there; a local failure in a mode opens that mode. `onSubmit` resolves to the error code of a failed save.
+ * focus moves there; a local failure in a mode opens that mode, and any other failure the game view. `onSubmit` resolves to the error code of a failed save.
  * After a save that hands back the stored game, the form keeps what was typed and takes the game's structure with its
  * new IDs, and an open mode stays open; any other success empties the form.
  * `imageFields` are shown in the game view after the genre; they save on their own, not with the form.
@@ -83,6 +83,9 @@ export function GameForm({
     setOpenKey(modeKey);
     setModeWasOpen(true);
   };
+  // A failure is shown in the view that holds its field: its mode, or the game view for everything else.
+  const showFailureView = (modeKey?: string) =>
+    modeKey ? openModeView(modeKey) : setOpenKey(undefined);
   const requestFocus = useFocusRequest();
   const saveId = `${id}-save`;
   // The stored modes keep the order they were sent in, so the open mode is found again by its place. Save was
@@ -99,7 +102,7 @@ export function GameForm({
     onSubmit,
     draft,
     setDraft,
-    openModeView,
+    showFailureView,
     takeSaved,
     game,
   );
@@ -331,14 +334,14 @@ function focusError(
 
 /**
  * Checks the input locally, then submits it. The failure it ends with is kept until the next submit, and focus goes
- * to what it is about. A local failure in a mode opens that mode first.
+ * to what it is about. The view that holds it is shown first: its mode, or the game view.
  */
 function useGameFormSubmit(
   id: string,
   onSubmit: SubmitGame,
   draft: StructureDraft,
   setDraft: Dispatch<SetStateAction<StructureDraft>>,
-  openModeView: (modeKey: string) => void,
+  showFailureView: (modeKey?: string) => void,
   takeSaved: (saved: Game) => void,
   game?: Game,
 ) {
@@ -372,7 +375,7 @@ function useGameFormSubmit(
     // Rendered at once, so the field to focus is on screen.
     flushSync(() => {
       setFailure(next);
-      if (next.modeKey) openModeView(next.modeKey);
+      showFailureView(next.modeKey);
     });
     focusError(form, id, next, { name: nameRef, max: maxRef, genre: genreRef });
   }

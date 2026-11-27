@@ -287,6 +287,22 @@ describe("one level at a time", () => {
     expect(within(openMode(form, "Duo")).getByDisplayValue("Duo")).toBeTruthy();
   });
 
+  it("goes back to the game view for a failure in the game's own fields when saved from a mode", async () => {
+    const client = renderPage();
+    const form = await editForm("Dungeons");
+    type(within(form).getByLabelText(en.gameNameLabel), " ");
+    openMode(form, "Duel");
+
+    click(form, en.gameEditSubmit);
+
+    const name = await within(form).findByRole("textbox", {
+      name: en.gameNameLabel,
+    });
+    expect(within(form).queryByRole("region")).toBeNull();
+    expect(document.activeElement).toBe(name);
+    expect(client.replaceGame).not.toHaveBeenCalled();
+  });
+
   it("saves the game from the mode view, with the activity added there", async () => {
     const client = renderPage();
     const form = await editForm("Dungeons");
