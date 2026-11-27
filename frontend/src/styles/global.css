@@ -765,7 +765,8 @@ a:where(:not([data-slot="button"])) {
 
 /* A phone keeps the panel's edge close, so the rows keep their width. */
 @media (width < 47.5rem) {
-  .settings-page > .panel {
+  .settings-page > .panel,
+  .settings-page .row-list > .game-row.list-row--editing {
     padding: var(--space-3);
   }
 
@@ -1478,8 +1479,19 @@ a:where(:not([data-slot="button"])) {
   border-bottom: var(--width-edge) solid var(--color-text);
 }
 
+/* A game being changed: a panel in place of its row, so its form reads as one unit apart from the rows around it. */
 .row-list > .game-row.list-row--editing {
-  padding-block: var(--space-4);
+  margin-block: var(--space-3);
+  padding: var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius);
+}
+
+.game-row__edit-heading {
+  flex: 1 1 100%;
+  margin: 0;
+  overflow-wrap: anywhere;
 }
 
 .game-row__name {
@@ -1491,10 +1503,10 @@ a:where(:not([data-slot="button"])) {
   overflow-wrap: anywhere;
 }
 
-/* The name over its facts, so the buttons keep the row's line on a phone. */
+/* The name over its facts. On a phone the buttons go under it when the name needs the room, so no word breaks. */
 .game-row__text {
   display: grid;
-  flex: 1 1 0;
+  flex: 1 1 12rem;
   gap: var(--space-1);
   min-width: 0;
 }

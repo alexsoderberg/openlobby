@@ -7,7 +7,10 @@ import { GameForm, type SubmitGame } from "./GameForm";
 import { GameImageField } from "./GameImageField";
 import type { GamesState } from "./useGames";
 
-/** Shows the games as the server orders them. A game being changed shows its form in place of its row. */
+/**
+ * Shows the games as the server orders them. A game being changed shows its form in place of its row, as a panel
+ * headed by the game's stored name.
+ */
 export function GameList({
   state,
   editingId,
@@ -127,6 +130,7 @@ function GameEditRow({
   const m = useMessages();
   return (
     <li className="list-row list-row--editing game-row">
+      <h2 className="game-row__edit-heading">{m.gameEditHeading(game.name)}</h2>
       <GameForm
         game={game}
         submitLabel={m.gameEditSubmit}

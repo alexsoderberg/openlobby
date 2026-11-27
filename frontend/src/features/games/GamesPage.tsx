@@ -1,6 +1,6 @@
 import { useRef } from "react";
 import { toUserMessage, useMessages } from "../../i18n";
-import { Alert, showToast } from "../../ui";
+import { Alert, Panel, showToast } from "../../ui";
 import { GROUPS_PATH } from "../groups";
 import { DeleteGameDialog } from "./DeleteGameDialog";
 import { GameForm } from "./GameForm";
@@ -61,9 +61,9 @@ function GameAdmin({ onUnauthenticated }: { onUnauthenticated: () => void }) {
       <h1 ref={headingRef} tabIndex={-1} className="page-head">
         {m.gameListHeading}
       </h1>
-      <div className="page-sections">
+      <div className="page-sections settings-page">
         <GameListSection admin={admin} onUnauthenticated={onUnauthenticated} />
-        <section>
+        <Panel>
           <h2>{m.gameAddHeading}</h2>
           <GameForm
             submitLabel={m.gameAddSubmit}
@@ -71,7 +71,7 @@ function GameAdmin({ onUnauthenticated }: { onUnauthenticated: () => void }) {
             busy={admin.busy}
             onSubmit={admin.add}
           />
-        </section>
+        </Panel>
         <RemoveGame admin={admin} />
       </div>
     </>
