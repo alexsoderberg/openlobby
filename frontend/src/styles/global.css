@@ -765,8 +765,7 @@ a:where(:not([data-slot="button"])) {
 
 /* A phone keeps the panel's edge close, so the rows keep their width. */
 @media (width < 47.5rem) {
-  .settings-page > .panel,
-  .settings-page .row-list > .game-row.list-row--editing {
+  .settings-page > .panel {
     padding: var(--space-3);
   }
 
@@ -1486,6 +1485,12 @@ a:where(:not([data-slot="button"])) {
   background: var(--color-surface);
   border: 1px solid var(--color-rule);
   border-radius: var(--radius);
+}
+
+@media (width < 47.5rem) {
+  .row-list > .game-row.list-row--editing {
+    padding: var(--space-3);
+  }
 }
 
 .game-row__edit-heading {
