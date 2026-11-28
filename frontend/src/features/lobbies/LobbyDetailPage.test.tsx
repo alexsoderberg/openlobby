@@ -819,3 +819,57 @@ describe("joining and leaving on the page", () => {
     expect(screen.queryByRole("alert")).toBeNull();
   });
 });
+
+describe("players' goals", () => {
+  it("shows each player's goals under the name, with the three name statuses, and the attribution once", async () => {
+    renderDetail({
+      getLobby: () =>
+        Promise.resolve({
+          ...lobby,
+          players: [
+            {
+              ...lobby.players[0],
+              goals: [
+                { itemId: 1935, name: "Assassin's Blade", status: "known" },
+                { itemId: 999999, name: null, status: "unknown" },
+              ],
+            },
+            {
+              ...lobby.players[1],
+              goals: [{ itemId: 872, name: null, status: "unavailable" }],
+            },
+          ],
+        }),
+    });
+
+    const maja = await screen.findByRole("list", {
+      name: en.goals.playerGoalsLabel("Maja Lind"),
+    });
+    expect(within(maja).getByText("Assassin's Blade")).toBeTruthy();
+    expect(within(maja).getByText(en.itemUnknown)).toBeTruthy();
+    const kim = screen.getByRole("list", {
+      name: en.goals.playerGoalsLabel("Kim Berg"),
+    });
+    expect(within(kim).getByText(en.itemFallbackName)).toBeTruthy();
+    expect(within(kim).getByText(/Name not available/)).toBeTruthy();
+    expect(screen.getAllByText(en.attribution)).toHaveLength(1);
+  });
+
+  it("shows no goal list and no attribution when no player has a goal here", async () => {
+    renderDetail({
+      getLobby: () =>
+        Promise.resolve({
+          ...lobby,
+          players: lobby.players.map((player) => ({ ...player, goals: [] })),
+        }),
+    });
+
+    await screen.findByRole("heading", { level: 1 });
+    expect(
+      screen.queryByRole("list", {
+        name: en.goals.playerGoalsLabel("Maja Lind"),
+      }),
+    ).toBeNull();
+    expect(screen.queryByText(en.attribution)).toBeNull();
+  });
+});

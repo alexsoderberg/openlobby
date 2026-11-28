@@ -17,6 +17,39 @@ The user saw the first build (PR 1a) in the light palette and rejected its colou
 
 Everything else in this requirement stays as decided on 2026-11-21.
 
+## Amendment 2026-11-27 (user decision, binding)
+The user reviewed the You page and the game form in the preview and found "forms without clear boundaries and badly placed buttons". The UI/UX expert reworked both. The user viewed the result and accepted it on 2026-11-27 ("I see nothing else we should take first"). The changes are:
+1. **Section panels** (item 8, You page): each section of the You page (Account, Game roles, Goals, System admin) is a panel: a surface with a 1 px `--color-rule-strong` edge and the `--radius` corners (the `.panel` of `frontend/src/styles/global.css`). The panel is bounded, so its sections read as units.
+2. **Rows in a panel** (item 8): the rows inside a panel are divided by a 1 px `--color-rule` line, not by the 2 px bottom rule in the text colour. Heavy rules inside a bounded panel read as section dividers. This replaces the 2 px rule of item 8 for the You page only; the rules of item 7 (Group cards) are not changed by this amendment.
+3. **Game form** (item 8, game list and game form): the game form at `/games` gets the same panel treatment as item 1, with one panel per form, not per section. The edit form of a game is one panel headed "Change {game}"; it stays open after a successful save. "Add a game" is one panel. The sections inside a form (name, max players and genre; image; game roles; modes) and the mode view are not separate panels; they are parts of the form's panel.
+4. **Placement of actions** (items 8 and 9): an action button sits in the panel of the form or section it acts on, not in a shared row at the end of the page. The button styles of item 9 are unchanged. The game edit form stays open after a successful save and keeps the open mode open, so its button that closes the form reads "Close" (not "Cancel"); Save and Close are also shown in the mode view. Reason (user, 2026-11-27): there was no way to save a Named activity from the mode view.
+5. **Measure** (items 8 and 9): the content of the You page and of `/games` is capped at the measure width `--width-measure` (48rem; class `.settings-page`), so the actions sit near the rows they act on. The panels do not grow to the full main area on wide screens.
+6. The colour, radius, shadow and focus rules of items 1, 9 and 12 apply to the panels and rows without change. No new token is added; the panels use `--color-surface`, a `--color-rule-strong` edge and `--radius`, and their dividers use `--color-rule` (glossary: Colour role, Panel).
+
+Acceptance criteria:
+- Given I open the You page, when I look at its sections, then each of Account, Game roles, Goals and System admin is a panel with a surface fill, a 1 px `--color-rule-strong` edge and a radius of `--radius`, and its heading is inside the panel.
+- Given a row inside a You page panel, when I look at its divider, then the divider is 1 px in `--color-rule`, and no row has a 2 px rule in the text colour.
+- Given I open the game list at `/games` and press "Change" on a game, when I look at the edit form, then the whole form is one panel with the edge and corners of the You page panel, headed "Change {game}", and its sections (name, max players and genre; image; game roles; modes) are not panels of their own.
+- Given I open "Add a game" at `/games`, when I look at it, then it is one panel with the same edge and corners.
+- Given I save the game edit form successfully, when the save completes, then the form stays open and an open mode stays open.
+- Given the game edit form is open, when I look at the button that closes it, then it reads "Close", not "Cancel", and Save is shown in the mode view too.
+- Given I open the You page or `/games` on a window wider than 48rem, when I look at the content, then it is capped at `--width-measure` and does not fill the main area.
+- Given an action button on the You page or the game form, when I look at where it is, then it is inside the panel of the section or form it acts on.
+- Given the panels, when I check their colours and shadows, then they use the tokens only and have no shadow (item 1), and every text colour on them passes the contrast of item 1 (`styles/tokens.test.ts`).
+- Given a phone of 390 px width, when I open the You page or the game form, then the panels fit the width and no page scrolls sideways (item 12).
+- Given the panels and the rows, when I use the keyboard, then the focus outline of item 1 is shown on every control in them.
+
+Out of scope:
+- New sections, new fields, new actions and any change of what the You page or the game form does (REQ-0020, REQ-0021, REQ-0030, REQ-0010, REQ-0009).
+- The Group list, the line-up and the Group cards (items 5 and 7), the Create lobby form and the Create group form (item 9 applies as before).
+- A panel or divider style for any other page.
+
+Related features:
+- F-038 (You page) and F-025 (game list and game form): the look only. Extends F-038 and F-025; no new feature.
+
+Open questions:
+- ASSUMPTION (product owner, user may change): Log out keeps its current place and secondary button style and is not placed in a panel of its own. The UI/UX expert's rework did not state this.
+
 ## Problem
 The app has been reskinned twice (the dark luxury look of 2026-11-03 and the accent changes of REQ-0028). The user rejected the reskin as AI-generated and said that only the colours changed while the layouts stayed the same. The week view is a column grid that does not show how long lobbies are or how the groups' lobbies relate; the Group rail takes a column of the screen for icons; and the Next up card is a box beside the week. The user wants a real redesign of the structure and the look, with a clear visual idea that is not generic.
 
@@ -164,7 +197,7 @@ The concept does not show the Group list. It follows the same language.
 
 ### 8. Other screens (follow the same language; not in the mockups)
 The following are not in the mockups. They take the tokens (item 1), the fonts (item 2), the Button and form rules (item 9) and the copy rules, and nothing else. Their layout is not changed by this requirement, except where a criterion says so.
-- **You page** (`/profile`): the sections Account, Game roles, System admin and Log out (REQ-0020, REQ-0021). Section headings in Big Shoulders, rows with a 2 px bottom rule in the text colour, "Log out" as a secondary button. The Avatar is the square form (item 10).
+- **You page** (`/profile`): the sections Account, Game roles, System admin and Log out (REQ-0020, REQ-0021). Section headings in Big Shoulders, rows with a 2 px bottom rule in the text colour, "Log out" as a secondary button. The Avatar is the square form (item 10). Amended 2026-11-27: each section is a panel, the rows have a 1 px `--color-rule` divider, and the game form at `/games` is panelled too (Amendment 2026-11-27).
 - **Game list and game form** (REQ-0010, REQ-0009, REQ-0015, REQ-0023, REQ-0026): the list rows follow the row rule of item 7; the game form follows item 9 (form rules). The logo of a game in the list is the logo at 2.5rem (REQ-0026 Amendment 2026-11-16) in a square with the radius of item 10.
 - **Landing page** (`/`, logged out; REQ-0001, REQ-0013): the headline is set in Big Shoulders Display, weight as the font provides for the display (ASSUMPTION: the headline is uppercase by CSS, as in the mockup); the lead and the Discord login button (ButtonLink, REQ-0028 item 4) follow item 9. The 3D hero with its decorative lobby cards (REQ-0013, built) stays as built: it keeps its place, its lazy load and its static fallback, and takes the Stage palette. ASSUMPTION: the 3D hero is not removed by this redesign; its restyling beyond the Stage palette is a follow-up if the user asks for it. DECISION (user, 2026-11-21, ADR 0028 section 7): the cards are neutral, the genre motifs and the glow phase are removed in PR5b, and the 3D scene stays. The landing headline keeps its role and text (REQ-0013, REQ-0028 item 3).
 - **Create lobby form** (REQ-0003, REQ-0015): a form in a Create frame (ADR 0023 Amendment 2026-11-17). It follows item 9.
@@ -245,6 +278,7 @@ Each row names the documented decision, where it is written, and what replaces i
 | Group view header with Create lobby and Invite (no change) | REQ-0025 (header rule) | Kept, and the header has the Group name at display size (item 5). |
 | Lobby page order and placement of actions | REQ-0028 item 5; REQ-0025 (side column) | Kept (DECISION, user, 2026-11-21; item 6). |
 | Button and touch size of 44 px | REQ-0028 item 8 | Kept. |
+| You page sections and game form as bare forms; 2 px bottom rule on You page rows | REQ-0029 item 8 (as decided 2026-11-21) | Section panels, 1 px `--color-rule` dividers in the panels, actions placed by the section they act on (Amendment 2026-11-27). |
 | Create lobby button and floating "+" on Home | REQ-0012 (Third amendment: "+" only on `/groups`; Out of scope: creating a lobby from the "+") | Not on Home (DECISION, user, 2026-11-21). Create lobby only inside a group. |
 
 ## Delivery (small PRs, each shippable on its own)

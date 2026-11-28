@@ -204,6 +204,8 @@
   --height-dialog: calc(100dvh - var(--space-4));
   --width-edge: 2px;
   --size-sheet-max: 70dvh;
+  /* The add-goal results scroll inside the panel past this height, so a long drop list keeps Close in reach. */
+  --size-goal-results-max: 28rem;
   --sheet-safe-bottom: calc(var(--space-2) + env(safe-area-inset-bottom));
   --ease-overshoot: cubic-bezier(0.3, 1.35, 0.5, 1);
   --ease-in: cubic-bezier(0.55, 0, 0.75, 0);
@@ -718,7 +720,7 @@ a:where(:not([data-slot="button"])) {
 .login-panel {
   padding: var(--space-4);
   background: var(--color-surface);
-  border: 1px solid var(--color-rule);
+  border: 1px solid var(--color-rule-strong);
   border-radius: var(--radius);
 }
 
@@ -746,6 +748,41 @@ a:where(:not([data-slot="button"])) {
 
 .page-sections h2 {
   margin-top: 0;
+}
+
+/* The You page: one panel per settings section, so each reads as a bounded unit, kept to the text measure so an
+   action stays near what it acts on. Log out follows the panels. */
+.settings-page {
+  max-width: var(--width-measure);
+  gap: var(--space-4);
+}
+
+/* A ruled list ends on the panel's own edge or footer rule, not on a rule of its own. */
+.settings-page .structure > .choice-option:last-child,
+.settings-page :is(.goal-row, .nav-row):last-child {
+  border-bottom: 0;
+}
+
+/* A phone keeps the panel's edge close, so the rows keep their width. */
+@media (width < 47.5rem) {
+  .settings-page > .panel {
+    padding: var(--space-3);
+  }
+
+  /* The item takes the full row; its action goes under it, set in as the drops line. */
+  .goal-row > .goal-row__action {
+    grid-area: 3 / 1;
+    justify-self: start;
+    margin-left: calc(var(--size-item-icon) + var(--space-2));
+  }
+}
+
+/* The end of a form or section: its actions on a rule, apart from the fields they apply to. */
+.actions-footer {
+  align-items: center;
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-rule);
 }
 
 /* Wide windows: the side column sits on the right of the main column, which is the first track (REQ-0025).
@@ -1065,18 +1102,14 @@ a:where(:not([data-slot="button"])) {
   overflow-wrap: anywhere;
 }
 
-/* A choice (the You page's game roles, the seat choice): each option is a ruled row, as a member of the Member list. */
+/* A choice (the You page's game roles, the seat choice): each option is a ruled row, as a member of the Member list.
+   Inside the You page's panels the light rule is enough: the panel is the boundary. */
 .group-form .structure:has(> .choice-option) {
   gap: 0;
 }
 
 .group-form .structure > .choice-option {
   border-bottom: 1px solid var(--color-rule);
-}
-
-/* The You page's rows carry the 2px text-colour rule (REQ-0029, You page). The seat choice keeps the light rule. */
-.game-roles-form .structure > .choice-option {
-  border-bottom: var(--width-edge) solid var(--color-text);
 }
 
 /* A game's legend on the You page: its logo or monogram before the name (REQ-0026). */
@@ -1206,6 +1239,131 @@ a:where(:not([data-slot="button"])) {
   color: var(--color-muted);
 }
 
+/* The You page's Goals (REQ-0030): per game a ruled heading with its logo, as the Game roles legends, and Add goal
+   at its right end, then the goals. */
+.goal-game {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.goal-game__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: 0 0 var(--space-2);
+  border-bottom: 1px solid var(--color-rule);
+}
+
+.goal-game__head > h3 {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: var(--font-size-lobby-name);
+  font-weight: var(--font-weight-heavy);
+  line-height: var(--line-height-solid);
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.goal-list,
+.goal-results {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* The item over the places it drops in, and the action at the right across both lines at every width. */
+.goal-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--color-rule);
+}
+
+.goal-row > [data-slot="item-label"] {
+  grid-area: 1 / 1;
+}
+
+/* Set in by the icon box, so it reads as the item's own line. */
+.goal-row__drops {
+  grid-area: 2 / 1;
+  padding-left: calc(var(--size-item-icon) + var(--space-2));
+  font-size: var(--font-size-small);
+  color: var(--color-muted);
+  overflow-wrap: anywhere;
+}
+
+.goal-row__action {
+  grid-area: 1 / 2 / span 2;
+}
+
+.goal-row__owned {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-size-small);
+  color: var(--color-muted);
+}
+
+/* The add panel: a well sunk into the Goals panel under its game's heading, not a card on a card; the name field
+   and the dungeon or raid side by side when there is room. */
+.goal-panel {
+  padding: var(--space-3);
+  background: var(--color-ground);
+  border: 1px solid var(--color-rule-strong);
+  border-radius: var(--radius);
+}
+
+.goal-panel__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+}
+
+.goal-results {
+  max-height: var(--size-goal-results-max);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* A lobby player's goals that can drop here (REQ-0030): a line of their own under the name. */
+.player-goals {
+  flex: 1 0 100%;
+  display: grid;
+  gap: var(--space-1);
+}
+
+.player-goals__title {
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.player-goals > ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.player-goals li {
+  display: flex;
+  min-width: 0;
+}
+
 /* The game form shows one level at a time: the game view, or one mode's view. A mode slides in from the right
    and the game view back from the left, so going in and coming back read as moving through levels. The game view
    does not slide when the form first opens. */
@@ -1233,6 +1391,20 @@ a:where(:not([data-slot="button"])) {
 .group-form > [data-slot="button"],
 .group-form :is(.structure, .mode-view) > [data-slot="button"] {
   justify-self: start;
+}
+
+/* The mode's name with Remove mode at its right end, since the button acts on the mode. */
+.mode-view__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+/* Its icon lines up with the fields' left edge. */
+.group-form .mode-view__back {
+  margin-inline-start: calc(-1 * var(--space-2));
 }
 
 .group-form .mode-view__heading {
@@ -1290,8 +1462,7 @@ a:where(:not([data-slot="button"])) {
 }
 
 .mode-row__chevron {
-  font-size: var(--font-size-heading);
-  line-height: 1;
+  flex: none;
   color: var(--color-muted);
 }
 
@@ -1300,15 +1471,32 @@ a:where(:not([data-slot="button"])) {
 }
 
 /* A game of the Game list: a ruled row as a member of the Member list, the name in the heading face, the edit and
-   remove buttons at the right. A game being changed holds its form in place of the row. */
-/* The 2px text-colour row rule of the You page and the Group cards (REQ-0029, Game list). */
+   remove buttons at the right, with the 2px text-colour row rule of the Group cards (REQ-0029, Game list). A game
+   being changed holds its form in place of the row. */
 .row-list > .game-row {
   padding-inline: 0;
   border-bottom: var(--width-edge) solid var(--color-text);
 }
 
+/* A game being changed: a panel in place of its row, so its form reads as one unit apart from the rows around it. */
 .row-list > .game-row.list-row--editing {
-  padding-block: var(--space-4);
+  margin-block: var(--space-3);
+  padding: var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-rule-strong);
+  border-radius: var(--radius);
+}
+
+@media (width < 47.5rem) {
+  .row-list > .game-row.list-row--editing {
+    padding: var(--space-3);
+  }
+}
+
+.game-row__edit-heading {
+  flex: 1 1 100%;
+  margin: 0;
+  overflow-wrap: anywhere;
 }
 
 .game-row__name {
@@ -1320,10 +1508,10 @@ a:where(:not([data-slot="button"])) {
   overflow-wrap: anywhere;
 }
 
-/* The name over its facts, so the buttons keep the row's line on a phone. */
+/* The name over its facts. On a phone the buttons go under it when the name needs the room, so no word breaks. */
 .game-row__text {
   display: grid;
-  flex: 1 1 0;
+  flex: 1 1 12rem;
   gap: var(--space-1);
   min-width: 0;
 }
@@ -2469,11 +2657,10 @@ main:focus {
   overflow-wrap: anywhere;
 }
 
-/* A settings row that opens another page: a You page row with its 2px rule, and the whole row is the link, so it
-   drops the underline. */
+/* A settings row that opens another page: a ruled row, and the whole row is the link, so it drops the underline. */
 .nav-row {
   padding-inline: 0;
-  border-bottom: var(--width-edge) solid var(--color-text);
+  border-bottom: 1px solid var(--color-rule);
   font-weight: var(--font-weight-strong);
   text-decoration: none;
 }

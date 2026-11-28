@@ -1,13 +1,16 @@
-import type { ChangeResult, Game, GameInput } from "../../api";
+import type { ChangeResult, Game } from "../../api";
 import { GenreName } from "../../genres";
 import { useMessages } from "../../i18n";
 import { Button, ErrorAlert, GameLogo, Icon, IconButton } from "../../ui";
 import { DropList } from "./DropList";
-import { GameForm } from "./GameForm";
+import { GameForm, type SubmitGame } from "./GameForm";
 import { GameImageField } from "./GameImageField";
 import type { GamesState } from "./useGames";
 
-/** Shows the games as the server orders them. A game being changed shows its form in place of its row. */
+/**
+ * Shows the games as the server orders them. A game being changed shows its form in place of its row, as a panel
+ * headed by the game's stored name.
+ */
 export function GameList({
   state,
   editingId,
@@ -25,7 +28,7 @@ export function GameList({
   busy: boolean;
   onRetry: () => void;
   onEdit: (gameId: string) => void;
-  onSave: (gameId: string, input: GameInput) => ChangeResult;
+  onSave: (gameId: string, ...save: Parameters<SubmitGame>) => ChangeResult;
   onCancelEdit: () => void;
   onRemove: (game: Game) => void;
   onImageChanged: () => void;
@@ -46,7 +49,7 @@ export function GameList({
             key={game.id}
             game={game}
             busy={busy}
-            onSave={(input) => onSave(game.id, input)}
+            onSave={(...save) => onSave(game.id, ...save)}
             onCancel={onCancelEdit}
             onImageChanged={onImageChanged}
             onUnauthenticated={onUnauthenticated}
@@ -119,7 +122,7 @@ function GameEditRow({
 }: {
   game: Game;
   busy: boolean;
-  onSave: (input: GameInput) => ChangeResult;
+  onSave: SubmitGame;
   onCancel: () => void;
   onImageChanged: () => void;
   onUnauthenticated: () => void;
@@ -127,6 +130,7 @@ function GameEditRow({
   const m = useMessages();
   return (
     <li className="list-row list-row--editing game-row">
+      <h2 className="game-row__edit-heading">{m.gameEditHeading(game.name)}</h2>
       <GameForm
         game={game}
         submitLabel={m.gameEditSubmit}

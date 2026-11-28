@@ -410,7 +410,7 @@ describe("change", () => {
       .closest("form")!;
   }
 
-  it("saves the whole game, closes the form and confirms with a toast", async () => {
+  it("saves the whole game, keeps its form open with what was saved and confirms with a toast", async () => {
     const client = adminClient();
     renderPage(client);
     const form = await startEdit();
@@ -432,10 +432,10 @@ describe("change", () => {
       }),
     );
     await findToast(en.gameChanged);
-    expect(document.activeElement).toBe(pageHeading());
-    expect(
-      screen.queryByRole("button", { name: en.gameEditSubmit }),
-    ).toBeNull();
+    // The form stays, so focus stays on the button that saved.
+    const save = within(form).getByRole("button", { name: en.gameEditSubmit });
+    expect(document.activeElement).toBe(save);
+    expect(valueOf(form, en.gameNameLabel)).toBe("Catan 5th");
   });
 
   it("cancels without saving", async () => {
@@ -444,7 +444,7 @@ describe("change", () => {
     const form = await startEdit();
 
     fireEvent.click(
-      within(form).getByRole("button", { name: en.gameEditCancel }),
+      within(form).getByRole("button", { name: en.gameEditClose }),
     );
 
     expect(

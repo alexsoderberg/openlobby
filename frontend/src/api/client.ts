@@ -39,6 +39,10 @@ export type GameInput = Omit<Game, "id" | "gameRoles" | "modes"> &
 /** A Blizzard item by its ID, with its name when Blizzard gave one (ADR 0029). */
 export type Item = calendarComponents["schemas"]["Item"];
 export type GameItemList = calendarComponents["schemas"]["GameItemList"];
+/** An item with the Named activities whose drop list has it. */
+export type GameItem = calendarComponents["schemas"]["GameItem"];
+/** One game of the caller's goals: the game, its logo version and the goals (ADR 0029). */
+export type GameGoals = calendarComponents["schemas"]["GameGoals"];
 export type ApiErrorCode =
   | authComponents["schemas"]["ErrorBody"]["code"]
   | calendarComponents["schemas"]["ErrorBody"]["code"];
@@ -59,6 +63,8 @@ export const DEFAULT_MAX_PLAYERS_MIN = 1;
 export const RESERVED_GAME_NAME = "Other";
 /** Contract rule: an item ID is a whole number from 1 to this value (a 32-bit signed integer, ADR 0029). */
 export const ITEM_ID_MAX = 2147483647;
+/** Contract rule: the item name search `q` is at most 50 characters after trim. */
+export const ITEM_SEARCH_MAX_LENGTH = 50;
 /** Contract rule: an invite link allows 1–10 uses (ADR 0007). */
 export const INVITE_MAX_USES_LIMIT = 10;
 /** The form preselects a single use: a quick invite is for one person. */
@@ -151,6 +157,12 @@ export interface ApiClient {
     activityId: string,
     itemId: number,
   ): Promise<void>;
+  /** The caller's goals per game, with every game that has drop-list items. */
+  getGoals(): Promise<GameGoals[]>;
+  /** Adds the item as the caller's goal for the game. Already a goal is a success. */
+  addGoal(gameId: string, itemId: number): Promise<void>;
+  /** Removes the caller's goal. Not a goal is a success. */
+  removeGoal(gameId: string, itemId: number): Promise<void>;
   /** Makes a member a group admin. Already an admin is a success. There is no way back in the MVP. */
   makeGroupAdmin(groupId: string, userId: string): Promise<void>;
 }

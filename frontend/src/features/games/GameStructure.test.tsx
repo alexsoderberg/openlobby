@@ -235,14 +235,11 @@ describe("one level at a time", () => {
     expect(document.activeElement).toBe(
       within(mode).getByRole("heading", { name: "Raid" }),
     );
-    // The game's own fields, the other modes and the save button are out of sight while a mode is open.
+    // The game's own fields and the other modes are out of sight while a mode is open.
     expect(
       within(form).queryByRole("textbox", { name: en.gameNameLabel }),
     ).toBeNull();
     expect(within(form).queryByRole("button", { name: "Duel" })).toBeNull();
-    expect(
-      within(form).queryByRole("button", { name: en.gameEditSubmit }),
-    ).toBeNull();
 
     back(form);
 
@@ -288,6 +285,85 @@ describe("one level at a time", () => {
 
     expect(client.replaceGame).not.toHaveBeenCalled();
     expect(within(openMode(form, "Duo")).getByDisplayValue("Duo")).toBeTruthy();
+  });
+
+  it("goes back to the game view for a failure in the game's own fields when saved from a mode", async () => {
+    const client = renderPage();
+    const form = await editForm("Dungeons");
+    type(within(form).getByLabelText(en.gameNameLabel), " ");
+    openMode(form, "Duel");
+
+    click(form, en.gameEditSubmit);
+
+    const name = await within(form).findByRole("textbox", {
+      name: en.gameNameLabel,
+    });
+    expect(within(form).queryByRole("region")).toBeNull();
+    expect(document.activeElement).toBe(name);
+    expect(client.replaceGame).not.toHaveBeenCalled();
+  });
+
+  it("keeps the mode view open and focuses its heading for a server failure about an activity", async () => {
+    renderPage({
+      replaceGame: vi.fn(() =>
+        Promise.reject(new ApiError(400, "invalid_activity")),
+      ),
+    });
+    const form = await editForm("Dungeons");
+    const mode = openMode(form, "Raid");
+
+    click(form, en.gameEditSubmit);
+
+    expect(await within(form).findByRole("alert")).toBeTruthy();
+    expect(within(form).getByRole("region")).toBe(mode);
+    expect(document.activeElement).toBe(
+      within(mode).getByRole("heading", { name: "Raid" }),
+    );
+  });
+
+  it("makes the form inert while a save is pending, so nothing typed is lost", async () => {
+    let answer: (game: Game) => void = () => undefined;
+    renderPage({
+      replaceGame: vi.fn(
+        () => new Promise<Game>((resolve) => (answer = resolve)),
+      ),
+    });
+    const form = await editForm("Dungeons");
+    const mode = openMode(form, "Duel");
+
+    click(form, en.gameEditSubmit);
+
+    await waitFor(() => expect(mode.closest("[inert]")).not.toBeNull());
+    answer({ ...dungeons, name: "Dungeons" });
+    await waitFor(() => expect(mode.closest("[inert]")).toBeNull());
+    expect(within(form).getByRole("region")).toBe(mode);
+  });
+
+  it("saves the game from the mode view, with the activity added there", async () => {
+    const client = renderPage();
+    const form = await editForm("Dungeons");
+    const mode = openMode(form, "Duel");
+    expect(
+      within(mode).getByText(en.gameModeSavedWithGame(en.gameEditSubmit)),
+    ).toBeTruthy();
+    click(mode, en.gameActivityAdd);
+    type(within(mode).getByLabelText(en.gameActivityNameLabel), "Arena");
+
+    click(form, en.gameEditSubmit);
+
+    await waitFor(() =>
+      expect(client.replaceGame).toHaveBeenCalledWith(
+        "g1",
+        expect.objectContaining({
+          modes: expect.arrayContaining([
+            expect.objectContaining({
+              id: "m2",
+              activities: [{ name: "Arena" }],
+            }),
+          ]),
+        }),
+      ),
+    );
   });
 });
 
@@ -744,7 +820,7 @@ describe("role icon", () => {
     expect(iconShown(roleRow(mode, 2))).toBe(en.roleIcon["medical-cross"]);
   });
 
-  it("shows the saved icon when the form opens again after save", async () => {
+  it("shows the saved icon in the form that stays open after save, and when it opens again", async () => {
     const stored: Game = {
       ...catan,
       defaultMaxPlayers: null,
@@ -771,12 +847,10 @@ describe("role icon", () => {
     const form = await editForm("Catan");
     await chooseOption(iconField(roleRow(form, 1)), en.roleIcon.wrench);
     click(form, en.gameEditSubmit);
-    await waitFor(() =>
-      expect(
-        screen.queryByRole("button", { name: en.gameEditSubmit }),
-      ).toBeNull(),
-    );
+    await waitFor(() => expect(games[0].gameRoles![0].roleIcon).toBe("wrench"));
+    expect(iconShown(roleRow(form, 1))).toBe(en.roleIcon.wrench);
 
+    click(form, en.gameEditClose);
     expect(iconShown(roleRow(await editForm("Catan"), 1))).toBe(
       en.roleIcon.wrench,
     );

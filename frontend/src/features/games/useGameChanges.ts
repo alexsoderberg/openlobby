@@ -57,8 +57,10 @@ export function useGameChanges(
     [api, change],
   );
   const replace = useCallback(
-    (gameId: string, input: GameInput) =>
-      change("changed", () => api.replaceGame(gameId, input)),
+    (gameId: string, input: GameInput, onSaved: (game: Game) => void) =>
+      change("changed", async () =>
+        onSaved(await api.replaceGame(gameId, input)),
+      ),
     [api, change],
   );
   const remove = useCallback(

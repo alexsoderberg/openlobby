@@ -315,9 +315,47 @@ describe("drop list", () => {
       within(addForm).getByRole("button", { name: en.gameActivityAdd }),
     );
 
-    expect(within(addForm).queryByText(en.dropListAfterSave)).toBeNull();
+    expect(
+      within(addForm).queryByText(en.dropListAfterSave(en.gameEditSubmit)),
+    ).toBeNull();
     expect(
       within(addForm).queryByRole("group", { name: /Drop list/ }),
+    ).toBeNull();
+  });
+
+  it("keeps the mode open after a save and shows the new activity's drop list at once", async () => {
+    const saved: Game = {
+      ...wow,
+      modes: [
+        {
+          ...wow.modes![0],
+          activities: [
+            ...wow.modes![0].activities,
+            { id: "a3", name: "Scholomance" },
+          ],
+        },
+      ],
+    };
+    const client = await openDungeon({
+      ...listsOf({}),
+      replaceGame: vi.fn(() => Promise.resolve(saved)),
+    });
+    fireEvent.click(screen.getByRole("button", { name: en.gameActivityAdd }));
+    fireEvent.change(screen.getAllByLabelText(en.gameActivityNameLabel)[2], {
+      target: { value: "Scholomance" },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: en.gameEditSubmit }));
+
+    expect(
+      await screen.findByRole("group", {
+        name: en.dropListHeading("Scholomance"),
+      }),
+    ).toBeTruthy();
+    expect(client.replaceGame).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole("region", { name: "Dungeon" })).toBeTruthy();
+    expect(
+      screen.queryByText(en.dropListAfterSave(en.gameEditSubmit)),
     ).toBeNull();
   });
 
@@ -326,6 +364,10 @@ describe("drop list", () => {
     fireEvent.click(screen.getByRole("button", { name: en.gameActivityAdd }));
 
     expect(screen.getAllByRole("group", { name: /Drop list/ })).toHaveLength(2);
-    expect(screen.getByText(en.dropListAfterSave)).toBeTruthy();
+    // The reason sits with the new activity, where its drop list will be.
+    const reason = screen.getByText(en.dropListAfterSave(en.gameEditSubmit));
+    expect(
+      within(reason.closest("li")!).getByLabelText(en.gameActivityNameLabel),
+    ).toHaveProperty("value", "");
   });
 });

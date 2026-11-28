@@ -82,6 +82,9 @@ export function fakeApiClient(overrides: Partial<ApiClient> = {}): ApiClient {
       Promise.reject(new ApiError(404, "game_not_found")),
     ),
     removeDropItem: vi.fn(() => Promise.resolve()),
+    getGoals: vi.fn(() => Promise.resolve([])),
+    addGoal: vi.fn(() => Promise.resolve()),
+    removeGoal: vi.fn(() => Promise.resolve()),
     ...overrides,
   };
 }

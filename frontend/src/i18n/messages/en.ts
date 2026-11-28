@@ -196,7 +196,9 @@ export const en = {
       .filter(Boolean)
       .join(" · "),
   gameModeHasError: "This mode has an error. Open it to fix it.",
-  gameModeBack: "Back",
+  gameModeBack: "Back to the game",
+  gameModeSavedWithGame: (save: string) =>
+    `Changes to this mode are saved with the game when you choose ${save}.`,
   gameModeAdd: "Add mode",
   gameModeRemove: "Remove mode",
   gameModeRemoveHeading: (name: string) => `Remove mode ${name}?`,
@@ -221,7 +223,9 @@ export const en = {
   gameAddSubmit: "Add game",
   gameEdit: "Change",
   gameEditSubmit: "Save changes",
-  gameEditCancel: "Cancel",
+  gameEditHeading: (game: string) => `Change ${game}`,
+  // The form stays open after a save, so this closes it; changes since the last save are not kept.
+  gameEditClose: "Close",
   gameRemove: "Remove",
   gameNameInvalid: `The name must be 1 to ${GAME_NAME_MAX_LENGTH} characters, and "${RESERVED_GAME_NAME}" is reserved.`,
   gameRemoveHeading: (name: string) => `Remove ${name}?`,
@@ -268,8 +272,8 @@ export const en = {
   dropListRemoveSubmit: "Yes, remove item",
   dropListRemoveKeep: "Keep item",
   dropListRemoved: "Item removed.",
-  dropListAfterSave:
-    "A new activity gets its drop list after you save the game.",
+  dropListAfterSave: (save: string) =>
+    `Its drop list can be filled once you choose ${save}.`,
   itemId: (itemId: number) => `ID ${itemId}`,
   itemUnknown: "Unknown item",
   itemFallbackName: "Item",
@@ -470,6 +474,39 @@ export const en = {
     saved: "Game roles saved.",
     removedRole:
       "A game role you chose has been removed. The list now shows the current game roles. Check your choice and save again.",
+  },
+
+  goals: {
+    heading: "Goals",
+    hint: "Choose the items you want from each game. Your goals apply to all your groups. The players of a lobby see the goals that can drop in its dungeon or raid.",
+    loading: "Loading goals.",
+    empty: "No game has a drop list yet.",
+    none: "No goals yet.",
+    listLabel: (game: string) => `Goals in ${game}`,
+    dropsIn: (activities: string[]) => `Drops in ${activities.join(", ")}`,
+    onNoDropList: "No longer on a drop list",
+    remove: "Remove goal",
+    removed: (item: string) => `${item} removed from your goals.`,
+    add: "Add goal",
+    added: (item: string) => `${item} added to your goals.`,
+    alreadyAdded: "Already in your goals",
+    panelLabel: (game: string) => `Add a goal in ${game}`,
+    close: "Close",
+    searchLabel: "Item name",
+    activityLabel: "Dungeon or raid",
+    allActivities: "All dungeons and raids",
+    searching: "Searching.",
+    resultCount: (count: number) =>
+      count === 0
+        ? "No items found."
+        : count === 1
+          ? "1 item."
+          : `${count} items.`,
+    namesUnavailable:
+      "Some item names are not available from Blizzard right now. The name search cannot match those items, so they are always listed by their ID.",
+    /** Above a lobby player's goals that can drop in the lobby's dungeon or raid. */
+    playerGoals: "Goals",
+    playerGoalsLabel: (player: string) => `Goals of ${player}`,
   },
 
   dashboard: {

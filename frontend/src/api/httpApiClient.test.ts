@@ -61,6 +61,9 @@ const failingCalls: Array<[string, (api: ApiClient) => Promise<unknown>]> = [
   ["listGameItems", (api) => api.listGameItems("g1")],
   ["addDropItem", (api) => api.addDropItem("g1", "a1", 19019)],
   ["removeDropItem", (api) => api.removeDropItem("g1", "a1", 19019)],
+  ["getGoals", (api) => api.getGoals()],
+  ["addGoal", (api) => api.addGoal("g1", 19019)],
+  ["removeGoal", (api) => api.removeGoal("g1", 19019)],
 ];
 
 describe("createHttpApiClient", () => {
@@ -192,6 +195,32 @@ describe("createHttpApiClient", () => {
     ]);
     expect(urls[1].pathname).toBe("/api/games/g1/activities/a1/items/19019");
     expect(urls[2].pathname).toBe("/api/games/g1/activities/a1/items/19019");
+  });
+
+  it("reads the goals and adds and removes one at the caller's own address", async () => {
+    const sent: Request[] = [];
+    const fetchImpl = vi.fn<typeof fetch>(async (input) => {
+      sent.push(new Request(input));
+      return sent.length === 1
+        ? Response.json({ games: [] })
+        : new Response(null, { status: 204 });
+    });
+    const api = createHttpApiClient(fetchImpl, BASE_URL);
+
+    await expect(api.getGoals()).resolves.toEqual([]);
+    await expect(api.addGoal("g1", 19019)).resolves.toBeUndefined();
+    await expect(api.removeGoal("g1", 19019)).resolves.toBeUndefined();
+
+    expect(sent.map((request) => request.method)).toEqual([
+      "GET",
+      "PUT",
+      "DELETE",
+    ]);
+    expect(sent.map((request) => new URL(request.url).pathname)).toEqual([
+      "/api/users/me/goals",
+      "/api/users/me/games/g1/goals/19019",
+      "/api/users/me/games/g1/goals/19019",
+    ]);
   });
 
   it("builds the item icon URL on our own origin", () => {

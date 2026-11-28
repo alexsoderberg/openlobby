@@ -237,6 +237,22 @@ export function createHttpApiClient(
         ),
       );
     },
+    getGoals: async () =>
+      bodyOf(await receive(http.GET("/api/users/me/goals"))).games,
+    addGoal: async (gameId, itemId) => {
+      await receive(
+        http.PUT("/api/users/me/games/{gameId}/goals/{itemId}", {
+          params: { path: { gameId, itemId: String(itemId) } },
+        }),
+      );
+    },
+    removeGoal: async (gameId, itemId) => {
+      await receive(
+        http.DELETE("/api/users/me/games/{gameId}/goals/{itemId}", {
+          params: { path: { gameId, itemId: String(itemId) } },
+        }),
+      );
+    },
     makeGroupAdmin: async (groupId, userId) => {
       await receive(
         http.PUT("/api/groups/{groupId}/admins/{userId}", {

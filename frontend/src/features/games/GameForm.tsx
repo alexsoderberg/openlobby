@@ -38,14 +38,25 @@ import {
 } from "./gameStructure";
 import { useFocusRequest } from "./useFocusRequest";
 
-type SubmitGame = (input: GameInput) => ChangeResult;
+/**
+ * Saves the input. A save that answers with the stored game hands it to `onSaved`: the form then goes on editing
+ * it.
+ */
+export type SubmitGame = (
+  input: GameInput,
+  onSaved: (game: Game) => void,
+) => ChangeResult;
 
 /**
  * Name, default max players, genre, and the game's modes, game roles and activities (the ID is made by the server).
  * The form shows one level at a time: the game with its modes as rows, or one open mode. The game's fields stay
  * mounted while a mode is open, so what was typed is kept. The default max players is not shown while the game has
  * modes or game roles. A failure, local or from the server, is shown next to the field or section it is about and
- * focus moves there; a local failure in a mode opens that mode. `onSubmit` resolves to the error code of a failed save.
+ * focus moves there; a local failure in a mode opens that mode, a failure in the game's own fields the game view,
+ * and any other failure leaves the view as it is. `onSubmit` resolves to the error code of a failed save.
+ * While a save is pending the views are inert, so nothing typed can be lost. After a save that hands back the stored
+ * game, the form keeps what was typed and takes the game's structure with its new IDs, and an open mode stays
+ * open; any other success empties the form.
  * `imageFields` are shown in the game view after the genre; they save on their own, not with the form.
  * `renderDropList` draws the drop list of a saved activity in the mode view; it saves on its own too.
  */
@@ -77,13 +88,32 @@ export function GameForm({
     setOpenKey(modeKey);
     setModeWasOpen(true);
   };
+  // A failure is shown in the view that holds its field: its mode, or the game view for the game's own fields. A
+  // structure failure from the server names no entry, so the view stays: the open mode may hold it.
+  const showFailureView = (section: ErrorSection, modeKey?: string) => {
+    if (modeKey) openModeView(modeKey);
+    else if (!isStructureSection(section)) setOpenKey(undefined);
+  };
   const requestFocus = useFocusRequest();
+  const saveId = `${id}-save`;
+  // The views were inert while saving, so the draft is the one that was sent. The stored modes keep the order they
+  // were sent in, so the open mode is found again by its place. Save was disabled, which dropped its focus.
+  const takeSaved = (saved: Game) => {
+    const next = draftFromGame(saved);
+    setDraft(next);
+    setOpenKey(
+      (current) =>
+        next.modes[draft.modes.findIndex((mode) => mode.key === current)]?.key,
+    );
+    requestFocus(saveId);
+  };
   const { failure, nameRef, maxRef, genreRef, submit } = useGameFormSubmit(
     id,
     onSubmit,
     draft,
     setDraft,
-    openModeView,
+    showFailureView,
+    takeSaved,
     game,
   );
   const errorId = `${id}-error`;
@@ -110,6 +140,7 @@ export function GameForm({
       <div
         className={modeWasOpen ? "form-view form-view--returned" : "form-view"}
         hidden={openMode !== undefined}
+        inert={busy}
       >
         <GameFormFields
           id={id}
@@ -139,6 +170,8 @@ export function GameForm({
           id={id}
           mode={openMode}
           position={openIndex + 1}
+          saveLabel={submitLabel}
+          inert={busy}
           setDraft={setDraft}
           requestFocus={requestFocus}
           error={structureError}
@@ -152,15 +185,14 @@ export function GameForm({
       {failure && (
         <GameFormError id={errorId} code={failure.code} section={section} />
       )}
-      {/* Saving is done from the game view. Without a submit button, Enter in a mode does not submit. */}
-      {!openMode && (
-        <GameFormActions
-          submitLabel={submitLabel}
-          submitIcon={submitIcon}
-          busy={busy}
-          onCancel={onCancel}
-        />
-      )}
+      {/* Shown in the mode view too: a mode's edits are saved with the game, so saving must be reachable from there. */}
+      <GameFormActions
+        saveId={saveId}
+        submitLabel={submitLabel}
+        submitIcon={submitIcon}
+        busy={busy}
+        onCancel={onCancel}
+      />
     </form>
   );
 }
@@ -243,11 +275,13 @@ function GameFormError({
 }
 
 function GameFormActions({
+  saveId,
   submitLabel,
   submitIcon,
   busy,
   onCancel,
 }: {
+  saveId: string;
   submitLabel: string;
   submitIcon: IconName;
   busy: boolean;
@@ -255,15 +289,15 @@ function GameFormActions({
 }) {
   const m = useMessages();
   return (
-    <div className="form-actions">
-      <Button type="submit" disabled={busy}>
+    <div className="form-actions actions-footer">
+      <Button id={saveId} type="submit" disabled={busy}>
         <Icon name={submitIcon} />
         {submitLabel}
       </Button>
       {onCancel && (
         <Button variant="secondary" type="button" onClick={onCancel}>
           <Icon name="close" />
-          {m.gameEditCancel}
+          {m.gameEditClose}
         </Button>
       )}
     </div>
@@ -287,7 +321,10 @@ const formTexts = (form: HTMLFormElement) => {
   ] as const;
 };
 
-/** The element an error is about: the exact entry for a local failure, else the first field of its section. */
+/**
+ * The element an error is about: the exact entry for a local failure, else the first field of its section, or the
+ * open mode's heading when that section is out of sight.
+ */
 function focusError(
   form: HTMLFormElement,
   id: string,
@@ -299,12 +336,16 @@ function focusError(
   },
 ) {
   if (isStructureSection(section))
-    (
-      (field && document.getElementById(`${id}-${field}`)) ||
+    [
+      field ? document.getElementById(`${id}-${field}`) : null,
       form.querySelector<HTMLElement>(
         `[data-section="${section}"] :is(input, button)`,
-      )
-    )?.focus();
+      ),
+      // A server failure in an open mode: its section in the game view is hidden, so the mode's heading.
+      form.querySelector<HTMLElement>(".mode-view__heading"),
+    ]
+      .find((element) => element && !element.closest("[hidden]"))
+      ?.focus();
   else if (section === "max") refs.max.current?.focus();
   else if (section === "genre") refs.genre.current?.focus();
   else refs.name.current?.focus();
@@ -312,14 +353,15 @@ function focusError(
 
 /**
  * Checks the input locally, then submits it. The failure it ends with is kept until the next submit, and focus goes
- * to what it is about. A local failure in a mode opens that mode first.
+ * to what it is about. The view that holds it is shown first: its mode, or the game view.
  */
 function useGameFormSubmit(
   id: string,
   onSubmit: SubmitGame,
   draft: StructureDraft,
   setDraft: Dispatch<SetStateAction<StructureDraft>>,
-  openModeView: (modeKey: string) => void,
+  showFailureView: (section: ErrorSection, modeKey?: string) => void,
+  takeSaved: (saved: Game) => void,
   game?: Game,
 ) {
   const [failure, setFailure] = useState<FormFailure>();
@@ -333,9 +375,13 @@ function useGameFormSubmit(
       draft,
       game?.defaultMaxPlayers,
     );
-    const code = parsed.ok ? await onSubmit(parsed.input) : parsed.code;
+    let saved: Game | undefined;
+    const code = parsed.ok
+      ? await onSubmit(parsed.input, (game) => (saved = game))
+      : parsed.code;
     if (code === undefined) {
       setFailure(undefined);
+      if (saved) return takeSaved(saved);
       form.reset();
       setDraft(draftFromGame(game));
       return;
@@ -348,7 +394,7 @@ function useGameFormSubmit(
     // Rendered at once, so the field to focus is on screen.
     flushSync(() => {
       setFailure(next);
-      if (next.modeKey) openModeView(next.modeKey);
+      showFailureView(next.section, next.modeKey);
     });
     focusError(form, id, next, { name: nameRef, max: maxRef, genre: genreRef });
   }

@@ -12,6 +12,7 @@ import {
   GameLogo,
   GameRoleName,
   Icon,
+  Panel,
 } from "../../ui";
 import {
   usePreferredGameRoles,
@@ -43,7 +44,7 @@ export function PreferredGameRoles({
   const { choices, reload, ...saving } =
     usePreferredGameRoles(onUnauthenticated);
   return (
-    <section>
+    <Panel>
       <h2 id={headingId}>{m.heading}</h2>
       <p id={hintId} className="form-hint">
         {m.hint}
@@ -63,7 +64,7 @@ export function PreferredGameRoles({
             {...saving}
           />
         ))}
-    </section>
+    </Panel>
   );
 }
 
@@ -146,15 +147,16 @@ function ChoiceForm({
           />
         )
       )}
-      <div className="form-actions">
+      {/* The save and its outcome close the section, so it is clear the button applies to every game above. */}
+      <div className="form-actions actions-footer">
         <Button ref={submitRef} type="submit" disabled={busy || reloading}>
           <Icon name="save" />
           {m.save}
         </Button>
+        <p ref={statusRef} tabIndex={-1} role="status" className="status">
+          {outcome && !outcome.code && m.saved}
+        </p>
       </div>
-      <p ref={statusRef} tabIndex={-1} role="status" className="status">
-        {outcome && !outcome.code && m.saved}
-      </p>
     </form>
   );
 }
