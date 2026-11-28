@@ -1,5 +1,5 @@
 # REQ-0030. Goals and item drops (World of Warcraft: Forever first)
-Status: Decided
+Status: Implemented
 Feature: F-031 (EXTEND, not a new feature)
 Priority: Should
 
