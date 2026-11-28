@@ -159,7 +159,7 @@ C1 is after the other Could items because no core flow depends on it, and it add
 
 Delivered (2026-11-08): C1 (REQ-0013, landing hero) in PR #72, with the removals of REQ-0013 Amendment 2026-11-08 and the steps in one column. Its REQ-0014 criterion (sample cards with genre themes) is delivered with it. Amendment 2026-11-24 (REQ-0013, REQ-0029 PR 5b, built on `redesign-preview`): the sample cards are neutral and unlit, so the hero no longer uses genre themes (REQ-0014) or a glow; on `main` since 2026-11-25 (PR #168).
 
-The item goals idea (F-031) was `Proposed` until 2026-11-25. It is now `Decided` and ordered as A3j (REQ-0030), not here.
+The item goals idea (F-031) was `Proposed` until 2026-11-25. It is now `Done`, delivered as A3j (REQ-0030) on 2026-11-28, not here.
 
 ## Technical tasks (operations)
 
